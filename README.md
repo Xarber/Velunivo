@@ -43,6 +43,10 @@ Actual web screenshots on public Milan routes. Speed is labelled **Demo** becaus
 
 [GitHub Releases](https://github.com/Xarber/Velunivo/releases) contains the APK, unsigned iPhone IPA, Apple Silicon Simulator `.app.zip`, web archive, checksums and release notes for successful builds. An iPhone IPA needs signing with your own account or an appropriate sideloading tool. A Simulator app is not an iPhone IPA.
 
+**[Add Velunivo’s source via AltDirect](https://altdirect.app/?url=https%3A%2F%2Fgithub.com%2FXarber%2FVelunivo%2Freleases%2Fdownload%2F1.0%2Fapps.json)**
+
+Choose your installed sideloading app on AltDirect, or copy the source URL below. The link opens the chooser without automatically launching an app.
+
 **AltStore Classic / SideStore source:**
 
 ```text

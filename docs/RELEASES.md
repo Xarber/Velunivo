@@ -38,3 +38,7 @@ The **Refresh AltSource** workflow accepts an existing binary release tag and re
 The new repository has `commit.gpgsign=false` and `tag.gpgsign=false` locally. Global configuration is untouched. Commit commands use `--no-gpg-sign`; no physical signing key is accessed. The release-note script groups `feat`, `fix`, `perf`, `refactor`, `ci`, `docs`, `test` and `chore`, retains scopes and flags `!` breaking changes. Unknown subjects are retained as other changes. Only changes since the previous v-prefixed semver tag are listed.
 
 Later signing by rebase changes commit hashes. Coordinate any force push and decide whether old release tags should remain as historical artifacts. This task does not sign or rebase history.
+
+## Add the source with AltDirect
+
+[Open Velunivo’s source in AltDirect](https://altdirect.app/?url=https%3A%2F%2Fgithub.com%2FXarber%2FVelunivo%2Freleases%2Fdownload%2F1.0%2Fapps.json). Choose your installed sideloading app; no redirect target is forced. This points to the fixed 1.0/apps.json feed, so the link stays valid across app releases. [Official URL parameter documentation](https://github.com/StikDebug/altdirect#creating-your-link).
