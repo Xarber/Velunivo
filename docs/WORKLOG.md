@@ -83,3 +83,5 @@ Final browser QA used a temporary ignored public-road geometry fixture (no user 
 Build fix committed separately: Simulator screenshots are captured before optional beta-runtime logs. A diagnostic timeout is recorded without failing an otherwise surviving app; process survival remains mandatory before publication. The cancelled older 0.1.2 run is replaced with a build from the latest navigation source.
 
 Planner cancellation follow-up: entering map selection cancels the pending lookup immediately, while retaining the current-location preference until an actual manual point is selected. Cancelling map selection therefore keeps the GPS default usable. Browser confirmed Compare routes re-enables after cancelling a pending lookup; no stale GPS update replaces a picked start.
+
+Dashboard visual follow-up: the desktop screenshot exposed an ellipsized arrival clock in 12-hour locales. The clock now uses the compact font size and permits a second line for dated/overnight arrivals, keeping the full arrival time readable.
