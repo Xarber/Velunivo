@@ -12,7 +12,7 @@ export async function fetchRoute(start: Coord, end: Coord, kind: 'bike' | 'car',
 
 export interface AddressResult { label: string; coordinate: Coord; }
 export async function searchAddresses(query: string): Promise<AddressResult[]> {
-  if (!serverUrl) throw new Error('Address search needs EXPO_PUBLIC_ROUTING_URL and a GraphHopper server key. You can choose a point on the map without a key.');
+  if (!serverUrl) throw new Error('Address search is not configured yet. You can choose either location on the map.');
   const response = await fetch(`${serverUrl.replace(/\/$/, '')}/geocode?q=${encodeURIComponent(query.trim())}`, { signal: AbortSignal.timeout(15000) });
   const body = await response.json();
   if (!response.ok) throw new Error(body.error || 'Address search unavailable');

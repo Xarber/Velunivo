@@ -4,7 +4,7 @@ An iOS-first Expo / React Native project for e-scooter and e-bike planning, with
 
 ## What works in the MVP
 
-- Native MapLibre on iPhone/iPad/Android; MapLibre GL JS on web. Phone layout becomes a map-and-planner split view at 900 px.
+- Apple Maps on iPhone/iPad, Google Maps on keyed Android builds, and a separate MapLibre downloadable-map option; MapLibre GL JS on web. Phone layout becomes a map-and-planner split view at 900 px.
 - Configurable hardware maximum, independent local riding limit, cruise fraction, acceleration and maneuver delays. Shows practical ETA and constant-speed minimum.
 - Depart-at and arrive-by calculations in the device's local time. **Scheduled trips do not use traffic conditions or traffic simulation.** The app displays that warning.
 - GPX import, geometry-only track following, accelerated simulation, local saved routes and GPX export of foreground GPS fixes.
@@ -20,7 +20,7 @@ This is an MVP, not a verified road-ready navigator. Native device sensors, voic
 
 Scooter access is not the same as bicycle or car access. Both route models exclude motorways, trunk roads, steps, ferries and known roads with limits above 50 km/h. Surface preferences discourage sand/gravel/ground. Provider access rules remain in effect. Missing road-limit/urban-status/scooter-access data cannot be certified. Candidates display an eligibility warning. Italy's scooter preset defaults to 20 km/h; eligibility is limited to urban roads under the current rule. Review local signs and rules. The e-bike preset changes speed assumptions, not the vehicle's legal classification.
 
-Background navigation, automatic rerouting, address search, hill/battery/weather models and an on-device routing graph are not implemented. Off-route guidance asks you to stop safely and replan. A saved route can be followed offline; calculating a new route requires the server. A GPX with only coordinates has no genuine turn instructions, and the app does not invent them.
+Background navigation, automatic rerouting, hill/battery/weather models and an on-device routing graph are not implemented. Off-route guidance asks you to stop safely and replan. A saved route can be followed offline; calculating a new route requires the server. A GPX with only coordinates has no genuine turn instructions, and the app does not invent them.
 
 ## Run locally
 

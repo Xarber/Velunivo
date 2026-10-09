@@ -25,3 +25,5 @@ Online npm audit initially reported 30 inherited/transitive advisories (11 moder
 ## Remote builds
 
 First run: prepare and web jobs succeeded; Android setup failed on an obsolete action-default package and was corrected. iOS native job still running. Release publication and AltSource population are gated on successful native binaries and Simulator screenshots. Empty bootstrap apps.json is intentional until a real IPA exists.
+
+Address/device-map update: local typecheck, lint, all 12 existing core/server tests and web production export passed. Config introspection passed with the platform-map plugin. In the real browser, typed a public landmark (`Duomo, Milano`), confirmed the honest missing-service message, picked Start on the actual map and observed the coordinate return to the Start field; repeated for Destination and observed its field update independently. No live geocoding results have been tested without provider credentials. Apple/Google map code has not yet been tested on a physical device; the updated native CI build is pending. Native camera, marker and gesture behavior must be checked on device before road use.
