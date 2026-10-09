@@ -11,12 +11,12 @@ export function useLocation(enabled: boolean) {
     const stop = () => { generation++; subscription?.remove(); subscription = undefined; if (locationTimeout) clearTimeout(locationTimeout); };
     async function start() {
       const token = ++generation;
+      setStatus('Finding your location…');
+      locationTimeout = setTimeout(() => { if (!cancelled && token === generation) setStatus('GPS is taking longer · you can choose a start on the map'); }, 20000);
       try {
         const permission = await Location.requestForegroundPermissionsAsync();
         if (cancelled || token !== generation) return;
-        if (!permission.granted) { setStatus('Location off · allow it in device settings or choose a start on the map'); return; }
-        setStatus('Finding your location…');
-        locationTimeout = setTimeout(() => { if (!cancelled && token === generation) setStatus('GPS is taking longer · you can choose a start on the map'); }, 20000);
+        if (!permission.granted) { if (locationTimeout) clearTimeout(locationTimeout); setStatus('Location off · allow it in device settings or choose a start on the map'); return; }
         const watch = await Location.watchPositionAsync({ accuracy: Location.Accuracy.High, timeInterval: 1000, distanceInterval: 0 }, p => {
           if (cancelled || token !== generation) return;
           const accuracy = p.coords.accuracy ?? 999;
@@ -27,7 +27,7 @@ export function useLocation(enabled: boolean) {
           setStatus('Live location');
         }, () => { if (!cancelled && token === generation) { if (locationTimeout) clearTimeout(locationTimeout); setStatus('Location unavailable · choose a start on the map'); } });
         if (cancelled || token !== generation) watch.remove(); else subscription = watch;
-      } catch { if (!cancelled && token === generation) setStatus('Location unavailable · choose a start on the map'); }
+      } catch { if (!cancelled && token === generation) { if (locationTimeout) clearTimeout(locationTimeout); setStatus('Location unavailable · choose a start on the map'); } }
     }
     if (AppState.currentState !== 'background') void start();
     const app = AppState.addEventListener('change', state => { stop(); if (state === 'active') void start(); });

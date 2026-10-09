@@ -104,6 +104,9 @@ def capture(devices, family):
         boot_and_install(udid, family)
         run('xcrun', 'simctl', 'status_bar', udid, 'override', '--time', '9:41',
             '--batteryState', 'charged', '--batteryLevel', '100')
+        # Public fixture, on this run's disposable Simulator only.
+        run('xcrun', 'simctl', 'privacy', udid, 'grant', 'location', BUNDLE)
+        run('xcrun', 'simctl', 'location', udid, 'set', '45.4642,9.1900')
         launch = run('xcrun', 'simctl', 'launch', udid, BUNDLE)
         match = re.search(r':\s*(\d+)', launch)
         if not match:

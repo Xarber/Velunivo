@@ -88,6 +88,9 @@ class SimulatorVerificationTests(unittest.TestCase):
             sim.capture(self.devices(), 'iphone')
             self.assertEqual(survival.call_args_list, [unittest.mock.call(1234, 0), unittest.mock.call(1234, 0)])
             self.assertTrue(any(c.args[2] == 'io' for c in commands.call_args_list))
+            calls = [c.args for c in commands.call_args_list]
+            self.assertIn(('xcrun', 'simctl', 'privacy', 'owned-device', 'grant', 'location', sim.BUNDLE), calls)
+            self.assertIn(('xcrun', 'simctl', 'location', 'owned-device', 'set', '45.4642,9.1900'), calls)
 
 
 if __name__ == '__main__':
