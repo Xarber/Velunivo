@@ -61,3 +61,8 @@ test('navigation rejects poor and stale fixes; arrival requires end proximity', 
   assert.equal(guidance(track, { ...fix, timestamp: Date.now() - 20000 }).valid, false);
   assert.equal(guidance(track, { ...fix, coordinate: [9.02, 45.01] }).arrived, false);
 });
+
+test('GraphHopper GPX prefers its full track over accompanying sparse route waypoints', () => {
+  const r = importGPX('<gpx><trk><trkseg><trkpt lat="45" lon="9"/><trkpt lat="45" lon="9.01"/><trkpt lat="45" lon="9.02"/></trkseg></trk><rte><rtept lat="45" lon="9"/><rtept lat="45" lon="9.02"/></rte></gpx>');
+  assert.deepEqual(r.coordinates, track.coordinates); assert.deepEqual(r.steps, []);
+});
