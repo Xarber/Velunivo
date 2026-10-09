@@ -12,12 +12,16 @@ for family in ['iphone','ipad']:
     run('xcrun','simctl','install',udid,'artifacts/Velunivo-simulator.app')
     run('xcrun','simctl','status_bar',udid,'override','--time','9:41','--batteryState','charged','--batteryLevel','100')
     launch=run('xcrun','simctl','launch',udid,'app.velunivo.mobile');print(launch,flush=True);time.sleep(15)
-    logs=subprocess.run(['xcrun','simctl','spawn',udid,'log','show','--last','2m','--style','compact','--predicate','process == "Velunivo"'],capture_output=True,text=True,timeout=45)
-    Path(f'artifacts/{family}-launch.log').write_text(logs.stdout+logs.stderr)
+    # Capture the UI before optional diagnostics: simctl log can hang on beta runtimes.
+    run('xcrun','simctl','io',udid,'screenshot',f'artifacts/{family}.png')
+    try:
+        logs=subprocess.run(['xcrun','simctl','spawn',udid,'log','show','--last','2m','--style','compact','--predicate','process == "Velunivo"'],capture_output=True,text=True,timeout=20)
+        Path(f'artifacts/{family}-launch.log').write_text(logs.stdout+logs.stderr)
+    except subprocess.TimeoutExpired:
+        Path(f'artifacts/{family}-launch.log').write_text('Optional Simulator log collection timed out; process survival is checked separately.\n')
     for folder in [Path.home()/'Library/Logs/DiagnosticReports',Path.home()/f'Library/Developer/CoreSimulator/Devices/{udid}/data/Library/Logs/DiagnosticReports']:
         if folder.exists():
             for report in folder.glob('*Velunivo*.ips'):shutil.copy(report,Path('artifacts')/report.name)
-    run('xcrun','simctl','io',udid,'screenshot',f'artifacts/{family}.png')
     pid=int(re.search(r':\s*(\d+)',launch).group(1))
     try:os.kill(pid,0)
     except ProcessLookupError:raise SystemExit('Velunivo exited after launch. See Simulator diagnostics; do not publish this build.')
