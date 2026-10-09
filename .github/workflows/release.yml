@@ -1,0 +1,221 @@
+name: Build and release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'App version, e.g. 0.1.0 (the 1.0 tag is reserved for the source feed)'
+        required: true
+        default: '0.1.0'
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          version="${INPUT_VERSION:-${GITHUB_REF_NAME#v}}"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Use major.minor.patch'; exit 1; }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint && npm run typecheck && npm test
+      - run: node scripts/release-notes.mjs
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: notes
+          path: release-notes.md
+  web:
+    needs: prepare
+    runs-on: ubuntu-latest
+    env:
+      APP_VERSION: ${{ needs.prepare.outputs.version }}
+      BUILD_NUMBER: ${{ github.run_number }}
+      EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
+      EXPO_PUBLIC_MAP_STYLE_URL: ${{ vars.MAP_STYLE_URL }}
+      EXPO_PUBLIC_ALLOW_OFFLINE_DOWNLOADS: ${{ vars.ALLOW_OFFLINE_DOWNLOADS }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx expo export --platform web --output-dir dist
+      - run: cd dist && zip -qr ../web.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web
+          path: web.zip
+  android:
+    needs: prepare
+    runs-on: ubuntu-latest
+    env:
+      APP_VERSION: ${{ needs.prepare.outputs.version }}
+      BUILD_NUMBER: ${{ github.run_number }}
+      EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
+      EXPO_PUBLIC_MAP_STYLE_URL: ${{ vars.MAP_STYLE_URL }}
+      EXPO_PUBLIC_ALLOW_OFFLINE_DOWNLOADS: ${{ vars.ALLOW_OFFLINE_DOWNLOADS }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - name: Select latest stable Android Studio SDK
+        run: |
+          sdkmanager --list --channel=0 > /tmp/sdk-list.txt
+          api=$(sed -nE 's/^[[:space:]]*platforms;android-([0-9]+)[[:space:]]*\|.*/\1/p' /tmp/sdk-list.txt | sort -nu | tail -1)
+          tools=$(sed -nE 's/^[[:space:]]*build-tools;([0-9]+\.[0-9]+\.[0-9]+)[[:space:]]*\|.*/\1/p' /tmp/sdk-list.txt | sort -Vu | tail -1)
+          test -n "$api" && test -n "$tools"
+          sdkmanager "platforms;android-$api" "build-tools;$tools" "platform-tools"
+          echo "ANDROID_COMPILE_SDK=$api" >> "$GITHUB_ENV"
+          echo "ANDROID_BUILD_TOOLS=$tools" >> "$GITHUB_ENV"
+      - run: npm ci
+      - run: npx expo prebuild --platform android --no-install
+      - name: Optional stable Android signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 -d > android/app/velunivo.keystore
+            python3 - <<'PY'
+          from pathlib import Path
+          p=Path('android/app/build.gradle');s=p.read_text();marker='signingConfigs {'
+          config='''signingConfigs {
+                  velunivo {
+                      storeFile file("velunivo.keystore")
+                      storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                      keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                      keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+                  }
+          '''
+          if marker not in s: raise SystemExit('Signing config layout changed')
+          s=s.replace(marker,config,1)
+          s=s.replace('signingConfig signingConfigs.debug','signingConfig signingConfigs.velunivo')
+          p.write_text(s)
+          PY
+          fi
+      - name: Build APK
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          cd android
+          ./gradlew assembleRelease --no-daemon
+      - run: |
+          mkdir -p artifacts
+          cp android/app/build/outputs/apk/release/app-release.apk artifacts/Velunivo.apk
+          "$ANDROID_HOME/build-tools/$ANDROID_BUILD_TOOLS/apksigner" verify artifacts/Velunivo.apk
+          printf 'Android API %s; build-tools %s\n' "$ANDROID_COMPILE_SDK" "$ANDROID_BUILD_TOOLS" > artifacts/android-build.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: artifacts/*
+  ios:
+    needs: prepare
+    runs-on: xcode-27
+    env:
+      APP_VERSION: ${{ needs.prepare.outputs.version }}
+      BUILD_NUMBER: ${{ github.run_number }}
+      EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
+      EXPO_PUBLIC_MAP_STYLE_URL: ${{ vars.MAP_STYLE_URL }}
+      EXPO_PUBLIC_ALLOW_OFFLINE_DOWNLOADS: ${{ vars.ALLOW_OFFLINE_DOWNLOADS }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Select newest installed Xcode beta (never silently use stable)
+        run: |
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          from pathlib import Path
+          import re
+          candidates=[p for p in Path('/Applications').glob('Xcode*.app') if 'beta' in p.name.lower() and not p.is_symlink()]
+          if not candidates: raise SystemExit('No Xcode beta installed on this runner')
+          chosen=max(candidates,key=lambda p:tuple(map(int,re.findall(r'\d+',p.name))))
+          print(f'DEVELOPER_DIR={chosen}/Contents/Developer')
+          PY
+      - run: xcodebuild -version && xcodebuild -showsdks
+      - run: npm ci
+      - run: npx expo prebuild --platform ios --no-install
+      - run: cd ios && pod install
+      - name: Archive iPhone app without signing
+        run: |
+          mkdir -p artifacts
+          xcodebuild -workspace ios/Velunivo.xcworkspace -scheme Velunivo -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -archivePath "$PWD/artifacts/Velunivo.xcarchive" archive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+          mkdir -p artifacts/Payload
+          cp -R artifacts/Velunivo.xcarchive/Products/Applications/Velunivo.app artifacts/Payload/
+          (cd artifacts && zip -qry Velunivo.ipa Payload)
+          python3 scripts/ios-metadata.py --app artifacts/Payload/Velunivo.app --ipa artifacts/Velunivo.ipa
+          xcodebuild -version > artifacts/ios-build.txt
+      - name: Build Apple Silicon Simulator app
+        run: |
+          xcodebuild -workspace ios/Velunivo.xcworkspace -scheme Velunivo -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath "$PWD/work/simulator" build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO ARCHS=arm64 ONLY_ACTIVE_ARCH=NO
+          cp -R work/simulator/Build/Products/Release-iphonesimulator/Velunivo.app artifacts/Velunivo-simulator.app
+          ditto -c -k --keepParent artifacts/Velunivo-simulator.app artifacts/Velunivo-simulator.app.zip
+          python3 scripts/simulator-screenshots.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios
+          path: |
+            artifacts/Velunivo.ipa
+            artifacts/Velunivo-simulator.app.zip
+            artifacts/ios-metadata.json
+            artifacts/ios-build.txt
+            artifacts/iphone.png
+            artifacts/ipad.png
+  publish:
+    needs: [prepare, web, android, ios]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Publish binaries and conventional release notes
+        run: |
+          (cd artifacts && sha256sum Velunivo.ipa Velunivo.apk Velunivo-simulator.app.zip web.zip > SHA256SUMS)
+          gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --title "Velunivo ${{ needs.prepare.outputs.version }}" --notes-file artifacts/release-notes.md
+          gh release upload "$RELEASE_TAG" artifacts/*
+      - name: Update mutable AltSource release at fixed 1.0 URL
+        run: |
+          if ! gh release view 1.0 >/dev/null 2>&1; then
+            gh release create 1.0 --target "$GITHUB_SHA" --title 'Velunivo AltSource' --notes 'Mutable source feed. Add apps.json to AltStore Classic or SideStore. Binary releases use v-prefixed version tags.' --latest=false
+          fi
+          mkdir -p work/source
+          gh release download 1.0 --pattern apps.json --dir work/source || true
+          python3 scripts/update-source.py --repo "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG" --existing work/source/apps.json --output work/source/apps.json
+          gh release upload 1.0 work/source/apps.json assets/icon.png --clobber

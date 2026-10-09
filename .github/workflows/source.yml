@@ -1,0 +1,27 @@
+name: Refresh AltSource
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Existing binary release, e.g. v0.1.0'
+        required: true
+permissions:
+  contents: write
+concurrency:
+  group: altsource
+  cancel-in-progress: false
+jobs:
+  source:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ inputs.release_tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || exit 1
+          mkdir -p artifacts work/source
+          gh release download "$TAG" --pattern ios-metadata.json --pattern iphone.png --pattern ipad.png --pattern release-notes.md --dir artifacts
+          gh release download 1.0 --pattern apps.json --dir work/source
+          python3 scripts/update-source.py --repo "$GITHUB_REPOSITORY" --tag "$TAG" --existing work/source/apps.json --output work/source/apps.json
+          gh release upload 1.0 work/source/apps.json assets/icon.png --clobber

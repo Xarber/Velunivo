@@ -1,0 +1,10 @@
+{
+  "name": "Velunivo",
+  "subtitle": "Routes for small electric wheels",
+  "description": "Official Velunivo source for e-scooter and e-bike navigation. No installable versions are listed until native build verification succeeds.",
+  "iconURL": "https://github.com/Xarber/Velunivo/releases/download/1.0/icon.png",
+  "tintColor": "007F6D",
+  "website": "https://github.com/Xarber/Velunivo",
+  "apps": [],
+  "news": []
+}
