@@ -244,6 +244,7 @@ jobs:
           name: ios-${{ matrix.family }}-verification
           path: |
             artifacts/${{ matrix.family }}.png
+            artifacts/${{ matrix.family }}-host.log
             artifacts/${{ matrix.family }}-launch.log
             artifacts/${{ matrix.family }}-simulator.log
             artifacts/*.ips

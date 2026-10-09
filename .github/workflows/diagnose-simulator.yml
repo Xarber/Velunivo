@@ -5,9 +5,13 @@ on:
       tag:
         description: Existing binary release
         default: v0.1.0
-        required: true
+        required: false
+      run_id:
+        description: 'Existing Build and release run with an ios artifact (overrides tag)'
+        required: false
 permissions:
   contents: read
+  actions: read
 jobs:
   diagnose:
     runs-on: xcode-27
@@ -19,6 +23,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       RELEASE_TAG: ${{ inputs.tag }}
+      BINARY_RUN_ID: ${{ inputs.run_id }}
     steps:
       - uses: actions/checkout@v4
       - name: Select installed beta and fetch existing Simulator build
@@ -31,7 +36,12 @@ jobs:
           print(f'DEVELOPER_DIR={chosen}/Contents/Developer')
           PY
           mkdir -p artifacts
-          gh release download "$RELEASE_TAG" --pattern Velunivo-simulator.app.zip --dir artifacts
+          if [[ -n "$BINARY_RUN_ID" ]]; then
+            [[ "$BINARY_RUN_ID" =~ ^[0-9]+$ ]] || { echo 'Use a numeric workflow run ID'; exit 1; }
+            gh run download "$BINARY_RUN_ID" --repo "$GITHUB_REPOSITORY" --name ios --dir artifacts
+          else
+            gh release download "$RELEASE_TAG" --pattern Velunivo-simulator.app.zip --dir artifacts
+          fi
           ditto -x -k artifacts/Velunivo-simulator.app.zip artifacts
       - run: python3 scripts/simulator-screenshots.py --family "${{ matrix.family }}"
       - uses: actions/upload-artifact@v4

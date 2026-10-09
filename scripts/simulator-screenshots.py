@@ -25,7 +25,14 @@ def select_device(devices, family):
                   if device.get('isAvailable') and family in device['name'].lower()]
     if not candidates:
         raise RuntimeError(f'No installed {family} Simulator. This workflow does not download runtimes.')
-    return max(candidates, key=lambda item: tuple(map(int, re.findall(r'\d+', item[0]))))
+    # Stay on the newest installed runtime, but prefer a regular/Air/mini iPad
+    # over the first (often large Pro) template returned by CoreSimulator.
+    def rank(item):
+        runtime, device = item
+        name = device['name'].lower()
+        return (tuple(map(int, re.findall(r'\d+', runtime))),
+                1 if family == 'ipad' and 'pro' not in name else 0)
+    return max(candidates, key=rank)
 
 
 def append_log(family, message):
@@ -46,6 +53,7 @@ def boot_and_install(udid, family):
     for attempt in (1, 2):
         try:
             run('xcrun', 'simctl', 'boot', udid)
+            open_simulator(udid)
             run('xcrun', 'simctl', 'bootstatus', udid, '-b')
             run('xcrun', 'simctl', 'install', udid, 'artifacts/Velunivo-simulator.app')
             return
@@ -62,7 +70,9 @@ def boot_and_install(udid, family):
 
 def diagnostics(udid, family):
     logs = best_effort('xcrun', 'simctl', 'spawn', udid, 'log', 'show', '--last', '2m',
-                       '--style', 'compact', '--predicate', 'process == "Velunivo"', timeout=20)
+                       '--style', 'compact', '--predicate', 'process == "Velunivo" OR process == "installd" OR process == "SpringBoard"', timeout=20)
+    host_logs = best_effort('log', 'show', '--last', '2m', '--style', 'compact', '--predicate', 'process == "Simulator" OR process == "com.apple.CoreSimulator.CoreSimulatorService"', timeout=20)
+    (ARTIFACTS / f'{family}-host.log').write_text(host_logs or 'Optional host log collection failed or timed out.\n')
     (ARTIFACTS / f'{family}-launch.log').write_text(logs or 'Optional Simulator log collection failed or timed out.\n')
     for folder in [Path.home() / 'Library/Logs/DiagnosticReports',
                    Path.home() / f'Library/Developer/CoreSimulator/Devices/{udid}/data/Library/Logs/DiagnosticReports']:
@@ -71,13 +81,19 @@ def diagnostics(udid, family):
                 shutil.copy(report, ARTIFACTS / report.name)
 
 
-def landscape(udid):
-    # Rotate the actual Simulator/UI, not the output image.
+def open_simulator(udid):
+    # Attach the selected Xcode UI before boot readiness/install, rather than
+    # leaving the beta iPad headless until after app launch.
     developer = Path(os.environ.get('DEVELOPER_DIR') or run('xcode-select', '-p'))
     simulator = developer / 'Applications/Simulator.app'
     if not simulator.is_dir():
         raise RuntimeError(f'Simulator is missing from selected Xcode: {simulator}')
     run('open', '-a', str(simulator), '--args', '-CurrentDeviceUDID', udid)
+
+
+def landscape(udid):
+    # Rotate the actual Simulator/UI, not the output image.
+    open_simulator(udid)
     time.sleep(3)
     run('osascript', '-e', 'tell application "Simulator" to activate', '-e',
         'tell application "System Events" to tell process "Simulator" to click menu item "Landscape Left" of menu 1 of menu item "Orientation" of menu 1 of menu bar item "Device" of menu bar 1', timeout=30)
