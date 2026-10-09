@@ -11,5 +11,6 @@ export default function Layout() {
     <Tabs.Screen name="index" options={{ title: 'Explore', tabBarIcon: ({ color, size }) => <Ionicons name="navigate" color={color} size={size} /> }} />
     <Tabs.Screen name="offline" options={{ title: 'Library', tabBarIcon: ({ color, size }) => <Ionicons name="download-outline" color={color} size={size} /> }} />
     <Tabs.Screen name="scooter" options={{ title: 'Vehicles', tabBarIcon: ({ color, size }) => <Ionicons name="options-outline" color={color} size={size} /> }} />
+    <Tabs.Screen name="settings" options={{ title: 'Settings', tabBarIcon: ({ color, size }) => <Ionicons name="settings-outline" color={color} size={size} /> }} />
   </Tabs></StoreProvider>;
 }

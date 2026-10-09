@@ -6,12 +6,14 @@ import { Coord, Fix, Profile, Route } from '../core/types';
 import { bearing } from '../core/rideView';
 import { guidance } from '../core/navigation';
 import { cumulative, pointAt } from '../core/geo';
-export function useRide(route: Route | null, profile: Profile) {
+export function useRide(route: Route | null, profile: Profile, unit: 'km' | 'mi' = 'km') {
   const [mode, setMode] = useState<'idle' | 'gps' | 'simulation'>('idle');
   const [fix, setFix] = useState<Fix | null>(null), [status, setStatus] = useState('Ready to ride');
   const [progress, setProgress] = useState<ReturnType<typeof guidance> | null>(null);
   const [recording, setRecording] = useState<Coord[]>([]);
   const along = useRef<number | undefined>(undefined), spoken = useRef('');
+  const unitRef = useRef(unit);
+  useEffect(() => { unitRef.current = unit; }, [unit]);
   const profileRef = useRef(profile);
   useEffect(() => { profileRef.current = profile; }, [profile]);
   useEffect(() => {
@@ -32,7 +34,7 @@ export function useRide(route: Route | null, profile: Profile) {
       if (mode === 'gps') setRecording(v => [...v.slice(-19999), next.coordinate]);
       const cue = g.next ? `${g.next.index}-${(g.maneuverMeters ?? 0) < 40 ? 'near' : 'ahead'}` : '';
       if (profileRef.current.voice && mode === 'gps' && !g.offRoute && g.next && (g.maneuverMeters ?? 999) < 150 && cue !== spoken.current) {
-        spoken.current = cue; void Speech.stop(); Speech.speak(`${Math.round((g.maneuverMeters ?? 0) / 10) * 10} meters. ${g.next.text}`, { language: 'en' });
+        spoken.current = cue; void Speech.stop(); Speech.speak(`${Math.round((g.maneuverMeters ?? 0) * (unitRef.current === 'mi' ? 3.28084 : 1) / 10) * 10} ${unitRef.current === 'mi' ? 'feet' : 'meters'}. ${g.next.text}`, { language: 'en' });
       }
       if (g.arrived) { if (timer) clearInterval(timer); subscription?.remove(); void Speech.stop(); }
     }
