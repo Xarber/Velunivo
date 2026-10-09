@@ -51,3 +51,5 @@ assets/tracks/private-*
 artifacts/
 public/maplibre-gl-worker.mjs
 release-notes.md
+__pycache__/
+*.pyc

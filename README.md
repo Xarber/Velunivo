@@ -46,7 +46,7 @@ npm run android
 
 MapLibre requires a native build; **Expo Go cannot run this project**. Do not run those commands if your tools are absent and you do not want downloads. SDK 57 requires iOS 16.4+ and an appropriate Xcode toolchain. No SDKs were downloaded locally during preparation. Use the GitHub workflow for remote builds.
 
-## Configure routing and traffic
+## Configure addresses, routing and traffic
 
 Copy `.env.example` to `.env`; copy `server/.env.example` to `server/.env`. The private keys belong only in the server environment.
 
@@ -78,6 +78,12 @@ The special `1.0` release is a mutable feed container, **not app version 1.0**. 
 
 All local commits and tags are deliberately **unsigned**. The local repository disables automatic signing without changing your global Git settings. Use descriptive conventional subjects, e.g. `feat: Add scheduled navigation` or `fix: Respect local speed limits`. Signing can be applied later by rebasing; do not automatically rewrite already published release tags.
 
+## Address input and device maps
+
+Address planning: enter a street/place and city, press Search, then choose a matching result. Both endpoints have a map picker; coordinates and current GPS remain available. Address search needs the routing server and its GraphHopper key. Map picking works without a geocoding key.
+
+Native maps: iOS defaults to Apple Maps without a map key. Android uses Google Maps when `EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_KEY` is supplied before building; otherwise a visible notice accompanies the street-map fallback. Restrict the key to the Maps SDK for Android, `app.velunivo.mobile` and your signing certificate SHA-1. In GitHub Actions use the `GOOGLE_MAPS_ANDROID_KEY` repository secret. Rebuild after configuring it. `Use downloadable maps` selects the MapLibre offline-capable renderer. Web uses OpenFreeMap.
+
 ## Validation and records
 
 ```sh
@@ -94,7 +100,3 @@ Your original GPX is retained locally at `assets/tracks/private-example.gpx` and
 ## Existing navigator to consider
 
 OsmAnd supports iOS offline maps, offline routing, bicycle/car profiles and navigation. Its moped profile is not automatically an e-scooter eligibility profile. It is a stronger option for mature offline routing today; Velunivo's particular focus is comparing road candidates with your riding-speed model. [Official routing docs](https://osmand.net/docs/user/navigation/routing/osmand-routing/?current-os=ios).
-
-Address planning: enter a street/place and city, press Search, then choose a matching result. Both endpoints have a map picker; coordinates and current GPS remain available. Address search needs the routing server and its GraphHopper key. Map picking works without a geocoding key.
-
-Native maps: iOS defaults to Apple Maps without a map key. Android uses Google Maps when `EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_KEY` is supplied before building; otherwise a visible notice accompanies the street-map fallback. Restrict the key to the Maps SDK for Android, `app.velunivo.mobile` and your signing certificate SHA-1. In GitHub Actions use the `GOOGLE_MAPS_ANDROID_KEY` repository secret. Rebuild after configuring it. `Use downloadable maps` selects the MapLibre offline-capable renderer. Web uses OpenFreeMap.

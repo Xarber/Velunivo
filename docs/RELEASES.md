@@ -8,6 +8,8 @@ Actions must be enabled. Workflows have minimum default read permission; publish
 
 Optional repository variables: `ROUTING_URL` (HTTPS private-key proxy), `MAP_STYLE_URL` (public restricted map-style URL), `ALLOW_OFFLINE_DOWNLOADS` (`true` only when licensed). No configured variables means illustrative track demo, online default map, and unavailable live routing/traffic. Server keys are configured on your separately deployed server, not in the public repo or app bundle.
 
+Optional native Android map secret: `GOOGLE_MAPS_ANDROID_KEY` (restricted Maps SDK key); it is a client map key embedded at build time, not a private routing credential. Without it, the map displays the explicitly labeled street-map fallback.
+
 Optional Android signing secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`. Keep a stable keystore for upgrades. Without them, the native template's development signing key is used; the release notes state this. iOS builds are unsigned and packaged for AltStore Classic/SideStore to re-sign. No Apple certificate or physical security key is requested. This is not App Store/PAL notarized distribution.
 
 ## Run a release

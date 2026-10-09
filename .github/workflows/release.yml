@@ -197,6 +197,9 @@ jobs:
             artifacts/iphone.png
             artifacts/ipad.png
   publish:
+    concurrency:
+      group: altsource
+      cancel-in-progress: false
     needs: [prepare, web, android, ios]
     runs-on: ubuntu-latest
     permissions:
