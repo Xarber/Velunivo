@@ -1,3 +1,4 @@
+import { routeLayers, ROUTE_WIDTH } from '../core/routeLayers';
 import { useCameraTarget } from '../services/useCameraTarget';
 import React, { useEffect, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
@@ -7,8 +8,8 @@ import { Route, Coord } from '../core/types';
 import { routeBounds } from '../core/geo';
 import { serverUrl } from '../services/api';
 import { mapStyle } from './mapConfig';
-interface MapProps { overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; offlineMap?: boolean; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
-export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan }: MapProps) {
+interface MapProps { completedMeters?: number; overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; offlineMap?: boolean; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
+export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, completedMeters }: MapProps) {
   const div = useRef<HTMLDivElement>(null), map = useRef<maplibregl.Map | null>(null);
   const [loaded, setLoaded] = useState(false), [error, setError] = useState(false);
   const user = useRef<maplibregl.Marker | null>(null);
@@ -35,12 +36,24 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
   useEffect(() => { const m = map.current; if (!m || !loaded) return; if (follow) { m.dragRotate.disable(); m.touchZoomRotate.disableRotation(); m.keyboard.disableRotation(); } else { m.dragRotate.enable(); m.touchZoomRotate.enableRotation(); m.keyboard.enableRotation(); } }, [follow, loaded]);
   useEffect(() => {
     const m = map.current; if (!m || !loaded) return;
-    for (const layer of m.getStyle().layers ?? []) if (layer.id.startsWith('ride-')) { m.removeLayer(layer.id); if (m.getSource(layer.id)) m.removeSource(layer.id); }
-    for (const r of routes) {
-      const id = `ride-${r.id}`;
-      m.addSource(id, { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: r.coordinates } } });
-      m.addLayer({ id, type: 'line', source: id, paint: { 'line-color': r.id === selected?.id ? '#007F6D' : '#658ACA', 'line-width': r.id === selected?.id ? 6 : 4 }, layout: { 'line-cap': 'round', 'line-join': 'round' } });
+    const paths = routeLayers(routes, selected, completedMeters);
+    const wanted = new Set(paths.map(r => `ride-${r.id}`));
+    for (const layer of m.getStyle().layers ?? []) if (layer.id.startsWith('ride-') && !wanted.has(layer.id.replace(/-outline$/, ''))) m.removeLayer(layer.id);
+    for (const source of Object.keys(m.getStyle().sources)) if (source.startsWith('ride-') && !wanted.has(source)) m.removeSource(source);
+    for (const r of paths) {
+      const id = `ride-${r.id}`, data: GeoJSON.Feature<GeoJSON.LineString> = { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: r.coordinates } };
+      const source = m.getSource(id) as maplibregl.GeoJSONSource | undefined;
+      if (source) source.setData(data); else {
+        m.addSource(id, { type: 'geojson', data });
+        m.addLayer({ id: `${id}-outline`, type: 'line', source: id, paint: { 'line-color': r.outline, 'line-width': ROUTE_WIDTH + 3 }, layout: { 'line-cap': 'round', 'line-join': 'round' } });
+        m.addLayer({ id, type: 'line', source: id, paint: { 'line-color': r.color, 'line-width': ROUTE_WIDTH }, layout: { 'line-cap': 'round', 'line-join': 'round' } });
+      }
+      // Existing sources must be moved too when the rider switches candidates.
+      m.moveLayer(`${id}-outline`); m.moveLayer(id);
     }
+  }, [routes, selected, loaded, completedMeters]);
+  useEffect(() => {
+    const m = map.current; if (!m || !loaded) return;
     if (selected && !follow && (!navigating || overview)) { const [w, s, e, n] = routeBounds(selected.coordinates); m.jumpTo({ padding: { top: 0, bottom: 0, left: 0, right: 0 } }); m.fitBounds([[w, s], [e, n]], { padding: fitPadding || 24, duration: 400, maxZoom: 17, bearing: 0, pitch: tilted ? 50 : 0 }); }
   }, [routes, selected, loaded, follow, fitPadding, overviewRequest, overview, navigating, tilted]);
   useEffect(() => {

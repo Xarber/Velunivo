@@ -5,6 +5,7 @@ export interface Step { text: string; sign: number; index: number; distance: num
 export interface Route {
   id: string; name: string; kind: RouteKind; coordinates: Coord[];
   steps: Step[]; details: Record<string, Detail[]>; source: 'graphhopper' | 'valhalla' | 'gpx';
+  startLabel?: string; endLabel?: string;
   safetyWarnings?: string[]; warnings: string[]; savedAt?: number; plannedCap?: number;
 }
 export interface Profile {
@@ -17,7 +18,7 @@ export const defaultProfile: Profile = {
 };
 export interface Fix { coordinate: Coord; accuracy: number; speed: number | null; heading?: number; timestamp: number; }
 
-export interface Vehicle extends Profile { id: string; kind: 'escooter' | 'ebike'; rangeKm: number | null; rangeUnit: 'km' | 'mi'; icon: string; photo: string | null; }
+export interface Vehicle extends Profile { id: string; kind: 'escooter' | 'ebike'; rangeKm: number | null; rangeUnit: 'km' | 'mi'; icon: string; photo: string | null; photos?: string[]; }
 
-export interface NavigationOptions { compass: boolean; tilted: boolean; unit: 'km' | 'mi'; }
-export const defaultNavigationOptions: NavigationOptions = { compass: true, tilted: false, unit: 'km' };
+export interface NavigationOptions { compass: boolean; tilted: boolean; unit: 'km' | 'mi'; voice: boolean; motion: boolean; volume: 'loud' | 'quiet' | 'off'; recordRides: boolean; downloadedMaps: boolean; }
+export const defaultNavigationOptions: NavigationOptions = { compass: true, tilted: false, unit: 'km', voice: true, motion: false, volume: 'loud', recordRides: true, downloadedMaps: true };

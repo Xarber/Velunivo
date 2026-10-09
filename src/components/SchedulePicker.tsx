@@ -16,5 +16,5 @@ export default function SchedulePicker({ value, onChange }: SchedulePickerProps)
       } });
     } });
   }
-  return <View style={{ gap: 8 }}><Text style={{ color: p.muted, fontSize: 12 }}>LOCAL DATE & TIME</Text>{Platform.OS === 'ios' ? <DateTimePicker accessibilityLabel="Scheduled date and time" value={date} mode="datetime" display="compact" accentColor={p.accent} onChange={(_, selected) => { if (selected) onChange(localDateTime(selected)); }} /> : <Button title={value ? date.toLocaleString() : 'Choose date & time'} secondary onPress={android} />}<Button title="Clear schedule · ride now" secondary onPress={() => onChange('')} /></View>;
+  return <View style={{ gap: 8 }}><Text style={{ color: p.muted, fontSize: 12 }}>LOCAL DATE & TIME</Text>{Platform.OS === 'ios' ? <DateTimePicker accessibilityLabel="Scheduled date and time" value={date} mode="datetime" display="compact" accentColor={p.accent} onChange={(_, selected) => { if (selected) onChange(localDateTime(selected)); }} /> : <Button title={value ? date.toLocaleString() : 'Choose date & time'} secondary onPress={android} />}{value && <Button title="Clear schedule · ride now" secondary icon="close-circle-outline" onPress={() => onChange('')} />}</View>;
 }

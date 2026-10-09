@@ -10,7 +10,7 @@ function useSystemPalette() {
   return { dark, bg: dark ? '#101B21' : '#F4F7F8', card: dark ? '#1A2930' : '#FFFFFF', text: dark ? '#F6FAFC' : '#162C35', muted: dark ? '#9BAEB6' : '#647B86', line: dark ? '#30434B' : '#E6ECEF', accent: dark ? '#64DCC5' : '#007F6D' };
 }
 export const usePalette = () => { const inherited = useContext(PaletteContext); const system = useSystemPalette(); return inherited ?? system; };
-export function Button({ title, onPress, secondary = false, disabled = false, icon }: { title: string; onPress(): void; secondary?: boolean; disabled?: boolean; icon?: keyof typeof Ionicons.glyphMap }) {
+export function Button({ title, onPress, secondary = false, disabled = false, icon = 'chevron-forward' }: { title: string; onPress(): void; secondary?: boolean; disabled?: boolean; icon?: keyof typeof Ionicons.glyphMap }) {
   const p = usePalette();
   return <PressMotion {...motionProps('button')} accessibilityRole="button" accessibilityLabel={title} disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.button, { backgroundColor: secondary ? p.line : p.accent, opacity: disabled ? .4 : pressed ? .75 : 1 }]}>{icon && <Ionicons name={icon} size={19} color={secondary ? p.text : p.dark ? '#102A28' : '#fff'} />}<Text style={{ color: secondary ? p.text : p.dark ? '#102A28' : '#fff', fontSize: 16, fontWeight: '700' }}>{title}</Text></PressMotion>;
 }
@@ -24,3 +24,5 @@ export const styles = StyleSheet.create({
   title: { fontSize: 32, fontWeight: '800', letterSpacing: -1 },
   subtitle: { fontSize: 15, lineHeight: 22 },
 });
+
+export function IconButton({ label, icon, onPress, disabled = false }: { label: string; icon: keyof typeof Ionicons.glyphMap; onPress(): void; disabled?: boolean }) { const p = usePalette(); return <PressMotion accessibilityRole="button" accessibilityLabel={label} disabled={disabled} onPress={onPress} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: p.line, opacity: disabled ? .4 : 1 }}><Ionicons name={icon} size={22} color={icon === 'trash-outline' ? '#D75451' : p.accent} /></PressMotion>; }

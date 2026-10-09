@@ -2,7 +2,7 @@
   "expo": {
     "name": "Velunivo",
     "slug": "velunivo",
-    "version": "0.1.11",
+    "version": "0.1.12",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -46,7 +46,7 @@
       [
         "expo-sensors",
         {
-          "motionPermission": "Velunivo shows motion readings during your ride."
+          "motionPermission": "Velunivo uses motion readings for ride diagnostics and local ride records when recording is enabled."
         }
       ],
       [

@@ -2,10 +2,10 @@ import { OfflineManager, OfflinePack, OfflinePackStatus } from '@maplibre/maplib
 import { routeBounds } from '../core/geo';
 import { Route } from '../core/types';
 import { mapStyle, offlineEnabled } from '../components/mapConfig';
-export type PackView = { id: string; name: string; percentage: number; bytes: number; state: string; pack: OfflinePack };
+export type PackView = { id: string; name: string; bounds?: [number, number, number, number]; percentage: number; bytes: number; state: string; pack: OfflinePack };
 export async function packs(): Promise<PackView[]> {
   const all = await OfflineManager.getPacks();
-  return Promise.all(all.map(async p => { const s = await p.status(); return { id: p.id, name: String(p.metadata.name || 'Map region'), percentage: s.percentage, bytes: s.completedResourceSize, state: s.state, pack: p }; }));
+  return Promise.all(all.map(async p => { const s = await p.status(); return { id: p.id, bounds: p.bounds, name: String(p.metadata.name || 'Map region'), percentage: s.percentage, bytes: s.completedResourceSize, state: s.state, pack: p }; }));
 }
 export async function download(route: Route, onProgress: (p: OfflinePack, s: OfflinePackStatus) => void, onError: (msg: string) => void) {
   if (!offlineEnabled) throw new Error('Configure an offline-licensed map style and enable downloads in .env.');

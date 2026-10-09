@@ -1,3 +1,4 @@
+import { routeLayers, ROUTE_WIDTH } from '../core/routeLayers';
 import { useCameraTarget } from '../services/useCameraTarget';
 import React, { useEffect, useRef, useState } from 'react';
 import { Map, Camera, GeoJSONSource, Layer, CameraRef, MapRef, RasterSource, Marker } from '@maplibre/maplibre-react-native';
@@ -6,8 +7,8 @@ import { routeBounds } from '../core/geo';
 import { serverUrl } from '../services/api';
 import PositionArrow from './PositionArrow';
 import { mapStyle } from './mapConfig';
-export interface MapProps { overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
-export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan }: MapProps) {
+export interface MapProps { completedMeters?: number; overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
+export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, completedMeters }: MapProps) {
   const camera = useRef<CameraRef>(null);
   const map = useRef<MapRef>(null);
   const [ready, setReady] = useState(false);
@@ -23,7 +24,7 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
   return <Map ref={map} onDidFinishLoadingMap={() => setReady(true)} onRegionWillChange={e => { if (e.nativeEvent.userInteraction) onPan?.(); }} style={{ flex: 1 }} mapStyle={mapStyle} touchRotate={!follow} attributionPosition={{ top: 130, right: 16 }} logoPosition={{ top: 170, right: 16 }} onPress={e => onPick?.(e.nativeEvent.lngLat)}>
     <Camera ref={camera} initialViewState={{ bounds: selected ? routeBounds(selected.coordinates) : [12.50, 41.84, 12.61, 41.89], padding: { top: 40, bottom: 40, left: 40, right: 40 } }} />
     {traffic && serverUrl && <RasterSource id="traffic" tiles={[`${serverUrl}/traffic/{z}/{x}/{y}.png`]} tileSize={256}><Layer type="raster" paint={{ 'raster-opacity': .7 }} /></RasterSource>}
-    {routes.map(r => <GeoJSONSource key={r.id} id={r.id} data={{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: r.coordinates } }}><Layer id={`${r.id}-line`} type="line" paint={{ 'line-color': r.id === selected?.id ? '#007F6D' : '#658ACA', 'line-width': r.id === selected?.id ? 6 : 4, 'line-opacity': r.id === selected?.id ? 1 : .6 }} layout={{ 'line-cap': 'round', 'line-join': 'round' }} /></GeoJSONSource>)}
+    {routeLayers(routes, selected, completedMeters).map(r => <GeoJSONSource key={r.id} id={r.id} data={{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: r.coordinates } }}><Layer id={`${r.id}-outline`} type="line" paint={{ 'line-color': r.outline, 'line-width': ROUTE_WIDTH + 3 }} layout={{ 'line-cap': 'round', 'line-join': 'round' }} /><Layer id={`${r.id}-line`} type="line" paint={{ 'line-color': r.color, 'line-width': ROUTE_WIDTH }} layout={{ 'line-cap': 'round', 'line-join': 'round' }} /></GeoJSONSource>)}
     {selected && <GeoJSONSource id="endpoints" data={{ type: 'FeatureCollection', features: [selected.coordinates[0], selected.coordinates.at(-1)!].map((p, i) => ({ type: 'Feature' as const, properties: { end: i }, geometry: { type: 'Point' as const, coordinates: p } })) }}><Layer type="circle" paint={{ 'circle-radius': 7, 'circle-color': '#007F6D', 'circle-stroke-width': 3, 'circle-stroke-color': '#FFFFFF' }} /></GeoJSONSource>}
     {(startPoint || endPoint) && <GeoJSONSource id="planning" data={{ type: 'FeatureCollection', features: [startPoint, endPoint].filter((p): p is Coord => !!p).map(p => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: p } })) }}><Layer type="circle" paint={{ 'circle-radius': 7, 'circle-color': '#007F6D', 'circle-stroke-width': 3, 'circle-stroke-color': '#FFFFFF' }} /></GeoJSONSource>}
     {position && <Marker id="navigation-position" lngLat={position}><PositionArrow navigating={navigating} rotation={follow ? 0 : heading} /></Marker>}

@@ -72,7 +72,7 @@ For a production export and local preview on port 8082, run `npm run web:preview
 
 ## Current boundaries
 
-Velunivo is an MVP. Physical-device compass/GPS/voice and offline pack downloads still need target testing. Scooter access cannot be certified from bicycle/car access or incomplete OpenStreetMap data; inspect signs and local rules. Unknown street limits remain unknown. New vehicle profiles start at a generic 25 km/h capability; configure your actual capability and local riding cap.
+Velunivo is an MVP. A user reported a successful 8 km physical-device ride on an earlier build. The latest music-ducking, recording and UI changes and offline pack downloads still need target testing. Scooter access cannot be certified from bicycle/car access or incomplete OpenStreetMap data; inspect signs and local rules. Unknown street limits remain unknown. New vehicle profiles start at a generic 25 km/h capability; configure your actual capability and local riding cap.
 
 Automatic rerouting, background navigation, offline route calculation and hill/weather energy models are not implemented. A saved route can be followed offline, but a new route needs an online routing provider. Imported geometry-only GPX tracks have no invented turn instructions. [Test evidence and remaining work](docs/VERIFICATION.md).
 
@@ -90,3 +90,7 @@ npm run brand:generate  # Rebuild raster assets from the shared vector design
 Maps and route data retain their providers’ attribution and terms. Original brand geometry and editable SVG exports are included; see [branding](docs/BRANDING.md).
 
 If no usable bicycle or car-road route is returned, Velunivo offers Apple Maps or Google Maps with your selected start and destination. Choose cycling or driving and confirm after three seconds. The other app computes its own route and ETA; your Velunivo vehicle settings are not transferred. Valid routes with unavailable road verification remain available after an explicit warning, with unknown speed limits rather than guessed signs.
+
+### Ride history and garage
+
+Global voice, motion and recording preferences live in Settings. Ride controls offer Loud, Quiet or Off directions. Recorded GPS rides stay locally in Library with map previews, endpoints, GPX and sensor-data exports; insights appear after three completed rides. Vehicles has a garage list with separate edit menus and retained photo galleries, including a Sharing E-Scooter preset with 25 km/h hardware and 20 km/h riding limits. GPX import is in Library; Where to owns address search, map selection, swapping, scheduling and the compact ride vehicle chooser. See [setup details](docs/SETUP.md#ride-recording-voice-and-revised-screens-0112).

@@ -197,3 +197,13 @@ GitHub rejected the first 0.1.11 dispatch before jobs started: runner.temp is no
 
 ## Android cache ordering after 0.1.11 failure
 Run 37953688059 failed before Android compilation: setup-gradle v6 could not find generated Gradle files. Moved its cache restore after Expo prebuild, before Gradle compilation. iOS archive and Simulator build succeeded; screenshot fallback ran. No replacement build is started before the requested app changes are complete.
+
+## 0.1.12 — ride feedback, garage, history and map layering
+- User reported a successful physical 8 km ride on the earlier build, with music interrupted by speech. Changed iOS speech session policy to system-managed mixing/ducking and serialized prompt cancellation; added persistent Loud/Quiet/Off ride controls. No new audio dependency.
+- Migrated global voice/motion preferences, added local persistent ride history (GPS, speed, compass and timestamped motion vectors), 5-second checkpointing, interrupted-session retention and exports. Added insights after three completed rides; no automatic cap or ETA changes.
+- Reorganized Vehicles into Router list/edit/category pages, icon-only + and delete actions, retained picture gallery, and a Sharing E-Scooter preset (25 hardware/20 riding).
+- Moved GPX import to Library with automatic save, added map/endpoint cards and GPX/full-data export. Moved downloaded-map selection to global Settings with completed-pack coverage checks and system-map fallback.
+- Reworked Where to with inline icons, focus-dependent current location, swap and collapsed schedule/vehicle cards. Selected addresses dismiss input. Reroute starts from fresh current GPS.
+- All map renderers order alternatives/completed geometry below the selected remaining route, using gray alternatives and brighter thicker green guidance. Web updates source data without restarting full-route camera fits on every GPS fix.
+- Run 37953688059 Android failure was a cache setup ordering bug (fixed in d4b64af). iPad logs additionally showed a 15-second simctl cleanup taking 340 seconds because descendants held the output pipe open. Added process-group timeout termination and a real child-process regression test. Publish checks required binary jobs explicitly and ignores screenshot-only cancellation/failure; whole-run aborts should use force-cancel.
+- Commit signing remains disabled; no local SDK downloads, no EAS, no private GPX publication. The user's original apps checkout remains untouched.

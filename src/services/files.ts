@@ -1,3 +1,4 @@
+import { keepPhoto } from './vehiclePhotos';
 import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as DocumentPicker from 'expo-document-picker';
@@ -38,7 +39,7 @@ export async function pickVehiclePhoto(): Promise<string | null> {
     let image: Awaited<ReturnType<typeof context.renderAsync>> | undefined;
     try { image = await context.renderAsync(); const saved = await image.saveAsync({ format: SaveFormat.JPEG, compress: .8, base64: true });
       if (!saved.base64 || saved.base64.length > 1_333_336) throw new Error('Could not prepare a small vehicle picture. Try another photo.');
-      return `data:image/jpeg;base64,${saved.base64}`;
+      return keepPhoto(saved.uri);
     } finally { image?.release(); context.release(); }
   }
   const result = await DocumentPicker.getDocumentAsync({ type: ['image/png', 'image/jpeg', 'image/webp'], copyToCacheDirectory: true, base64: false });
@@ -52,4 +53,15 @@ export async function pickVehiclePhoto(): Promise<string | null> {
     if (blob.size > 1_000_000) throw new Error('Choose an image smaller than 1 MB.');
     return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(new Error('Could not read image.')); reader.readAsDataURL(blob); });
   }
+}
+
+export async function shareRideData(ride: import('../core/recordings').RecordedRide, samples: import('../core/recordings').RideSample[], format: 'gpx' | 'json') {
+  if (format === 'gpx' && samples.filter(s => s.fix.accuracy >= 0 && s.fix.accuracy <= 100).length < 2) throw new Error('This ride has fewer than two usable GPS fixes. Export the full JSON record instead.');
+  const { exportRecordedGPX } = await import('../core/gpx');
+  const text = format === 'gpx' ? exportRecordedGPX(samples) : JSON.stringify({ ...ride, sampleUnits: { speed: 'm/s', accelerometer: 'g', gyroscope: 'rad/s', heading: 'degrees', timestamps: 'Unix milliseconds' }, sensorSamples: samples }, null, 2);
+  const name = `velunivo-${ride.id}.${format}`, mime = format === 'gpx' ? 'application/gpx+xml' : 'application/json';
+  if (Platform.OS === 'web') { const url = URL.createObjectURL(new Blob([text], { type: mime })); const a = document.createElement('a'); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); return; }
+  const file = new File(Paths.cache, name); file.create({ overwrite: true }); file.write(text);
+  if (!await Sharing.isAvailableAsync()) throw new Error('Sharing is unavailable on this device.');
+  await Sharing.shareAsync(file.uri, { mimeType: mime, UTI: format === 'gpx' ? 'com.topografix.gpx' : 'public.json' });
 }
