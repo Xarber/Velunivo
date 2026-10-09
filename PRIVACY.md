@@ -9,3 +9,5 @@ GPX import is local. The explicit comparison between track endpoints sends those
 GPS, compass and motion readings support foreground guidance/diagnostics. Vehicle photos remain local. A local route library or exported GPX can contain sensitive location information; treat device backups, exports and screenshots accordingly.
 
 The optional development server caches results briefly in memory and is not a production account/access-control system. Deployment operators are responsible for their own access controls, logs, retention and privacy disclosures. The app does not currently provide cloud sync, crash detection or background navigation.
+
+Vehicle pictures use the system photo picker on iOS and Android, without requesting camera or microphone access. Selected pictures are resized to at most 512 pixels and JPEG encoded before local persistence; they are never uploaded. Web file imports remain limited to 1 MB. Explore requests foreground location on opening; location updates pause in the background.

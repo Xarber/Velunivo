@@ -65,3 +65,9 @@ AltDirect link checked in the actual browser: it displays the fixed Velunivo 1.0
 Simulator install-timeout fix: five mocked Python regression tests pass, including one clean reset/retry and fatal second failure; app death still prevents screenshot/publication. These tests exercise control flow only. Actual runner testing is dispatched using the existing v0.1.2 Simulator binary; it does not claim that mock tests prove native runtime behaviour. Failed v0.1.3 run 37922695018 compiled successfully before timing out on iPad installation. The independent v0.1.4 build was already in progress before this fix.
 
 Local validation of the fix: lint, typecheck and all 31 existing TypeScript tests pass; all five Python Simulator regression checks pass; both edited workflow files parse as valid YAML and git diff whitespace checks pass. No local Simulator/SDK execution was performed.
+
+## 0.1.5 preparation
+
+Run 37931165265 verified real startup and screenshots of the existing v0.1.2 binary on independent iPhone/iPad beta runners. The iPad recovered after its first 300-second install timeout; both required PID-survival checks passed. New landscape capture and publication changes still require their own runner verification. Fresh temporary-checkout lint/type checks, 34 TypeScript tests and 8 Python tests passed; web export renders responsive glass surfaces and persistent map controls. No browser result is proof of native Liquid Glass, photo-library selection or physical compass/GPS performance.
+
+Browser ride check: planned a real public Milan car-road candidate, started simulation, observed forward-facing tilted navigation and the lower blue arrow, then used the full-route control and observed automatic return. The bicycle provider rejected exact matching for these test endpoints; that existing provider failure was disclosed in the planner rather than hidden. Exported all three JavaScript bundles (web, iOS and Android); this is not a new native compilation.

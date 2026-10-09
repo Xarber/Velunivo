@@ -1,3 +1,5 @@
+import * as ImagePicker from 'expo-image-picker';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as DocumentPicker from 'expo-document-picker';
 import { File, Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -26,18 +28,28 @@ export async function shareTrack(points: Coord[]) {
 
 // Small, self-contained data URIs persist with the vehicle on all three platforms.
 export async function pickVehiclePhoto(): Promise<string | null> {
+  if (Platform.OS !== 'web') {
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: false, allowsEditing: false, quality: 1 });
+    if (result.canceled) return null;
+    const asset = result.assets[0];
+    const context = ImageManipulator.manipulate(asset.uri);
+    const scale = Math.min(1, 512 / Math.max(asset.width, asset.height));
+    context.resize({ width: Math.max(1, Math.round(asset.width * scale)), height: Math.max(1, Math.round(asset.height * scale)) });
+    let image: Awaited<ReturnType<typeof context.renderAsync>> | undefined;
+    try { image = await context.renderAsync(); const saved = await image.saveAsync({ format: SaveFormat.JPEG, compress: .8, base64: true });
+      if (!saved.base64 || saved.base64.length > 1_333_336) throw new Error('Could not prepare a small vehicle picture. Try another photo.');
+      return `data:image/jpeg;base64,${saved.base64}`;
+    } finally { image?.release(); context.release(); }
+  }
   const result = await DocumentPicker.getDocumentAsync({ type: ['image/png', 'image/jpeg', 'image/webp'], copyToCacheDirectory: true, base64: false });
   if (result.canceled) return null;
   const asset = result.assets[0];
   const mime = asset.mimeType || (/\.png$/i.test(asset.name) ? 'image/png' : /\.webp$/i.test(asset.name) ? 'image/webp' : 'image/jpeg');
   if (!['image/png', 'image/jpeg', 'image/webp'].includes(mime)) throw new Error('Choose a PNG, JPEG or WebP image.');
   if ((asset.size ?? 0) > 1_000_000) throw new Error('Choose an image smaller than 1 MB.');
-  if (Platform.OS === 'web') {
+  {
     const blob = await (await fetch(asset.uri)).blob();
     if (blob.size > 1_000_000) throw new Error('Choose an image smaller than 1 MB.');
     return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(new Error('Could not read image.')); reader.readAsDataURL(blob); });
   }
-  const file = new File(asset.uri);
-  if (file.size > 1_000_000) throw new Error('Choose an image smaller than 1 MB.');
-  return `data:${mime};base64,${await file.base64()}`;
 }
