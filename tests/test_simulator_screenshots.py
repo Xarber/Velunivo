@@ -18,6 +18,12 @@ class SimulatorVerificationTests(unittest.TestCase):
             {'name': 'iPad Pro', 'isAvailable': True, 'deviceTypeIdentifier': 'ipad-type', 'udid': 'newer-ipad'},
             {'name': 'iPhone', 'isAvailable': True, 'deviceTypeIdentifier': 'iphone-type', 'udid': 'existing-phone'}]}
 
+    def test_family_argument_limits_work_to_one_device(self):
+        import json
+        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'run', return_value=json.dumps({'devices': self.devices()})), patch.object(sim, 'capture') as capture:
+            sim.main(['--family', 'ipad'])
+            capture.assert_called_once_with(self.devices(), 'ipad')
+
     def test_newest_installed_family_and_missing_runtime(self):
         self.assertTrue(sim.select_device(self.devices(), 'ipad')[0].endswith('iOS-27-2'))
         with self.assertRaisesRegex(RuntimeError, 'does not download'):

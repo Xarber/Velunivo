@@ -1,4 +1,5 @@
 """Verify real startup on fresh installed Simulators; never download runtimes."""
+import argparse
 import json
 import os
 import re
@@ -103,10 +104,13 @@ def capture(devices, family):
         best_effort('xcrun', 'simctl', 'delete', udid, timeout=60)
 
 
-def main():
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--family', choices=['iphone', 'ipad'])
+    args = parser.parse_args(argv)
     ARTIFACTS.mkdir(exist_ok=True)
     devices = json.loads(run('xcrun', 'simctl', 'list', 'devices', 'available', '--json'))['devices']
-    for family in ['iphone', 'ipad']:
+    for family in ([args.family] if args.family else ['iphone', 'ipad']):
         capture(devices, family)
 
 

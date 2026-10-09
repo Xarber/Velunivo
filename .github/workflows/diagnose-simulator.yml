@@ -11,6 +11,11 @@ permissions:
 jobs:
   diagnose:
     runs-on: xcode-27
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        family: [iphone, ipad]
     env:
       GH_TOKEN: ${{ github.token }}
       RELEASE_TAG: ${{ inputs.tag }}
@@ -28,11 +33,11 @@ jobs:
           mkdir -p artifacts
           gh release download "$RELEASE_TAG" --pattern Velunivo-simulator.app.zip --dir artifacts
           ditto -x -k artifacts/Velunivo-simulator.app.zip artifacts
-      - run: python3 scripts/simulator-screenshots.py
+      - run: python3 scripts/simulator-screenshots.py --family "${{ matrix.family }}"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: simulator-diagnostics
+          name: simulator-diagnostics-${{ matrix.family }}
           path: |
             artifacts/*.png
             artifacts/*.log

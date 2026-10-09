@@ -183,8 +183,6 @@ jobs:
           xcodebuild -workspace ios/Velunivo.xcworkspace -scheme Velunivo -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath "$PWD/work/simulator" build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO ARCHS=arm64 ONLY_ACTIVE_ARCH=NO
           cp -R work/simulator/Build/Products/Release-iphonesimulator/Velunivo.app artifacts/Velunivo-simulator.app
           ditto -c -k --keepParent artifacts/Velunivo-simulator.app artifacts/Velunivo-simulator.app.zip
-      - name: Verify fresh iPhone and iPad Simulator startup
-        run: python3 scripts/simulator-screenshots.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -199,11 +197,48 @@ jobs:
             artifacts/*-launch.log
             artifacts/*-simulator.log
             artifacts/*.ips
+  verify-ios:
+    needs: ios
+    runs-on: xcode-27
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        family: [iphone, ipad]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select newest installed Xcode beta
+        run: |
+          python3 - <<'PYCODE' >> "$GITHUB_ENV"
+          from pathlib import Path
+          import re
+          candidates=[p for p in Path('/Applications').glob('Xcode*.app') if 'beta' in p.name.lower() and not p.is_symlink()]
+          if not candidates: raise SystemExit('No Xcode beta installed on this runner')
+          chosen=max(candidates,key=lambda p:tuple(map(int,re.findall(r'\d+',p.name))))
+          print(f'DEVELOPER_DIR={chosen}/Contents/Developer')
+          PYCODE
+      - uses: actions/download-artifact@v4
+        with:
+          name: ios
+          path: artifacts
+      - name: Unpack compiled Simulator app
+        run: ditto -x -k artifacts/Velunivo-simulator.app.zip artifacts
+      - name: Verify isolated Simulator startup
+        run: python3 scripts/simulator-screenshots.py --family "${{ matrix.family }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-${{ matrix.family }}-verification
+          path: |
+            artifacts/${{ matrix.family }}.png
+            artifacts/${{ matrix.family }}-launch.log
+            artifacts/${{ matrix.family }}-simulator.log
+            artifacts/*.ips
   publish:
     concurrency:
       group: altsource
       cancel-in-progress: false
-    needs: [prepare, web, android, ios]
+    needs: [prepare, web, android, ios, verify-ios]
     runs-on: ubuntu-latest
     permissions:
       contents: write
