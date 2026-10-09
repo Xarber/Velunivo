@@ -4,6 +4,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import struct
 import time
@@ -17,8 +18,25 @@ BUNDLE = 'app.velunivo.mobile'
 def run(*args, timeout=60):
     print('+ ' + ' '.join(args), flush=True)
     started = time.monotonic()
+    process = subprocess.Popen(args, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True)
     try:
-        return subprocess.check_output(args, text=True, stderr=subprocess.STDOUT, timeout=timeout).strip()
+        try:
+            output, _ = process.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            # simctl children can inherit stdout, keeping communicate blocked after
+            # killing only its parent. Kill our owned process group, then bound draining.
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            try:
+                process.communicate(timeout=2)
+            except subprocess.TimeoutExpired:
+                process.stdout.close()
+            raise subprocess.TimeoutExpired(args, timeout)
+        if process.returncode:
+            raise subprocess.CalledProcessError(process.returncode, args, output)
+        return output.strip()
     finally:
         print(f'Completed after {time.monotonic() - started:.1f}s (limit {timeout}s)', flush=True)
 

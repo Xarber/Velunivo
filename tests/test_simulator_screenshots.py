@@ -1,6 +1,8 @@
 import importlib.util
 import subprocess
 import tempfile
+import sys
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -120,6 +122,15 @@ class SimulatorVerificationTests(unittest.TestCase):
             calls = [c.args for c in commands.call_args_list]
             self.assertIn(('xcrun', 'simctl', 'privacy', 'owned-device', 'grant', 'location', sim.BUNDLE), calls)
             self.assertIn(('xcrun', 'simctl', 'location', 'owned-device', 'set', '45.4642,9.1900'), calls)
+
+
+class ProcessTimeoutTests(unittest.TestCase):
+    def test_timeout_kills_child_that_inherits_stdout(self):
+        started = time.monotonic()
+        code = 'import subprocess,sys,time; subprocess.Popen([sys.executable,"-c","import time; time.sleep(20)"]); time.sleep(20)'
+        with self.assertRaises(subprocess.TimeoutExpired):
+            sim.run(sys.executable, '-c', code, timeout=.2)
+        self.assertLess(time.monotonic() - started, 3)
 
 
 if __name__ == '__main__':

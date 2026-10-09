@@ -1,19 +1,23 @@
+import { conventionalChanges } from './conventional-changes.mjs';
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 const current = process.env.RELEASE_TAG || '';
 const tags = execFileSync('git', ['tag', '--sort=-version:refname', '--list', 'v*'], { encoding: 'utf8' }).trim().split('\n');
-const previous = tags.find(t => /^v\d+\.\d+\.\d+$/.test(t) && t !== current);
+let published;
+try { published = JSON.parse(execFileSync('gh', ['release', 'list', '--limit', '100', '--json', 'tagName,isDraft'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })).filter(r => !r.isDraft).map(r => r.tagName); }
+catch { console.warn('Published release lookup unavailable; release notes fall back to local version tags.'); }
+const previous = (published || tags).find(t => /^v\d+\.\d+\.\d+$/.test(t) && t !== current);
 const args = ['log', '--format=%H%x09%s', ...(previous ? [`${previous}..HEAD`] : [])];
 const lines = execFileSync('git', args, { encoding: 'utf8' }).trim().split('\n');
 const names = { feat: 'Features', fix: 'Fixes', perf: 'Performance', refactor: 'Refactoring', ci: 'Build and release', docs: 'Documentation', test: 'Verification', chore: 'Maintenance' };
 const groups = new Map();
 for (const line of lines) {
   const [sha, subject] = line.split('\t'); if (!subject) continue;
-  const match = /^(\w+)(?:\(([^)]+)\))?(!)?: (.+)$/.exec(subject);
-  const title = match ? names[match[1]] || 'Other changes' : 'Other changes';
-  const text = match ? `${match[3] ? 'BREAKING: ' : ''}${match[2] ? `${match[2]}: ` : ''}${match[4]}` : subject;
-  if (!groups.has(title)) groups.set(title, []);
-  groups.get(title).push(`- ${text} (${sha.slice(0, 7)})`);
+  for (const change of conventionalChanges(subject)) {
+    const title = names[change.type] || 'Other changes';
+    if (!groups.has(title)) groups.set(title, []);
+    groups.get(title).push(`- ${change.text} (${sha.slice(0, 7)})`);
+  }
 }
 let notes = `# ${current || 'Velunivo release'}\n\n`;
 for (const [name, entries] of groups) notes += `## ${name}\n\n${entries.join('\n')}\n\n`;

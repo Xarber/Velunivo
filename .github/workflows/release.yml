@@ -292,7 +292,7 @@ jobs:
             artifacts/${{ matrix.family }}-simulator.log
             artifacts/*.ips
   publish:
-    if: ${{ always() && !cancelled() && needs.prepare.result == 'success' && needs.web.result == 'success' && needs.android.result == 'success' && needs.ios.result == 'success' }}
+    if: ${{ always() && needs.prepare.result == 'success' && needs.web.result == 'success' && needs.android.result == 'success' && needs.ios.result == 'success' }}
     concurrency:
       group: altsource
       cancel-in-progress: false
