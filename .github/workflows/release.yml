@@ -86,6 +86,8 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - name: Select latest stable Android Studio SDK
         run: |
           sdkmanager --list --channel=0 > /tmp/sdk-list.txt
@@ -127,7 +129,7 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           cd android
-          ./gradlew assembleRelease --no-daemon
+          ./gradlew assembleRelease --no-daemon --max-workers=2
       - run: |
           mkdir -p artifacts
           cp android/app/build/outputs/apk/release/app-release.apk artifacts/Velunivo.apk

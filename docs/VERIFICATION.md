@@ -11,6 +11,7 @@
 - Arrive-by input 2026-10-10 09:00 produced suggested departure 08:53 for the sample; the no-traffic scheduling warning remains present.
 - Labeled simulation starts track guidance and End ride stops it. Simulation does not record GPS fixes.
 - Expo Doctor initially reported missing direct expo-font peer. It was already installed transitively at the SDK-matched version; it was declared directly using an offline lockfile update, with no new package download.
+- Real browser file chooser imported a test GPX; saving it made it appear in Library.
 - Workflow YAML parsed locally. Native-config introspection passed without generating/downloading SDKs.
 
 ## Native and provider boundaries
@@ -23,4 +24,4 @@ Online npm audit initially reported 30 inherited/transitive advisories (11 moder
 
 ## Remote builds
 
-Pending first workflow run. Release publication and AltSource population are gated on successful native binaries and Simulator screenshots. Empty bootstrap apps.json is intentional until a real IPA exists.
+First run: prepare and web jobs succeeded; Android setup failed on an obsolete action-default package and was corrected. iOS native job still running. Release publication and AltSource population are gated on successful native binaries and Simulator screenshots. Empty bootstrap apps.json is intentional until a real IPA exists.

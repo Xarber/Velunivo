@@ -14,3 +14,6 @@ All entries 2026-10-09, Europe/Rome. Descriptive conventional commits are delibe
 10. Local verification caught a missing direct expo-font peer (already present transitively) and a web map-worker loading failure. Declared the installed font offline and served MapLibre's installed worker locally. Recorded test/browser evidence in VERIFICATION.md.
 
 Further build/test outcomes are appended below; unresolved provider or hardware dependencies are not represented as working.
+
+11. Published five unsigned conventional commits and the mutable 1.0 bootstrap feed. Started GitHub verification and native release workflow. Remote Android setup failed because the action requested obsolete SDK package `tools`; configured its explicit package list to `platform-tools`. Web release job succeeded. iOS continued through CocoaPods. Native results remain pending.
+12. Browser GPX file chooser successfully imported a generated test track, and Save/Open appeared in Library. No original private GPX was sent to GitHub.

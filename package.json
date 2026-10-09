@@ -49,7 +49,8 @@
     "test": "tsx --test tests/*.test.ts",
     "server": "tsx server/index.ts",
     "lint": "expo lint",
-    "postinstall": "node scripts/copy-map-worker.mjs"
+    "postinstall": "node scripts/copy-map-worker.mjs",
+    "web:preview": "expo export --platform web --output-dir dist && python3 scripts/serve-web.py"
   },
   "private": true
 }

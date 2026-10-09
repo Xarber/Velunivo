@@ -50,3 +50,4 @@ assets/tracks/private-*
 *.xcarchive
 artifacts/
 public/maplibre-gl-worker.mjs
+release-notes.md
