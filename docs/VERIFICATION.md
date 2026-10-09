@@ -85,3 +85,7 @@ TypeScript provider regressions now assert that all flagged road categories rema
 ### 0.1.9 external navigation fallback
 
 40 TypeScript and 9 Python tests pass, including exact endpoint order/encoding for both providers and transport modes, invalid endpoint rejection, original geometry preservation when metadata is mismatched/incomplete/unavailable, and invalid original geometry rejection. Lint/typecheck and web/native JavaScript exports pass. Actual public no-road endpoint responses exercised the fallback modal in the phone browser: fresh confirmation disabled for three seconds, provider selection, later enablement, and return to planner with inputs retained. Screenshot: velunivo-external-maps.png in chat outputs. External URLs follow official Apple/Google specifications; opening installed apps and their resulting routes remains a physical-device check. Historical verification above describes the behavior of those earlier versions.
+
+### 0.1.10 Liquid Glass safe area
+
+Lint/typecheck and 40 app tests pass; web and iOS JavaScript exports pass. Native SafeAreaView integration matches the installed SDK 57 interfaces. The shared Liquid Glass capability gate leaves non-native-tab layouts without a wrapper or additional inset. The iPhone screenshot is evidence of the original overlap, not of the fix; new device/runner verification is pending.

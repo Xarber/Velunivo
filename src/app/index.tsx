@@ -11,6 +11,7 @@ import SpeedBadges from '../components/SpeedBadges';
 import PressMotion from '../components/PressMotion';
 import MotionView from '../components/MotionView';
 import SwipeArea from '../components/SwipeArea';
+import NativeTabSafeOverlay, { usesLiquidGlassTabs } from '../components/NativeTabSafeOverlay';
 import RouteWarning from '../components/RouteWarning';
 import ExternalMapsWarning from '../components/ExternalMapsWarning';
 import { ExternalNavigation } from '../core/externalMaps';
@@ -44,7 +45,11 @@ export default function Explore() {
   const [externalJourney, setExternalJourney] = useState<ExternalNavigation | null>(null);
   const [warningRoute, setWarningRoute] = useState<Route | null>(null);
   const [mapHeight, setMapHeight] = useState(height);
-  const panelHeight = panelOpen ? Math.max(180, mapHeight * .78) : 176;
+  const [overlayHeight, setOverlayHeight] = useState(height);
+  const glassTabs = usesLiquidGlassTabs();
+  const controlsHeight = glassTabs ? Math.min(mapHeight, overlayHeight) : mapHeight;
+  const bottomObstruction = glassTabs ? Math.max(0, mapHeight - controlsHeight) : 0;
+  const panelHeight = panelOpen ? Math.max(180, controlsHeight * .78) : 176;
 
   const [trafficAvailable, setTrafficAvailable] = useState(false), [traffic, setTraffic] = useState(false);
   const [departure, setDeparture] = useState('');
@@ -80,10 +85,10 @@ export default function Explore() {
   useEffect(() => () => { if (overviewTimer.current) clearTimeout(overviewTimer.current); }, []);
   useEffect(() => { lockVehicle(active); return () => lockVehicle(false); }, [active, lockVehicle]);
   const fitPadding = useMemo(() => {
-    if (picking) return { top: 100, bottom: 55, left: 24, right: 24 };
-    if (wide && !active) return { top: 90, bottom: 45, left: 425, right: 60 };
-    return { top: active ? 145 : 115, bottom: active ? 205 : Math.min(visiblePanelHeight + 25, mapHeight * .5), left: 24, right: 70 };
-  }, [wide, active, picking, visiblePanelHeight, mapHeight]);
+    if (picking) return { top: 100, bottom: 55 + bottomObstruction, left: 24, right: 24 };
+    if (wide && !active) return { top: 90, bottom: 45 + bottomObstruction, left: 425, right: 60 };
+    return { top: active ? 145 : 115, bottom: bottomObstruction + (active ? 205 : Math.min(visiblePanelHeight + 25, controlsHeight * .5)), left: 24, right: 70 };
+  }, [wide, active, picking, visiblePanelHeight, controlsHeight, bottomObstruction]);
   const followPadding = useMemo(() => ({ ...fitPadding, top: fitPadding.top + Math.max(0, (mapHeight - fitPadding.top - fitPadding.bottom) * .42) }), [fitPadding, mapHeight]);
   const eta = selected ? estimate(selected, profile, active && g && !g.offRoute ? g.along : 0) : null;
   const run = async (task: () => Promise<unknown>) => { try { await task(); } catch (e) { notify(e instanceof Error ? e.message : String(e)); } };
@@ -139,7 +144,7 @@ export default function Explore() {
       <RideMap routes={visibleRoutes} selected={selected} position={mapPosition} follow={follow && !overview && (active || (!selected && !startPoint && !picking))} onPan={() => setFollow(false)} heading={heading} tilted={navigationOptions.tilted && !overview} overviewRequest={overviewRequest} overview={overview} onPick={picked} traffic={traffic} startPoint={startPoint} endPoint={endPoint} offlineMap={offlineMap} fitPadding={fitPadding} followPadding={followPadding} navigating={active} />
       {!active && <View pointerEvents="none" style={[s.mapBadge, { backgroundColor: p.card, top: insets.top + (wide ? 24 : 82) }]}><View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: p.accent }} /><Text style={{ color: p.text, fontSize: 12, fontWeight: '700' }}>{picking ? `Tap your ${picking === 'start' ? 'start location' : 'destination'}` : selected?.source === 'gpx' ? 'GPX · TRACK PREVIEW' : !selected ? live.fix && !mapPosition ? 'Waiting for fresh GPS…' : live.status : 'ROUTE COMPARISON'}</Text></View>}
       {active && <><GlassSurface style={{ position: 'absolute', top: insets.top + 12, left: 12, right: wide ? undefined : 12, width: wide ? 420 : undefined, padding: 16, borderRadius: 24, backgroundColor: p.card, boxShadow: '0 4px 20px #00000030', flexDirection: 'row', gap: 14, alignItems: 'center' }}><Ionicons name={g?.next?.sign && g.next.sign < 0 ? 'arrow-back' : g?.next?.sign && g.next.sign > 0 && g.next.sign !== 4 ? 'arrow-forward' : 'arrow-up'} color={p.accent} size={40} /><View style={{ flex: 1 }}><Text style={{ color: p.accent, fontWeight: '800', fontSize: 24 }}>{g?.arrived ? 'Arrived' : g?.maneuverMeters !== undefined ? navigationOptions.unit === 'mi' ? `${Math.round(g.maneuverMeters * 3.28084 / 10) * 10} ft` : `${Math.round(g.maneuverMeters / 10) * 10} m` : 'Follow the route'}</Text><Text numberOfLines={2} style={{ color: p.text, fontSize: 17, fontWeight: '600' }}>{g?.offRoute ? 'Off route · stop safely to replan' : g?.next?.text || (selected?.source === 'gpx' ? 'GPX track · turns unavailable' : 'Turn instructions unavailable · follow the mapped route')}</Text><Text numberOfLines={1} style={{ color: p.muted, fontSize: 10, marginTop: 5 }}>{ride.mode === 'simulation' ? 'Simulation · no live GPS' : ride.status}</Text></View></GlassSurface><View style={{ position: 'absolute', left: 12, top: insets.top + 156 }}><SpeedBadges route={selected} profile={profile} fix={ride.fix} index={g?.index} offRoute={g?.offRoute} now={now} unit={navigationOptions.unit} simulation={ride.mode === 'simulation'} /></View></>}
-      {picking && <View style={{ position: 'absolute', bottom: 12, left: 12 }}><Button title="Cancel map selection" secondary onPress={() => { setPicking(null); setPlanner(true); }} /></View>}
+
       <GlassSurface interactive style={{ position: 'absolute', right: 12, top: insets.top + (active ? 162 : wide ? 110 : 170), borderRadius: 23, padding: 3, gap: 2, boxShadow: '0 3px 16px #00000020' }}>
         <PressMotion accessibilityRole="button" accessibilityLabel={overview ? 'Return to navigation' : !follow ? 'Follow current location' : Platform.OS === 'web' ? 'Follow travel direction' : navigationOptions.compass ? 'Use travel direction' : 'Use device compass'} accessibilityState={{ selected: navigationOptions.compass && follow }} onPress={() => { if (!follow || overview) resumeFollowing(); else if (Platform.OS !== 'web') updateNavigationOptions({ compass: !navigationOptions.compass }); }} style={s.mapControl}><Ionicons name={navigationOptions.compass && Platform.OS !== 'web' ? 'compass-outline' : 'navigate'} size={25} color="#287CF5" style={navigationOptions.compass && Platform.OS !== 'web' ? undefined : { transform: [{ rotate: '-45deg' }] }} /></PressMotion>
         <View style={{ height: 1, marginHorizontal: 9, backgroundColor: p.line }} />
@@ -149,7 +154,9 @@ export default function Explore() {
 
     </View>
     {!active && <View pointerEvents="box-none" style={[s.header, { top: insets.top + 12, left: 16, right: wide ? undefined : 16 }]}><GlassSurface style={s.brandCard}><Brand /></GlassSurface><Pressable accessibilityRole="button" accessibilityLabel="Plan a ride" disabled={active} onPress={openPlanner} style={[s.round, { backgroundColor: p.card }]}><Ionicons name="search" size={22} color={p.text} /></Pressable></View>}
-    {!picking && <GlassSurface expanded={expandedPanel} {...motionProps('sheet')} style={[s.floatingPanel, { backgroundColor: panelP.bg, left: 12, right: wide ? undefined : 12, width: wide ? 390 : undefined, top: wide && !active ? insets.top + 88 : undefined, bottom: 12, height: wide && !active ? undefined : active && panelOpen ? Math.min(mapHeight * .6, 480) : visiblePanelHeight }]}>
+    <NativeTabSafeOverlay onHeight={setOverlayHeight}>
+      {picking && <View style={{ position: 'absolute', bottom: 12, left: 12 }}><Button title="Cancel map selection" secondary onPress={() => { setPicking(null); setPlanner(true); }} /></View>}
+    {!picking && <GlassSurface expanded={expandedPanel} {...motionProps('sheet')} style={[s.floatingPanel, { backgroundColor: panelP.bg, left: 12, right: wide ? undefined : 12, width: wide ? 390 : undefined, top: wide && !active ? insets.top + 88 : undefined, bottom: 12, height: wide && !active ? undefined : active && panelOpen ? Math.min(controlsHeight * .6, 480) : visiblePanelHeight }]}>
       <PaletteProvider value={panelP}><SwipeArea onSwipe={setPanelOpen} style={{ paddingTop: 8 }}>
       <View style={{ alignItems: 'center', paddingBottom: 6 }}><View style={{ height: 4, width: 38, borderRadius: 2, backgroundColor: panelP.muted, opacity: .4 }} /></View>
       <View style={{ paddingHorizontal: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><Text style={{ color: panelP.text, fontWeight: '800', fontSize: 20 }}>{active ? 'Trip' : 'Your ride'}</Text>{(!wide || active) && <Pressable accessibilityRole="button" accessibilityLabel={panelOpen ? 'Collapse ride controls' : 'Expand ride controls'} onPress={() => setPanelOpen(v => !v)} style={{ padding: 8 }}><Ionicons name={panelOpen ? 'chevron-down' : 'chevron-up'} color={panelP.accent} size={22} /></Pressable>}</View>
@@ -190,6 +197,7 @@ export default function Explore() {
       {selected && selected.steps.length > 0 && !active && <View style={[styles.card, { backgroundColor: panelP.card }]}><Text style={{ fontWeight: '700', color: panelP.text }}>Turn-by-turn directions</Text>{selected.steps.map((step, i) => <Text key={`${i}-${step.index}`} style={{ color: panelP.muted, lineHeight: 20 }}>{i + 1}. {step.text}</Text>)}</View>}
     </ScrollView>}
     </PaletteProvider></GlassSurface>}
+    </NativeTabSafeOverlay>
     {externalJourney && <ExternalMapsWarning journey={externalJourney} onCancel={() => { setExternalJourney(null); setPlanner(true); }} />}
     <RouteWarning key={warningRoute?.id ?? 'closed'} route={warningRoute} onCancel={() => setWarningRoute(null)} onConfirm={route => { if (route.id === selected?.id) { setWarningRoute(null); beginRide(false, true); } }} />
     <Modal visible={planner} animationType={reducedMotion ? 'none' : 'fade'} transparent presentationStyle="overFullScreen" onRequestClose={() => setPlanner(false)}><View style={{ flex: 1, justifyContent: 'center', padding: wide ? 24 : 12, backgroundColor: '#00000025' }}><Pressable accessibilityLabel="Dismiss route planner" onPress={() => setPlanner(false)} style={StyleSheet.absoluteFill} /><SafeAreaView {...motionProps('planner', planner ? 'open' : 'closed')} edges={['top', 'bottom']} style={{ width: '100%', maxWidth: 560, maxHeight: '92%', alignSelf: wide ? 'flex-start' : 'center', backgroundColor: p.bg, borderRadius: 28, overflow: 'hidden', boxShadow: '0 12px 36px #00000030' }}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 24, gap: 18, width: '100%', maxWidth: 780, alignSelf: 'center' }}>
