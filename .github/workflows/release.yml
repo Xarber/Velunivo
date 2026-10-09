@@ -7,7 +7,7 @@ on:
       version:
         description: 'App version, e.g. 0.1.0 (the 1.0 tag is reserved for the source feed)'
         required: true
-        default: '0.1.8'
+        default: '0.1.9'
 permissions:
   contents: read
 concurrency:

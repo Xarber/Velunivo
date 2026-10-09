@@ -88,3 +88,5 @@ npm run brand:generate  # Rebuild raster assets from the shared vector design
 [Architecture](docs/ARCHITECTURE.md) · [Work log](docs/WORKLOG.md) · [Contributing](CONTRIBUTING.md) · [Privacy](PRIVACY.md)
 
 Maps and route data retain their providers’ attribution and terms. Original brand geometry and editable SVG exports are included; see [branding](docs/BRANDING.md).
+
+If no usable bicycle or car-road route is returned, Velunivo offers Apple Maps or Google Maps with your selected start and destination. Choose cycling or driving and confirm after three seconds. The other app computes its own route and ETA; your Velunivo vehicle settings are not transferred. Valid routes with unavailable road verification remain available after an explicit warning, with unknown speed limits rather than guessed signs.
