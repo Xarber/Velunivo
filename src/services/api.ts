@@ -1,13 +1,13 @@
 import { Coord, Profile, Route } from '../core/types';
 import { requestJson } from './request';
-import { fromValhalla, valhallaRequest } from '../core/valhalla';
+import { fromValhalla, valhallaRequest, valhallaAttributesRequest } from '../core/valhalla';
 import { fromGraphHopper } from '../core/routing';
 export const serverUrl = process.env.EXPO_PUBLIC_ROUTING_URL ?? '';
 export async function fetchRoute(start: Coord, end: Coord, kind: 'bike' | 'car', profile: Profile): Promise<Route> {
   if (!serverUrl) {
     const q = valhallaRequest(start, end, kind, profile), data = await publicJson('https://valhalla1.openstreetmap.de/route', q);
     const shape = data?.trip?.legs?.[0]?.shape; if (!shape) throw new Error('No route found');
-    const attributes = await publicJson('https://valhalla1.openstreetmap.de/trace_attributes', { encoded_polyline: shape, shape_match: 'edge_walk', costing: q.costing, units: 'kilometers', filters: { action: 'include', attributes: ['shape', 'edge.speed_limit', 'edge.begin_shape_index', 'edge.end_shape_index', 'edge.road_class', 'edge.use', 'edge.surface'] } });
+    const attributes = await publicJson('https://valhalla1.openstreetmap.de/trace_attributes', valhallaAttributesRequest(shape, q));
     return fromValhalla(data, attributes, kind, Math.min(profile.maxSpeed, profile.ridingLimit), [start, end]);
   }
   const { response, body } = await requestJson(`${serverUrl.replace(/\/$/, '')}/route`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ start, end, kind, maxSpeed: profile.maxSpeed, ridingLimit: profile.ridingLimit }) });

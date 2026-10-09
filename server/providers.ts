@@ -1,4 +1,4 @@
-import { fromValhalla, valhallaRequest } from '../src/core/valhalla';
+import { fromValhalla, valhallaRequest, valhallaAttributesRequest } from '../src/core/valhalla';
 import { Coord, Profile } from '../src/core/types';
 const valhalla = process.env.VALHALLA_URL || 'https://valhalla1.openstreetmap.de';
 const photon = process.env.PHOTON_URL || 'https://photon.komoot.io';
@@ -21,6 +21,6 @@ export async function publicRoute(start: Coord, end: Coord, kind: 'bike' | 'car'
   const q = valhallaRequest(start, end, kind, profile), id = JSON.stringify(q), hit = cache.get(id); if (hit && hit.until > Date.now()) return hit.data;
   const data = await provider(`${valhalla}/route`, q), shape = data?.trip?.legs?.[0]?.shape;
   if (!shape) throw new Error('No route found');
-  const attributes = await provider(`${valhalla}/trace_attributes`, { encoded_polyline: shape, shape_match: 'edge_walk', costing: q.costing, units: 'kilometers', filters: { action: 'include', attributes: ['shape', 'edge.speed_limit', 'edge.begin_shape_index', 'edge.end_shape_index', 'edge.road_class', 'edge.use', 'edge.surface'] } });
+  const attributes = await provider(`${valhalla}/trace_attributes`, valhallaAttributesRequest(shape, q));
   const route = fromValhalla(data, attributes, kind, Math.min(profile.maxSpeed, profile.ridingLimit), [start, end]); remember(id, route); return route;
 }

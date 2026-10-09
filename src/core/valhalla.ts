@@ -11,10 +11,21 @@ export function valhallaRequest(start: Coord, end: Coord, kind: 'bike' | 'car', 
   const costing = kind === 'bike' ? 'bicycle' : 'auto', cap = Math.min(profile.maxSpeed, profile.ridingLimit);
   return { locations: [start, end].map(([lon, lat]) => ({ lon, lat })), costing, units: 'kilometers', directions_options: { language: 'en-US' }, costing_options: { [costing]: { exclude_highways: true, exclude_ferries: true, use_ferry: 0, use_highways: 0, speed_types: ['freeflow'], ...(kind === 'car' ? { top_speed: Math.max(10, cap), use_distance: .6 } : { bicycle_type: 'hybrid', cycling_speed: Math.max(5, Math.min(60, cap)), avoid_bad_surfaces: 1, use_roads: .4 }) } } };
 }
+// Preserve the exact route's costing options when matching its roads. Otherwise
+// bicycle access/preferences can produce a different path in the second request.
+export function valhallaAttributesRequest(shape: string, request: ReturnType<typeof valhallaRequest>) {
+  const { locations: _locations, ...options } = request;
+  return { ...options, encoded_polyline: shape, shape_match: 'walk_or_snap', filters: { action: 'include', attributes: ['shape', 'edge.speed_limit', 'edge.begin_shape_index', 'edge.end_shape_index', 'edge.road_class', 'edge.use', 'edge.surface'] } };
+}
 export function fromValhalla(data: any, attributes: any, kind: 'bike' | 'car', cap: number, requested?: [Coord, Coord]): Route {
   const leg = data?.trip?.legs?.[0]; if (!leg || data.trip.legs.length !== 1) throw new Error('Unsupported route legs');
-  if (attributes?.shape !== leg.shape || !Array.isArray(attributes.edges) || !attributes.edges.length) throw new Error('Road details could not be verified. Try again.');
-  const coordinates = decodeShape(leg.shape), details: Record<string, Detail[]> = { max_speed: [], road_class: [], surface: [] };
+  if (typeof attributes?.shape !== 'string' || !Array.isArray(attributes.edges) || !attributes.edges.length) throw new Error('Road details could not be verified. Try again.');
+  const original = decodeShape(leg.shape), coordinates = decodeShape(attributes.shape);
+  // Polyline strings can differ through endpoint rounding. Indexes remain safe
+  // only if every point corresponds in order within one metre. Never accept a
+  // different snapped street or attach attribute indexes to another geometry.
+  if (original.length !== coordinates.length || original.some((p, i) => distance(p, coordinates[i]) > 1)) throw new Error('Road verification matched a different path. Choose another endpoint or try again.');
+  const details: Record<string, Detail[]> = { max_speed: [], road_class: [], surface: [] };
   let unknown = false, covered = 0;
   for (const e of attributes.edges) {
     const a = e.begin_shape_index, b = e.end_shape_index, limit = Number(e.speed_limit);

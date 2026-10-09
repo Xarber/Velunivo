@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { decodeShape, fromValhalla, valhallaRequest } from '../src/core/valhalla';
+import { decodeShape, fromValhalla, valhallaRequest, valhallaAttributesRequest } from '../src/core/valhalla';
 const shape = '??gEgE'; // two polyline6 points, [0,0] to [.0001,.0001]
 const route = { trip: { legs: [{ shape, maneuvers: [{ type: 15, instruction: 'Turn left', begin_shape_index: 0, length: .01 }] }] } };
 const attributes = { shape, edges: [{ begin_shape_index: 0, end_shape_index: 1, speed_limit: 30, use: 'road', road_class: 'residential', surface: 'paved' }] };
@@ -20,4 +20,21 @@ test('public routing requests exclude highways/ferries and never use predicted/c
 
 test('snapped destination gaps are disclosed without inventing a connecting path or ETA', () => {
   const r = fromValhalla(route, attributes, 'car',25,[[0,0],[.002,.002]]);assert.ok(r.warnings.some(w=>w.includes('Final access is unverified and not included in ETA')));assert.deepEqual(r.coordinates.at(-1),[.0001,.0001]);
+});
+
+// Endpoint rounding can change the encoded string without changing the street.
+test('road verification accepts sub-metre rounding but rejects shifted or reindexed paths', () => {
+  const rounded = fromValhalla(route, { ...attributes, shape: 'AAeEeE' }, 'bike', 25);
+  assert.equal(rounded.coordinates.length, 2);
+  assert.deepEqual(rounded.details.max_speed, [[0, 1, 30]]);
+  assert.throws(() => fromValhalla(route, { ...attributes, shape: 'gEgE??' }, 'bike', 25), /different path/);
+  assert.throws(() => fromValhalla(route, { ...attributes, shape: '????gEgE' }, 'bike', 25), /different path/);
+});
+test('road attribution inherits bicycle access options and uses guarded matching fallback', () => {
+  const q = valhallaRequest([9, 45], [9.1, 45.1], 'bike', { maxSpeed: 25, ridingLimit: 20 });
+  const a = valhallaAttributesRequest(shape, q);
+  assert.deepEqual(a.costing_options, q.costing_options);
+  assert.equal(a.shape_match, 'walk_or_snap');
+  assert.ok(!('locations' in a));
+  assert.ok(a.filters.attributes.includes('edge.speed_limit'));
 });
