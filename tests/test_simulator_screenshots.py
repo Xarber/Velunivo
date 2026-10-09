@@ -23,6 +23,15 @@ class SimulatorVerificationTests(unittest.TestCase):
                     with self.assertRaisesRegex(RuntimeError, 'must be landscape'):
                         sim.verify_landscape(image)
 
+    def test_landscape_opens_simulator_from_selected_beta_xcode(self):
+        with tempfile.TemporaryDirectory() as folder:
+            developer = Path(folder) / 'Xcode_beta.app/Contents/Developer'
+            app = developer / 'Applications/Simulator.app'
+            app.mkdir(parents=True)
+            with patch.dict(sim.os.environ, {'DEVELOPER_DIR': str(developer)}), patch.object(sim, 'run') as commands, patch.object(sim.time, 'sleep'):
+                sim.landscape('owned-device')
+                self.assertEqual(commands.call_args_list[0].args, ('open', '-a', str(app), '--args', '-CurrentDeviceUDID', 'owned-device'))
+
     def devices(self):
         return {'com.apple.CoreSimulator.SimRuntime.iOS-26-4': [
             {'name': 'iPad Pro', 'isAvailable': True, 'deviceTypeIdentifier': 'ipad-type', 'udid': 'existing-ipad'}],

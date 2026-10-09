@@ -73,7 +73,11 @@ def diagnostics(udid, family):
 
 def landscape(udid):
     # Rotate the actual Simulator/UI, not the output image.
-    run('open', '-a', 'Simulator', '--args', '-CurrentDeviceUDID', udid)
+    developer = Path(os.environ.get('DEVELOPER_DIR') or run('xcode-select', '-p'))
+    simulator = developer / 'Applications/Simulator.app'
+    if not simulator.is_dir():
+        raise RuntimeError(f'Simulator is missing from selected Xcode: {simulator}')
+    run('open', '-a', str(simulator), '--args', '-CurrentDeviceUDID', udid)
     time.sleep(3)
     run('osascript', '-e', 'tell application "Simulator" to activate', '-e',
         'tell application "System Events" to tell process "Simulator" to click menu item "Landscape Left" of menu 1 of menu item "Orientation" of menu 1 of menu bar item "Device" of menu bar 1', timeout=30)
