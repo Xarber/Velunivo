@@ -9,7 +9,7 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
   const camera = useRef<CameraRef>(null);
   useEffect(() => { if (selected && !follow) camera.current?.fitBounds(routeBounds(selected.coordinates), { padding: fitPadding || { top: 40, bottom: 40, left: 40, right: 40 }, duration: 500 }); }, [selected, follow, fitPadding]);
   useEffect(() => { if (position && follow) camera.current?.easeTo({ center: position, zoom: 16, duration: 700 }); }, [position, follow]);
-  return <Map style={{ flex: 1 }} mapStyle={mapStyle} onPress={e => onPick?.(e.nativeEvent.lngLat)}>
+  return <Map style={{ flex: 1 }} mapStyle={mapStyle} attributionPosition={{ top: 130, right: 16 }} logoPosition={{ top: 170, right: 16 }} onPress={e => onPick?.(e.nativeEvent.lngLat)}>
     <Camera ref={camera} initialViewState={{ bounds: selected ? routeBounds(selected.coordinates) : [12.50, 41.84, 12.61, 41.89], padding: { top: 40, bottom: 40, left: 40, right: 40 } }} />
     {traffic && serverUrl && <RasterSource id="traffic" tiles={[`${serverUrl}/traffic/{z}/{x}/{y}.png`]} tileSize={256}><Layer type="raster" paint={{ 'raster-opacity': .7 }} /></RasterSource>}
     {routes.map(r => <GeoJSONSource key={r.id} id={r.id} data={{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: r.coordinates } }}><Layer id={`${r.id}-line`} type="line" paint={{ 'line-color': r.id === selected?.id ? '#007F6D' : '#658ACA', 'line-width': r.id === selected?.id ? 6 : 4, 'line-opacity': r.id === selected?.id ? 1 : .6 }} layout={{ 'line-cap': 'round', 'line-join': 'round' }} /></GeoJSONSource>)}

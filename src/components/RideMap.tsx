@@ -16,7 +16,7 @@ function DeviceMap({ routes, selected, position, follow, onPick, traffic, startP
   useEffect(fit, [selected, follow, fitPadding]);
   useEffect(() => { if (position && follow) map.current?.animateCamera({ center: point(position), zoom: 16 }, { duration: 700 }); }, [position, follow]);
   const [w, s, e, n] = selected ? routeBounds(selected.coordinates) : [9.18, 45.46, 9.20, 45.48];
-  return <MapView ref={map} style={{ flex: 1 }} onMapReady={fit} initialRegion={{ latitude: (s + n) / 2, longitude: (w + e) / 2, latitudeDelta: Math.max(.005, (n - s) * 1.5), longitudeDelta: Math.max(.005, (e - w) * 1.5) }} onPress={ev => onPick?.([ev.nativeEvent.coordinate.longitude, ev.nativeEvent.coordinate.latitude])}>
+  return <MapView ref={map} style={{ flex: 1 }} onMapReady={fit} legalLabelInsets={{ top: 120, left: 12, right: 12, bottom: fitPadding?.bottom || 45 }} initialRegion={{ latitude: (s + n) / 2, longitude: (w + e) / 2, latitudeDelta: Math.max(.005, (n - s) * 1.5), longitudeDelta: Math.max(.005, (e - w) * 1.5) }} onPress={ev => onPick?.([ev.nativeEvent.coordinate.longitude, ev.nativeEvent.coordinate.latitude])}>
     {routes.map(r => <Polyline key={r.id} coordinates={r.coordinates.map(point)} strokeColor={r.id === selected?.id ? '#007F6D' : '#658ACA'} strokeWidth={r.id === selected?.id ? 6 : 4} />)}
     {(startPoint || selected?.coordinates[0]) && <Marker coordinate={point(startPoint || selected!.coordinates[0])} title="Start" pinColor="#007F6D" />}
     {(endPoint || selected?.coordinates.at(-1)) && <Marker coordinate={point(endPoint || selected!.coordinates.at(-1)!)} title="Destination" />}

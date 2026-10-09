@@ -16,7 +16,8 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
     if (!div.current) return;
     try {
       maplibregl.setWorkerUrl('/maplibre-gl-worker.mjs');
-      const m = new maplibregl.Map({ container: div.current, style: mapStyle, center: [9.186, 45.468], zoom: 12, attributionControl: { compact: true } }); map.current = m;
+      const m = new maplibregl.Map({ container: div.current, style: mapStyle, center: [9.186, 45.468], zoom: 12, attributionControl: false }); map.current = m;
+      m.addControl(new maplibregl.AttributionControl({ compact: true }), 'top-right');
       m.on('load', () => setLoaded(true)); m.on('error', () => setError(true));
       m.on('click', e => click.current?.([e.lngLat.lng, e.lngLat.lat]));
       const observer = new ResizeObserver(() => m.resize()); observer.observe(div.current);
@@ -53,5 +54,5 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
     const source = m.getSource('planning') as maplibregl.GeoJSONSource | undefined;
     if (source) source.setData(data); else { m.addSource('planning', { type: 'geojson', data }); m.addLayer({ id: 'planning', source: 'planning', type: 'circle', paint: { 'circle-radius': 7, 'circle-color': '#007F6D', 'circle-stroke-width': 3, 'circle-stroke-color': '#fff' } }); }
   }, [startPoint, endPoint, loaded]);
-  return <View style={{ flex: 1 }}><div ref={div} style={{ position: 'absolute', inset: 0 }} />{error && <Text style={{ position: 'absolute', top: 8, left: 8, right: 8, padding: 8, backgroundColor: '#fff', color: '#536671', fontSize: 12 }}>Map resources unavailable. Route geometry and ETA remain available.</Text>}</View>;
+  return <View style={{ flex: 1 }}><style>{`.maplibregl-ctrl-top-right { top: 125px; right: 10px; } @media (min-width: 700px) { .maplibregl-ctrl-top-right { top: 70px; } }`}</style><div ref={div} style={{ position: 'absolute', inset: 0 }} />{error && <Text style={{ position: 'absolute', top: 8, left: 8, right: 8, padding: 8, backgroundColor: '#fff', color: '#536671', fontSize: 12 }}>Map resources unavailable. Route geometry and ETA remain available.</Text>}</View>;
 }
