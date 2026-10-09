@@ -21,6 +21,6 @@ export async function publicRoute(start: Coord, end: Coord, kind: 'bike' | 'car'
   const q = valhallaRequest(start, end, kind, profile), id = JSON.stringify(q), hit = cache.get(id); if (hit && hit.until > Date.now()) return hit.data;
   const data = await provider(`${valhalla}/route`, q), shape = data?.trip?.legs?.[0]?.shape;
   if (!shape) throw new Error('No route found');
-  const attributes = await provider(`${valhalla}/trace_attributes`, valhallaAttributesRequest(shape, q));
+  const attributes = await provider(`${valhalla}/trace_attributes`, valhallaAttributesRequest(shape, q)).catch(error => ({ verificationError: error instanceof Error ? error.message : 'Road verification unavailable' }));
   const route = fromValhalla(data, attributes, kind, Math.min(profile.maxSpeed, profile.ridingLimit), [start, end]); remember(id, route); return route;
 }
