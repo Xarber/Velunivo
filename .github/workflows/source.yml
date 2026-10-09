@@ -24,4 +24,4 @@ jobs:
           gh release download "$TAG" --pattern ios-metadata.json --pattern iphone.png --pattern ipad.png --pattern release-notes.md --dir artifacts
           gh release download 1.0 --pattern apps.json --dir work/source
           python3 scripts/update-source.py --repo "$GITHUB_REPOSITORY" --tag "$TAG" --existing work/source/apps.json --output work/source/apps.json
-          gh release upload 1.0 work/source/apps.json assets/icon.png --clobber
+          gh release upload 1.0 work/source/apps.json assets/icon.png docs/brand/banner.png docs/brand/social-preview.png --clobber

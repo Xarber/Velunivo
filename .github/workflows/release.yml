@@ -7,7 +7,7 @@ on:
       version:
         description: 'App version, e.g. 0.1.0 (the 1.0 tag is reserved for the source feed)'
         required: true
-        default: '0.1.3'
+        default: '0.1.4'
 permissions:
   contents: read
 concurrency:
@@ -226,4 +226,4 @@ jobs:
           mkdir -p work/source
           gh release download 1.0 --pattern apps.json --dir work/source || true
           python3 scripts/update-source.py --repo "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG" --existing work/source/apps.json --output work/source/apps.json
-          gh release upload 1.0 work/source/apps.json assets/icon.png --clobber
+          gh release upload 1.0 work/source/apps.json assets/icon.png docs/brand/banner.png docs/brand/social-preview.png --clobber
