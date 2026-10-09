@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+import { useCameraTarget } from '../services/useCameraTarget';
+import React, { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import MapView, { Marker, Polyline, UrlTile } from 'react-native-maps';
 import { Coord } from '../core/types';
@@ -11,13 +12,21 @@ export default function RideMap(props: MapProps & { offlineMap?: boolean }) {
   if (props.offlineMap || Platform.OS === 'android') return <OfflineRideMap {...props} />;
   return <DeviceMap {...props} />;
 }
-function DeviceMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0 }: MapProps) {
+function DeviceMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan }: MapProps) {
   const map = useRef<MapView>(null);
-  const fit = () => { if (!selected && startPoint && !follow) { if (endPoint) map.current?.fitToCoordinates([startPoint, endPoint].map(point), { edgePadding: fitPadding || { top: 45, bottom: 45, left: 45, right: 45 }, animated: true }); else map.current?.animateCamera({ center: point(startPoint), zoom: 13, heading: 0, pitch: 0 }, { duration: 400 }); } if (selected && !follow) { map.current?.setCamera({ heading: 0, pitch: 0 }); map.current?.fitToCoordinates(selected.coordinates.map(point), { edgePadding: fitPadding || { top: 45, bottom: 45, left: 45, right: 45 }, animated: true }); } };
-  useEffect(fit, [selected, follow, fitPadding, overviewRequest, tilted, startPoint, endPoint]);
-  useEffect(() => { if (position && follow) map.current?.animateCamera({ center: point(position), zoom: 16.5, altitude: 650, heading, pitch: tilted ? 50 : 0 }, { duration: 250 }); }, [position, follow, heading, tilted, followPadding]);
+  const [ready, setReady] = useState(false);
+  const hasPosition = !!position;
+  const cameraTarget = useCameraTarget(position, heading, !!follow && ready, JSON.stringify([tilted, followPadding || fitPadding]));
+  const fit = () => { if (!selected && startPoint && !follow) { if (endPoint) map.current?.fitToCoordinates([startPoint, endPoint].map(point), { edgePadding: fitPadding || { top: 45, bottom: 45, left: 45, right: 45 }, animated: true }); else map.current?.animateCamera({ center: point(startPoint), zoom: 13, heading: 0, pitch: 0 }, { duration: 400 }); } if (selected && !follow && (!navigating || overview)) { map.current?.setCamera({ heading: 0, pitch: 0 }); map.current?.fitToCoordinates(selected.coordinates.map(point), { edgePadding: fitPadding || { top: 45, bottom: 45, left: 45, right: 45 }, animated: true }); } };
+  useEffect(() => { if (!follow && tilted && !overview) { const timer = setTimeout(() => map.current?.animateCamera({ pitch: 50 }, { duration: 400 }), 550); return () => clearTimeout(timer); } }, [follow, tilted, overview, selected, ready]);
+  useEffect(() => { if (ready && !selected && (!follow || !hasPosition)) map.current?.animateCamera({ pitch: tilted ? 50 : 0 }, { duration: 350 }); }, [ready, tilted, selected, follow, hasPosition]);
+  useEffect(fit, [selected, follow, fitPadding, overviewRequest, overview, navigating, tilted, startPoint, endPoint]);
+  useEffect(() => {
+    if (follow && cameraTarget) map.current?.animateCamera({ center: point(cameraTarget.position), zoom: navigating ? 16.5 : 15, altitude: navigating ? 650 : 1800, heading: cameraTarget.heading, pitch: tilted ? 50 : 0 }, { duration: cameraTarget.duration });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraTarget]);
   const [w, s, e, n] = selected ? routeBounds(selected.coordinates) : [9.18, 45.46, 9.20, 45.48];
-  return <MapView ref={map} style={{ flex: 1 }} mapPadding={follow ? followPadding || fitPadding : { top: 0, bottom: 0, left: 0, right: 0 }} showsBuildings pitchEnabled rotateEnabled={!follow} onMapReady={fit} legalLabelInsets={{ top: 120, left: 12, right: 12, bottom: fitPadding?.bottom || 45 }} initialRegion={{ latitude: (s + n) / 2, longitude: (w + e) / 2, latitudeDelta: Math.max(.005, (n - s) * 1.5), longitudeDelta: Math.max(.005, (e - w) * 1.5) }} onPress={ev => onPick?.([ev.nativeEvent.coordinate.longitude, ev.nativeEvent.coordinate.latitude])}>
+  return <MapView onPanDrag={onPan} ref={map} style={{ flex: 1 }} mapPadding={follow ? followPadding || fitPadding : { top: 0, bottom: 0, left: 0, right: 0 }} showsBuildings pitchEnabled rotateEnabled={!follow} onMapReady={() => { setReady(true); fit(); }} legalLabelInsets={{ top: 120, left: 12, right: 12, bottom: fitPadding?.bottom || 45 }} initialRegion={{ latitude: (s + n) / 2, longitude: (w + e) / 2, latitudeDelta: Math.max(.005, (n - s) * 1.5), longitudeDelta: Math.max(.005, (e - w) * 1.5) }} onPress={ev => onPick?.([ev.nativeEvent.coordinate.longitude, ev.nativeEvent.coordinate.latitude])}>
     {routes.map(r => <Polyline key={r.id} coordinates={r.coordinates.map(point)} strokeColor={r.id === selected?.id ? '#007F6D' : '#658ACA'} strokeWidth={r.id === selected?.id ? 6 : 4} />)}
     {(startPoint || selected?.coordinates[0]) && <Marker coordinate={point(startPoint || selected!.coordinates[0])} title="Start" pinColor="#007F6D" />}
     {(endPoint || selected?.coordinates.at(-1)) && <Marker coordinate={point(endPoint || selected!.coordinates.at(-1)!)} title="Destination" />}
