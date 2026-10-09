@@ -145,3 +145,7 @@ Release publication is also retryable after a partial upload: existing release n
 - Start the idle GPS timeout before permission lookup too; a stalled browser permission call no longer leaves the initial location status indefinitely unchanged.
 - Simulator QA now grants location only to this app on this run's disposable device and injects the public Milan fixture before startup, avoiding the permission alert covering screenshots. Native location/landscape verification remains dependent on runner execution.
 - Validation: 36 TypeScript tests and 8 Python tests pass; lint and typecheck pass. New regressions reject shifted/reindexed geometry and verify matched costing options.
+
+## 2026-10-09 — early unsigned IPA workflow artifact
+
+Added an ios-unsigned-early artifact upload immediately after iPhone packaging/metadata validation and before Simulator compilation. The existing ios artifact, release gates and publication steps stay unchanged. A completion-triggered cleanup workflow deletes only that named artifact belonging to the completed Build and release run (success, failure or cancellation); it never checks out or executes the originating run's code. One-day retention is a fallback if cleanup cannot run. Validated YAML, unchanged existing release steps, and cleanup against mocked artifact lists. This change applies to future runs; the active 0.1.6 run keeps its original workflow. No build was restarted.

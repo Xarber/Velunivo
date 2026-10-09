@@ -184,6 +184,13 @@ jobs:
           (cd artifacts && zip -qry Velunivo.ipa Payload)
           python3 scripts/ios-metadata.py --app artifacts/Payload/Velunivo.app --ipa artifacts/Velunivo.ipa
           xcodebuild -version > artifacts/ios-build.txt
+      - name: Upload unsigned iPhone IPA immediately
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-unsigned-early
+          path: artifacts/Velunivo.ipa
+          if-no-files-found: error
+          retention-days: 1
       - name: Build Apple Silicon Simulator app
         run: |
           xcodebuild -workspace ios/Velunivo.xcworkspace -scheme Velunivo -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath "$PWD/work/simulator" build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO ARCHS=arm64 ONLY_ACTIVE_ARCH=NO
