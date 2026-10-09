@@ -1,6 +1,6 @@
 {
   "name": "velunivo",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "main": "expo-router/entry",
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
@@ -25,6 +25,7 @@
     "expo-sensors": "~57.0.3",
     "expo-sharing": "~57.0.22",
     "expo-speech": "~57.0.3",
+    "expo-splash-screen": "~57.0.9",
     "expo-status-bar": "~57.0.1",
     "fast-xml-parser": "^5.11.2",
     "maplibre-gl": "^6.13.0",
@@ -41,6 +42,7 @@
   "devDependencies": {
     "@types/geojson": "^7946.0.16",
     "@types/react": "~19.2.2",
+    "sharp": "^0.35.5",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3"
   },
@@ -54,7 +56,8 @@
     "server": "tsx server/index.ts",
     "lint": "expo lint",
     "postinstall": "node scripts/copy-map-worker.mjs",
-    "web:preview": "expo export --platform web --output-dir dist && python3 scripts/serve-web.py"
+    "web:preview": "expo export --platform web --output-dir dist && python3 scripts/serve-web.py",
+    "brand:generate": "node scripts/generate-brand.mjs"
   },
   "private": true
 }
