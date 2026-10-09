@@ -14,6 +14,24 @@ createServer(async (req, res) => {
   const send = (code: number, body: unknown) => { res.writeHead(code); res.end(JSON.stringify(body)); };
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
   if (req.url === '/health') { send(200, { ok: true, routingConfigured: !!key, trafficConfigured: !!trafficKey }); return; }
+  const url = new URL(req.url || '/', 'http://localhost');
+  if (req.method === 'GET' && url.pathname === '/geocode') {
+    if (!key) { send(503, { error: 'Address search needs GRAPHHOPPER_API_KEY on the server.' }); return; }
+    const query = url.searchParams.get('q')?.trim() || '';
+    if (query.length < 3 || query.length > 200) { send(400, { error: 'Enter an address or place between 3 and 200 characters.' }); return; }
+    const client = req.socket.remoteAddress || 'unknown', now = Date.now();
+    for (const [id, v] of budget) if (v.reset < now) budget.delete(id);
+    const usage = budget.get(client) ?? { count: 0, reset: now + 60000 }; usage.count++; budget.set(client, usage);
+    if (usage.count > 30) { send(429, { error: 'Too many searches. Try again in a minute.' }); return; }
+    try {
+      const upstream = await fetch(`https://graphhopper.com/api/1/geocode?q=${encodeURIComponent(query)}&limit=5&key=${encodeURIComponent(key)}`, { signal: AbortSignal.timeout(10000) });
+      const data = await upstream.json();
+      if (!upstream.ok) { send(upstream.status === 429 ? 429 : 502, { error: data.message || 'Address provider unavailable.' }); return; }
+      const results = (data.hits || []).filter((h: any) => Number.isFinite(h.point?.lng) && Number.isFinite(h.point?.lat)).map((h: any) => ({ label: [h.name, [h.street, h.housenumber].filter(Boolean).join(' '), h.postcode, h.city, h.country].filter(Boolean).join(', '), coordinate: [h.point.lng, h.point.lat] }));
+      send(200, { results });
+    } catch { send(502, { error: 'Address search unavailable or timed out.' }); }
+    return;
+  }
   const traffic = /^\/traffic\/(\d+)\/(\d+)\/(\d+)\.png$/.exec(req.url || '');
   if (req.method === 'GET' && traffic) {
     if (!trafficKey) { send(503, { error: 'Live traffic is not configured' }); return; }

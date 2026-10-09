@@ -48,6 +48,7 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     env:
+      EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_KEY: ${{ secrets.GOOGLE_MAPS_ANDROID_KEY }}
       APP_VERSION: ${{ needs.prepare.outputs.version }}
       BUILD_NUMBER: ${{ github.run_number }}
       EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
@@ -70,6 +71,7 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     env:
+      EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_KEY: ${{ secrets.GOOGLE_MAPS_ANDROID_KEY }}
       APP_VERSION: ${{ needs.prepare.outputs.version }}
       BUILD_NUMBER: ${{ github.run_number }}
       EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
@@ -143,6 +145,7 @@ jobs:
     needs: prepare
     runs-on: xcode-27
     env:
+      EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_KEY: ${{ secrets.GOOGLE_MAPS_ANDROID_KEY }}
       APP_VERSION: ${{ needs.prepare.outputs.version }}
       BUILD_NUMBER: ${{ github.run_number }}
       EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}

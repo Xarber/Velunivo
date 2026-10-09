@@ -29,7 +29,11 @@ Node 22.13+ (Node 24 used here), npm, and the committed lockfile. No EAS account
 ```sh
 npm ci
 npm run web
+# Or a production export + local SPA server on port 8082:
+npm run web:preview
 ```
+
+Production web hosts need an index.html fallback for Expo Router paths; the included preview server handles this.
 
 The illustrative sample works without a routing key. Map resources still require a connection unless downloaded in a native build. `Simulate` exercises track progress without GPS. `Start ride` requests foreground location. Use precise location, not approximate location.
 
@@ -90,3 +94,7 @@ Your original GPX is retained locally at `assets/tracks/private-example.gpx` and
 ## Existing navigator to consider
 
 OsmAnd supports iOS offline maps, offline routing, bicycle/car profiles and navigation. Its moped profile is not automatically an e-scooter eligibility profile. It is a stronger option for mature offline routing today; Velunivo's particular focus is comparing road candidates with your riding-speed model. [Official routing docs](https://osmand.net/docs/user/navigation/routing/osmand-routing/?current-os=ios).
+
+Address planning: enter a street/place and city, press Search, then choose a matching result. Both endpoints have a map picker; coordinates and current GPS remain available. Address search needs the routing server and its GraphHopper key. Map picking works without a geocoding key.
+
+Native maps: iOS defaults to Apple Maps without a map key. Android uses Google Maps when `EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_KEY` is supplied before building; otherwise a visible notice accompanies the street-map fallback. Restrict the key to the Maps SDK for Android, `app.velunivo.mobile` and your signing certificate SHA-1. In GitHub Actions use the `GOOGLE_MAPS_ANDROID_KEY` repository secret. Rebuild after configuring it. `Use downloadable maps` selects the MapLibre offline-capable renderer. Web uses OpenFreeMap.

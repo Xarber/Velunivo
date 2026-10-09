@@ -6,6 +6,7 @@ import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import RideMap from '../components/RideMap';
+import EndpointPicker from '../components/EndpointPicker';
 import { Button, Field, styles, usePalette } from '../components/ui';
 import { useStore } from '../services/store';
 import { serverUrl, fetchRoute } from '../services/api';
@@ -27,7 +28,9 @@ export default function Explore() {
   const { routes, selected, select, setRoutes, profile, save, ready } = useStore();
   const [planner, setPlanner] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState('');
   const [start, setStart] = useState('45.464200, 9.190000'), [end, setEnd] = useState('45.471200, 9.188000');
-  const [picking, setPicking] = useState(false), [follow, setFollow] = useState(true);
+  const [startPoint, setStartPoint] = useState<Coord | undefined>(), [endPoint, setEndPoint] = useState<Coord | undefined>();
+  const [offlineMap, setOfflineMap] = useState(false);
+  const [picking, setPicking] = useState<'start' | 'end' | null>(null), [follow, setFollow] = useState(true);
   const ride = useRide(selected, profile), motion = useMotion(profile.motion && ride.mode === 'gps');
   const active = ride.mode !== 'idle', g = ride.progress;
   const eta = selected ? estimate(selected, profile, active && g?.valid && !g.offRoute ? g.along : 0) : null;
@@ -35,7 +38,8 @@ export default function Explore() {
   async function plan() {
     setError(''); setBusy(true);
     try {
-      const a = parseCoordinate(start), b = parseCoordinate(end);
+      let a: Coord, b: Coord;
+      try { a = startPoint || parseCoordinate(start); b = endPoint || parseCoordinate(end); } catch { throw new Error('Search each address and choose a result, or pick both locations on the map.'); }
       const results = await Promise.allSettled([fetchRoute(a, b, 'bike', profile), fetchRoute(a, b, 'car', profile)]);
       const good: Route[] = [], failures: string[] = [];
       results.forEach((r, i) => r.status === 'fulfilled' ? good.push(r.value) : failures.push(`${i === 0 ? 'Bicycle' : 'Car-road'}: ${r.reason.message}`));
@@ -48,16 +52,17 @@ export default function Explore() {
     const permission = await Location.requestForegroundPermissionsAsync();
     if (permission.status !== 'granted') throw new Error('Allow precise location to use your current position.');
     const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
-    setStart(`${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`);
+    setStart(`${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`); setStartPoint([pos.coords.longitude, pos.coords.latitude]);
   }
-  function picked(c: Coord) { if (!picking) return; setEnd(`${c[1].toFixed(6)}, ${c[0].toFixed(6)}`); setPicking(false); setPlanner(true); }
+  function picked(c: Coord) { if (!picking) return; const label = `${c[1].toFixed(6)}, ${c[0].toFixed(6)}`; if (picking === 'start') { setStart(label); setStartPoint(c); } else { setEnd(label); setEndPoint(c); } setPicking(null); setPlanner(true); }
   return <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: p.bg }}>
     {active && <Awake />}
     <View style={s.header}><View><Text style={[s.brand, { color: p.text }]}>Velunivo<Text style={{ color: p.accent }}>↗</Text></Text><Text style={{ color: p.muted, fontSize: 13 }}>A better way to ride.</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Plan a ride" disabled={active} onPress={() => setPlanner(true)} style={[s.round, { backgroundColor: p.card }]}><Ionicons name="search" size={22} color={p.text} /></Pressable></View>
     <View style={{ flex: 1, flexDirection: wide ? 'row' : 'column' }}>
     <View style={{ flex: wide ? 1 : undefined, height: wide ? undefined : Math.max(240, Math.min(360, height * .38)), marginHorizontal: 16, borderRadius: 26, overflow: 'hidden', backgroundColor: p.line }}>
-      <RideMap routes={routes} selected={selected} position={ride.fix?.coordinate} follow={active && follow} onPick={picked} traffic={traffic} />
-      <View pointerEvents="none" style={[s.mapBadge, { backgroundColor: p.card }]}><View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: p.accent }} /><Text style={{ color: p.text, fontSize: 12, fontWeight: '700' }}>{picking ? 'Tap your destination' : selected?.source === 'gpx' ? 'GPX · TRACK PREVIEW' : 'ROUTE COMPARISON'}</Text></View>
+      <RideMap routes={routes} selected={selected} position={ride.fix?.coordinate} follow={active && follow} onPick={picked} traffic={traffic} startPoint={startPoint} endPoint={endPoint} offlineMap={offlineMap} />
+      <View pointerEvents="none" style={[s.mapBadge, { backgroundColor: p.card }]}><View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: p.accent }} /><Text style={{ color: p.text, fontSize: 12, fontWeight: '700' }}>{picking ? `Tap your ${picking === 'start' ? 'start location' : 'destination'}` : selected?.source === 'gpx' ? 'GPX · TRACK PREVIEW' : 'ROUTE COMPARISON'}</Text></View>
+      {picking && <View style={{ position: 'absolute', bottom: 12, left: 12 }}><Button title="Cancel map selection" secondary onPress={() => { setPicking(null); setPlanner(true); }} /></View>}
       {active && <Pressable accessibilityLabel="Toggle map following" onPress={() => setFollow(v => !v)} style={[s.recenter, { backgroundColor: p.card }]}><Ionicons name={follow ? 'locate' : 'locate-outline'} size={24} color={p.accent} /></Pressable>}
     </View>
     <ScrollView style={{ width: wide ? 430 : undefined, flexGrow: wide ? 0 : 1, flexShrink: wide ? 0 : 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 28 }}>
@@ -66,7 +71,7 @@ export default function Explore() {
         <Text style={{ color: g?.offRoute ? '#C75A36' : p.muted }}>{ride.status}</Text>
         <View style={s.metrics}><Metric label="km/h" value={ride.fix ? (ride.fix.speed * 3.6).toFixed(0) : '—'} /><Metric label="remaining" value={eta ? km(eta.meters) : '—'} /><Metric label="estimate" value={eta ? minutes(eta.seconds) : '—'} /></View>
         {motion.status !== 'Off' && <Text style={{ color: p.muted, fontSize: 12 }}>Motion: {motion.status} · {motion.acceleration.toFixed(2)} g · {motion.rotation.toFixed(2)} rad/s</Text>}
-        {g?.offRoute && <Button title="End ride & replan" secondary onPress={() => { ride.stop(); if (ride.fix) setStart(`${ride.fix.coordinate[1]}, ${ride.fix.coordinate[0]}`); setPlanner(true); }} />}
+        {g?.offRoute && <Button title="End ride & replan" secondary onPress={() => { ride.stop(); if (ride.fix) { setStart(`${ride.fix.coordinate[1]}, ${ride.fix.coordinate[0]}`); setStartPoint(ride.fix.coordinate); } setPlanner(true); }} />}
         <Button title="End ride" onPress={ride.stop} />
       </View> : <>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}><Text style={{ color: p.text, fontSize: 23, fontWeight: '800' }}>Your next ride</Text><Text style={{ color: p.accent, fontSize: 12, fontWeight: '700' }}>{Math.min(profile.maxSpeed, profile.ridingLimit)} KM/H CAP</Text></View>
@@ -76,6 +81,7 @@ export default function Explore() {
         {selected?.warnings.map(w => <Text key={w} style={{ color: p.muted, fontSize: 12, lineHeight: 18 }}>{w}</Text>)}
         {error !== '' && <Text accessibilityRole="alert" style={{ color: '#C75A36', lineHeight: 20 }}>{error}</Text>}
         <View style={{ gap: 10 }}><View style={{ flexDirection: 'row', gap: 8 }}><View style={{ flex: 1 }}><Button title="Depart at" secondary={scheduleMode !== 'depart'} onPress={() => setScheduleMode('depart')} /></View><View style={{ flex: 1 }}><Button title="Arrive by" secondary={scheduleMode !== 'arrive'} onPress={() => setScheduleMode('arrive')} /></View></View><Field label={scheduleMode === 'depart' ? 'DEPARTURE · LOCAL DATE & TIME' : 'ARRIVAL · LOCAL DATE & TIME'} placeholder="Now, or YYYY-MM-DD HH:MM" value={departure} onChangeText={setDeparture} /><Text style={{ color: p.muted, fontSize: 12 }}>{arrivalText(departure, eta?.seconds, scheduleMode)} · Estimated with your riding profile</Text><Text accessibilityRole="alert" style={{ color: '#C75A36', fontSize: 12, lineHeight: 18 }}>Scheduled trips do not use traffic conditions or traffic simulation. Allow extra time for delays.</Text><Button title={traffic ? 'Hide live traffic' : 'Show live traffic'} secondary disabled={!trafficAvailable} onPress={() => setTraffic(v => !v)} />{!trafficAvailable && <Text style={{ color: p.muted, fontSize: 12 }}>Live traffic needs a configured TomTom server key.</Text>}{traffic && <Text style={{ color: p.muted, fontSize: 12 }}>Current traffic flow · © TomTom · not included in scooter ETA</Text>}</View>
+        {Platform.OS !== 'web' && <Button title={offlineMap ? 'Use device maps' : 'Use downloadable maps'} secondary onPress={() => setOfflineMap(v => !v)} />}
         <Button title="Plan bicycle & car routes" icon="search" onPress={() => setPlanner(true)} />
         {selected && <View style={{ flexDirection: 'row', gap: 10 }}><View style={{ flex: 1 }}><Button title="Start ride" icon="navigate" disabled={!ready || selected.id === 'illustrative-track'} onPress={() => ride.start()} /></View><Button title="Simulate" secondary onPress={() => ride.start(true)} /></View>}
         <View style={{ flexDirection: 'row', gap: 10 }}><View style={{ flex: 1 }}><Button title="Import GPX" secondary icon="add" onPress={() => void run(async () => { const r = await pickTrack(); if (r) { setRoutes([r]); select(r); } })} /></View>{selected && <Button title="Save" secondary icon="bookmark-outline" onPress={() => void run(async () => { await save(selected); notify('Saved to your Library.'); })} />}</View>
@@ -84,13 +90,11 @@ export default function Explore() {
       {selected && selected.steps.length > 0 && !active && <View style={[styles.card, { backgroundColor: p.card }]}><Text style={{ fontWeight: '700', color: p.text }}>Turn-by-turn directions</Text>{selected.steps.map((step, i) => <Text key={`${i}-${step.index}`} style={{ color: p.muted, lineHeight: 20 }}>{i + 1}. {step.text}</Text>)}</View>}
     </ScrollView>
     </View>
-    <Modal visible={planner} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setPlanner(false)}><SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 24, gap: 18 }}>
+    <Modal visible={planner} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setPlanner(false)}><SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 24, gap: 18, width: '100%', maxWidth: 780, alignSelf: 'center' }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><Text style={[styles.title, { color: p.text }]}>Where to?</Text><Pressable accessibilityLabel="Close planner" onPress={() => setPlanner(false)}><Ionicons name="close-circle" size={30} color={p.muted} /></Pressable></View>
-      <Text style={[styles.subtitle, { color: p.muted }]}>Compare bicycle and car-road candidates at your riding speed. Choose coordinates, or tap a destination on the map.</Text>
-      <Field label="START · LATITUDE, LONGITUDE" value={start} onChangeText={setStart} autoCapitalize="none" />
-      <Button title="Use my location" secondary icon="locate" onPress={() => void run(useLocation)} />
-      <Field label="DESTINATION · LATITUDE, LONGITUDE" value={end} onChangeText={setEnd} autoCapitalize="none" />
-      <Button title="Choose on map" secondary icon="map-outline" onPress={() => { setPicking(true); setPlanner(false); }} />
+      <Text style={[styles.subtitle, { color: p.muted }]}>Compare bicycle and car-road candidates at your riding speed. Search an address and select a result, use your location, or pick either endpoint on the map. Coordinates also work.</Text>
+      <EndpointPicker label="Start" value={start} onChange={v => { setStart(v); setStartPoint(undefined); }} onSelect={(label, c) => { setStart(label); setStartPoint(c); }} onLocation={() => void run(useLocation)} onMap={() => { setPicking('start'); setPlanner(false); }} />
+      <EndpointPicker label="Destination" value={end} onChange={v => { setEnd(v); setEndPoint(undefined); }} onSelect={(label, c) => { setEnd(label); setEndPoint(c); }} onMap={() => { setPicking('end'); setPlanner(false); }} />
       <View style={[styles.card, { backgroundColor: p.card }]}><Text style={{ color: p.text, fontWeight: '700' }}>{profile.name}</Text><Text style={{ color: p.muted }}>Hardware {profile.maxSpeed} km/h · Riding limit {profile.ridingLimit} km/h</Text><Text style={{ color: p.muted, fontSize: 12 }}>Avoid motorways, trunk roads, steps, ferries and known roads above 50 km/h. Scooter access and urban status need review.</Text></View>
       {busy && <ActivityIndicator color={p.accent} />}{!!error && <Text style={{ color: '#C75A36' }}>{error}</Text>}
       <Button title={busy ? 'Finding routes…' : 'Compare routes'} disabled={busy} onPress={() => void plan()} />

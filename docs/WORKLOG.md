@@ -17,3 +17,9 @@ Further build/test outcomes are appended below; unresolved provider or hardware 
 
 11. Published five unsigned conventional commits and the mutable 1.0 bootstrap feed. Started GitHub verification and native release workflow. Remote Android setup failed because the action requested obsolete SDK package `tools`; configured its explicit package list to `platform-tools`. Web release job succeeded. iOS continued through CocoaPods. Native results remain pending.
 12. Browser GPX file chooser successfully imported a generated test track, and Save/Open appeared in Library. No original private GPX was sent to GitHub.
+
+## Address and device-map update
+
+User requested address input, start map selection and platform-native maps. Added explicit address search and candidate selection through a key-private GraphHopper geocoder; editing clears stale resolved points. Added start/destination map picking with cancellation and preview pins, retained GPS/coordinate input. Switched iOS default to Apple Maps and keyed Android default to Google Maps using the SDK57-compatible react-native-maps library, while keeping an explicit downloadable-map renderer and a visible no-key Android fallback. Added restricted key configuration to CI. Installed the JavaScript/native library only; no local SDK was downloaded. Commits remain unsigned.
+
+Previous Verify runs passed. The first native iPhone archive succeeded on Xcode beta; its simulator build remains underway. The first Android job failed during SDK setup because the action requested an obsolete package; the configuration was corrected. Cancelled the pending retry to avoid publishing a release without this requested update; a new build will use the updated commit.

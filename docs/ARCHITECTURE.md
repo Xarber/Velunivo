@@ -42,3 +42,9 @@ Known limitations: projection is not full map matching; parallel roads, loops, G
 - [OsmAnd iOS routing](https://osmand.net/docs/user/navigation/routing/osmand-routing/?current-os=ios): alternative mature offline navigator.
 
 - [OpenFreeMap quick start](https://openfreemap.org/quick_start/): public detailed street styles support both MapLibre web and native without a map key. Offline bulk downloads remain an explicit configured-provider choice.
+
+### Device maps and address search (2026-10-09 update)
+
+Native default is now react-native-maps 1.27.2, the [Expo SDK 57 recommended version](https://docs.expo.dev/versions/v57.0.0/sdk/map-view/): MapKit/Apple Maps on iOS and Google Maps on Android. No Google provider is compiled for iOS. Android requires a Maps SDK key restricted to package and certificate SHA-1; without it, the app explicitly falls back to OpenFreeMap so releases remain usable. `Use downloadable maps` switches to MapLibre and the separately licensed offline style. Web remains MapLibre. Device-map rendering is independent of the GraphHopper routing engine and cannot establish scooter road access. Native map views do not expose offline-region downloads; saved route geometry still works with either renderer.
+
+Address lookup uses [GraphHopper Geocoding](https://docs.graphhopper.com/openapi/geocoding) through `/geocode` on the private server. Search is submitted explicitly, never sent on every keystroke. Users choose one of up to five named results; editing the field invalidates the previously resolved coordinate. Both start and destination can also be tapped on the map, or entered as latitude/longitude. Start supports GPS. Search is online, needs the existing private GraphHopper key, and shares the development request quota. No public Nominatim endpoint or prohibited public autocomplete is used. Address text is sent to the configured server and GraphHopper only when Search is pressed.

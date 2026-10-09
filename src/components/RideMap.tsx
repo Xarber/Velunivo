@@ -1,19 +1,27 @@
 import React, { useEffect, useRef } from 'react';
-import { Map, Camera, GeoJSONSource, Layer, CameraRef, RasterSource } from '@maplibre/maplibre-react-native';
-import { Coord, Route } from '../core/types';
+import { Platform, View, Text } from 'react-native';
+import MapView, { Marker, Polyline, UrlTile } from 'react-native-maps';
+import { Coord } from '../core/types';
 import { routeBounds } from '../core/geo';
 import { serverUrl } from '../services/api';
-import { mapStyle } from './mapConfig';
-export interface MapProps { routes: Route[]; selected: Route | null; position?: Coord; follow?: boolean; onPick?(p: Coord): void; traffic?: boolean; }
-export default function RideMap({ routes, selected, position, follow, onPick, traffic }: MapProps) {
-  const camera = useRef<CameraRef>(null);
-  useEffect(() => { if (selected && !follow) camera.current?.fitBounds(routeBounds(selected.coordinates), { padding: { top: 40, bottom: 40, left: 40, right: 40 }, duration: 500 }); }, [selected, follow]);
-  useEffect(() => { if (position && follow) camera.current?.easeTo({ center: position, zoom: 16, duration: 700 }); }, [position, follow]);
-  return <Map style={{ flex: 1 }} mapStyle={mapStyle} onPress={e => onPick?.(e.nativeEvent.lngLat)}>
-    <Camera ref={camera} initialViewState={{ bounds: selected ? routeBounds(selected.coordinates) : [12.50, 41.84, 12.61, 41.89], padding: { top: 40, bottom: 40, left: 40, right: 40 } }} />
-    {traffic && serverUrl && <RasterSource id="traffic" tiles={[`${serverUrl}/traffic/{z}/{x}/{y}.png`]} tileSize={256}><Layer type="raster" paint={{ 'raster-opacity': .7 }} /></RasterSource>}
-    {routes.map(r => <GeoJSONSource key={r.id} id={r.id} data={{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: r.coordinates } }}><Layer id={`${r.id}-line`} type="line" paint={{ 'line-color': r.id === selected?.id ? '#007F6D' : '#658ACA', 'line-width': r.id === selected?.id ? 6 : 4, 'line-opacity': r.id === selected?.id ? 1 : .6 }} layout={{ 'line-cap': 'round', 'line-join': 'round' }} /></GeoJSONSource>)}
-    {selected && <GeoJSONSource id="endpoints" data={{ type: 'FeatureCollection', features: [selected.coordinates[0], selected.coordinates.at(-1)!].map((p, i) => ({ type: 'Feature' as const, properties: { end: i }, geometry: { type: 'Point' as const, coordinates: p } })) }}><Layer type="circle" paint={{ 'circle-radius': 7, 'circle-color': '#007F6D', 'circle-stroke-width': 3, 'circle-stroke-color': '#FFFFFF' }} /></GeoJSONSource>}
-    {position && <GeoJSONSource id="position" data={{ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: position } }}><Layer type="circle" paint={{ 'circle-color': '#287CF5', 'circle-radius': 8, 'circle-stroke-width': 3, 'circle-stroke-color': '#FFFFFF' }} /></GeoJSONSource>}
-  </Map>;
+import OfflineRideMap, { MapProps } from './OfflineRideMap';
+const point = (p: Coord) => ({ longitude: p[0], latitude: p[1] });
+export default function RideMap(props: MapProps & { offlineMap?: boolean }) {
+  if (props.offlineMap) return <OfflineRideMap {...props} />;
+  if (Platform.OS === 'android' && !process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_KEY) return <View style={{ flex: 1 }}><OfflineRideMap {...props} /><Text style={{ position: 'absolute', bottom: 8, left: 8, right: 8, padding: 8, backgroundColor: '#fff', color: '#536671', fontSize: 12 }}>Google Maps needs an Android map key. Showing the street-map alternative.</Text></View>;
+  return <DeviceMap {...props} />;
+}
+function DeviceMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint }: MapProps) {
+  const map = useRef<MapView>(null);
+  const fit = () => { if (selected && !follow) map.current?.fitToCoordinates(selected.coordinates.map(point), { edgePadding: { top: 45, bottom: 45, left: 45, right: 45 }, animated: true }); };
+  useEffect(fit, [selected, follow]);
+  useEffect(() => { if (position && follow) map.current?.animateCamera({ center: point(position), zoom: 16 }, { duration: 700 }); }, [position, follow]);
+  const [w, s, e, n] = selected ? routeBounds(selected.coordinates) : [9.18, 45.46, 9.20, 45.48];
+  return <MapView ref={map} style={{ flex: 1 }} onMapReady={fit} initialRegion={{ latitude: (s + n) / 2, longitude: (w + e) / 2, latitudeDelta: Math.max(.005, (n - s) * 1.5), longitudeDelta: Math.max(.005, (e - w) * 1.5) }} onPress={ev => onPick?.([ev.nativeEvent.coordinate.longitude, ev.nativeEvent.coordinate.latitude])}>
+    {routes.map(r => <Polyline key={r.id} coordinates={r.coordinates.map(point)} strokeColor={r.id === selected?.id ? '#007F6D' : '#658ACA'} strokeWidth={r.id === selected?.id ? 6 : 4} />)}
+    {(startPoint || selected?.coordinates[0]) && <Marker coordinate={point(startPoint || selected!.coordinates[0])} title="Start" pinColor="#007F6D" />}
+    {(endPoint || selected?.coordinates.at(-1)) && <Marker coordinate={point(endPoint || selected!.coordinates.at(-1)!)} title="Destination" />}
+    {position && <Marker coordinate={point(position)} title="Your position" pinColor="#287CF5" />}
+    {traffic && serverUrl && <UrlTile urlTemplate={`${serverUrl}/traffic/{z}/{x}/{y}.png`} tileSize={256} zIndex={1} />}
+  </MapView>;
 }
