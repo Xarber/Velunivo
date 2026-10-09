@@ -4,7 +4,7 @@ export type Detail = [number, number, number | string];
 export interface Step { text: string; sign: number; index: number; distance: number; }
 export interface Route {
   id: string; name: string; kind: RouteKind; coordinates: Coord[];
-  steps: Step[]; details: Record<string, Detail[]>; source: 'graphhopper' | 'gpx';
+  steps: Step[]; details: Record<string, Detail[]>; source: 'graphhopper' | 'valhalla' | 'gpx';
   warnings: string[]; savedAt?: number; plannedCap?: number;
 }
 export interface Profile {

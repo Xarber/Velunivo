@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 test('server reports unconfigured services without faking routes or exposing keys', async () => {
-  const child = spawn(process.execPath, ['--import', 'tsx', 'server/index.ts'], { env: { ...process.env, PORT: '18787', GRAPHHOPPER_API_KEY: '', TOMTOM_API_KEY: '' }, stdio: ['ignore', 'pipe', 'pipe'] });
+  const child = spawn(process.execPath, ['--import', 'tsx', 'server/index.ts'], { env: { ...process.env, PORT: '18787', PUBLIC_PROVIDERS: 'false', GRAPHHOPPER_API_KEY: '', TOMTOM_API_KEY: '' }, stdio: ['ignore', 'pipe', 'pipe'] });
   try {
     await Promise.race([once(child.stdout, 'data'), new Promise((_, reject) => setTimeout(() => reject(new Error('Server did not start')), 5000))]);
     const health = await (await fetch('http://127.0.0.1:18787/health')).json(); assert.equal(health.routingConfigured, false); assert.equal(health.trafficConfigured, false);
