@@ -1,4 +1,5 @@
 import React from 'react';
+import { motionProps } from './WebMotion';
 import { Pressable, Text, StyleSheet, useColorScheme, View, TextInput, TextInputProps } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 export const usePalette = () => {
@@ -7,10 +8,10 @@ export const usePalette = () => {
 };
 export function Button({ title, onPress, secondary = false, disabled = false, icon }: { title: string; onPress(): void; secondary?: boolean; disabled?: boolean; icon?: keyof typeof Ionicons.glyphMap }) {
   const p = usePalette();
-  return <Pressable accessibilityRole="button" accessibilityLabel={title} disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.button, { backgroundColor: secondary ? p.line : p.accent, opacity: disabled ? .4 : pressed ? .75 : 1 }]}>{icon && <Ionicons name={icon} size={19} color={secondary ? p.text : p.dark ? '#102A28' : '#fff'} />}<Text style={{ color: secondary ? p.text : p.dark ? '#102A28' : '#fff', fontSize: 16, fontWeight: '700' }}>{title}</Text></Pressable>;
+  return <Pressable {...motionProps('button')} accessibilityRole="button" accessibilityLabel={title} disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.button, { backgroundColor: secondary ? p.line : p.accent, opacity: disabled ? .4 : pressed ? .75 : 1 }]}>{icon && <Ionicons name={icon} size={19} color={secondary ? p.text : p.dark ? '#102A28' : '#fff'} />}<Text style={{ color: secondary ? p.text : p.dark ? '#102A28' : '#fff', fontSize: 16, fontWeight: '700' }}>{title}</Text></Pressable>;
 }
 export function Field({ label, ...props }: TextInputProps & { label: string }) {
-  const p = usePalette(); return <View style={{ gap: 6 }}><Text style={{ color: p.muted, fontSize: 12, fontWeight: '700', letterSpacing: .8 }}>{label}</Text><TextInput accessibilityLabel={label} placeholderTextColor={p.muted} {...props} style={[styles.field, { color: p.text, backgroundColor: p.bg, borderColor: p.line }, props.style]} /></View>;
+  const p = usePalette(); return <View style={{ gap: 6 }}><Text style={{ color: p.muted, fontSize: 12, fontWeight: '700', letterSpacing: .8 }}>{label}</Text><TextInput {...motionProps('field')} accessibilityLabel={label} placeholderTextColor={p.muted} {...props} style={[styles.field, { color: p.text, backgroundColor: p.bg, borderColor: p.line }, props.style]} /></View>;
 }
 export const styles = StyleSheet.create({
   button: { minHeight: 50, borderRadius: 16, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 },
