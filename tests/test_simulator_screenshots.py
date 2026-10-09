@@ -11,6 +11,18 @@ spec.loader.exec_module(sim)
 
 
 class SimulatorVerificationTests(unittest.TestCase):
+    def test_landscape_verification_rejects_portrait_framebuffer(self):
+        import struct
+        with tempfile.TemporaryDirectory() as folder:
+            image = Path(folder) / 'ipad.png'
+            for width, height in [(2732, 2048), (2048, 2732)]:
+                image.write_bytes(b'\x89PNG\r\n\x1a\n' + b'\0' * 8 + struct.pack('>II', width, height))
+                if width > height:
+                    sim.verify_landscape(image)
+                else:
+                    with self.assertRaisesRegex(RuntimeError, 'must be landscape'):
+                        sim.verify_landscape(image)
+
     def devices(self):
         return {'com.apple.CoreSimulator.SimRuntime.iOS-26-4': [
             {'name': 'iPad Pro', 'isAvailable': True, 'deviceTypeIdentifier': 'ipad-type', 'udid': 'existing-ipad'}],
@@ -61,7 +73,7 @@ class SimulatorVerificationTests(unittest.TestCase):
             if args[2] == 'create': return 'owned-device'
             if args[2] == 'launch': return 'app.velunivo.mobile: 1234'
             return ''
-        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'run', side_effect=command), patch.object(sim, 'diagnostics'), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill', side_effect=ProcessLookupError):
+        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'run', side_effect=command), patch.object(sim, 'diagnostics'), patch.object(sim, 'landscape'), patch.object(sim, 'verify_landscape'), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill', side_effect=ProcessLookupError):
             with self.assertRaises(ProcessLookupError):
                 sim.capture(self.devices(), 'ipad')
         self.assertNotIn('io', [c[2] for c in calls])
@@ -72,7 +84,7 @@ class SimulatorVerificationTests(unittest.TestCase):
             if args[2] == 'create': return 'owned-device'
             if args[2] == 'launch': return 'app.velunivo.mobile: 1234'
             return ''
-        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'run', side_effect=command) as commands, patch.object(sim, 'diagnostics'), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill') as survival:
+        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'run', side_effect=command) as commands, patch.object(sim, 'diagnostics'), patch.object(sim, 'landscape'), patch.object(sim, 'verify_landscape'), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill') as survival:
             sim.capture(self.devices(), 'iphone')
             self.assertEqual(survival.call_args_list, [unittest.mock.call(1234, 0), unittest.mock.call(1234, 0)])
             self.assertTrue(any(c.args[2] == 'io' for c in commands.call_args_list))

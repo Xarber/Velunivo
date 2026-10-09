@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import subprocess
+import struct
 import time
 import uuid
 from pathlib import Path
@@ -70,6 +71,25 @@ def diagnostics(udid, family):
                 shutil.copy(report, ARTIFACTS / report.name)
 
 
+def landscape(udid):
+    # Rotate the actual Simulator/UI, not the output image.
+    run('open', '-a', 'Simulator', '--args', '-CurrentDeviceUDID', udid)
+    time.sleep(3)
+    run('osascript', '-e', 'tell application "Simulator" to activate', '-e',
+        'tell application "System Events" to tell process "Simulator" to click menu item "Landscape Left" of menu 1 of menu item "Orientation" of menu 1 of menu bar item "Device" of menu bar 1', timeout=30)
+    time.sleep(3)
+
+
+def verify_landscape(path):
+    with path.open('rb') as image:
+        header = image.read(24)
+    if len(header) != 24 or header[:8] != b'\x89PNG\r\n\x1a\n':
+        raise RuntimeError('Simulator did not produce a PNG screenshot')
+    width, height = struct.unpack('>II', header[16:24])
+    if width <= height:
+        raise RuntimeError(f'iPad screenshot must be landscape; got {width} x {height}')
+
+
 def capture(devices, family):
     runtime, template = select_device(devices, family)
     device_type = template.get('deviceTypeIdentifier')
@@ -91,7 +111,11 @@ def capture(devices, family):
         pid = int(match.group(1))
         time.sleep(15)
         os.kill(pid, 0)
+        if family == 'ipad':
+            landscape(udid)
         run('xcrun', 'simctl', 'io', udid, 'screenshot', str(ARTIFACTS / f'{family}.png'))
+        if family == 'ipad':
+            verify_landscape(ARTIFACTS / 'ipad.png')
         diagnostics(udid, family)
         os.kill(pid, 0)
         append_log(family, f'Verified app PID {pid} survived launch and screenshot capture.')
