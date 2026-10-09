@@ -23,3 +23,21 @@ export async function shareTrack(points: Coord[]) {
   if (!await Sharing.isAvailableAsync()) throw new Error('Sharing is unavailable on this device.');
   await Sharing.shareAsync(file.uri, { mimeType: 'application/gpx+xml', UTI: 'com.topografix.gpx' });
 }
+
+// Small, self-contained data URIs persist with the vehicle on all three platforms.
+export async function pickVehiclePhoto(): Promise<string | null> {
+  const result = await DocumentPicker.getDocumentAsync({ type: ['image/png', 'image/jpeg', 'image/webp'], copyToCacheDirectory: true, base64: false });
+  if (result.canceled) return null;
+  const asset = result.assets[0];
+  const mime = asset.mimeType || (/\.png$/i.test(asset.name) ? 'image/png' : /\.webp$/i.test(asset.name) ? 'image/webp' : 'image/jpeg');
+  if (!['image/png', 'image/jpeg', 'image/webp'].includes(mime)) throw new Error('Choose a PNG, JPEG or WebP image.');
+  if ((asset.size ?? 0) > 1_000_000) throw new Error('Choose an image smaller than 1 MB.');
+  if (Platform.OS === 'web') {
+    const blob = await (await fetch(asset.uri)).blob();
+    if (blob.size > 1_000_000) throw new Error('Choose an image smaller than 1 MB.');
+    return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(new Error('Could not read image.')); reader.readAsDataURL(blob); });
+  }
+  const file = new File(asset.uri);
+  if (file.size > 1_000_000) throw new Error('Choose an image smaller than 1 MB.');
+  return `data:${mime};base64,${await file.base64()}`;
+}

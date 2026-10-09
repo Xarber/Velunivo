@@ -1,25 +1,28 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { defaultProfile, Profile, Route } from '../core/types';
-interface Store { profile: Profile; updateProfile: (p: Partial<Profile>) => void; routes: Route[]; setRoutes: (r: Route[]) => void; selected: Route | null; select: (r: Route | null) => void; saved: Route[]; save: (r: Route) => Promise<void>; remove: (id: string) => Promise<void>; ready: boolean; }
+import { Vehicle, Route } from '../core/types';
+import { createVehicle, defaultGarage, removeVehicle, restoreGarage } from '../core/vehicles';
+interface Store { profile: Vehicle; vehicles: Vehicle[]; chooseVehicle: (id: string) => void; addVehicle: (kind: Vehicle['kind']) => void; deleteVehicle: (id: string) => void; updateProfile: (p: Partial<Vehicle>, id?: string) => void; vehicleLocked: boolean; lockVehicle: (locked: boolean) => void; routes: Route[]; setRoutes: (r: Route[]) => void; selected: Route | null; select: (r: Route | null) => void; saved: Route[]; save: (r: Route) => Promise<void>; remove: (id: string) => Promise<void>; ready: boolean; }
 const Context = createContext<Store>(null!);
 export const useStore = () => useContext(Context);
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [profile, setProfile] = useState(defaultProfile), [routes, setRoutes] = useState<Route[]>([]);
+  const [garage, setGarage] = useState(defaultGarage), [routes, setRoutes] = useState<Route[]>([]);
+  const [vehicleLocked, lockVehicle] = useState(false);
   const [selected, select] = useState<Route | null>(null), [saved, setSaved] = useState<Route[]>([]), [ready, setReady] = useState(false);
   useEffect(() => { (async () => {
     try {
-      const [p, r] = await Promise.all([AsyncStorage.getItem('profile-v1'), AsyncStorage.getItem('routes-v1')]);
-      if (p) { const v = JSON.parse(p); if (v.maxSpeed > 0 && v.maxSpeed <= 60 && v.ridingLimit > 0 && v.ridingLimit <= 60 && v.cruiseFactor >= .2 && v.cruiseFactor <= 1 && v.acceleration >= .1 && v.acceleration <= 4 && v.stopDelay >= 0 && v.stopDelay <= 120) setProfile({ ...defaultProfile, ...v }); }
+      const [p, r, g] = await Promise.all([AsyncStorage.getItem('profile-v1'), AsyncStorage.getItem('routes-v1'), AsyncStorage.getItem('vehicles-v1')]);
+      setGarage(restoreGarage(g, p));
       if (r) { const v = JSON.parse(r); if (Array.isArray(v) && v.every(x => Array.isArray(x.coordinates) && x.coordinates.length >= 2 && Array.isArray(x.steps))) setSaved(v.filter(x => x.id !== 'illustrative-track')); }
     } catch { /* Corrupt local data: keep an empty planner. */ }
     setReady(true);
   })(); }, []);
-  useEffect(() => { if (ready) AsyncStorage.setItem('profile-v1', JSON.stringify(profile)).catch(console.warn); }, [profile, ready]);
+  useEffect(() => { if (ready) AsyncStorage.setItem('vehicles-v1', JSON.stringify(garage)).catch(console.warn); }, [garage, ready]);
   async function save(route: Route) {
     const next = [{ ...route, savedAt: Date.now() }, ...saved.filter(r => r.id !== route.id)].slice(0, 20);
     await AsyncStorage.setItem('routes-v1', JSON.stringify(next)); setSaved(next);
   }
   async function remove(id: string) { const next = saved.filter(r => r.id !== id); await AsyncStorage.setItem('routes-v1', JSON.stringify(next)); setSaved(next); }
-  return <Context.Provider value={{ profile, updateProfile: p => setProfile(v => ({ ...v, ...p })), routes, setRoutes, selected, select, saved, save, remove, ready }}>{children}</Context.Provider>;
+  const profile = garage.vehicles.find(v => v.id === garage.activeId) || garage.vehicles[0];
+  return <Context.Provider value={{ profile, vehicles: garage.vehicles, vehicleLocked, lockVehicle, chooseVehicle: id => !vehicleLocked && setGarage(g => g.vehicles.some(v => v.id === id) ? { ...g, activeId: id } : g), addVehicle: kind => { if (vehicleLocked) return; const v = createVehicle(kind); setGarage(g => ({ vehicles: [...g.vehicles, v], activeId: v.id })); }, deleteVehicle: id => !vehicleLocked && setGarage(g => removeVehicle(g, id)), updateProfile: (p, id) => !vehicleLocked && setGarage(g => ({ ...g, vehicles: g.vehicles.map(v => v.id === (id || g.activeId) ? { ...v, ...p, id: v.id } : v) })), routes, setRoutes, selected, select, saved, save, remove, ready }}>{children}</Context.Provider>;
 }

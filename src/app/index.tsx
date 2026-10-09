@@ -7,6 +7,8 @@ import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import { motionProps, useReducedMotion } from '../components/WebMotion';
 import RideMap from '../components/RideMap';
+import VehicleSelector from '../components/VehicleSelector';
+import { batteryLabel } from '../core/vehicles';
 import ScheduleControl from '../components/ScheduleControl';
 import { scheduleSummary } from '../core/schedule';
 import EndpointPicker from '../components/EndpointPicker';
@@ -33,7 +35,7 @@ export default function Explore() {
   const [departure, setDeparture] = useState('');
   const [scheduleMode, setScheduleMode] = useState<'depart' | 'arrive'>('depart');
   useEffect(() => { if (serverUrl) fetch(`${serverUrl}/health`).then(r => r.json()).then(r => setTrafficAvailable(!!r.trafficConfigured)).catch(() => {}); }, []);
-  const { routes, selected, select, setRoutes, profile, save, ready } = useStore();
+  const { routes, selected, select, setRoutes, profile, save, ready, lockVehicle } = useStore();
   const [planner, setPlanner] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState('');
   const [start, setStart] = useState(''), [end, setEnd] = useState('');
   const [startPoint, setStartPoint] = useState<Coord | undefined>(), [endPoint, setEndPoint] = useState<Coord | undefined>();
@@ -41,6 +43,7 @@ export default function Explore() {
   const [picking, setPicking] = useState<'start' | 'end' | null>(null), [follow, setFollow] = useState(true);
   const ride = useRide(selected, profile), motion = useMotion(profile.motion && ride.mode === 'gps');
   const active = ride.mode !== 'idle', g = ride.progress;
+  useEffect(() => { lockVehicle(active); return () => lockVehicle(false); }, [active, lockVehicle]);
   const fitPadding = useMemo(() => wide && !picking ? { top: 90, bottom: 45, left: 430, right: 45 } : { top: 120, bottom: picking ? 60 : Math.min(panelHeight + 30, mapHeight * .66), left: 35, right: 35 }, [wide, picking, panelHeight, mapHeight]);
   const eta = selected ? estimate(selected, profile, active && g?.valid && !g.offRoute ? g.along : 0) : null;
   const run = async (task: () => Promise<unknown>) => { try { await task(); } catch (e) { notify(e instanceof Error ? e.message : String(e)); } };
@@ -80,6 +83,7 @@ export default function Explore() {
       {active ? <View style={[styles.card, { backgroundColor: p.card }]}>
         <View style={{ flexDirection: 'row', gap: 14, alignItems: 'center' }}><Ionicons name={g?.next?.sign === -2 ? 'arrow-back' : g?.next?.sign === 2 ? 'arrow-forward' : 'arrow-up'} size={36} color={p.accent} /><View style={{ flex: 1 }}><Text style={{ color: p.accent, fontWeight: '700', fontSize: 13 }}>{g?.valid && !g.offRoute && g.maneuverMeters !== undefined ? `${Math.round(g.maneuverMeters)} m` : 'RIDE GUIDANCE'}</Text><Text style={{ color: p.text, fontSize: 21, fontWeight: '700' }}>{g?.arrived ? 'You have arrived' : g?.offRoute ? 'Off route' : !g?.valid ? 'Waiting for GPS' : g.next?.text || 'Follow the track'}</Text></View></View>
         <Text style={{ color: g?.offRoute ? '#C75A36' : p.muted }}>{ride.status}</Text>
+        <Text style={{ color: p.muted, fontSize: 12 }}>{profile.icon} {profile.name}{eta ? ` · Remaining distance uses ${batteryLabel(eta.meters, profile)}` : ''}</Text>
         <View style={s.metrics}><Metric label="km/h" value={ride.fix ? (ride.fix.speed * 3.6).toFixed(0) : '—'} /><Metric label="remaining" value={eta ? km(eta.meters) : '—'} /><Metric label="estimate" value={eta ? minutes(eta.seconds) : '—'} /></View>
         {motion.status !== 'Off' && <Text style={{ color: p.muted, fontSize: 12 }}>Motion: {motion.status} · {motion.acceleration.toFixed(2)} g · {motion.rotation.toFixed(2)} rad/s</Text>}
         {g?.offRoute && <Button title="End ride & replan" secondary onPress={() => { ride.stop(); if (ride.fix) { setStart(`${ride.fix.coordinate[1]}, ${ride.fix.coordinate[0]}`); setStartPoint(ride.fix.coordinate); } setPlanner(true); }} />}
@@ -87,8 +91,11 @@ export default function Explore() {
       </View> : <>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}><Text style={{ color: p.text, fontSize: 23, fontWeight: '800' }}>Your next ride</Text><Text style={{ color: p.accent, fontSize: 12, fontWeight: '700' }}>{Math.min(profile.maxSpeed, profile.ridingLimit)} KM/H CAP</Text></View>
         {routes.length === 0 && <View style={[styles.card, { backgroundColor: p.card }]}><Text style={{ color: p.text, fontSize: 18, fontWeight: '700' }}>Where will you ride?</Text><Text style={{ color: p.muted, lineHeight: 20 }}>Plan a route or import your own GPX to see riding estimates. Imported tracks are previews; road access and turns are not verified.</Text></View>}
+        <VehicleSelector />
         {routes.map(r => { const e = estimate(r, profile), chosen = r.id === selected?.id; return <Pressable {...motionProps('route')} accessibilityRole="button" accessibilityLabel={`${r.name}, ${minutes(e.seconds)}`} accessibilityState={{ selected: chosen }} key={r.id} onPress={() => { select(r); void Haptics.selectionAsync(); }} style={[styles.card, { backgroundColor: p.card, borderWidth: 2, borderColor: chosen ? p.accent : 'transparent' }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><View style={[s.round, { backgroundColor: p.bg }]}><Ionicons name={r.kind === 'bike' ? 'bicycle' : r.kind === 'car' ? 'car-outline' : 'trail-sign-outline'} size={24} color={p.accent} /></View><View style={{ flex: 1 }}><Text style={{ color: p.text, fontSize: 17, fontWeight: '700' }}>{r.name}</Text><Text style={{ color: p.muted, marginTop: 3 }}>{km(e.meters)} · {r.source === 'gpx' ? 'Track only' : 'Access unverified'}</Text></View><View style={{ alignItems: 'flex-end' }}><Text style={{ color: p.text, fontSize: 25, fontWeight: '800' }}>{minutes(e.seconds)}</Text><Text style={{ color: p.muted, fontSize: 11 }}>minimum {minutes(e.minimumSeconds)}</Text></View></View>
+          <Text style={{ color: p.muted, fontSize: 12 }}>{batteryLabel(e.meters, profile)}</Text>
+          {r.source === 'graphhopper' && r.plannedCap !== Math.min(profile.maxSpeed, profile.ridingLimit) && <Text style={{ color: '#C75A36', fontSize: 12 }}>Speed settings changed. Replan to update road speeds, alternatives and ETA.</Text>}
         </Pressable>; })}
         {selected?.warnings.map(w => <Text key={w} style={{ color: p.muted, fontSize: 12, lineHeight: 18 }}>{w}</Text>)}
         {error !== '' && <Text accessibilityRole="alert" style={{ color: '#C75A36', lineHeight: 20 }}>{error}</Text>}
@@ -107,7 +114,7 @@ export default function Explore() {
       <Text style={[styles.subtitle, { color: p.muted }]}>Compare bicycle and car-road candidates at your riding speed. Search an address and select a result, use your location, or pick either endpoint on the map. Coordinates also work.</Text>
       <EndpointPicker label="Start" value={start} onChange={v => { setStart(v); setStartPoint(undefined); }} onSelect={(label, c) => { setStart(label); setStartPoint(c); }} onLocation={() => void run(useLocation)} onMap={() => { setPicking('start'); setPlanner(false); }} />
       <EndpointPicker label="Destination" value={end} onChange={v => { setEnd(v); setEndPoint(undefined); }} onSelect={(label, c) => { setEnd(label); setEndPoint(c); }} onMap={() => { setPicking('end'); setPlanner(false); }} />
-      <View style={[styles.card, { backgroundColor: p.card }]}><Text style={{ color: p.text, fontWeight: '700' }}>{profile.name}</Text><Text style={{ color: p.muted }}>Hardware {profile.maxSpeed} km/h · Riding limit {profile.ridingLimit} km/h</Text><Text style={{ color: p.muted, fontSize: 12 }}>Avoid motorways, trunk roads, steps, ferries and known roads above 50 km/h. Scooter access and urban status need review.</Text></View>
+      <View style={[styles.card, { backgroundColor: p.card }]}><VehicleSelector /><Text style={{ color: p.muted }}>Hardware {profile.maxSpeed} km/h · Riding limit {profile.ridingLimit} km/h</Text><Text style={{ color: p.muted, fontSize: 12 }}>Avoid motorways, trunk roads, steps, ferries and known roads above 50 km/h. Scooter access and urban status need review.</Text></View>
       {busy && <ActivityIndicator color={p.accent} />}{!!error && <Text style={{ color: '#C75A36' }}>{error}</Text>}
       <Button title={busy ? 'Finding routes…' : 'Compare routes'} disabled={busy} onPress={() => void plan()} />
     </ScrollView></SafeAreaView></View></Modal>

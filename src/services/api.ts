@@ -7,7 +7,7 @@ export async function fetchRoute(start: Coord, end: Coord, kind: 'bike' | 'car',
   const { response, body } = await requestJson(`${serverUrl.replace(/\/$/, '')}/route`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ start, end, kind, maxSpeed: profile.maxSpeed, ridingLimit: profile.ridingLimit }) });
   if (!response.ok) throw new Error(body.error || `Routing error ${response.status}`);
   if (!body.paths?.[0]) throw new Error('No route found.');
-  return fromGraphHopper(body.paths[0], kind);
+  return { ...fromGraphHopper(body.paths[0], kind), plannedCap: Math.min(profile.maxSpeed, profile.ridingLimit) };
 }
 
 export interface AddressResult { label: string; coordinate: Coord; }

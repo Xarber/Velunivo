@@ -12,8 +12,8 @@ test('distance uses the polyline, not endpoint distance', () => {
   const loop = cumulative([[0, 0], [.01, 0], [0, 0]]); assert.ok(loop.at(-1)! > 2200);
 });
 test('ETA respects hardware capability and local cap independently', () => {
-  const legal = estimate(track, defaultProfile), fast = estimate(track, { ...defaultProfile, ridingLimit: 35 });
-  assert.equal(legal.cap, 20); assert.equal(fast.cap, 35); assert.ok(fast.seconds < legal.seconds);
+  const legal = estimate(track, defaultProfile), fast = estimate(track, { ...defaultProfile, maxSpeed: 35, ridingLimit: 35 });
+  assert.equal(legal.cap, 25); assert.equal(fast.cap, 35); assert.ok(fast.seconds < legal.seconds);
   const slow = estimate(track, { ...defaultProfile, maxSpeed: 10 }); assert.equal(slow.cap, 10);
   assert.ok(legal.seconds >= legal.minimumSeconds);
 });
@@ -41,7 +41,7 @@ test('coordinate entry uses latitude/longitude but provider uses longitude/latit
   assert.deepEqual(parseCoordinate('45.5, 9.2'), [9.2, 45.5]); assert.throws(() => parseCoordinate('45, ')); assert.throws(() => parseCoordinate('91, 0'));
 });
 test('custom models apply exclusions and cap to both road candidates', () => {
-  for (const kind of ['bike', 'car'] as const) { const r = routeRequest([9, 45], [9.01, 45], kind, defaultProfile); assert.equal(r.profile, kind); assert.equal(r.custom_model.speed[0].limit_to, '20'); assert.equal(r['ch.disable'], true); assert.ok(r.custom_model.priority.some(x => x.if.includes('STEPS') && x.multiply_by === '0')); }
+  for (const kind of ['bike', 'car'] as const) { const r = routeRequest([9, 45], [9.01, 45], kind, defaultProfile); assert.equal(r.profile, kind); assert.equal(r.custom_model.speed[0].limit_to, '25'); assert.equal(r['ch.disable'], true); assert.ok(r.custom_model.priority.some(x => x.if.includes('STEPS') && x.multiply_by === '0')); }
 });
 test('provider geometry and known excluded roads are validated', () => {
   const path = { points: { coordinates: track.coordinates }, details: { road_class: [[0, 2, 'RESIDENTIAL']] }, instructions: [{ text: 'Turn right', sign: 2, interval: [1, 2], distance: 100 }] };

@@ -5,14 +5,16 @@ export interface Step { text: string; sign: number; index: number; distance: num
 export interface Route {
   id: string; name: string; kind: RouteKind; coordinates: Coord[];
   steps: Step[]; details: Record<string, Detail[]>; source: 'graphhopper' | 'gpx';
-  warnings: string[]; savedAt?: number;
+  warnings: string[]; savedAt?: number; plannedCap?: number;
 }
 export interface Profile {
   name: string; maxSpeed: number; ridingLimit: number; cruiseFactor: number;
   acceleration: number; stopDelay: number; voice: boolean; motion: boolean;
 }
 export const defaultProfile: Profile = {
-  name: 'My scooter', maxSpeed: 35, ridingLimit: 20, cruiseFactor: 0.8,
+  name: 'E-scooter', maxSpeed: 25, ridingLimit: 25, cruiseFactor: 0.8,
   acceleration: 0.8, stopDelay: 12, voice: true, motion: false,
 };
 export interface Fix { coordinate: Coord; accuracy: number; speed: number; timestamp: number; }
+
+export interface Vehicle extends Profile { id: string; kind: 'escooter' | 'ebike'; rangeKm: number | null; rangeUnit: 'km' | 'mi'; icon: string; photo: string | null; }
