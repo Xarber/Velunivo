@@ -89,3 +89,7 @@ TypeScript provider regressions now assert that all flagged road categories rema
 ### 0.1.10 Liquid Glass safe area
 
 Lint/typecheck and 40 app tests pass; web and iOS JavaScript exports pass. Native SafeAreaView integration matches the installed SDK 57 interfaces. The shared Liquid Glass capability gate leaves non-native-tab layouts without a wrapper or additional inset. The iPhone screenshot is evidence of the original overlap, not of the fix; new device/runner verification is pending.
+
+### 0.1.11 screenshot fallback and build speed
+
+40 app and 15 Python tests pass, lint/typecheck pass, edited workflow YAML parses. Historical fallback was tested against the real public v0.1.2 iPad screenshot and recorded its original portrait dimensions. Runner diagnosis found the selected beta path lacked Simulator.app; the new optional GUI lookup/fallback is source/unit-checked, not yet a successful new capture. Native compile cache gains and release fallback need replacement workflow execution. Screenshot/launch verification is now advisory per user instruction and cannot block successfully compiled binaries; release notes distinguish fresh, reused and unavailable screenshots.

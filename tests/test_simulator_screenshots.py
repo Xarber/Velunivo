@@ -32,6 +32,12 @@ class SimulatorVerificationTests(unittest.TestCase):
                 sim.landscape('owned-device')
                 self.assertEqual(commands.call_args_list[0].args, ('open', '-a', str(app), '--args', '-CurrentDeviceUDID', 'owned-device'))
 
+    def test_missing_simulator_gui_does_not_block_headless_install(self):
+        with patch.dict(sim.os.environ, {'DEVELOPER_DIR': '/missing/beta/Developer'}), patch.object(Path, 'is_dir', return_value=False):
+            self.assertFalse(sim.open_simulator('owned-device'))
+            with self.assertRaisesRegex(RuntimeError, 'rotate the iPad'):
+                sim.landscape('owned-device')
+
     def devices(self):
         return {'com.apple.CoreSimulator.SimRuntime.iOS-26-4': [
             {'name': 'iPad Pro', 'isAvailable': True, 'deviceTypeIdentifier': 'ipad-type', 'udid': 'existing-ipad'}],
@@ -58,31 +64,36 @@ class SimulatorVerificationTests(unittest.TestCase):
         self.assertTrue(runtime.endswith('iOS-27-2'))
         self.assertEqual(device['deviceTypeIdentifier'], 'air-type')
 
-    def test_install_timeout_retries_once_after_owned_device_reset(self):
+    def test_full_capture_retries_once_and_removes_failed_frame(self):
         calls = []
-        def command(*args, **kwargs):
-            calls.append(args)
-            if args[2] == 'install' and sum(c[2] == 'install' for c in calls) == 1:
-                raise subprocess.TimeoutExpired(args, 300, output=b'installd stalled')
-            return ''
-        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'open_simulator') as opened, patch.object(sim, 'run', side_effect=command):
-            sim.boot_and_install('owned-device', 'ipad')
-            self.assertEqual(opened.call_count, 2)
-            self.assertEqual([c[2] for c in calls], ['boot', 'bootstatus', 'install', 'shutdown', 'erase', 'boot', 'bootstatus', 'install'])
-            self.assertTrue(all(c[3] == 'owned-device' for c in calls))
-            self.assertIn('installd stalled', (Path(folder) / 'ipad-simulator.log').read_text())
+        with tempfile.TemporaryDirectory() as folder:
+            image = Path(folder) / 'ipad.png'
+            def attempt(devices, family):
+                calls.append((devices, family))
+                if len(calls) == 1:
+                    image.write_bytes(b'partial frame')
+                    raise subprocess.TimeoutExpired('install', 60)
+                self.assertFalse(image.exists())
+                image.write_bytes(b'fresh frame')
+            with patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'capture_once', side_effect=attempt):
+                sim.capture(self.devices(), 'ipad')
+            self.assertEqual(len(calls), 2)
+            self.assertIn('fresh', (Path(folder) / 'ipad-screenshot.json').read_text())
 
-    def test_second_install_failure_remains_fatal(self):
-        installs = []
-        def command(*args, **kwargs):
-            if args[2] == 'install':
-                installs.append(args)
-                raise subprocess.TimeoutExpired(args, 300)
-            return ''
-        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'open_simulator'), patch.object(sim, 'run', side_effect=command):
+    def test_second_capture_failure_remains_fatal_for_fallback_step(self):
+        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'capture_once', side_effect=subprocess.TimeoutExpired('install', 60)) as attempts:
             with self.assertRaises(subprocess.TimeoutExpired):
-                sim.boot_and_install('owned-device', 'ipad')
-            self.assertEqual(len(installs), 2)
+                sim.capture(self.devices(), 'ipad')
+            self.assertEqual(attempts.call_count, 2)
+            self.assertFalse((Path(folder) / 'ipad.png').exists())
+
+    def test_install_has_short_bounded_timeouts_and_opens_ui_before_readiness(self):
+        calls = []
+        with patch.object(sim, 'run', side_effect=lambda *args, **kw: calls.append((args, kw))), patch.object(sim, 'open_simulator', side_effect=lambda udid: calls.append(('UI', udid))):
+            sim.boot_and_install('owned-device', 'ipad')
+        self.assertEqual(calls[1], ('UI', 'owned-device'))
+        self.assertEqual(calls[2][1]['timeout'], 150)
+        self.assertEqual(calls[3][1]['timeout'], 60)
 
     def test_process_exit_blocks_screenshot_and_cleans_only_fresh_device(self):
         calls = []
@@ -93,7 +104,7 @@ class SimulatorVerificationTests(unittest.TestCase):
             return ''
         with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'open_simulator'), patch.object(sim, 'run', side_effect=command), patch.object(sim, 'diagnostics'), patch.object(sim, 'landscape'), patch.object(sim, 'verify_landscape'), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill', side_effect=ProcessLookupError):
             with self.assertRaises(ProcessLookupError):
-                sim.capture(self.devices(), 'ipad')
+                sim.capture_once(self.devices(), 'ipad')
         self.assertNotIn('io', [c[2] for c in calls])
         self.assertEqual(calls[-2:], [('xcrun', 'simctl', 'shutdown', 'owned-device'), ('xcrun', 'simctl', 'delete', 'owned-device')])
 
@@ -103,7 +114,7 @@ class SimulatorVerificationTests(unittest.TestCase):
             if args[2] == 'launch': return 'app.velunivo.mobile: 1234'
             return ''
         with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'open_simulator'), patch.object(sim, 'run', side_effect=command) as commands, patch.object(sim, 'diagnostics'), patch.object(sim, 'landscape'), patch.object(sim, 'verify_landscape'), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill') as survival:
-            sim.capture(self.devices(), 'iphone')
+            sim.capture_once(self.devices(), 'iphone')
             self.assertEqual(survival.call_args_list, [unittest.mock.call(1234, 0), unittest.mock.call(1234, 0)])
             self.assertTrue(any(c.args[2] == 'io' for c in commands.call_args_list))
             calls = [c.args for c in commands.call_args_list]

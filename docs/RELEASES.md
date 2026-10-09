@@ -19,9 +19,9 @@ The workflow builds:
 
 - Android release APK with SDK Manager's highest stable integer API and build-tools package. It uses command-line tools shared with Android Studio; no IDE is needed on the runner.
 - iPhone archive on `xcode-27`, selecting the newest installed beta by DEVELOPER_DIR. It does not silently choose stable Xcode or download Xcode. The unsigned .app is packed inside Payload in an IPA.
-- Apple Silicon iOS Simulator .app.zip. Simulators install .app bundles, not iPhone IPAs. No Simulator runtime is downloaded; a missing installed iPhone/iPad runtime fails the job.
+- Apple Silicon iOS Simulator .app.zip. Simulators install .app bundles, not iPhone IPAs. No Simulator runtime is downloaded; a missing installed runtime triggers historical screenshot fallback without blocking compiled binaries.
 - Web static export ZIP.
-- iPhone/iPad screenshots captured from the built Simulator app, real byte sizes, version/build/minimum OS/permission metadata, build-tool records, conventional release notes and SHA256SUMS.
+- iPhone/iPad screenshots captured from the built Simulator app (or explicitly disclosed historical screenshots on capture failure), real byte sizes, version/build/minimum OS/permission metadata, build-tool records, conventional release notes and SHA256SUMS.
 
 The native jobs must succeed before binaries are published and the source feed is advertised. Packaging an unsigned IPA does not prove successful sideloading; physical-device installation and behavior remain a separate check.
 
@@ -43,6 +43,8 @@ Later signing by rebase changes commit hashes. Coordinate any force push and dec
 
 [Open Velunivo’s source in AltDirect](https://altdirect.app/?url=https%3A%2F%2Fgithub.com%2FXarber%2FVelunivo%2Freleases%2Fdownload%2F1.0%2Fapps.json). Choose your installed sideloading app; no redirect target is forced. This points to the fixed 1.0/apps.json feed, so the link stays valid across app releases. [Official URL parameter documentation](https://github.com/StikDebug/altdirect#creating-your-link).
 
-Release preparation pins an unsigned lightweight version tag to the exact build commit before compilation. Existing tags at a different commit fail instead of being moved. Publication requires that tag. Simulator verification uses independent runners; iPad rotates to landscape and PNG dimensions are checked. Both launch checks remain mandatory.
+Release preparation pins an unsigned lightweight version tag to the exact build commit before compilation. Existing tags at a different commit fail instead of being moved. Publication requires that tag. Simulator verification uses independent runners; iPad rotates to landscape and PNG dimensions are checked. Fresh screenshots require both PID survival checks and actual landscape orientation on iPad. Screenshot verification is best effort: two bounded full capture attempts, then reuse the latest available published image. A screenshot job failure does not block publication when preparation and all binary/web builds succeed. Reused or unavailable images are disclosed in release notes, with source version and original orientation. If historical lookup fails, AltSource retains its prior per-device screenshot URLs.
 
 Simulator screenshots pregrant foreground location and set a public Milan test location only on the fresh disposable QA Simulator, before launching the app. This avoids capturing a system permission alert. It does not modify a physical device or prove physical GPS performance. The 0.1.5 run was cancelled for a routing fix; its tag stays pinned. Use 0.1.6 for the replacement release.
+
+Build speed: Android restores Gradle dependencies/build state with the official setup-gradle action's basic open-source cache provider and enables the local build cache. iOS optionally enables SDK 57 C++ ccache on runners only, retaining compiler-checked entries in a 1 GB cache separated by Xcode/architecture. Failed ccache installation falls back to normal compilation. Cold cache runs still compile normally; report measured gains only after runner execution. Early unsigned IPA upload remains before Simulator compilation.

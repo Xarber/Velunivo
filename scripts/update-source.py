@@ -12,10 +12,13 @@ app=next((x for x in source['apps'] if x['bundleIdentifier']==meta['bundleIdenti
 if app is None:
     app={'bundleIdentifier':meta['bundleIdentifier'],'versions':[]};source['apps'].append(app)
 app.update({'name':'Velunivo','developerName':a.repo.split('/')[0],'subtitle':'Your route. Your riding speed.','localizedDescription':'Compare bicycle and car-road candidates with saved e-scooter/e-bike profiles, distinct icons, custom pictures and approximate trip battery use from your entered range. Search addresses or choose either endpoint on the map. Apple Maps on iPhone/iPad, key-free OpenFreeMap on Android/web, and downloadable-map support. Compass/travel-direction navigation, optional tilted perspective, a temporary full-route overview, persistent speed/road-limit badges, a compact arrival/time-left/distance-left card and global km/miles settings, practical and minimum ETAs, native date/time pickers and depart-at/arrive-by planning without traffic simulation, GPX import/export and route comparison between track endpoints, foreground GPS guidance, spoken turn instructions, local saved routes, optional licensed offline map packs, motion readings and an optional live traffic layer. Fullscreen map with expandable phone controls and floating iPad/desktop planning panels. Address search and live routing use public Photon/Valhalla providers by default; an optional server supports GraphHopper. Traffic needs TomTom. Scooter access is unverified; inspect signs and local rules. Offline maps do not include an offline routing engine.','iconURL':stable+'icon.png','tintColor':'007F6D','category':'utilities'})
-shots={}
+shots=dict(app.get('screenshots', {}))
 for device in ['iphone','ipad']:
     image=folder/f'{device}.png'
-    w,h=struct.unpack('>II',image.read_bytes()[16:24]);shots[device]=[{'imageURL':base+image.name,'width':w,'height':h}]
+    if image.exists():
+        w,h=struct.unpack('>II',image.read_bytes()[16:24]);shots[device]=[{'imageURL':base+image.name,'width':w,'height':h}]
+    # If capture and historical lookup failed, retain the previous source URL.
+
 app['screenshots']=shots;app['appPermissions']=meta['appPermissions']
 notes=(folder/'release-notes.md').read_text() if (folder/'release-notes.md').exists() else f'Velunivo {meta["version"]}'
 version={k:meta[k] for k in ['version','buildVersion','size','minOSVersion']};version.update({'date':datetime.datetime.now(datetime.timezone.utc).isoformat(),'downloadURL':base+'Velunivo.ipa','localizedDescription':notes})

@@ -14,9 +14,13 @@ ARTIFACTS = Path('artifacts')
 BUNDLE = 'app.velunivo.mobile'
 
 
-def run(*args, timeout=300):
+def run(*args, timeout=60):
     print('+ ' + ' '.join(args), flush=True)
-    return subprocess.check_output(args, text=True, stderr=subprocess.STDOUT, timeout=timeout).strip()
+    started = time.monotonic()
+    try:
+        return subprocess.check_output(args, text=True, stderr=subprocess.STDOUT, timeout=timeout).strip()
+    finally:
+        print(f'Completed after {time.monotonic() - started:.1f}s (limit {timeout}s)', flush=True)
 
 
 def select_device(devices, family):
@@ -49,29 +53,17 @@ def best_effort(*args, timeout=30):
 
 
 def boot_and_install(udid, family):
-    # Retry a beta-runtime installd stall once on an erased, owned QA device.
-    for attempt in (1, 2):
-        try:
-            run('xcrun', 'simctl', 'boot', udid)
-            open_simulator(udid)
-            run('xcrun', 'simctl', 'bootstatus', udid, '-b')
-            run('xcrun', 'simctl', 'install', udid, 'artifacts/Velunivo-simulator.app')
-            return
-        except (subprocess.TimeoutExpired, subprocess.CalledProcessError) as error:
-            output = error.output or ''
-            if isinstance(output, bytes):
-                output = output.decode(errors='replace')
-            append_log(family, f'Boot/install attempt {attempt} failed: {error}\n{output}')
-            if attempt == 2:
-                raise
-            run('xcrun', 'simctl', 'shutdown', udid, timeout=60)
-            run('xcrun', 'simctl', 'erase', udid, timeout=60)
+    # Retry the whole capture on a fresh device, not a stalled installd instance.
+    run('xcrun', 'simctl', 'boot', udid, timeout=30)
+    open_simulator(udid)
+    run('xcrun', 'simctl', 'bootstatus', udid, '-b', timeout=150)
+    run('xcrun', 'simctl', 'install', udid, 'artifacts/Velunivo-simulator.app', timeout=60)
 
 
 def diagnostics(udid, family):
     logs = best_effort('xcrun', 'simctl', 'spawn', udid, 'log', 'show', '--last', '2m',
-                       '--style', 'compact', '--predicate', 'process == "Velunivo" OR process == "installd" OR process == "SpringBoard"', timeout=20)
-    host_logs = best_effort('log', 'show', '--last', '2m', '--style', 'compact', '--predicate', 'process == "Simulator" OR process == "com.apple.CoreSimulator.CoreSimulatorService"', timeout=20)
+                       '--style', 'compact', '--predicate', 'process == "Velunivo" OR process == "installd" OR process == "SpringBoard"', timeout=5)
+    host_logs = best_effort('log', 'show', '--last', '2m', '--style', 'compact', '--predicate', 'process == "Simulator" OR process == "com.apple.CoreSimulator.CoreSimulatorService"', timeout=5)
     (ARTIFACTS / f'{family}-host.log').write_text(host_logs or 'Optional host log collection failed or timed out.\n')
     (ARTIFACTS / f'{family}-launch.log').write_text(logs or 'Optional Simulator log collection failed or timed out.\n')
     for folder in [Path.home() / 'Library/Logs/DiagnosticReports',
@@ -82,18 +74,24 @@ def diagnostics(udid, family):
 
 
 def open_simulator(udid):
-    # Attach the selected Xcode UI before boot readiness/install, rather than
-    # leaving the beta iPad headless until after app launch.
     developer = Path(os.environ.get('DEVELOPER_DIR') or run('xcode-select', '-p'))
-    simulator = developer / 'Applications/Simulator.app'
-    if not simulator.is_dir():
-        raise RuntimeError(f'Simulator is missing from selected Xcode: {simulator}')
-    run('open', '-a', str(simulator), '--args', '-CurrentDeviceUDID', udid)
+    preferred = developer / 'Applications/Simulator.app'
+    alternatives = [Path('/Applications/Simulator.app'),
+                    *sorted(Path('/Applications').glob('Xcode*.app/Contents/Developer/Applications/Simulator.app'), reverse=True)]
+    simulator = next((p for p in [preferred, *alternatives] if p.is_dir()), None)
+    if simulator is None:
+        # Some beta runner images provide SDK/CLI tools without that beta's GUI.
+        # Keep the selected beta DEVELOPER_DIR and try headless verification.
+        print(f'::warning::No installed Simulator UI found (selected developer: {developer}); using headless capture.', flush=True)
+        return False
+    run('open', '-a', str(simulator), '--args', '-CurrentDeviceUDID', udid, timeout=30)
+    return True
 
 
 def landscape(udid):
     # Rotate the actual Simulator/UI, not the output image.
-    open_simulator(udid)
+    if not open_simulator(udid):
+        raise RuntimeError('No installed Simulator UI is available to rotate the iPad into landscape')
     time.sleep(3)
     run('osascript', '-e', 'tell application "Simulator" to activate', '-e',
         'tell application "System Events" to tell process "Simulator" to click menu item "Landscape Left" of menu 1 of menu item "Orientation" of menu 1 of menu bar item "Device" of menu bar 1', timeout=30)
@@ -110,7 +108,7 @@ def verify_landscape(path):
         raise RuntimeError(f'iPad screenshot must be landscape; got {width} x {height}')
 
 
-def capture(devices, family):
+def capture_once(devices, family):
     runtime, template = select_device(devices, family)
     device_type = template.get('deviceTypeIdentifier')
     if not device_type:
@@ -136,7 +134,7 @@ def capture(devices, family):
         os.kill(pid, 0)
         if family == 'ipad':
             landscape(udid)
-        run('xcrun', 'simctl', 'io', udid, 'screenshot', str(ARTIFACTS / f'{family}.png'))
+        run('xcrun', 'simctl', 'io', udid, 'screenshot', str(ARTIFACTS / f'{family}.png'), timeout=30)
         if family == 'ipad':
             verify_landscape(ARTIFACTS / 'ipad.png')
         diagnostics(udid, family)
@@ -147,8 +145,24 @@ def capture(devices, family):
         diagnostics(udid, family)
         raise
     finally:
-        best_effort('xcrun', 'simctl', 'shutdown', udid, timeout=60)
-        best_effort('xcrun', 'simctl', 'delete', udid, timeout=60)
+        best_effort('xcrun', 'simctl', 'shutdown', udid, timeout=15)
+        best_effort('xcrun', 'simctl', 'delete', udid, timeout=15)
+
+
+def capture(devices, family):
+    # Two complete attempts cover installation, launch, rotation and screenshot.
+    image = ARTIFACTS / f'{family}.png'
+    for attempt in (1, 2):
+        image.unlink(missing_ok=True)
+        try:
+            capture_once(devices, family)
+            (ARTIFACTS / f'{family}-screenshot.json').write_text(json.dumps({'status': 'fresh', 'attempt': attempt}))
+            return
+        except Exception as error:
+            append_log(family, f'Capture attempt {attempt}/2 failed: {error}')
+            if attempt == 2:
+                image.unlink(missing_ok=True)
+                raise
 
 
 def main(argv=None):
