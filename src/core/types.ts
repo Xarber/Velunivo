@@ -15,6 +15,9 @@ export const defaultProfile: Profile = {
   name: 'E-scooter', maxSpeed: 25, ridingLimit: 25, cruiseFactor: 0.8,
   acceleration: 0.8, stopDelay: 12, voice: true, motion: false,
 };
-export interface Fix { coordinate: Coord; accuracy: number; speed: number; timestamp: number; }
+export interface Fix { coordinate: Coord; accuracy: number; speed: number | null; heading?: number; timestamp: number; }
 
 export interface Vehicle extends Profile { id: string; kind: 'escooter' | 'ebike'; rangeKm: number | null; rangeUnit: 'km' | 'mi'; icon: string; photo: string | null; }
+
+export interface NavigationOptions { compass: boolean; tilted: boolean; unit: 'km' | 'mi'; }
+export const defaultNavigationOptions: NavigationOptions = { compass: true, tilted: false, unit: 'km' };

@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import * as Location from 'expo-location';
 import * as Speech from 'expo-speech';
 import { Coord, Fix, Profile, Route } from '../core/types';
+import { bearing } from '../core/rideView';
 import { guidance } from '../core/navigation';
 import { cumulative, pointAt } from '../core/geo';
 export function useRide(route: Route | null, profile: Profile) {
@@ -39,7 +40,7 @@ export function useRide(route: Route | null, profile: Profile) {
     if (mode === 'simulation') {
       let meters = 0; const total = cumulative(route.coordinates).at(-1)!;
       accept({ coordinate: route.coordinates[0], accuracy: 3, speed: 0, timestamp: Date.now() });
-      timer = setInterval(() => { if (paused) return; meters = Math.min(total, meters + 35); accept({ coordinate: pointAt(route.coordinates, meters), accuracy: 3, speed: 8, timestamp: Date.now() }); }, 500);
+      timer = setInterval(() => { if (paused) return; const speed = Math.min(profileRef.current.maxSpeed, profileRef.current.ridingLimit) * profileRef.current.cruiseFactor / 3.6; const before = pointAt(route.coordinates, meters); meters = Math.min(total, meters + speed * .5); const coordinate = pointAt(route.coordinates, meters); accept({ coordinate, accuracy: 3, speed: meters < total ? speed : 0, heading: bearing(before, coordinate) ?? undefined, timestamp: Date.now() }); }, 500);
     } else {
       setRecording([]); setStatus('Requesting GPS permission');
       (async () => {
@@ -47,7 +48,7 @@ export function useRide(route: Route | null, profile: Profile) {
           const permission = await Location.requestForegroundPermissionsAsync();
           if (cancelled) return;
           if (permission.status !== 'granted') { setStatus('Location permission denied. Enable it in Settings.'); setMode('idle'); return; }
-          const watch = await Location.watchPositionAsync({ accuracy: Location.Accuracy.BestForNavigation, timeInterval: 1000, distanceInterval: 3 }, p => accept({ coordinate: [p.coords.longitude, p.coords.latitude], accuracy: p.coords.accuracy ?? 999, speed: Math.max(0, p.coords.speed ?? 0), timestamp: p.timestamp }));
+          const watch = await Location.watchPositionAsync({ accuracy: Location.Accuracy.BestForNavigation, timeInterval: 1000, distanceInterval: 0 }, p => accept({ coordinate: [p.coords.longitude, p.coords.latitude], accuracy: p.coords.accuracy ?? 999, speed: p.coords.speed !== null && Number.isFinite(p.coords.speed) && p.coords.speed >= 0 ? p.coords.speed : null, heading: p.coords.heading !== null && p.coords.heading >= 0 ? p.coords.heading : undefined, timestamp: p.timestamp }));
           if (cancelled) watch.remove(); else subscription = watch;
         } catch (e) { if (!cancelled) { setStatus(e instanceof Error ? e.message : 'GPS unavailable'); setMode('idle'); } }
       })();
