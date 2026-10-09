@@ -18,6 +18,7 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+      - run: python3 -m unittest discover -s tests -p 'test_*.py'
       - run: npx expo export --platform web --output-dir dist
       - run: npx expo export --platform ios --output-dir dist-ios
       - run: npx expo export --platform android --output-dir dist-android

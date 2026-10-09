@@ -37,6 +37,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint && npm run typecheck && npm test
+      - run: python3 -m unittest discover -s tests -p 'test_*.py'
       - run: node scripts/release-notes.mjs
         env:
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
@@ -182,7 +183,8 @@ jobs:
           xcodebuild -workspace ios/Velunivo.xcworkspace -scheme Velunivo -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath "$PWD/work/simulator" build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO ARCHS=arm64 ONLY_ACTIVE_ARCH=NO
           cp -R work/simulator/Build/Products/Release-iphonesimulator/Velunivo.app artifacts/Velunivo-simulator.app
           ditto -c -k --keepParent artifacts/Velunivo-simulator.app artifacts/Velunivo-simulator.app.zip
-          python3 scripts/simulator-screenshots.py
+      - name: Verify fresh iPhone and iPad Simulator startup
+        run: python3 scripts/simulator-screenshots.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -195,6 +197,7 @@ jobs:
             artifacts/iphone.png
             artifacts/ipad.png
             artifacts/*-launch.log
+            artifacts/*-simulator.log
             artifacts/*.ips
   publish:
     concurrency:
