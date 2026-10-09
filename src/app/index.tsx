@@ -6,8 +6,10 @@ import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
 import RideMap from '../components/RideMap';
+import ScheduleControl from '../components/ScheduleControl';
+import { scheduleSummary } from '../core/schedule';
 import EndpointPicker from '../components/EndpointPicker';
-import { Button, Field, styles, usePalette } from '../components/ui';
+import { Button, styles, usePalette } from '../components/ui';
 import { useStore } from '../services/store';
 import { serverUrl, fetchRoute } from '../services/api';
 import { pickTrack, shareTrack } from '../services/files';
@@ -27,7 +29,7 @@ export default function Explore() {
   useEffect(() => { if (serverUrl) fetch(`${serverUrl}/health`).then(r => r.json()).then(r => setTrafficAvailable(!!r.trafficConfigured)).catch(() => {}); }, []);
   const { routes, selected, select, setRoutes, profile, save, ready } = useStore();
   const [planner, setPlanner] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState('');
-  const [start, setStart] = useState('45.464200, 9.190000'), [end, setEnd] = useState('45.471200, 9.188000');
+  const [start, setStart] = useState(''), [end, setEnd] = useState('');
   const [startPoint, setStartPoint] = useState<Coord | undefined>(), [endPoint, setEndPoint] = useState<Coord | undefined>();
   const [offlineMap, setOfflineMap] = useState(false);
   const [picking, setPicking] = useState<'start' | 'end' | null>(null), [follow, setFollow] = useState(true);
@@ -75,15 +77,16 @@ export default function Explore() {
         <Button title="End ride" onPress={ride.stop} />
       </View> : <>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}><Text style={{ color: p.text, fontSize: 23, fontWeight: '800' }}>Your next ride</Text><Text style={{ color: p.accent, fontSize: 12, fontWeight: '700' }}>{Math.min(profile.maxSpeed, profile.ridingLimit)} KM/H CAP</Text></View>
+        {routes.length === 0 && <View style={[styles.card, { backgroundColor: p.card }]}><Text style={{ color: p.text, fontSize: 18, fontWeight: '700' }}>Where will you ride?</Text><Text style={{ color: p.muted, lineHeight: 20 }}>Plan a route or import your own GPX to see riding estimates. Imported tracks are previews; road access and turns are not verified.</Text></View>}
         {routes.map(r => { const e = estimate(r, profile), chosen = r.id === selected?.id; return <Pressable accessibilityRole="button" accessibilityLabel={`${r.name}, ${minutes(e.seconds)}`} accessibilityState={{ selected: chosen }} key={r.id} onPress={() => { select(r); void Haptics.selectionAsync(); }} style={[styles.card, { backgroundColor: p.card, borderWidth: 2, borderColor: chosen ? p.accent : 'transparent' }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><View style={[s.round, { backgroundColor: p.bg }]}><Ionicons name={r.kind === 'bike' ? 'bicycle' : r.kind === 'car' ? 'car-outline' : 'trail-sign-outline'} size={24} color={p.accent} /></View><View style={{ flex: 1 }}><Text style={{ color: p.text, fontSize: 17, fontWeight: '700' }}>{r.name}</Text><Text style={{ color: p.muted, marginTop: 3 }}>{km(e.meters)} · {r.source === 'gpx' ? 'Track only' : 'Access unverified'}</Text></View><View style={{ alignItems: 'flex-end' }}><Text style={{ color: p.text, fontSize: 25, fontWeight: '800' }}>{minutes(e.seconds)}</Text><Text style={{ color: p.muted, fontSize: 11 }}>minimum {minutes(e.minimumSeconds)}</Text></View></View>
         </Pressable>; })}
         {selected?.warnings.map(w => <Text key={w} style={{ color: p.muted, fontSize: 12, lineHeight: 18 }}>{w}</Text>)}
         {error !== '' && <Text accessibilityRole="alert" style={{ color: '#C75A36', lineHeight: 20 }}>{error}</Text>}
-        <View style={{ gap: 10 }}><View style={{ flexDirection: 'row', gap: 8 }}><View style={{ flex: 1 }}><Button title="Depart at" secondary={scheduleMode !== 'depart'} onPress={() => setScheduleMode('depart')} /></View><View style={{ flex: 1 }}><Button title="Arrive by" secondary={scheduleMode !== 'arrive'} onPress={() => setScheduleMode('arrive')} /></View></View><Field label={scheduleMode === 'depart' ? 'DEPARTURE · LOCAL DATE & TIME' : 'ARRIVAL · LOCAL DATE & TIME'} placeholder="Now, or YYYY-MM-DD HH:MM" value={departure} onChangeText={setDeparture} /><Text style={{ color: p.muted, fontSize: 12 }}>{arrivalText(departure, eta?.seconds, scheduleMode)} · Estimated with your riding profile</Text><Text accessibilityRole="alert" style={{ color: '#C75A36', fontSize: 12, lineHeight: 18 }}>Scheduled trips do not use traffic conditions or traffic simulation. Allow extra time for delays.</Text><Button title={traffic ? 'Hide live traffic' : 'Show live traffic'} secondary disabled={!trafficAvailable} onPress={() => setTraffic(v => !v)} />{!trafficAvailable && <Text style={{ color: p.muted, fontSize: 12 }}>Live traffic needs a configured TomTom server key.</Text>}{traffic && <Text style={{ color: p.muted, fontSize: 12 }}>Current traffic flow · © TomTom · not included in scooter ETA</Text>}</View>
-        {Platform.OS !== 'web' && <Button title={offlineMap ? 'Use device maps' : 'Use downloadable maps'} secondary onPress={() => setOfflineMap(v => !v)} />}
+        <View style={{ gap: 10 }}><View style={{ flexDirection: 'row', gap: 8 }}><View style={{ flex: 1 }}><Button title="Depart at" secondary={scheduleMode !== 'depart'} onPress={() => setScheduleMode('depart')} /></View><View style={{ flex: 1 }}><Button title="Arrive by" secondary={scheduleMode !== 'arrive'} onPress={() => setScheduleMode('arrive')} /></View></View><ScheduleControl value={departure} onChange={setDeparture} /><Text style={{ color: p.muted, fontSize: 12 }}>{scheduleSummary(departure, eta?.seconds, scheduleMode)} · Estimated with your riding profile</Text><Text accessibilityRole="alert" style={{ color: '#C75A36', fontSize: 12, lineHeight: 18 }}>Scheduled trips do not use traffic conditions or traffic simulation. Allow extra time for delays.</Text><Button title={traffic ? 'Hide live traffic' : 'Show live traffic'} secondary disabled={!trafficAvailable} onPress={() => setTraffic(v => !v)} />{!trafficAvailable && <Text style={{ color: p.muted, fontSize: 12 }}>Live traffic needs a configured TomTom server key.</Text>}{traffic && <Text style={{ color: p.muted, fontSize: 12 }}>Current traffic flow · © TomTom · not included in scooter ETA</Text>}</View>
+        {Platform.OS === 'ios' && <Button title={offlineMap ? 'Use device maps' : 'Use downloadable maps'} secondary onPress={() => setOfflineMap(v => !v)} />}
         <Button title="Plan bicycle & car routes" icon="search" onPress={() => setPlanner(true)} />
-        {selected && <View style={{ flexDirection: 'row', gap: 10 }}><View style={{ flex: 1 }}><Button title="Start ride" icon="navigate" disabled={!ready || selected.id === 'illustrative-track'} onPress={() => ride.start()} /></View><Button title="Simulate" secondary onPress={() => ride.start(true)} /></View>}
+        {selected && <View style={{ flexDirection: 'row', gap: 10 }}><View style={{ flex: 1 }}><Button title="Start ride" icon="navigate" disabled={!ready} onPress={() => ride.start()} /></View><Button title="Simulate" secondary onPress={() => ride.start(true)} /></View>}
         <View style={{ flexDirection: 'row', gap: 10 }}><View style={{ flex: 1 }}><Button title="Import GPX" secondary icon="add" onPress={() => void run(async () => { const r = await pickTrack(); if (r) { setRoutes([r]); select(r); } })} /></View>{selected && <Button title="Save" secondary icon="bookmark-outline" onPress={() => void run(async () => { await save(selected); notify('Saved to your Library.'); })} />}</View>
       </>}
       {ride.recording.length > 1 && !active && <Button title={`Export ride · ${ride.recording.length} fixes`} secondary icon="share-outline" onPress={() => void run(() => shareTrack(ride.recording))} />}
@@ -103,17 +106,3 @@ export default function Explore() {
 }
 function Metric({ label, value }: { label: string; value: string }) { const p = usePalette(); return <View style={{ flex: 1 }}><Text style={{ fontSize: 26, fontWeight: '800', color: p.text }}>{value}</Text><Text style={{ color: p.muted, fontSize: 12 }}>{label}</Text></View>; }
 const s = StyleSheet.create({ header: { padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, brand: { fontSize: 30, letterSpacing: -1.3, fontWeight: '800' }, round: { height: 46, width: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }, mapBadge: { position: 'absolute', left: 12, top: 12, padding: 10, borderRadius: 12, flexDirection: 'row', gap: 8, alignItems: 'center' }, recenter: { position: 'absolute', right: 12, top: 60, borderRadius: 14, padding: 12 }, metrics: { flexDirection: 'row', paddingVertical: 10 } });
-
-function arrivalText(departure: string, seconds: number | undefined, mode: 'depart' | 'arrive') {
-  let date = new Date();
-  if (departure.trim()) {
-    const match = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})$/.exec(departure.trim());
-    if (!match) return 'Use YYYY-MM-DD HH:MM';
-    const [, y, m, d, h, min] = match.map(Number);
-    date = new Date(y, m - 1, d, h, min);
-    if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d || date.getHours() !== h || date.getMinutes() !== min) return 'Choose a valid local date and time';
-  }
-  if (seconds === undefined) return 'Select a route to estimate arrival';
-  if (mode === 'arrive' && !departure.trim()) return 'Enter your desired arrival time';
-  return `${mode === 'arrive' ? 'Suggested departure' : 'Estimated arrival'} ${new Date(date.getTime() + (mode === 'arrive' ? -1 : 1) * seconds * 1000).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
-}

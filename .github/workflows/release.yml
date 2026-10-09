@@ -7,7 +7,7 @@ on:
       version:
         description: 'App version, e.g. 0.1.0 (the 1.0 tag is reserved for the source feed)'
         required: true
-        default: '0.1.0'
+        default: '0.1.1'
 permissions:
   contents: read
 concurrency:
@@ -48,7 +48,6 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     env:
-      EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_KEY: ${{ secrets.GOOGLE_MAPS_ANDROID_KEY }}
       APP_VERSION: ${{ needs.prepare.outputs.version }}
       BUILD_NUMBER: ${{ github.run_number }}
       EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
@@ -71,7 +70,6 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     env:
-      EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_KEY: ${{ secrets.GOOGLE_MAPS_ANDROID_KEY }}
       APP_VERSION: ${{ needs.prepare.outputs.version }}
       BUILD_NUMBER: ${{ github.run_number }}
       EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
@@ -145,7 +143,6 @@ jobs:
     needs: prepare
     runs-on: xcode-27
     env:
-      EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_KEY: ${{ secrets.GOOGLE_MAPS_ANDROID_KEY }}
       APP_VERSION: ${{ needs.prepare.outputs.version }}
       BUILD_NUMBER: ${{ github.run_number }}
       EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
@@ -187,6 +184,7 @@ jobs:
           ditto -c -k --keepParent artifacts/Velunivo-simulator.app artifacts/Velunivo-simulator.app.zip
           python3 scripts/simulator-screenshots.py
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: ios
           path: |
@@ -196,6 +194,8 @@ jobs:
             artifacts/ios-build.txt
             artifacts/iphone.png
             artifacts/ipad.png
+            artifacts/*-launch.log
+            artifacts/*.ips
   publish:
     concurrency:
       group: altsource

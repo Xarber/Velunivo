@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Platform, View, Text } from 'react-native';
+import { Platform } from 'react-native';
 import MapView, { Marker, Polyline, UrlTile } from 'react-native-maps';
 import { Coord } from '../core/types';
 import { routeBounds } from '../core/geo';
@@ -7,8 +7,7 @@ import { serverUrl } from '../services/api';
 import OfflineRideMap, { MapProps } from './OfflineRideMap';
 const point = (p: Coord) => ({ longitude: p[0], latitude: p[1] });
 export default function RideMap(props: MapProps & { offlineMap?: boolean }) {
-  if (props.offlineMap) return <OfflineRideMap {...props} />;
-  if (Platform.OS === 'android' && !process.env.EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_KEY) return <View style={{ flex: 1 }}><OfflineRideMap {...props} /><Text style={{ position: 'absolute', bottom: 8, left: 8, right: 8, padding: 8, backgroundColor: '#fff', color: '#536671', fontSize: 12 }}>Google Maps needs an Android map key. Showing the street-map alternative.</Text></View>;
+  if (props.offlineMap || Platform.OS === 'android') return <OfflineRideMap {...props} />;
   return <DeviceMap {...props} />;
 }
 function DeviceMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint }: MapProps) {

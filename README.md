@@ -4,7 +4,7 @@ An iOS-first Expo / React Native project for e-scooter and e-bike planning, with
 
 ## What works in the MVP
 
-- Apple Maps on iPhone/iPad, Google Maps on keyed Android builds, and a separate MapLibre downloadable-map option; MapLibre GL JS on web. Phone layout becomes a map-and-planner split view at 900 px.
+- Apple Maps on iPhone/iPad; key-free OpenFreeMap with MapLibre on Android and web, plus a downloadable-map option on iOS. Phone layout becomes a map-and-planner split view at 900 px.
 - Configurable hardware maximum, independent local riding limit, cruise fraction, acceleration and maneuver delays. Shows practical ETA and constant-speed minimum.
 - Depart-at and arrive-by calculations in the device's local time. **Scheduled trips do not use traffic conditions or traffic simulation.** The app displays that warning.
 - GPX import, geometry-only track following, accelerated simulation, local saved routes and GPX export of foreground GPS fixes.
@@ -35,7 +35,7 @@ npm run web:preview
 
 Production web hosts need an index.html fallback for Expo Router paths; the included preview server handles this.
 
-The illustrative sample works without a routing key. Map resources still require a connection unless downloaded in a native build. `Simulate` exercises track progress without GPS. `Start ride` requests foreground location. Use precise location, not approximate location.
+The app starts with an empty planner. Import your own GPX to preview and simulate a track without a routing key. Map resources still require a connection unless downloaded in a native build. `Simulate` exercises track progress without GPS. `Start ride` requests foreground location. Use precise location, not approximate location.
 
 For native development, use your installed Xcode/Android tools:
 
@@ -82,7 +82,7 @@ All local commits and tags are deliberately **unsigned**. The local repository d
 
 Address planning: enter a street/place and city, press Search, then choose a matching result. Both endpoints have a map picker; coordinates and current GPS remain available. Address search needs the routing server and its GraphHopper key. Map picking works without a geocoding key.
 
-Native maps: iOS defaults to Apple Maps without a map key. Android uses Google Maps when `EXPO_PUBLIC_GOOGLE_MAPS_ANDROID_KEY` is supplied before building; otherwise a visible notice accompanies the street-map fallback. Restrict the key to the Maps SDK for Android, `app.velunivo.mobile` and your signing certificate SHA-1. In GitHub Actions use the `GOOGLE_MAPS_ANDROID_KEY` repository secret. Rebuild after configuring it. `Use downloadable maps` selects the MapLibre offline-capable renderer. Web uses OpenFreeMap.
+Native maps: iOS defaults to Apple Maps without a map key. Android and web always use the same OpenFreeMap service through MapLibre, without a map key. On iOS, `Use downloadable maps` selects the offline-capable MapLibre renderer. Licensed downloads still require an explicitly enabled compatible map style.
 
 ## Validation and records
 
@@ -95,8 +95,10 @@ npx expo export --platform web
 
 [Architecture and research](docs/ARCHITECTURE.md), [verification](docs/VERIFICATION.md), [work log](docs/WORKLOG.md), [release setup](docs/RELEASES.md).
 
-Your original GPX is retained locally at `assets/tracks/private-example.gpx` and ignored by Git. Public source contains only explicitly illustrative sample geometry. Import your original file from Explore if desired. Routes and GPS fixes are stored locally; route requests send coordinates to the configured provider. No analytics are implemented.
+Your original GPX is retained locally at `assets/tracks/private-example.gpx` and ignored by Git. No illustrative or private track is bundled in public builds. Import your original file from Explore if desired. Routes and GPS fixes are stored locally; route requests send coordinates to the configured provider. No analytics are implemented.
 
 ## Existing navigator to consider
 
 OsmAnd supports iOS offline maps, offline routing, bicycle/car profiles and navigation. Its moped profile is not automatically an e-scooter eligibility profile. It is a stronger option for mature offline routing today; Velunivo's particular focus is comparing road candidates with your riding-speed model. [Official routing docs](https://osmand.net/docs/user/navigation/routing/osmand-routing/?current-os=ios).
+
+Scheduling uses the native iOS date/time picker, Android date and time dialogs, or the browser date/time control. You can also enter `Today at 9:00`, `Tomorrow at 6:30 pm`, or `in 3 hours and 35 minutes` and tap **Use this time**. The confirmed local date, time and timezone appear below. Supported English phrases are deliberately explicit; unsupported phrases show an error. Departure/arrival estimates never use traffic prediction or simulation.
