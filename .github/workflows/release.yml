@@ -154,7 +154,7 @@ jobs:
     needs: prepare
     runs-on: xcode-27
     env:
-      CCACHE_DIR: ${{ runner.temp }}/velunivo-ccache
+      CCACHE_DIR: ${{ github.workspace }}/.velunivo-ccache
       CCACHE_MAXSIZE: 1G
       CCACHE_COMPILERCHECK: content
       CCACHE_BASEDIR: ${{ github.workspace }}
