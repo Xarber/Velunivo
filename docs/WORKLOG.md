@@ -194,3 +194,6 @@ The preceding 0.1.7 build compiled both native platforms and verified iPhone sta
 - Screen-awake behavior was already present and remains unchanged. Previous 0.1.10 run was observed cancelled before dispatching the replacement; no additional cancellation of that completed run is needed. Existing early unsigned IPA upload/cleanup remains unchanged. New 0.1.11 native/cache timing validation remains pending on the replacement build. All commits unsigned; no local SDK install.
 
 GitHub rejected the first 0.1.11 dispatch before jobs started: runner.temp is not an allowed context in job-level env. Moved CCACHE_DIR to the github.workspace-based runner checkout cache path (runner.arch remains only in step-level cache keys). This parse failure did not create a release tag or binary. Retry the same 0.1.11 version after the workflow correction; do not describe the rejected dispatch as a build.
+
+## Android cache ordering after 0.1.11 failure
+Run 37953688059 failed before Android compilation: setup-gradle v6 could not find generated Gradle files. Moved its cache restore after Expo prebuild, before Gradle compilation. iOS archive and Simulator build succeeded; screenshot fallback ran. No replacement build is started before the requested app changes are complete.
