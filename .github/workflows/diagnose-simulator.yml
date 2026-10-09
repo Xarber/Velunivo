@@ -1,0 +1,39 @@
+name: Diagnose Simulator launch
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing binary release
+        default: v0.1.0
+        required: true
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: xcode-27
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select installed beta and fetch existing Simulator build
+        run: |
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          from pathlib import Path
+          import re
+          candidates=[p for p in Path('/Applications').glob('Xcode*.app') if 'beta' in p.name.lower() and not p.is_symlink()]
+          chosen=max(candidates,key=lambda p:tuple(map(int,re.findall(r'\d+',p.name))))
+          print(f'DEVELOPER_DIR={chosen}/Contents/Developer')
+          PY
+          mkdir -p artifacts
+          gh release download "$RELEASE_TAG" --pattern Velunivo-simulator.app.zip --dir artifacts
+          ditto -x -k artifacts/Velunivo-simulator.app.zip artifacts
+      - run: python3 scripts/simulator-screenshots.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: simulator-diagnostics
+          path: |
+            artifacts/*.png
+            artifacts/*.log
+            artifacts/*.ips
