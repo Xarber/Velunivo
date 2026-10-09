@@ -7,10 +7,10 @@ An iOS-first Expo / React Native project for e-scooter and e-bike planning, with
 - Apple Maps on iPhone/iPad; key-free OpenFreeMap with MapLibre on Android and web, plus a downloadable-map option on iOS. Full-screen map with an expandable bottom control sheet on phones and a floating sidebar on iPad/desktop (700 px+). Address planning opens in a popup over the map.
 - Configurable hardware maximum, independent local riding limit, cruise fraction, acceleration and maneuver delays. Shows practical ETA and constant-speed minimum.
 - Depart-at and arrive-by calculations in the device's local time. **Scheduled trips do not use traffic conditions or traffic simulation.** The app displays that warning.
-- GPX import, geometry-only track following, accelerated simulation, local saved routes and GPX export of foreground GPS fixes.
+- GPX import, geometry-only track following, labeled simulation, local saved routes and GPX export of planned routes or foreground GPS fixes.
 - GPS guidance with accuracy/freshness checks, progress, next maneuver, voice cues for routes with instructions, off-route notice and arrival detection. Keep-awake while riding.
 - Optional accelerometer and gyroscope diagnostics; subscriptions stop in the background and on ride end. No crash detection, sensor fusion or dead reckoning.
-- Separate GraphHopper bicycle and car-road candidates with turn instructions and scooter-capped speeds, when your routing server is configured. Each profile can fail independently; no fake fallback route.
+- Separate bicycle and car-road candidates with real turn instructions and scooter-specific ETA. Photon address search and Valhalla public routing work without API keys; an optional server proxy supports GraphHopper custom models. Each profile can fail independently; no fabricated fallback route.
 - Native offline region creation, progress, pause/resume and deletion, when an offline-licensed map provider is configured.
 - Optional current TomTom traffic-flow overlay through the server. It **does not change scooter ETA**, scheduled or otherwise.
 
@@ -18,9 +18,9 @@ An iOS-first Expo / React Native project for e-scooter and e-bike planning, with
 
 This is an MVP, not a verified road-ready navigator. Native device sensors, voice output, installation and downloaded maps must be tested on an actual device. Native build status and web checks are recorded in [docs/VERIFICATION.md](docs/VERIFICATION.md).
 
-Scooter access is not the same as bicycle or car access. Both route models exclude motorways, trunk roads, steps, ferries and known roads with limits above 50 km/h. Surface preferences discourage sand/gravel/ground. Provider access rules remain in effect. Missing road-limit/urban-status/scooter-access data cannot be certified. Candidates display an eligibility warning. New installations use a generic 25 km/h scooter, with no assumed range. Set a lower local riding limit where required (for example 20 km/h for scooters in Italy). Review local signs and rules. A profile does not determine the vehicle's legal classification.
+Scooter access is not the same as bicycle or car access. Both providers request road restrictions and candidates are rejected if their aligned road details contain motorways, trunk roads, steps, ferries or mapped limits above 50 km/h. Valhalla hard exclusions still permit excluded start/end edges, so the postcheck matters. Rough-surface preferences are provider-specific. Provider access rules remain in effect. Missing road-limit/urban-status/scooter-access data cannot be certified. Candidates display an eligibility warning. New installations use a generic 25 km/h scooter, with no assumed range. Set a lower local riding limit where required (for example 20 km/h for scooters in Italy). Review local signs and rules. A profile does not determine the vehicle's legal classification.
 
-Background navigation, automatic rerouting, hill/battery/weather models and an on-device routing graph are not implemented. Off-route guidance asks you to stop safely and replan. A saved route can be followed offline; calculating a new route requires the server. A GPX with only coordinates has no genuine turn instructions, and the app does not invent them.
+Background navigation, automatic rerouting, hill/battery/weather models and an on-device routing graph are not implemented. Off-route guidance asks you to stop safely and replan. A saved route can be followed offline; calculating a new route requires an online provider. A GPX with only coordinates has no genuine turn instructions, and the app does not invent them.
 
 ## Run locally
 
@@ -48,13 +48,15 @@ MapLibre requires a native build; **Expo Go cannot run this project**. Do not ru
 
 ## Configure addresses, routing and traffic
 
-Copy `.env.example` to `.env`; copy `server/.env.example` to `server/.env`. The private keys belong only in the server environment.
+With no routing URL configured, the app uses Photon and Valhalla directly, with serialized requests and a five-minute memory cache. These public demos have fair-use limits and no service guarantee; use self-hosted/contracted endpoints for production. Search text and route endpoints go to these providers. GPX geometry stays local; the explicit endpoint-planning action sends only endpoints.
+
+For the optional local proxy, copy `.env.example` to `.env`; copy `server/.env.example` to `server/.env`. The example leaves GraphHopper blank and enables public providers. Private keys belong only in the server environment.
 
 ```sh
 node --env-file=server/.env --import tsx server/index.ts
 ```
 
-Use `EXPO_PUBLIC_ROUTING_URL=http://localhost:8787` for web on your Mac. A phone's localhost is the phone, not the Mac; for native release apps use an HTTPS server reachable from the phone. The server binds to 127.0.0.1 by default; LAN development needs an explicit HOST and network configuration. Restart Expo after editing public variables. The release workflow uses repository variables `ROUTING_URL`, `MAP_STYLE_URL`, `ALLOW_OFFLINE_DOWNLOADS`. None are private credentials. Restrict public map keys according to the provider's recommended configuration.
+Use `EXPO_PUBLIC_ROUTING_URL=http://localhost:8787` for web on your Mac. A phone's localhost is the phone, not the Mac. Leave the routing URL blank for direct no-key public services, or use an HTTPS proxy reachable from the phone. The server binds to 127.0.0.1 by default; LAN development needs an explicit HOST and network configuration. Restart Expo after editing public variables. The release workflow uses repository variables `ROUTING_URL`, `MAP_STYLE_URL`, `ALLOW_OFFLINE_DOWNLOADS`. None are private credentials. Restrict public map keys according to the provider's recommended configuration.
 
 GraphHopper's hosted service requires a key/account with custom-model support for `bike` and `car`. The default bicycle profile may retain lower base segment speeds, even when your scooter is faster; the app conservatively respects those speeds. No authenticated route request has been verified without a supplied key. Unsupported custom models produce a visible error, not a relaxed safety policy. Self-hosted GraphHopper profiles and encoded values can be adapted by replacing the server adapter.
 
@@ -124,3 +126,13 @@ During foreground native navigation the map can rotate with the device compass (
 The compact/expanded dashboard shows speed, mapped road speed limit (unknown if absent), your configured riding cap, actual clock arrival, remaining duration and remaining distance. Miles also select mph. ETA does not include traffic. A road limit is provider data, not scooter eligibility certification. Sensor/GPS loss is shown explicitly; simulation speeds/directions are labeled as demo data. Physical-device compass calibration and native camera behaviour still require testing.
 
 Implementation references: [Expo Location heading API](https://docs.expo.dev/versions/v57.0.0/sdk/location/), [screen orientation](https://docs.expo.dev/versions/v57.0.0/sdk/screen-orientation/), [DeviceMotion display rotation](https://docs.expo.dev/versions/v57.0.0/sdk/devicemotion/), [MapLibre camera](https://github.com/maplibre/maplibre-react-native), [MapKit camera integration](https://github.com/react-native-maps/react-native-maps/blob/master/docs/mapview.md).
+
+## Navigation layout and public routing update
+
+The navigation layout follows [Apple's official navigation screenshot](https://www.apple.com/de/newsroom/2022/04/apple-rolls-out-all-new-map-across-germany/): turn banner at the top, speed and mapped limit on the map, and a compact arrival/time/distance card at the bottom. Tilt is now 50 degrees; camera padding puts the arrow lower in the unobscured map to show more upcoming road. The arrow renders above the path. Overview uses independent padding and resets retained navigation padding before fitting the selected route. Both overview controls share the same action and collapse the ride menu.
+
+Settings owns global km/mile units, including mph, vehicle capability/range inputs, saved-route distance and voice distance. Canonical stored km/kmh values are preserved when switching units. Planned routes export to GPX. Imported GPX may be used explicitly to plan new bicycle/car candidates between endpoints; this does not preserve/snap the original track.
+
+Street limits come from Valhalla trace_attributes on the exact route shape, using edge.speed_limit and its geometry indexes. Unknown values remain unknown; the vehicle cap is never presented as a street limit. Missing/mismatched/incomplete safety details reject the candidate. When a road route snaps away from the chosen start/destination (e.g. a pedestrian square), the gap is shown and final access is excluded from ETA.
+
+Provider references: [Photon API and demo limits](https://github.com/komoot/photon), [Valhalla route options](https://valhalla.github.io/valhalla/api/route/api-reference/), [public demo fair usage](https://valhalla.github.io/valhalla/start/introduction/), [edge attributes](https://github.com/valhalla/valhalla-docs/blob/master/map-matching/api-reference.md), [GraphHopper path speed limits](https://www.graphhopper.com/blog/2019/11/28/routing-api-using-path-details/). No departure time, predicted/current traffic source or traffic simulation is sent to the routing provider.
