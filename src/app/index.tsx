@@ -91,7 +91,8 @@ export default function Explore() {
     const coordinate: Coord = [pos.coords.longitude, pos.coords.latitude]; setStart('Current location'); setStartPoint(coordinate); setGpsStart(true); return coordinate;
   }
   function picked(c: Coord) { if (!picking) return; const label = `${c[1].toFixed(6)}, ${c[0].toFixed(6)}`; if (picking === 'start') { manualStart(); setStart(label); setStartPoint(c); } else { setEnd(label); setEndPoint(c); } setPicking(null); setPlanner(true); }
-  function manualStart() { locationRequest.current++; setGpsStart(false); setLocating(false); }
+  function cancelPendingLocation() { locationRequest.current++; setLocating(false); }
+  function manualStart() { cancelPendingLocation(); setGpsStart(false); }
   function beginRide(simulate = false) { setNow(Date.now()); setPanelOpen(false); resumeFollowing(); ride.start(simulate); }
   function openPlanner() {
     setPlanner(true);
@@ -158,7 +159,7 @@ export default function Explore() {
     <Modal visible={planner} animationType={reducedMotion ? 'none' : 'fade'} transparent presentationStyle="overFullScreen" onRequestClose={() => setPlanner(false)}><View style={{ flex: 1, justifyContent: 'center', padding: wide ? 24 : 12, backgroundColor: '#00000025' }}><Pressable accessibilityLabel="Dismiss route planner" onPress={() => setPlanner(false)} style={StyleSheet.absoluteFill} /><SafeAreaView {...motionProps('planner', planner ? 'open' : 'closed')} edges={['top', 'bottom']} style={{ width: '100%', maxWidth: 560, maxHeight: '92%', alignSelf: wide ? 'flex-start' : 'center', backgroundColor: p.bg, borderRadius: 28, overflow: 'hidden', boxShadow: '0 12px 36px #00000030' }}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 24, gap: 18, width: '100%', maxWidth: 780, alignSelf: 'center' }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><Text style={[styles.title, { color: p.text }]}>Where to?</Text><Pressable accessibilityLabel="Close planner" onPress={() => setPlanner(false)}><Ionicons name="close-circle" size={30} color={p.muted} /></Pressable></View>
       <Text style={[styles.subtitle, { color: p.muted }]}>Compare bicycle and car-road candidates at your riding speed. Search an address and select a result, use your location, or pick either endpoint on the map. Coordinates also work.</Text>
-      <EndpointPicker label="Start" value={start} onChange={v => { manualStart(); setStart(v); setStartPoint(undefined); }} onSelect={(label, c) => { manualStart(); setStart(label); setStartPoint(c); }} onLocation={() => void run(resolveCurrentLocation)} onMap={() => { manualStart(); setPicking('start'); setPlanner(false); }} />
+      <EndpointPicker label="Start" value={start} onChange={v => { manualStart(); setStart(v); setStartPoint(undefined); }} onSelect={(label, c) => { manualStart(); setStart(label); setStartPoint(c); }} onLocation={() => void run(resolveCurrentLocation)} onMap={() => { cancelPendingLocation(); setPicking('start'); setPlanner(false); }} />
       <EndpointPicker label="Destination" value={end} onChange={v => { setEnd(v); setEndPoint(undefined); }} onSelect={(label, c) => { setEnd(label); setEndPoint(c); }} onMap={() => { setPicking('end'); setPlanner(false); }} />
       <View style={[styles.card, { backgroundColor: p.card }]}><VehicleSelector /><Text style={{ color: p.muted }}>Hardware {profile.maxSpeed} km/h · Riding limit {profile.ridingLimit} km/h</Text><Text style={{ color: p.muted, fontSize: 12 }}>Avoid motorways, trunk roads, steps, ferries and known roads above 50 km/h. Scooter access and urban status need review.</Text></View>
       {locating && <Text style={{ color: p.muted }}>Finding your current GPS location…</Text>}
