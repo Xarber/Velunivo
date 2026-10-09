@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { View, Text, ScrollView, Pressable, Modal, Alert, Platform, ActivityIndicator, StyleSheet, useWindowDimensions, PanResponder } from 'react-native';
+import { View, Text, ScrollView, Pressable, Modal, Alert, Platform, ActivityIndicator, StyleSheet, useWindowDimensions } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -10,6 +10,8 @@ import RideMap from '../components/RideMap';
 import SpeedBadges from '../components/SpeedBadges';
 import PressMotion from '../components/PressMotion';
 import MotionView from '../components/MotionView';
+import SwipeArea from '../components/SwipeArea';
+import RouteWarning from '../components/RouteWarning';
 import GlassSurface from '../components/GlassSurface';
 import { useLocation } from '../services/useLocation';
 import Brand from '../components/Brand';
@@ -21,7 +23,7 @@ import { batteryLabel } from '../core/vehicles';
 import ScheduleControl from '../components/ScheduleControl';
 import { scheduleSummary } from '../core/schedule';
 import EndpointPicker from '../components/EndpointPicker';
-import { Button, styles, usePalette } from '../components/ui';
+import { Button, styles, usePalette, PaletteProvider } from '../components/ui';
 import { useStore } from '../services/store';
 import { serverUrl, fetchRoute } from '../services/api';
 import { pickTrack, shareTrack } from '../services/files';
@@ -37,9 +39,10 @@ export default function Explore() {
   const reducedMotion = useReducedMotion();
   const wide = width >= 700, insets = useSafeAreaInsets();
   const [panelOpen, setPanelOpen] = useState(false);
+  const [warningRoute, setWarningRoute] = useState<Route | null>(null);
   const [mapHeight, setMapHeight] = useState(height);
   const panelHeight = panelOpen ? Math.max(180, mapHeight * .78) : 176;
-  const drag = useMemo(() => PanResponder.create({ onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dy) > 10, onPanResponderRelease: (_, gesture) => { if (gesture.dy < -25) setPanelOpen(true); if (gesture.dy > 25) setPanelOpen(false); } }), []);
+
   const [trafficAvailable, setTrafficAvailable] = useState(false), [traffic, setTraffic] = useState(false);
   const [departure, setDeparture] = useState('');
   const [scheduleMode, setScheduleMode] = useState<'depart' | 'arrive'>('depart');
@@ -57,6 +60,8 @@ export default function Explore() {
   const [picking, setPicking] = useState<'start' | 'end' | null>(null), [follow, setFollow] = useState(true);
   const ride = useRide(selected, profile, navigationOptions.unit), motion = useMotion(profile.motion && ride.mode === 'gps');
   const active = ride.mode !== 'idle', g = ride.progress;
+  const expandedPanel = panelOpen || (wide && !active);
+  const panelP = expandedPanel ? { ...p, dark: true, bg: '#071118', card: '#15222C', text: '#F6FAFC', muted: '#ADBCC6', line: '#30434B', accent: '#64DCC5' } : p;
   const live = useLocation(ride.mode !== 'gps');
   const mapFix = active ? ride.fix : live.fix;
   const mapPosition = mapFix && mapFix.accuracy <= 100 && now - mapFix.timestamp <= 15000 ? mapFix.coordinate : undefined;
@@ -110,7 +115,7 @@ export default function Explore() {
   function picked(c: Coord) { if (!picking) return; const label = `${c[1].toFixed(6)}, ${c[0].toFixed(6)}`; if (picking === 'start') { manualStart(); setStart(label); setStartPoint(c); } else { setEnd(label); setEndPoint(c); } setPicking(null); setPlanner(true); }
   function cancelPendingLocation() { locationRequest.current++; setLocating(false); }
   function manualStart() { cancelPendingLocation(); setGpsStart(false); }
-  function beginRide(simulate = false) { setNow(Date.now()); setPanelOpen(false); resumeFollowing(); ride.start(simulate); }
+  function beginRide(simulate = false, confirmed = false) { if (!simulate && !confirmed && selected?.safetyWarnings?.length) { setWarningRoute(selected); return; } setNow(Date.now()); setPanelOpen(false); resumeFollowing(); ride.start(simulate); }
   function openPlanner() {
     setPlanner(true);
     if (gpsStart && !locating) { setLocating(true); const pending = resolveCurrentLocation(), request = locationRequest.current; void pending.catch(e => { if (request === locationRequest.current) setError(e.message); }).finally(() => { if (request === locationRequest.current) setLocating(false); }); }
@@ -122,7 +127,7 @@ export default function Explore() {
   }
   function resumeFollowing() { if (overviewTimer.current) clearTimeout(overviewTimer.current); overviewTimer.current = null; setOverview(false); setFollow(true); }
   function clearRide() {
-    planRequest.current++; setBusy(false); locationRequest.current++; setLocating(false); ride.stop(); setRoutes([]); select(null); setStart('Current location'); setStartPoint(undefined); setGpsStart(true); setEnd(''); setEndPoint(undefined); setDeparture(''); setScheduleMode('depart'); setOptionsOpen(false); setTraffic(false); setPicking(null); setPlanner(false); setPanelOpen(false); setError(''); resumeFollowing();
+    setWarningRoute(null); planRequest.current++; setBusy(false); locationRequest.current++; setLocating(false); ride.stop(); setRoutes([]); select(null); setStart('Current location'); setStartPoint(undefined); setGpsStart(true); setEnd(''); setEndPoint(undefined); setDeparture(''); setScheduleMode('depart'); setOptionsOpen(false); setTraffic(false); setPicking(null); setPlanner(false); setPanelOpen(false); setError(''); resumeFollowing();
   }
   return <SafeAreaView edges={[]} onLayout={e => setMapHeight(e.nativeEvent.layout.height)} style={{ flex: 1, backgroundColor: p.bg }}>
     {active && <Awake />}
@@ -140,32 +145,34 @@ export default function Explore() {
 
     </View>
     {!active && <View pointerEvents="box-none" style={[s.header, { top: insets.top + 12, left: 16, right: wide ? undefined : 16 }]}><GlassSurface style={s.brandCard}><Brand /></GlassSurface><Pressable accessibilityRole="button" accessibilityLabel="Plan a ride" disabled={active} onPress={openPlanner} style={[s.round, { backgroundColor: p.card }]}><Ionicons name="search" size={22} color={p.text} /></Pressable></View>}
-    {!picking && <GlassSurface {...motionProps('sheet')} style={[s.floatingPanel, { backgroundColor: p.bg, left: 12, right: wide ? undefined : 12, width: wide ? 390 : undefined, top: wide && !active ? insets.top + 88 : undefined, bottom: 12, height: wide && !active ? undefined : active && panelOpen ? Math.min(mapHeight * .6, 480) : visiblePanelHeight }]}>
-      <View {...(!wide ? drag.panHandlers : {})} style={{ alignItems: 'center', paddingTop: 8, paddingBottom: 4 }}><View style={{ height: 4, width: 38, borderRadius: 2, backgroundColor: p.muted, opacity: .4 }} /></View>
-      <View style={{ paddingHorizontal: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><Text style={{ color: p.text, fontWeight: '800', fontSize: 20 }}>{active ? 'Trip' : 'Your ride'}</Text>{(!wide || active) && <Pressable accessibilityRole="button" accessibilityLabel={panelOpen ? 'Collapse ride controls' : 'Expand ride controls'} onPress={() => setPanelOpen(v => !v)} style={{ padding: 8 }}><Ionicons name={panelOpen ? 'chevron-down' : 'chevron-up'} color={p.accent} size={22} /></Pressable>}</View>
-      {(!wide || active) && !panelOpen ? <MotionView {...motionProps('content')} style={{ paddingHorizontal: 16, gap: 10 }}>{active ? <RideDashboard etaOnly compact simulation={ride.mode === 'simulation'} profile={profile} route={selected} fix={ride.fix} index={g?.index} offRoute={g?.offRoute} seconds={eta?.seconds} meters={eta?.meters} now={now} unit={navigationOptions.unit} /> : <Text numberOfLines={1} style={{ color: p.muted }}>{selected && eta ? `${selected.name} · ${distanceLeft(eta.meters, navigationOptions.unit)} · ${minutes(eta.seconds)}` : 'Plan your next ride or import a GPX'}</Text>}<Button title={active ? 'Ride controls' : 'Plan a ride'} icon={active ? 'navigate' : 'search'} onPress={() => active ? setPanelOpen(true) : openPlanner()} /></MotionView> : <ScrollView {...motionProps('content')} keyboardShouldPersistTaps="handled" style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 14, paddingBottom: 28 }}>
-      {active ? <View style={[styles.card, { backgroundColor: p.card }]}>
+    {!picking && <GlassSurface expanded={expandedPanel} {...motionProps('sheet')} style={[s.floatingPanel, { backgroundColor: panelP.bg, left: 12, right: wide ? undefined : 12, width: wide ? 390 : undefined, top: wide && !active ? insets.top + 88 : undefined, bottom: 12, height: wide && !active ? undefined : active && panelOpen ? Math.min(mapHeight * .6, 480) : visiblePanelHeight }]}>
+      <PaletteProvider value={panelP}><SwipeArea onSwipe={setPanelOpen} style={{ paddingTop: 8 }}>
+      <View style={{ alignItems: 'center', paddingBottom: 6 }}><View style={{ height: 4, width: 38, borderRadius: 2, backgroundColor: panelP.muted, opacity: .4 }} /></View>
+      <View style={{ paddingHorizontal: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><Text style={{ color: panelP.text, fontWeight: '800', fontSize: 20 }}>{active ? 'Trip' : 'Your ride'}</Text>{(!wide || active) && <Pressable accessibilityRole="button" accessibilityLabel={panelOpen ? 'Collapse ride controls' : 'Expand ride controls'} onPress={() => setPanelOpen(v => !v)} style={{ padding: 8 }}><Ionicons name={panelOpen ? 'chevron-down' : 'chevron-up'} color={panelP.accent} size={22} /></Pressable>}</View>
+      </SwipeArea>
+      {(!wide || active) && !panelOpen ? <SwipeArea onSwipe={setPanelOpen}><MotionView {...motionProps('content')} style={{ paddingHorizontal: 16, gap: 10 }}>{active ? <RideDashboard etaOnly compact simulation={ride.mode === 'simulation'} profile={profile} route={selected} fix={ride.fix} index={g?.index} offRoute={g?.offRoute} seconds={eta?.seconds} meters={eta?.meters} now={now} unit={navigationOptions.unit} /> : <Text numberOfLines={1} style={{ color: panelP.muted }}>{selected && eta ? `${selected.name} · ${distanceLeft(eta.meters, navigationOptions.unit)} · ${minutes(eta.seconds)}` : 'Plan your next ride or import a GPX'}</Text>}<Button title={active ? 'Ride controls' : 'Plan a ride'} icon={active ? 'navigate' : 'search'} onPress={() => active ? setPanelOpen(true) : openPlanner()} /></MotionView></SwipeArea> : <ScrollView {...motionProps('content')} keyboardShouldPersistTaps="handled" style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 14, paddingBottom: 28 }}>
+      {active ? <View style={[styles.card, { backgroundColor: panelP.card }]}>
         <RideDashboard etaOnly simulation={ride.mode === 'simulation'} profile={profile} route={selected} fix={ride.fix} index={g?.index} offRoute={g?.offRoute} seconds={eta?.seconds} meters={eta?.meters} now={now} unit={navigationOptions.unit} />
-        <Text style={{ color: p.muted, fontSize: 12 }}>{profile.name} · Cap {displaySpeed(Math.min(profile.maxSpeed, profile.ridingLimit), navigationOptions.unit).toFixed(0)} {navigationOptions.unit === 'mi' ? 'mph' : 'km/h'} · {eta ? batteryLabel(eta.meters, profile) : 'Range unknown'}</Text>
-        <Text style={{ color: p.muted, fontSize: 11 }}>{headingSource}{ride.mode === 'gps' && navigationOptions.compass && !compassFresh ? ` · ${compass.status}` : ''}{!precise ? ' · Waiting for a precise GPS fix' : ''}</Text>
+        <Text style={{ color: panelP.muted, fontSize: 12 }}>{profile.name} · Cap {displaySpeed(Math.min(profile.maxSpeed, profile.ridingLimit), navigationOptions.unit).toFixed(0)} {navigationOptions.unit === 'mi' ? 'mph' : 'km/h'} · {eta ? batteryLabel(eta.meters, profile) : 'Range unknown'}</Text>
+        <Text style={{ color: panelP.muted, fontSize: 11 }}>{headingSource}{ride.mode === 'gps' && navigationOptions.compass && !compassFresh ? ` · ${compass.status}` : ''}{!precise ? ' · Waiting for a precise GPS fix' : ''}</Text>
 
-        {motion.status !== 'Off' && <Text style={{ color: p.muted, fontSize: 12 }}>Motion: {motion.status} · {motion.acceleration.toFixed(2)} g · {motion.rotation.toFixed(2)} rad/s</Text>}
+        {motion.status !== 'Off' && <Text style={{ color: panelP.muted, fontSize: 12 }}>Motion: {motion.status} · {motion.acceleration.toFixed(2)} g · {motion.rotation.toFixed(2)} rad/s</Text>}
         {g?.offRoute && <Button title="End ride & replan" secondary onPress={() => { ride.stop(); if (ride.fix) { setStart(`${ride.fix.coordinate[1]}, ${ride.fix.coordinate[0]}`); setStartPoint(ride.fix.coordinate); manualStart(); } setPlanner(true); }} />}
         <Button title="End ride" onPress={ride.stop} />
       </View> : <>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}><Text style={{ color: p.text, fontSize: 23, fontWeight: '800' }}>Your next ride</Text><Text style={{ color: p.accent, fontSize: 12, fontWeight: '700' }}>{displaySpeed(Math.min(profile.maxSpeed, profile.ridingLimit), navigationOptions.unit).toFixed(0)} {navigationOptions.unit === 'mi' ? 'MPH' : 'KM/H'} CAP</Text></View>
-        {routes.length === 0 && <View style={[styles.card, { backgroundColor: p.card }]}><Text style={{ color: p.text, fontSize: 18, fontWeight: '700' }}>Where will you ride?</Text><Text style={{ color: p.muted, lineHeight: 20 }}>Plan a route or import your own GPX to see riding estimates. Imported tracks are previews; road access and turns are not verified.</Text></View>}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}><Text style={{ color: panelP.text, fontSize: 23, fontWeight: '800' }}>Your next ride</Text><Text style={{ color: panelP.accent, fontSize: 12, fontWeight: '700' }}>{displaySpeed(Math.min(profile.maxSpeed, profile.ridingLimit), navigationOptions.unit).toFixed(0)} {navigationOptions.unit === 'mi' ? 'MPH' : 'KM/H'} CAP</Text></View>
+        {routes.length === 0 && <View style={[styles.card, { backgroundColor: panelP.card }]}><Text style={{ color: panelP.text, fontSize: 18, fontWeight: '700' }}>Where will you ride?</Text><Text style={{ color: panelP.muted, lineHeight: 20 }}>Plan a route or import your own GPX to see riding estimates. Imported tracks are previews; road access and turns are not verified.</Text></View>}
         <VehicleSelector />
-        {routes.map(r => { const e = estimate(r, profile), chosen = r.id === selected?.id; return <Pressable {...motionProps('route')} accessibilityRole="button" accessibilityLabel={`${r.name}, ${minutes(e.seconds)}`} accessibilityState={{ selected: chosen }} key={r.id} onPress={() => { select(r); void Haptics.selectionAsync(); }} style={[styles.card, { backgroundColor: p.card, borderWidth: 2, borderColor: chosen ? p.accent : 'transparent' }]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><View style={[s.round, { backgroundColor: p.bg }]}><Ionicons name={r.kind === 'bike' ? 'bicycle' : r.kind === 'car' ? 'car-outline' : 'trail-sign-outline'} size={24} color={p.accent} /></View><View style={{ flex: 1 }}><Text style={{ color: p.text, fontSize: 17, fontWeight: '700' }}>{r.name}</Text><Text style={{ color: p.muted, marginTop: 3 }}>{distanceLeft(e.meters, navigationOptions.unit)} · {r.source === 'gpx' ? 'Track only' : 'Access unverified'}</Text></View><View style={{ alignItems: 'flex-end' }}><Text style={{ color: p.text, fontSize: 25, fontWeight: '800' }}>{minutes(e.seconds)}</Text><Text style={{ color: p.muted, fontSize: 11 }}>minimum {minutes(e.minimumSeconds)}</Text></View></View>
-          <Text style={{ color: p.muted, fontSize: 12 }}>{batteryLabel(e.meters, profile)}</Text>
+        {routes.map(r => { const e = estimate(r, profile), chosen = r.id === selected?.id; return <Pressable {...motionProps('route')} accessibilityRole="button" accessibilityLabel={`${r.name}, ${minutes(e.seconds)}`} accessibilityState={{ selected: chosen }} key={r.id} onPress={() => { select(r); void Haptics.selectionAsync(); }} style={[styles.card, { backgroundColor: panelP.card, borderWidth: 2, borderColor: chosen ? panelP.accent : 'transparent' }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><View style={[s.round, { backgroundColor: panelP.bg }]}><Ionicons name={r.kind === 'bike' ? 'bicycle' : r.kind === 'car' ? 'car-outline' : 'trail-sign-outline'} size={24} color={panelP.accent} /></View><View style={{ flex: 1 }}><Text style={{ color: panelP.text, fontSize: 17, fontWeight: '700' }}>{r.name}</Text><Text style={{ color: panelP.muted, marginTop: 3 }}>{distanceLeft(e.meters, navigationOptions.unit)} · {r.source === 'gpx' ? 'Track only' : 'Access unverified'}</Text></View><View style={{ alignItems: 'flex-end' }}><Text style={{ color: panelP.text, fontSize: 25, fontWeight: '800' }}>{minutes(e.seconds)}</Text><Text style={{ color: panelP.muted, fontSize: 11 }}>minimum {minutes(e.minimumSeconds)}</Text></View></View>
+          <Text style={{ color: panelP.muted, fontSize: 12 }}>{batteryLabel(e.meters, profile)}</Text>
           {r.source !== 'gpx' && r.plannedCap !== Math.min(profile.maxSpeed, profile.ridingLimit) && <Text style={{ color: '#C75A36', fontSize: 12 }}>Speed settings changed. Replan to update road speeds, alternatives and ETA.</Text>}
         </Pressable>; })}
-        {selected?.warnings.map(w => <Text key={w} style={{ color: p.muted, fontSize: 12, lineHeight: 18 }}>{w}</Text>)}
+        {selected?.warnings.map(w => <Text key={w} style={{ color: panelP.muted, fontSize: 12, lineHeight: 18 }}>{w}</Text>)}
         {error !== '' && <Text accessibilityRole="alert" style={{ color: '#C75A36', lineHeight: 20 }}>{error}</Text>}
-        <Text style={{ color: p.muted, fontSize: 12 }}>{departure ? scheduleSummary(departure, eta?.seconds, scheduleMode) : 'Depart now'} · ETA excludes traffic.</Text>
+        <Text style={{ color: panelP.muted, fontSize: 12 }}>{departure ? scheduleSummary(departure, eta?.seconds, scheduleMode) : 'Depart now'} · ETA excludes traffic.</Text>
         <Button title={optionsOpen ? 'Hide ride options' : 'Ride options'} secondary icon="options-outline" onPress={() => setOptionsOpen(v => !v)} />
-        {optionsOpen && <>        <View style={{ gap: 10 }}><View style={{ flexDirection: 'row', gap: 8 }}><View style={{ flex: 1 }}><Button title="Depart at" secondary={scheduleMode !== 'depart'} onPress={() => setScheduleMode('depart')} /></View><View style={{ flex: 1 }}><Button title="Arrive by" secondary={scheduleMode !== 'arrive'} onPress={() => setScheduleMode('arrive')} /></View></View><ScheduleControl value={departure} onChange={setDeparture} /><Text style={{ color: p.muted, fontSize: 12 }}>{scheduleSummary(departure, eta?.seconds, scheduleMode)} · Estimated with your riding profile</Text><Text accessibilityRole="alert" style={{ color: '#C75A36', fontSize: 12, lineHeight: 18 }}>Scheduled trips do not use traffic conditions or traffic simulation. Allow extra time for delays.</Text><Button title={traffic ? 'Hide live traffic' : 'Show live traffic'} secondary disabled={!trafficAvailable} onPress={() => setTraffic(v => !v)} />{!trafficAvailable && <Text style={{ color: p.muted, fontSize: 12 }}>Live traffic needs a configured TomTom server key.</Text>}{traffic && <Text style={{ color: p.muted, fontSize: 12 }}>Current traffic flow · © TomTom · not included in scooter ETA</Text>}</View>
+        {optionsOpen && <>        <View style={{ gap: 10 }}><View style={{ flexDirection: 'row', gap: 8 }}><View style={{ flex: 1 }}><Button title="Depart at" secondary={scheduleMode !== 'depart'} onPress={() => setScheduleMode('depart')} /></View><View style={{ flex: 1 }}><Button title="Arrive by" secondary={scheduleMode !== 'arrive'} onPress={() => setScheduleMode('arrive')} /></View></View><ScheduleControl value={departure} onChange={setDeparture} /><Text style={{ color: panelP.muted, fontSize: 12 }}>{scheduleSummary(departure, eta?.seconds, scheduleMode)} · Estimated with your riding profile</Text><Text accessibilityRole="alert" style={{ color: '#C75A36', fontSize: 12, lineHeight: 18 }}>Scheduled trips do not use traffic conditions or traffic simulation. Allow extra time for delays.</Text><Button title={traffic ? 'Hide live traffic' : 'Show live traffic'} secondary disabled={!trafficAvailable} onPress={() => setTraffic(v => !v)} />{!trafficAvailable && <Text style={{ color: panelP.muted, fontSize: 12 }}>Live traffic needs a configured TomTom server key.</Text>}{traffic && <Text style={{ color: panelP.muted, fontSize: 12 }}>Current traffic flow · © TomTom · not included in scooter ETA</Text>}</View>
         </>}
         {Platform.OS === 'ios' && <Button title={offlineMap ? 'Use device maps' : 'Use downloadable maps'} secondary onPress={() => setOfflineMap(v => !v)} />}
         <Button title="Plan bicycle & car routes" icon="search" onPress={openPlanner} />
@@ -174,17 +181,18 @@ export default function Explore() {
       </>}
       <View style={{ gap: 10 }}>{selected && <Button title={overview ? 'Return to navigation' : 'Show full route · 15 seconds'} secondary icon="expand-outline" onPress={overview ? resumeFollowing : showOverview} />}{selected && <Button title="Clear ride & start new" secondary icon="refresh" onPress={clearRide} />}</View>
       {selected && !active && <Button title="Export route as GPX" secondary icon="share-outline" onPress={() => void run(() => shareTrack(selected.coordinates))} />}
-      {selected?.source === 'gpx' && !active && <><Button title="Compare routes between track endpoints" secondary onPress={() => { manualStart(); const a = selected.coordinates[0], b = selected.coordinates.at(-1)!; setStartPoint(a); setEndPoint(b); setStart(`${a[1]}, ${a[0]}`); setEnd(`${b[1]}, ${b[0]}`); setPlanner(true); }} /><Text style={{ color: p.muted, fontSize: 11 }}>Creates new road routes between the endpoints. It does not preserve or upload the original GPX track.</Text></>}
+      {selected?.source === 'gpx' && !active && <><Button title="Compare routes between track endpoints" secondary onPress={() => { manualStart(); const a = selected.coordinates[0], b = selected.coordinates.at(-1)!; setStartPoint(a); setEndPoint(b); setStart(`${a[1]}, ${a[0]}`); setEnd(`${b[1]}, ${b[0]}`); setPlanner(true); }} /><Text style={{ color: panelP.muted, fontSize: 11 }}>Creates new road routes between the endpoints. It does not preserve or upload the original GPX track.</Text></>}
       {ride.recording.length > 1 && !active && <Button title={`Export ride · ${ride.recording.length} fixes`} secondary icon="share-outline" onPress={() => void run(() => shareTrack(ride.recording))} />}
-      {selected && selected.steps.length > 0 && !active && <View style={[styles.card, { backgroundColor: p.card }]}><Text style={{ fontWeight: '700', color: p.text }}>Turn-by-turn directions</Text>{selected.steps.map((step, i) => <Text key={`${i}-${step.index}`} style={{ color: p.muted, lineHeight: 20 }}>{i + 1}. {step.text}</Text>)}</View>}
+      {selected && selected.steps.length > 0 && !active && <View style={[styles.card, { backgroundColor: panelP.card }]}><Text style={{ fontWeight: '700', color: panelP.text }}>Turn-by-turn directions</Text>{selected.steps.map((step, i) => <Text key={`${i}-${step.index}`} style={{ color: panelP.muted, lineHeight: 20 }}>{i + 1}. {step.text}</Text>)}</View>}
     </ScrollView>}
-    </GlassSurface>}
+    </PaletteProvider></GlassSurface>}
+    <RouteWarning key={warningRoute?.id ?? 'closed'} route={warningRoute} onCancel={() => setWarningRoute(null)} onConfirm={route => { if (route.id === selected?.id) { setWarningRoute(null); beginRide(false, true); } }} />
     <Modal visible={planner} animationType={reducedMotion ? 'none' : 'fade'} transparent presentationStyle="overFullScreen" onRequestClose={() => setPlanner(false)}><View style={{ flex: 1, justifyContent: 'center', padding: wide ? 24 : 12, backgroundColor: '#00000025' }}><Pressable accessibilityLabel="Dismiss route planner" onPress={() => setPlanner(false)} style={StyleSheet.absoluteFill} /><SafeAreaView {...motionProps('planner', planner ? 'open' : 'closed')} edges={['top', 'bottom']} style={{ width: '100%', maxWidth: 560, maxHeight: '92%', alignSelf: wide ? 'flex-start' : 'center', backgroundColor: p.bg, borderRadius: 28, overflow: 'hidden', boxShadow: '0 12px 36px #00000030' }}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 24, gap: 18, width: '100%', maxWidth: 780, alignSelf: 'center' }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><Text style={[styles.title, { color: p.text }]}>Where to?</Text><Pressable accessibilityLabel="Close planner" onPress={() => setPlanner(false)}><Ionicons name="close-circle" size={30} color={p.muted} /></Pressable></View>
       <Text style={[styles.subtitle, { color: p.muted }]}>Compare bicycle and car-road candidates at your riding speed. Search an address and select a result, use your location, or pick either endpoint on the map. Coordinates also work.</Text>
       <EndpointPicker disabled={busy} label="Start" value={start} onChange={v => { manualStart(); setStart(v); setStartPoint(undefined); }} onSelect={(label, c) => { manualStart(); setStart(label); setStartPoint(c); }} onLocation={() => void run(resolveCurrentLocation)} onMap={() => { cancelPendingLocation(); setPicking('start'); setPlanner(false); }} />
       <EndpointPicker disabled={busy} label="Destination" value={end} onChange={v => { setEnd(v); setEndPoint(undefined); }} onSelect={(label, c) => { setEnd(label); setEndPoint(c); }} onMap={() => { setPicking('end'); setPlanner(false); }} />
-      <View style={[styles.card, { backgroundColor: p.card }]}><VehicleSelector disabled={busy} /><Text style={{ color: p.muted }}>Hardware {displaySpeed(profile.maxSpeed, navigationOptions.unit).toFixed(0)} {navigationOptions.unit === 'mi' ? 'mph' : 'km/h'} · Riding limit {displaySpeed(profile.ridingLimit, navigationOptions.unit).toFixed(0)} {navigationOptions.unit === 'mi' ? 'mph' : 'km/h'}</Text><Text style={{ color: p.muted, fontSize: 12 }}>Avoid motorways, trunk roads, steps, ferries and known roads above 50 km/h. Scooter access and urban status need review.</Text></View>
+      <View style={[styles.card, { backgroundColor: p.card }]}><VehicleSelector disabled={busy} /><Text style={{ color: p.muted }}>Hardware {displaySpeed(profile.maxSpeed, navigationOptions.unit).toFixed(0)} {navigationOptions.unit === 'mi' ? 'mph' : 'km/h'} · Riding limit {displaySpeed(profile.ridingLimit, navigationOptions.unit).toFixed(0)} {navigationOptions.unit === 'mi' ? 'mph' : 'km/h'}</Text><Text style={{ color: p.muted, fontSize: 12 }}>Prefer routes avoiding motorways, trunk roads, steps, ferries and roads above 50 km/h. Flagged candidates require confirmation before riding. Scooter access needs review.</Text></View>
       {locating && <Text style={{ color: p.muted }}>Finding your current GPS location…</Text>}
       {busy && <ActivityIndicator color={p.accent} />}{!!error && <Text style={{ color: '#C75A36' }}>{error}</Text>}
       <Button title={busy ? 'Finding routes…' : 'Compare routes'} disabled={busy || locating} onPress={() => void plan()} />
