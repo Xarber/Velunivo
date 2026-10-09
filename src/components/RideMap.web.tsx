@@ -6,8 +6,8 @@ import { Route, Coord } from '../core/types';
 import { routeBounds } from '../core/geo';
 import { serverUrl } from '../services/api';
 import { mapStyle } from './mapConfig';
-interface MapProps { routes: Route[]; selected: Route | null; position?: Coord; follow?: boolean; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; offlineMap?: boolean; }
-export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint }: MapProps) {
+interface MapProps { routes: Route[]; selected: Route | null; position?: Coord; follow?: boolean; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; offlineMap?: boolean; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
+export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding }: MapProps) {
   const div = useRef<HTMLDivElement>(null), map = useRef<maplibregl.Map | null>(null);
   const [loaded, setLoaded] = useState(false), [error, setError] = useState(false);
   const click = useRef(onPick);
@@ -31,8 +31,8 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
       m.addSource(id, { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: r.coordinates } } });
       m.addLayer({ id, type: 'line', source: id, paint: { 'line-color': r.id === selected?.id ? '#007F6D' : '#658ACA', 'line-width': r.id === selected?.id ? 6 : 4 }, layout: { 'line-cap': 'round', 'line-join': 'round' } });
     }
-    if (selected && !follow) { const [w, s, e, n] = routeBounds(selected.coordinates); m.fitBounds([[w, s], [e, n]], { padding: 45, duration: 400 }); }
-  }, [routes, selected, loaded, follow]);
+    if (selected && !follow) { const [w, s, e, n] = routeBounds(selected.coordinates); m.fitBounds([[w, s], [e, n]], { padding: fitPadding || 45, duration: 400 }); }
+  }, [routes, selected, loaded, follow, fitPadding]);
   useEffect(() => {
     const m = map.current; if (!m || !loaded || !position) return;
     const data: GeoJSON.Feature<GeoJSON.Point> = { type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: position } };

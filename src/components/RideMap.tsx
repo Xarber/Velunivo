@@ -10,10 +10,10 @@ export default function RideMap(props: MapProps & { offlineMap?: boolean }) {
   if (props.offlineMap || Platform.OS === 'android') return <OfflineRideMap {...props} />;
   return <DeviceMap {...props} />;
 }
-function DeviceMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint }: MapProps) {
+function DeviceMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding }: MapProps) {
   const map = useRef<MapView>(null);
-  const fit = () => { if (selected && !follow) map.current?.fitToCoordinates(selected.coordinates.map(point), { edgePadding: { top: 45, bottom: 45, left: 45, right: 45 }, animated: true }); };
-  useEffect(fit, [selected, follow]);
+  const fit = () => { if (selected && !follow) map.current?.fitToCoordinates(selected.coordinates.map(point), { edgePadding: fitPadding || { top: 45, bottom: 45, left: 45, right: 45 }, animated: true }); };
+  useEffect(fit, [selected, follow, fitPadding]);
   useEffect(() => { if (position && follow) map.current?.animateCamera({ center: point(position), zoom: 16 }, { duration: 700 }); }, [position, follow]);
   const [w, s, e, n] = selected ? routeBounds(selected.coordinates) : [9.18, 45.46, 9.20, 45.48];
   return <MapView ref={map} style={{ flex: 1 }} onMapReady={fit} initialRegion={{ latitude: (s + n) / 2, longitude: (w + e) / 2, latitudeDelta: Math.max(.005, (n - s) * 1.5), longitudeDelta: Math.max(.005, (e - w) * 1.5) }} onPress={ev => onPick?.([ev.nativeEvent.coordinate.longitude, ev.nativeEvent.coordinate.latitude])}>

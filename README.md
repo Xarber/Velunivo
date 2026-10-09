@@ -4,7 +4,7 @@ An iOS-first Expo / React Native project for e-scooter and e-bike planning, with
 
 ## What works in the MVP
 
-- Apple Maps on iPhone/iPad; key-free OpenFreeMap with MapLibre on Android and web, plus a downloadable-map option on iOS. Phone layout becomes a map-and-planner split view at 900 px.
+- Apple Maps on iPhone/iPad; key-free OpenFreeMap with MapLibre on Android and web, plus a downloadable-map option on iOS. Full-screen map with an expandable bottom control sheet on phones and a floating sidebar on iPad/desktop (700 px+). Address planning opens in a popup over the map.
 - Configurable hardware maximum, independent local riding limit, cruise fraction, acceleration and maneuver delays. Shows practical ETA and constant-speed minimum.
 - Depart-at and arrive-by calculations in the device's local time. **Scheduled trips do not use traffic conditions or traffic simulation.** The app displays that warning.
 - GPX import, geometry-only track following, accelerated simulation, local saved routes and GPX export of foreground GPS fixes.
@@ -102,3 +102,5 @@ Your original GPX is retained locally at `assets/tracks/private-example.gpx` and
 OsmAnd supports iOS offline maps, offline routing, bicycle/car profiles and navigation. Its moped profile is not automatically an e-scooter eligibility profile. It is a stronger option for mature offline routing today; Velunivo's particular focus is comparing road candidates with your riding-speed model. [Official routing docs](https://osmand.net/docs/user/navigation/routing/osmand-routing/?current-os=ios).
 
 Scheduling uses the native iOS date/time picker, Android date and time dialogs, or the browser date/time control. You can also enter `Today at 9:00`, `Tomorrow at 6:30 pm`, or `in 3 hours and 35 minutes` and tap **Use this time**. The confirmed local date, time and timezone appear below. Supported English phrases are deliberately explicit; unsupported phrases show an error. Departure/arrival estimates never use traffic prediction or simulation.
+
+Xcode 27 compatibility: SDK57 builds opt into `expo-build-properties` scene support. Native release validation checks that the Simulator process survives launch and preserves logs on failure. The initial v0.1.0 iOS binary is marked a prerelease because it lacks this scene setting and exits on iOS27; use the corrected build when available.

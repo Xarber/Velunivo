@@ -4,10 +4,10 @@ import { Coord, Route } from '../core/types';
 import { routeBounds } from '../core/geo';
 import { serverUrl } from '../services/api';
 import { mapStyle } from './mapConfig';
-export interface MapProps { routes: Route[]; selected: Route | null; position?: Coord; follow?: boolean; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; }
-export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint }: MapProps) {
+export interface MapProps { routes: Route[]; selected: Route | null; position?: Coord; follow?: boolean; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
+export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding }: MapProps) {
   const camera = useRef<CameraRef>(null);
-  useEffect(() => { if (selected && !follow) camera.current?.fitBounds(routeBounds(selected.coordinates), { padding: { top: 40, bottom: 40, left: 40, right: 40 }, duration: 500 }); }, [selected, follow]);
+  useEffect(() => { if (selected && !follow) camera.current?.fitBounds(routeBounds(selected.coordinates), { padding: fitPadding || { top: 40, bottom: 40, left: 40, right: 40 }, duration: 500 }); }, [selected, follow, fitPadding]);
   useEffect(() => { if (position && follow) camera.current?.easeTo({ center: position, zoom: 16, duration: 700 }); }, [position, follow]);
   return <Map style={{ flex: 1 }} mapStyle={mapStyle} onPress={e => onPick?.(e.nativeEvent.lngLat)}>
     <Camera ref={camera} initialViewState={{ bounds: selected ? routeBounds(selected.coordinates) : [12.50, 41.84, 12.61, 41.89], padding: { top: 40, bottom: 40, left: 40, right: 40 } }} />
