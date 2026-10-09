@@ -43,11 +43,11 @@ test('coordinate entry uses latitude/longitude but provider uses longitude/latit
 test('custom models apply exclusions and cap to both road candidates', () => {
   for (const kind of ['bike', 'car'] as const) { const r = routeRequest([9, 45], [9.01, 45], kind, defaultProfile); assert.equal(r.profile, kind); assert.equal(r.custom_model.speed[0].limit_to, '25'); assert.equal(r['ch.disable'], true); assert.ok(r.custom_model.priority.some(x => x.if.includes('STEPS') && x.multiply_by === '0')); }
 });
-test('provider geometry and known excluded roads are validated', () => {
+test('provider geometry is validated and restricted roads stay available with warnings', () => {
   const path = { points: { coordinates: track.coordinates }, details: { road_class: [[0, 2, 'RESIDENTIAL']] }, instructions: [{ text: 'Turn right', sign: 2, interval: [1, 2], distance: 100 }] };
   assert.equal(fromGraphHopper(path, 'bike').steps[0].index, 1);
-  assert.throws(() => fromGraphHopper({ ...path, details: { road_class: [[0, 2, 'MOTORWAY']] } }, 'car'));
-  assert.throws(() => fromGraphHopper({ ...path, details: { max_speed: [[0, 2, 90]] } }, 'car'));
+  assert.ok(fromGraphHopper({ ...path, details: { road_class: [[0, 2, 'MOTORWAY']] } }, 'car').safetyWarnings?.length);
+  assert.ok(fromGraphHopper({ ...path, details: { max_speed: [[0, 2, 90]] } }, 'car').safetyWarnings?.some(w => w.includes('90')));
   assert.throws(() => fromGraphHopper({ ...path, points: { coordinates: [[NaN, 0], [1, 1]] } }, 'car'));
 });
 test('projection finds continuous progress and off-route distance', () => {

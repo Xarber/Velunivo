@@ -27,10 +27,13 @@ export function fromValhalla(data: any, attributes: any, kind: 'bike' | 'car', c
   if (original.length !== coordinates.length || original.some((p, i) => distance(p, coordinates[i]) > 1)) throw new Error('Road verification matched a different path. Choose another endpoint or try again.');
   const details: Record<string, Detail[]> = { max_speed: [], road_class: [], surface: [] };
   let unknown = false, covered = 0;
+  const risks = new Set<string>();
   for (const e of attributes.edges) {
     const a = e.begin_shape_index, b = e.end_shape_index, limit = Number(e.speed_limit);
     if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b >= coordinates.length || b < a) throw new Error('Invalid road interval');
-    if (['motorway', 'trunk'].includes(e.road_class) || ['steps', 'ferry', 'rail-ferry'].includes(e.use) || limit > 50) throw new Error('This candidate includes a motorway, trunk road, ferry, steps or road above 50 km/h. Try a bicycle route or another endpoint.');
+    if (['motorway', 'trunk'].includes(e.road_class)) risks.add(`Includes a ${e.road_class} road, which may prohibit this vehicle.`);
+    if (['steps', 'ferry', 'rail-ferry'].includes(e.use)) risks.add(`Includes ${e.use}; check access and whether you must dismount or arrange transport.`);
+    if (limit > 50) risks.add(limit === 255 ? 'Includes a road with an unlimited mapped speed limit.' : `Includes a road with a mapped speed limit of ${limit} km/h.`);
     if (a > covered) throw new Error('Road details contain an unchecked gap'); covered = Math.max(covered, b);
     if (a === b) continue;
     const road = ['cycleway', 'footway', 'path'].includes(e.use) ? e.use.toUpperCase() : String(e.road_class || 'UNKNOWN').toUpperCase();
@@ -42,5 +45,5 @@ export function fromValhalla(data: any, attributes: any, kind: 'bike' | 'car', c
   if (!Array.isArray(leg.maneuvers)) throw new Error('Missing route instructions');
   const steps = leg.maneuvers.map((m: any) => { if (!Number.isInteger(m.begin_shape_index) || m.begin_shape_index < 0 || m.begin_shape_index >= coordinates.length || typeof m.instruction !== 'string') throw new Error('Invalid maneuver'); return { text: m.instruction, sign: signs[m.type] ?? 0, index: m.begin_shape_index, distance: (m.length ?? 0) * 1000 }; });
   const endGap = requested ? distance(coordinates.at(-1)!, requested[1]) : 0, startGap = requested ? distance(coordinates[0], requested[0]) : 0;
-  return { id: `${kind}-${Date.now()}`, kind, source: 'valhalla', name: kind === 'bike' ? 'Bicycle candidate' : 'Car-road candidate', coordinates, details, steps, plannedCap: cap, warnings: ['Road access for e-scooters is not certified. Check local signs and rules.', 'Mapped limits are OpenStreetMap data and can be missing or outdated.', ...(endGap > 30 ? [`Road route ends ${Math.round(endGap)} m from the selected destination. Final access is unverified and not included in ETA.`] : []), ...(startGap > 50 ? [`Road route starts ${Math.round(startGap)} m from the selected start.`] : []), ...(unknown ? ['Some road speed limits are unknown.'] : [])] };
+  return { id: `${kind}-${Date.now()}`, kind, source: 'valhalla', name: kind === 'bike' ? 'Bicycle candidate' : 'Car-road candidate', coordinates, details, steps, plannedCap: cap, safetyWarnings: [...risks], warnings: [...risks,'Road access for e-scooters is not certified. Check local signs and rules.', 'Mapped limits are OpenStreetMap data and can be missing or outdated.', ...(endGap > 30 ? [`Road route ends ${Math.round(endGap)} m from the selected destination. Final access is unverified and not included in ETA.`] : []), ...(startGap > 50 ? [`Road route starts ${Math.round(startGap)} m from the selected start.`] : []), ...(unknown ? ['Some road speed limits are unknown.'] : [])] };
 }

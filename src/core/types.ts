@@ -5,7 +5,7 @@ export interface Step { text: string; sign: number; index: number; distance: num
 export interface Route {
   id: string; name: string; kind: RouteKind; coordinates: Coord[];
   steps: Step[]; details: Record<string, Detail[]>; source: 'graphhopper' | 'valhalla' | 'gpx';
-  warnings: string[]; savedAt?: number; plannedCap?: number;
+  safetyWarnings?: string[]; warnings: string[]; savedAt?: number; plannedCap?: number;
 }
 export interface Profile {
   name: string; maxSpeed: number; ridingLimit: number; cruiseFactor: number;

@@ -9,8 +9,9 @@ test('Valhalla polyline6 and road limits align with maneuver and geometry indexe
   const r = fromValhalla(route, attributes, 'bike', 25); assert.equal(r.steps[0].sign, -2); assert.deepEqual(r.details.max_speed, [[0,1,30]]); assert.equal(r.plannedCap,25);
   assert.throws(() => decodeShape('?')); assert.throws(() => fromValhalla(route, { ...attributes, shape: 'different' }, 'car',25));
 });
-test('Valhalla rejects unchecked geometry, excluded road classes, ferries and high/unlimited road limits', () => {
-  for (const patch of [{road_class:'motorway'},{road_class:'trunk'},{use:'ferry'},{use:'steps'},{speed_limit:80},{speed_limit:255},{end_shape_index:0}]) assert.throws(()=>fromValhalla(route,{shape,edges:[{...attributes.edges[0],...patch}]},'car',25));
+test('Valhalla preserves flagged roads as explicit warnings while rejecting unchecked geometry', () => {
+  for (const patch of [{road_class:'motorway'},{road_class:'trunk'},{use:'ferry'},{use:'steps'},{speed_limit:80},{speed_limit:255}]) { const r = fromValhalla(route,{shape,edges:[{...attributes.edges[0],...patch}]},'car',25); assert.ok(r.safetyWarnings?.length); assert.ok(r.warnings.includes(r.safetyWarnings[0])); assert.equal(r.coordinates.length, 2); }
+  assert.throws(() => fromValhalla(route, { shape, edges: [{ ...attributes.edges[0], end_shape_index: 0 }] }, 'car', 25));
   const r=fromValhalla(route,{shape,edges:[{...attributes.edges[0],speed_limit:0}]},'bike',25);assert.deepEqual(r.details.max_speed,[]);assert.ok(r.warnings.some(w=>w.includes('unknown')));
 });
 test('public routing requests exclude highways/ferries and never use predicted/current traffic', () => {
