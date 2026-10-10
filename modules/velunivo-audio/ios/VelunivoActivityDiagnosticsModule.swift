@@ -17,6 +17,7 @@ public final class VelunivoActivityDiagnosticsModule: Module {
       if #available(iOS 16.2, *) { enabled = ActivityAuthorizationInfo().areActivitiesEnabled }
       return [
         "systemEnabled": enabled,
+        "nativeRenderer": Bundle.main.object(forInfoDictionaryKey: "VelunivoNativeActivityRenderer") as? Bool == true,
         "declaredSupport": Bundle.main.object(forInfoDictionaryKey: "NSSupportsLiveActivities") as? Bool == true,
         "extensionBundled": !widgets.isEmpty,
         "groupConfigured": group != nil,

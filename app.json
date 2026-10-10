@@ -2,7 +2,7 @@
   "expo": {
     "name": "Velunivo",
     "slug": "velunivo",
-    "version": "0.1.18",
+    "version": "0.1.19",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -13,7 +13,8 @@
         "ITSAppUsesNonExemptEncryption": false,
         "UIBackgroundModes": [
           "audio"
-        ]
+        ],
+        "VelunivoNativeActivityRenderer": true
       },
       "buildNumber": "1",
       "icon": {

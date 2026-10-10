@@ -1,6 +1,6 @@
 {
   "name": "velunivo",
-  "version": "0.1.18",
+  "version": "0.1.19",
   "main": "index.js",
   "dependencies": {
     "@expo/ui": "~57.0.22",
@@ -35,7 +35,7 @@
     "expo-status-bar": "~57.0.1",
     "expo-symbols": "~57.0.3",
     "expo-task-manager": "~57.0.21",
-    "expo-widgets": "~57.0.23",
+    "expo-widgets": "57.0.23",
     "fast-xml-parser": "^5.11.2",
     "maplibre-gl": "^6.13.0",
     "react": "19.2.3",
@@ -64,10 +64,19 @@
     "test": "tsx --test tests/*.test.ts tests/*.test.mjs",
     "server": "tsx server/index.ts",
     "lint": "expo lint",
-    "postinstall": "node scripts/copy-map-worker.mjs",
+    "postinstall": "node scripts/patch-widgets.mjs && node scripts/copy-map-worker.mjs",
     "web:preview": "node scripts/generate-pwa.mjs && expo export --platform web --output-dir dist && node scripts/build-pwa.mjs dist && python3 scripts/serve-web.py",
     "brand:generate": "node scripts/generate-brand.mjs",
     "pwa:generate": "node scripts/generate-pwa.mjs"
   },
-  "private": true
+  "private": true,
+  "expo": {
+    "autolinking": {
+      "ios": {
+        "buildFromSource": [
+          "^expo-widgets$"
+        ]
+      }
+    }
+  }
 }

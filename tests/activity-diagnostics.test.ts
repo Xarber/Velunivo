@@ -13,3 +13,10 @@ test('active ActivityKit state is never presented as proof of lock screen render
  assert.match(activityDiagnosis({checks:healthy,activeCount:1,lastError:'DeniedBySystem'}),/DeniedBySystem/);
  assert.match(activityDiagnosis({checks:null,activeCount:0,lastError:''}),/latest native build/);
 });
+test('native renderer tolerates unavailable shared layout but preserves native startup errors',()=>{
+ const checks={...healthy,nativeRenderer:true,sharedContainerAvailable:false,layoutStored:false,groupsMatch:false};
+ assert.match(activityDiagnosis({checks,activeCount:1,lastError:''}),/directly from ActivityKit data/);
+ assert.match(activityDiagnosis({checks,activeCount:1,lastError:''}),/still needs checking/);
+ assert.match(activityDiagnosis({checks,activeCount:1,lastError:'RequestDenied'}),/RequestDenied/);
+ assert.match(activityDiagnosis({checks:{...checks,extensionBundled:false},activeCount:1,lastError:''}),/missing/);
+});
