@@ -32,7 +32,7 @@ export default function RecordTrip(){
   const [controlsHeight,setControlsHeight]=useState(height),nativeTabs=usesLiquidGlassTabs();
   const bottomObstruction=nativeTabs?Math.max(0,height-controlsHeight):0;
   const metadata=useMemo(()=>({id:`free-trip-${Date.now()}`,name:`Free ride · ${new Date().toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}`,startLabel:'Trip start',endLabel:'Trip finish'}),[]);
-  const motion=useMotion(active),compass=useHeading(active),recorder=useRideRecorder(active,true,false,metadata,profile,motion,compass);
+  const motion=useMotion(active),compass=useHeading(active),recorder=useRideRecorder(active,true,false,metadata,profile,motion,compass,n.askBatteryUsage);
   const recordFix=recorder.accept;
   const accept=React.useCallback(async (fix:import('../../core/types').Fix)=>{if(fix.speed!==null)setPeak(v=>Math.max(v,fix.speed!*3.6));await recordFix(fix);},[recordFix]);
   const location=useTripLocation(active,n.backgroundNavigation,accept),preview=useLocation(!active);

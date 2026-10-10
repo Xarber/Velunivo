@@ -18,7 +18,7 @@ export const defaultProfile: Profile = {
 };
 export interface Fix { coordinate: Coord; accuracy: number; speed: number | null; heading?: number; timestamp: number; }
 
-export interface Vehicle extends Profile { id: string; kind: 'escooter' | 'ebike'; rangeKm: number | null; rangeUnit: 'km' | 'mi'; icon: string; photo: string | null; photos?: string[]; }
+export interface Vehicle extends Profile { id: string; kind: 'escooter' | 'ebike'; rangeKm: number | null; learnedRangeKm?: number; learnedBatteryRideCount?: number; rangeUnit: 'km' | 'mi'; icon: string; photo: string | null; photos?: string[]; }
 
-export interface NavigationOptions { compass: boolean; tilted: boolean; unit: 'km' | 'mi'; voice: boolean; motion: boolean; volume: 'loud' | 'quiet' | 'off'; recordRides: boolean; downloadedMaps: boolean; developerMode: boolean; showSharingVehicle: boolean; learnedEta: boolean; transit: boolean; traffic: boolean; liveActivities: boolean; backgroundNavigation: boolean; }
-export const defaultNavigationOptions: NavigationOptions = { compass: true, tilted: false, unit: 'km', voice: true, motion: false, volume: 'loud', recordRides: true, downloadedMaps: true, developerMode: false, showSharingVehicle: true, learnedEta: true, transit: false, traffic: false, liveActivities: true, backgroundNavigation: true };
+export interface NavigationOptions { compass: boolean; tilted: boolean; unit: 'km' | 'mi'; voice: boolean; motion: boolean; volume: 'loud' | 'quiet' | 'off'; recordRides: boolean; askBatteryUsage: boolean; downloadedMaps: boolean; developerMode: boolean; showSharingVehicle: boolean; learnedEta: boolean; transit: boolean; traffic: boolean; liveActivities: boolean; backgroundNavigation: boolean; }
+export const defaultNavigationOptions: NavigationOptions = { compass: true, tilted: false, unit: 'km', voice: true, motion: false, volume: 'loud', recordRides: true, askBatteryUsage: false, downloadedMaps: true, developerMode: false, showSharingVehicle: true, learnedEta: true, transit: false, traffic: false, liveActivities: true, backgroundNavigation: true };

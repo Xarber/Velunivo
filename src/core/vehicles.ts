@@ -30,10 +30,11 @@ export function removeVehicle(g: Garage, id: string): Garage {
 export const rangeValue = (km: number, unit: Vehicle['rangeUnit']) => unit === 'mi' ? km / 1.609344 : km;
 export const rangeKm = (value: number, unit: Vehicle['rangeUnit']) => unit === 'mi' ? value * 1.609344 : value;
 export function batteryEstimate(meters: number, vehicle: Vehicle) {
-  if (!vehicle.rangeKm || !Number.isFinite(meters) || meters < 0) return null;
-  return { percent: meters / 1000 / vehicle.rangeKm * 100, remainingKm: Math.max(0, vehicle.rangeKm - meters / 1000), exceedsRange: meters / 1000 > vehicle.rangeKm };
+  const range = vehicle.learnedRangeKm || vehicle.rangeKm;
+  if (!range || !Number.isFinite(meters) || meters < 0) return null;
+  return { percent: meters / 1000 / range * 100, remainingKm: Math.max(0, range - meters / 1000), exceedsRange: meters / 1000 > range };
 }
 export function batteryLabel(meters: number, vehicle: Vehicle) {
   const b = batteryEstimate(meters, vehicle);
-  return b ? `≈${b.percent.toFixed(b.percent > 0 && b.percent < 1 ? 1 : 0)}% of full battery${b.exceedsRange ? ' · exceeds full-charge range' : ''}` : 'Add vehicle range for a battery estimate';
+  return b ? `≈${b.percent.toFixed(b.percent > 0 && b.percent < 1 ? 1 : 0)}% of full battery${b.exceedsRange ? ' · exceeds full-charge range' : ''}${vehicle.learnedRangeKm ? ` · learned from ${vehicle.learnedBatteryRideCount} rides` : ''}` : 'Add vehicle range for a battery estimate';
 }

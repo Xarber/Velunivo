@@ -3,7 +3,7 @@ import { usableMovementFix } from './movement';
 import { distance } from './geo';
 export interface VectorReading { x: number; y: number; z: number; timestamp: number; }
 export interface RideSample { pathFix?: Fix | null; breakBefore?: boolean; fix: Fix; compass: { heading: number; timestamp: number } | null; accelerometer: VectorReading | null; gyroscope: VectorReading | null; }
-export interface RecordedRide { id: string; name: string; vehicle: Pick<Vehicle, 'id' | 'name' | 'kind' | 'maxSpeed' | 'ridingLimit'>; startLabel: string; endLabel: string; startedAt: number; endedAt?: number; lastFixAt?: number; status: 'recording' | 'finished' | 'arrived' | 'interrupted'; samples: number; chunks: number; meters: number; preview: Coord[]; trace?: Coord[][]; start?: Coord; end?: Coord; }
+export interface RecordedRide { batteryUsagePercent?: number; batteryFeedback?: 'pending' | 'answered' | 'skipped'; id: string; name: string; vehicle: Pick<Vehicle, 'id' | 'name' | 'kind' | 'maxSpeed' | 'ridingLimit'>; startLabel: string; endLabel: string; startedAt: number; endedAt?: number; lastFixAt?: number; status: 'recording' | 'finished' | 'arrived' | 'interrupted'; samples: number; chunks: number; meters: number; preview: Coord[]; trace?: Coord[][]; start?: Coord; end?: Coord; }
 export function freshVector(v: VectorReading | null, now: number): VectorReading | null { return v && now - v.timestamp >= 0 && now - v.timestamp < 2000 ? v : null; }
 export function appendSample(r: RecordedRide, sample: RideSample, previous: Fix | null): RecordedRide {
   const f = sample.pathFix === undefined ? sample.fix : sample.pathFix, usable = !!f && usableMovementFix(f);
