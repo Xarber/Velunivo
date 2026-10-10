@@ -202,3 +202,9 @@ Saved Places: Library → Saved Places → pencil → edit name → Save name. N
 Enable Developer Mode from the version label in Settings, then choose the play icon for a selected route. Simulation replaces GPS fixes with synthetic route progress. Voice/volume, registered iOS Live Activities, turn cards, speed/ETA/road-limit displays, compass and enabled motion readings, route overview, maps, safety warnings and ride controls remain available. Live Activities label the ride Simulation. Replanning uses the simulated current position. Recording and learned-pace input are excluded even if Record Rides is on.
 
 No real foreground/background GPS subscription is started for a simulated ride. The simulator uses elapsed time and catches up after OS timer suspension; updates while locked depend on the OS allowing JavaScript execution. It does not invent a GPS location or keep the process alive through fake location/audio use. A registered native extension is still required for Live Activities.
+
+## Live Activity installation checks (0.1.16)
+
+On iOS, Settings → Live Activity check → Check Live Activity reads system authorization, installed widget/configuration, App Group agreement, access to the shared container, and navigation layout presence. During an active ride it also reads the activity count and last native start/update error. Developer Mode shows the underlying booleans/count/error. No permission dialog, installation change, export or transmission occurs. No device/container paths, ride samples or activity identifiers are returned.
+
+An active ActivityKit request does not prove visible rendering; bundled-extension presence does not prove system registration. A missing shared container points to an installation/entitlement issue, but a healthy app-side container does not establish extension-side access. The panel cannot inspect the Lock Screen or jailbreak configuration. Native APIs require a fresh build; web/Android omit this iOS-only panel.

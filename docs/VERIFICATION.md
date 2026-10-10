@@ -124,3 +124,7 @@ Automatic metadata-only AltSource workflow 38049619846 succeeded against v0.1.13
 ## 0.1.15 — simulated navigation parity
 
 61 app tests, lint and typecheck pass, including a controlled execution of the actual simulated subscription effect. It verifies voice/activity delivery, elapsed-time catch-up and arrival cleanup, plus zero recording and real GPS calls. Payload tests retain the same ETA/distance metrics with a Simulation label. All-platform JavaScript exports pass. These checks do not prove physical/simulator ActivityKit installation, audio playback or locked-screen execution. API behavior was checked against [Expo SDK57 Widgets](https://docs.expo.dev/versions/v57.0.0/sdk/widgets/), [Speech](https://docs.expo.dev/versions/v57.0.0/sdk/speech/) and [Sensors](https://docs.expo.dev/versions/v57.0.0/sdk/sensors/).
+
+## 0.1.16 — silent ActivityKit failure diagnostics
+
+63 app tests pass, including missing prerequisites despite an active request, preserved error reasons, and avoiding claims of visible rendering from activity count alone. Lint/typecheck, all-platform JavaScript export and native Swift syntax parsing pass. Expo autolinking resolves the added native class in the VelunivoAudio pod; its compilation/linkage awaits GitHub build. No physical TrollStore Lite/Lock Screen check has been completed. The panel distinguishes bundled metadata from installation/runtime state and never reads private device paths or ride data.

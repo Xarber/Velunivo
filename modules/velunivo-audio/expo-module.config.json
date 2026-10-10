@@ -1,1 +1,11 @@
-{"platforms":["apple"],"apple":{"modules":["VelunivoAudioModule"]}}
+{
+  "platforms": [
+    "apple"
+  ],
+  "apple": {
+    "modules": [
+      "VelunivoAudioModule",
+      "VelunivoActivityDiagnosticsModule"
+    ]
+  }
+}
