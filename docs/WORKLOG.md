@@ -229,3 +229,7 @@ Final staged review removed a whitespace-only line in the new Library screen. Ve
 ## AltSource image refresh — 2026-10-10
 
 Compared the published icon against assets/icon.png; their SHA-256 digests match, so stale source/app imagery is consistent with client caching at the unchanged icon.png URL. Source generation now refreshes both source and app metadata and publishes a content-addressed icon asset. The source description no longer says no installable versions exist. Tablet screenshots are also included in the iPhone gallery because clients select one device gallery; the dedicated iPad gallery remains intact. Existing native iPad imagery is a disclosed older portrait capture; no landscape image was fabricated or rotated. This metadata correction does not require rebuilding the app.
+
+## Automatic AltSource maintenance — 2026-10-10
+
+Centralized editable source/app metadata, connected published-release events as well as inline release publication, fixed the manual refresh path's missing hashed-icon upload, and guarded against older tags overwriting newer release metadata. Added asset-first/feed-last publication with remote JSON verification, and preserved existing binary dates on refresh. Existing screenshot fallback remains intact. Python source/workflow tests pass.

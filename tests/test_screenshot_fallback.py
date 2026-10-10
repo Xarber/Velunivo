@@ -82,7 +82,10 @@ class ScreenshotFallbackTests(unittest.TestCase):
             self.assertEqual(gallery['iphone'],shots['iphone']+shots['ipad'])
             self.assertEqual(gallery['ipad'],shots['ipad'])
             subprocess.check_call(args)
-            self.assertEqual(json.loads(result_path.read_text())['apps'][0]['screenshots'],gallery)
+            again=json.loads(result_path.read_text())
+            self.assertEqual(again['apps'][0]['screenshots'],gallery)
+            self.assertEqual(again['apps'][0]['versions'][0]['date'],result['apps'][0]['versions'][0]['date'])
+            self.assertEqual(again['website'],'https://github.com/Xarber/Velunivo')
 
 
 if __name__ == '__main__':
