@@ -55,6 +55,7 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     env:
+      WEB_PUBLIC_ORIGIN: ${{ vars.WEB_PUBLIC_ORIGIN }}
       APP_VERSION: ${{ needs.prepare.outputs.version }}
       BUILD_NUMBER: ${{ github.run_number }}
       EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
@@ -67,7 +68,9 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: node scripts/generate-pwa.mjs
       - run: npx expo export --platform web --output-dir dist
+      - run: node scripts/build-pwa.mjs dist
       - run: cd dist && zip -qr ../web.zip .
       - uses: actions/upload-artifact@v4
         with:
@@ -325,6 +328,8 @@ jobs:
             gh release create 1.0 --target "$GITHUB_SHA" --title 'Velunivo AltSource' --notes 'Mutable source feed. Add apps.json to AltStore Classic or SideStore. Binary releases use v-prefixed version tags.' --latest=false
           fi
           mkdir -p work/source
-          gh release download 1.0 --pattern apps.json --dir work/source || true
+          if gh release view 1.0 --json assets --jq '.assets[].name' | grep -qx apps.json; then
+            gh release download 1.0 --pattern apps.json --dir work/source
+          fi
           python3 scripts/update-source.py --repo "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG" --existing work/source/apps.json --output work/source/apps.json
           python3 scripts/publish-source.py --repo "$GITHUB_REPOSITORY" --source work/source

@@ -1,0 +1,127 @@
+{
+  "id": "/",
+  "name": "Velunivo — Scooter & E-bike Navigation",
+  "short_name": "Velunivo",
+  "description": "Plan e-scooter and e-bike rides, compare bicycle and car-road alternatives with vehicle-specific ETA, save places and routes, and keep ride records locally. Web guidance requires keeping the app open.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "theme_color": "#007F6D",
+  "background_color": "#102C2B",
+  "categories": [
+    "navigation",
+    "travel",
+    "utilities"
+  ],
+  "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "icons": [
+    {
+      "src": "/pwa/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/pwa/monochrome-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "monochrome"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/pwa/phone.jpg",
+      "sizes": "393x852",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Phone web navigation preview · simulated ride"
+    },
+    {
+      "src": "/pwa/wide.jpg",
+      "sizes": "1280x800",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Desktop web navigation preview · simulated ride"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Plan a ride",
+      "short_name": "Explore",
+      "url": "/",
+      "description": "Compare routes for your vehicle",
+      "icons": [
+        {
+          "src": "/pwa/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png",
+          "purpose": "any"
+        }
+      ]
+    },
+    {
+      "name": "Library",
+      "short_name": "Library",
+      "url": "/offline",
+      "description": "Saved places, routes and recorded rides",
+      "icons": [
+        {
+          "src": "/pwa/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png",
+          "purpose": "any"
+        }
+      ]
+    },
+    {
+      "name": "Vehicles",
+      "short_name": "Vehicles",
+      "url": "/scooter",
+      "description": "Manage your e-scooters and e-bikes",
+      "icons": [
+        {
+          "src": "/pwa/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png",
+          "purpose": "any"
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "short_name": "Settings",
+      "url": "/settings",
+      "description": "Units, maps and ride preferences",
+      "icons": [
+        {
+          "src": "/pwa/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png",
+          "purpose": "any"
+        }
+      ]
+    }
+  ]
+}

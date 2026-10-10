@@ -233,3 +233,11 @@ Compared the published icon against assets/icon.png; their SHA-256 digests match
 ## Automatic AltSource maintenance — 2026-10-10
 
 Centralized editable source/app metadata, connected published-release events as well as inline release publication, fixed the manual refresh path's missing hashed-icon upload, and guarded against older tags overwriting newer release metadata. Added asset-first/feed-last publication with remote JSON verification, and preserved existing binary dates on refresh. Existing screenshot fallback remains intact. Python source/workflow tests pass.
+
+## 0.1.14 — continuous native GPS, renamed places and installable web app
+
+Added an Expo TaskManager entry-point task for active-ride background GPS with Always-location/Android foreground-service configuration, foreground fallback, timestamp deduplication, cancellation ownership checks, durable recording delivery and direct Live Activity updates. Stops release resources; headless restart never resumes a terminated ride. Sensor gaps remain honest. Added local saved-place rename editor preserving address/coordinate/identity.
+
+Added PWA Settings install banner, branded regular/maskable/monochrome/Apple icons, complete applicable manifest fields, screenshots/shortcuts, sharing/SEO/structured metadata, safe-area viewport/dynamic keyboard sizing and a public-shell-only service worker. Updates wait and cannot be applied through Settings during an active ride. Build/check workflows generate and package these assets; optional WEB_PUBLIC_ORIGIN supplies actual public share URLs. Source updates now refuse transient feed-download failure rather than losing version history.
+
+Kept the original apps checkout untouched, used only the temporary clone, left all commits unsigned and downloaded no local SDKs. Native/installed PWA physical tests remain pending; browser policy blocked raw safe-area emulation, so only normal responsive layouts were tested.

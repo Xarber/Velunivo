@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+    <title>Velunivo — Scooter &amp; E-bike Navigation</title>
+    <meta name="application-name" content="Velunivo" />
+    <meta name="description" content="Plan e-scooter and e-bike rides with vehicle-specific ETA, saved places, routes and local ride records." />
+    <meta name="author" content="Xarber" />
+    <meta name="keywords" content="e-scooter, e-bike, navigation, route planner, GPX, Velunivo" />
+    <meta name="theme-color" content="#007F6D" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Velunivo" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Velunivo — Your route. Your riding speed." />
+    <meta property="og:description" content="Navigation and route planning for e-scooters and e-bikes." />
+    <meta property="og:site_name" content="Velunivo" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content="/pwa/social-preview.png" />
+    <meta property="og:image:alt" content="Velunivo route mark and app name" />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta name="twitter:image:alt" content="Velunivo route mark and app name" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Velunivo — Your route. Your riding speed." />
+    <meta name="twitter:description" content="Navigation for e-scooters and e-bikes." />
+    <meta name="twitter:image" content="/pwa/social-preview.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/pwa/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/pwa/icon-192.png" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Velunivo","applicationCategory":"TravelApplication","operatingSystem":"Web, iOS, Android","description":"E-scooter and e-bike route planning with vehicle-specific travel times.","isAccessibleForFree":true,"author":{"@type":"Person","name":"Xarber"},"sameAs":"https://github.com/Xarber/Velunivo"}</script>
+    <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
+    <style id="expo-reset">
+      /* These styles make the body full-height */
+      html,
+      body {
+        height: 100%;
+      }
+      /* These styles disable body scrolling if you are using <ScrollView> */
+      body {
+        overflow: hidden;
+        margin: 0;
+        overscroll-behavior: none;
+        background: #102C2B;
+      }
+      /* These styles make the root element full-height */
+      #root {
+        display: flex;
+        height: 100%;
+        height: var(--velunivo-visible-height, 100dvh);
+        flex: 1;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Use static rendering with Expo Router to support running without JavaScript. -->
+    <noscript>
+      You need to enable JavaScript to run this app.
+    </noscript>
+    <!-- The root element for your Expo app. -->
+    <div id="root"></div>
+  </body>
+</html>

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Velunivo",
     "slug": "velunivo",
-    "version": "0.1.13",
+    "version": "0.1.14",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -10,7 +10,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "app.velunivo.mobile",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": [
+          "audio"
+        ]
       },
       "buildNumber": "1",
       "icon": {
@@ -40,7 +43,11 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Velunivo uses your location for ride guidance and recording."
+          "locationWhenInUsePermission": "Velunivo uses your location for ride guidance and recording.",
+          "locationAlwaysAndWhenInUsePermission": "Velunivo uses location during an active ride to keep directions, Live Activities and ride recording updated when the screen is locked.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
         }
       ],
       [

@@ -3,7 +3,9 @@ import { AppState } from 'react-native';
 import { Image, Text, VStack } from '@expo/ui/swift-ui';
 import { font, foregroundStyle, padding } from '@expo/ui/swift-ui/modifiers';
 import { createLiveActivity, LiveActivity, LiveActivityEnvironment } from 'expo-widgets';
-import { NavigationActivity } from '../core/liveActivity';
+import { NavigationActivity, rideActivity } from '../core/liveActivity';
+import { Route, Profile, NavigationOptions, Fix } from '../core/types';
+import { guidance } from '../core/navigation';
 const NavigationLayout = (p: NavigationActivity, environment: LiveActivityEnvironment) => {
   'widget';
   const accent=environment.isLuminanceReduced ? '#FFFFFF' : '#28DAB0';
@@ -26,9 +28,17 @@ export function useNavigationActivity(active: boolean, props: NavigationActivity
     // The native ActivityKit factory synchronously reports availability.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     try { instance.current=activity.start(latest.current,'velunivo:///',new Date(Date.now()+30000)); setStatus(''); } catch { setStatus('Live Activity unavailable on this installation.'); }
-    const app=AppState.addEventListener('change',s=>{const live=instance.current;if(live && s!=='active') void live.update({...latest.current,turn:'Guidance paused · open Velunivo'},new Date(Date.now()+1000)).catch(()=>{});});
-    return ()=>{app.remove();const live=instance.current;instance.current=null;last.current='';if(live)void live.end('immediate').catch(()=>{});};
+    return ()=>{const live=instance.current;instance.current=null;last.current='';if(live)void live.end('immediate').catch(()=>{});};
   },[active]);
-  useEffect(()=>{ if(!active || !instance.current)return; const key=JSON.stringify(props);if(key===last.current)return;last.current=key;void instance.current.update(props,new Date(Date.now()+30000)).catch(()=>setStatus('Live Activity could not update.')); },[active,props]);
+  useEffect(()=>{ if(!active || !instance.current || AppState.currentState !== 'active')return; const key=JSON.stringify(props);if(key===last.current)return;last.current=key;void instance.current.update(props,new Date(Date.now()+30000)).catch(()=>setStatus('Live Activity could not update.')); },[active,props]);
   return {status};
 }
+
+// Called directly by GPS task delivery; does not depend on a background React render.
+export async function updateRideActivity(route:Route,profile:Profile,options:NavigationOptions,g:ReturnType<typeof guidance>,fix:Fix) {
+ try { for(const live of activity.getInstances()) {
+   if(g.arrived || !options.liveActivities)await live.end('immediate');
+   else await live.update(rideActivity(route,profile,options,g,fix),new Date(Date.now()+30000));
+ } } catch { /* UI hook reports extension availability; GPS must continue. */ }
+}
+export async function markActivityPaused() {try {for(const live of activity.getInstances())await live.update({turn:'Guidance paused · enable background location',symbol:'arrow.up',distance:'—',arrival:'—',minutes:'—',remaining:'—'},new Date());} catch { /* Unsupported extension. */ }}

@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { rideActivity } from '../src/core/liveActivity';
+import { guidance } from '../src/core/navigation';
+import { defaultNavigationOptions } from '../src/core/types';
 import { measuredPace, learnedPace } from '../src/core/learnedEta';
 import { createVehicle, defaultGarage, removeVehicle, restoreGarage } from '../src/core/vehicles';
 import { estimate } from '../src/core/eta';
@@ -7,7 +10,7 @@ import { RecordedRide, RideSample } from '../src/core/recordings';
 import { Route } from '../src/core/types';
 import { maneuverDistance } from '../src/core/rideView';
 import { photonResults } from '../src/core/addresses';
-import { swapEndpoints, searchPlaces, journeyTitle } from '../src/core/places';
+import { swapEndpoints, searchPlaces, journeyTitle, renameSavedPlace } from '../src/core/places';
 const vehicle=createVehicle('escooter','v');
 const record: RecordedRide={id:'r',name:'Ride',vehicle,startLabel:'A',endLabel:'B',startedAt:0,endedAt:120000,status:'finished',samples:121,chunks:2,meters:400,preview:[]};
 const samples: RideSample[]=Array.from({length:121},(_,i)=>({fix:{coordinate:[i<61 ? i*.00005 : .003,0],timestamp:i*1000,accuracy:3,speed:i<61?5:0},compass:null,accelerometer:null,gyroscope:null}));
@@ -28,3 +31,7 @@ test('swap accepts empty endpoints and preserves current location semantics',()=
 test('distance changes units at a kilometre and uses miles and feet',()=>{for(const [m,label] of [[10,'10 m'],[100,'100 m'],[900,'900 m'],[999,'1 km'],[1000,'1 km'],[1529,'1.5 km']] as const)assert.equal(maneuverDistance(m,'km'),label);assert.equal(maneuverDistance(1609.344,'mi'),'1 mi');assert.equal(maneuverDistance(10,'mi'),'30 ft');});
 test('POI names and municipalities remain distinguishable',()=>{const results=photonResults({features:['San Cesareo','Monte Compatri'].map(city=>({geometry:{type:'Point',coordinates:[12,41]},properties:{name:'Metro shop',street:'Via Casilina',housenumber:'512',city,county:'Roma',state:'Lazio',country:'Italia'}}))});assert.equal(results[0].name,'Metro shop');assert.notEqual(results[0].label,results[1].label);assert.match(results[1].address,/Monte Compatri/);assert.equal(searchPlaces([{id:'p',name:'Home',address:results[1].address,coordinate:[12,41]}],'compATri').length,1);assert.equal(journeyTitle('Duomo, Milano','Castle, Milano','Bicycle candidate'),'Duomo → Castle');assert.equal(journeyTitle(undefined,undefined,'Weekend by the lake',123),'Weekend by the lake');});
 test('Sharing E-Scooter cannot be deleted and is restored if absent',()=>{assert.deepEqual(removeVehicle(defaultGarage,'sharing-scooter'),defaultGarage);const hiddenOld={...defaultGarage,vehicles:[vehicle],activeId:'v',sharingPresetAdded:true};assert.equal(restoreGarage(JSON.stringify(hiddenOld),null).vehicles.some(v=>v.id==='sharing-scooter'),true);});
+
+test('renaming a saved place preserves its address, coordinate and identity',()=>{const place={id:'home',name:'Home',address:'Milan, Italy',coordinate:[9,45] as [number,number]};const renamed=renameSavedPlace([place],'home','  My home  ');assert.deepEqual(renamed,[{...place,name:'My home'}]);assert.deepEqual(renameSavedPlace([place],'home','  '),[place]);assert.equal(renameSavedPlace([place],'unknown','Elsewhere')[0],place);});
+
+test('background activity updates use fresh GPS progress, units and arrival state',()=>{const route:Route={id:'bg',name:'Test',kind:'bike',coordinates:[[0,0],[.03,0]],steps:[{text:'Turn left',sign:-1,index:1,distance:3336}],source:'gpx',warnings:[],details:{}};const fix={coordinate:[0,0] as [number,number],accuracy:3,speed:5,timestamp:Date.now()};const g=guidance(route,fix);const p=rideActivity(route,vehicle,defaultNavigationOptions,g,fix);assert.equal(p.symbol,'arrow.turn.up.left');assert.match(p.distance,/km$/);assert.match(rideActivity(route,vehicle,{...defaultNavigationOptions,unit:'mi'},g,fix).distance,/mi$/);assert.equal(rideActivity(route,vehicle,defaultNavigationOptions,{...g,arrived:true},fix).turn,'You have arrived');});

@@ -74,7 +74,7 @@ For a production export and local preview on port 8082, run `npm run web:preview
 
 Velunivo is an MVP. A user reported a successful 8 km physical-device ride on an earlier build. Version 0.1.13 adds learned ETAs, reorganized Library screens, native audio-session cleanup and Live Activities; those native changes and offline pack downloads still need physical-device testing. Scooter access cannot be certified from bicycle/car access or incomplete OpenStreetMap data; inspect signs and local rules. Unknown street limits remain unknown. New vehicle profiles start at a generic 25 km/h capability; configure your actual capability and local riding cap.
 
-Automatic rerouting, background navigation, offline route calculation and hill/weather energy models are not implemented. A saved route can be followed offline, but a new route needs an online routing provider. Imported geometry-only GPX tracks have no invented turn instructions. [Test evidence and remaining work](docs/VERIFICATION.md).
+Automatic rerouting, offline route calculation and hill/weather energy models are not implemented. A saved route can be followed offline, but a new route needs an online routing provider. Imported geometry-only GPX tracks have no invented turn instructions. [Test evidence and remaining work](docs/VERIFICATION.md).
 
 ## Development
 
@@ -100,3 +100,9 @@ Global voice, motion and recording preferences live in Settings. Ride controls o
 After three qualifying completed rides with the same vehicle and limits, route estimates can use its observed pace, including stops. Saved Places, Saved Routes and Recorded Rides have separate Library menus. Start again plans alternatives between the recorded endpoints without starting navigation. Normal sharing exports GPX; tap the app version at the bottom of Settings to reveal Developer Mode, which enables JSON export and ride simulation.
 
 Turn cards use readable metre/kilometre or feet/mile distances; swipe down on the active turn banner to browse upcoming directions. Native iOS builds include audio-session cleanup and optional Live Activities/Dynamic Island guidance. Live Activities need a registered widget extension and may be unavailable in LiveContainer. Transit labels/rail overlays and optional current traffic are map previews, not public transport routing or traffic-based ETA. See [0.1.13 setup](docs/SETUP.md#learned-eta-places-and-native-features-0113).
+
+## Install on the web and navigate in the background
+
+The web release includes an installable PWA with Velunivo Home Screen icons, install screenshots, app shortcuts and sharing metadata. Open Settings → Install Velunivo. Safari uses Share → Add to Home Screen on iPhone/iPad, or File → Add to Dock on Mac. Serve the exported site over HTTPS at the domain root; see [setup](docs/SETUP.md#installable-web-app-pwa). Web GPS needs the page open; cached app assets and local Library do not provide offline routing or downloaded web maps.
+
+Native active rides can continue GPS guidance, recording and registered iOS Live Activity updates with background location permission. The OS controls update delivery; force-quitting ends updates. Motion/compass samples may pause when locked. Saved Places can be renamed using the pencil button. These native changes require the 0.1.14 build and physical-device verification.

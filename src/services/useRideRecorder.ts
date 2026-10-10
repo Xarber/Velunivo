@@ -13,15 +13,16 @@ export function useRideRecorder(active: boolean, enabled: boolean, arrived: bool
     const chunks = [...s.pending].map(([index, samples]) => ({ index, samples: [...samples] }));
     if (s.buffer.length) chunks.push({ index: s.chunk, samples: [...s.buffer] });
     s.ride = { ...s.ride, chunks: s.chunk + (s.buffer.length ? 1 : 0) }; s.dirty = false;
-    void persistRide(s.ride, chunks).then(() => { setError(''); for (const c of chunks) if (c.samples.length >= 100) s.pending.delete(c.index); }).catch(e => { s.dirty = true; setError(`Ride could not be saved: ${e.message}. Check device storage.`); });
+    const write = persistRide(s.ride, chunks).then(() => { setError(''); for (const c of chunks) if (c.samples.length >= 100) s.pending.delete(c.index); }).catch(e => { s.dirty = true; setError(`Ride could not be saved: ${e.message}. Check device storage.`); });
     if (s.buffer.length >= 100) { s.pending.set(s.chunk, [...s.buffer]); s.chunk++; s.buffer = []; }
+    return write;
   }, []);
-  const accept = useCallback((fix: Fix) => {
+  const accept = useCallback((fix: Fix, arrived = false) => {
     const s = session.current; if (!s || s.ride.status !== 'recording') return;
     const now = Date.now(), sensor = sensors.current;
     const sample: RideSample = { fix, compass: sensor.compass.heading !== null && now - sensor.compass.timestamp < 3000 ? { heading: sensor.compass.heading, timestamp: sensor.compass.timestamp } : null, accelerometer: freshVector(sensor.motion.accelerometer, now), gyroscope: freshVector(sensor.motion.gyroscope, now) };
     s.ride = appendSample(s.ride, sample, s.previous); s.previous = fix; s.buffer.push(sample); s.dirty = true;
-    if (s.buffer.length >= 100) flush();
+    if (arrived || s.buffer.length >= 100 || AppState.currentState !== 'active') return flush(arrived ? 'arrived' : undefined);
   }, [flush]);
   useEffect(() => {
     if (!active || !enabled || !route) return;
