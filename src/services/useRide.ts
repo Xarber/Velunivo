@@ -1,3 +1,4 @@
+import { MovementTracker, usableMovementFix } from '../core/movement';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 import * as Location from 'expo-location';
@@ -26,16 +27,20 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
     setProgress(null); setFix(null); setCompletedMeters(0);
     if (mode === 'idle' || !route) return;
     let cancelled = false, paused = mode === 'gps' && AppState.currentState !== 'active', background = false, halted = false, lastAccepted = 0, stopBackground: (()=>Promise<void>) | undefined, subscription: Location.LocationSubscription | undefined, timer: ReturnType<typeof setInterval> | undefined;
-    async function accept(next: Fix) {
-      if (cancelled || paused || halted || next.timestamp <= lastAccepted) return;
-      lastAccepted=next.timestamp;
+    const movement = new MovementTracker();
+    async function accept(raw: Fix) {
+      if (cancelled || paused || halted || raw.timestamp <= lastAccepted) return;
+      const tracked = mode === 'gps' ? movement.next(raw) : null;
+      lastAccepted=raw.timestamp;
+      if (mode === 'gps' && !usableMovementFix(raw)) { setStatus('Waiting for a precise GPS fix'); setProgress(v => v ? { ...v, valid: false } : null); await onFixRef.current?.(raw); return; }
+      const next = mode === 'simulation' ? raw : tracked?.fix ?? raw;
       setFix(next);
       const g = guidance(route!, next, along.current);
-      if (!g.valid) { setStatus('Waiting for a precise GPS fix'); setProgress(v => v ? { ...v, valid: false } : null); if(mode==='gps')await onFixRef.current?.(next); return; }
+      if (!g.valid) { setStatus('Waiting for a precise GPS fix'); setProgress(v => v ? { ...v, valid: false } : null); if(mode==='gps')await onFixRef.current?.(raw); return; }
       setProgress(g); if (!g.offRoute) setCompletedMeters(v => Math.max(v, g.along));
       if (g.offRoute) setStatus('Off route · stop safely to replan');
       else { along.current = g.along; setStatus(g.arrived ? 'You have arrived' : mode === 'simulation' ? 'Simulation · no live GPS' : background ? 'GPS guidance · background enabled' : Platform.OS === 'web' ? 'GPS guidance · keep this page open' : 'GPS guidance · foreground only'); }
-      if(mode==='gps')await onFixRef.current?.(next,g.arrived);
+      if(mode==='gps')await onFixRef.current?.(raw,g.arrived);
       if(cancelled || lastAccepted!==next.timestamp)return;
       const cue = g.next ? `${g.next.index}-${(g.maneuverMeters ?? 0) < 40 ? 'near' : 'ahead'}` : '';
       if (preferencesRef.current.voice && preferencesRef.current.volume !== 'off' && !g.offRoute && g.next && (g.maneuverMeters ?? 999) < 150 && cue !== spoken.current) {

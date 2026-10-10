@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
+import * as movement from '../src/core/movement';
 import * as geo from '../src/core/geo';
 import * as navigation from '../src/core/navigation';
 import * as rideView from '../src/core/rideView';
@@ -23,7 +24,7 @@ test('simulated fixes drive voice and activity while recording and real GPS stay
     './backgroundLocation':{beginBackgroundLocation:async()=>{gpsRequests++;throw new Error('Simulation must not acquire background GPS');}},
     './directionsVoice':{speakDirection:async()=>{spoken++;},stopDirections:async()=>{}},
     './useNavigationActivity':{updateRideActivity:async(...args:unknown[])=>{updates.push(args);},markActivityPaused:async()=>{pausedActivities++;}},
-    '../core/rideView':rideView,'../core/navigation':navigation,'../core/geo':geo,
+    '../core/movement':movement,'../core/rideView':rideView,'../core/navigation':navigation,'../core/geo':geo,
   };
   class Clock extends Date {static now(){return now;}}
   const context={exports:{},require:(name:string)=>{if(!(name in mocks))throw new Error(name);return mocks[name];},Date:Clock,setInterval:(fn:()=>void)=>{tick=fn;return 1;},clearInterval:()=>{stopped=true;},console};
@@ -51,4 +52,31 @@ test('simulated Live Activity remains clearly labelled with normal navigation me
   const simulated=rideActivity(route,vehicle,defaultNavigationOptions,g,fix,true);
   assert.equal(simulated.turn,`Simulation · ${real.turn}`);
   assert.equal(simulated.arrival,real.arrival);assert.equal(simulated.remaining,real.remaining);assert.equal(simulated.minutes,real.minutes);
+});
+
+test('real GPS subscription keeps stationary progress still while delivering original recording samples',async()=>{
+ const states:unknown[]=[], effects:(()=>void)[]=[], originals:unknown[]=[];
+ let locationCallback:((p:unknown)=>void)|undefined;
+ const mocks:Record<string,unknown>={
+  react:{useState:(initial:unknown)=>[initial==='idle'?'gps':initial,(value:unknown)=>{if(typeof value!=='function')states.push(value);}],useRef:(initial:unknown)=>({current:initial}),useEffect:(fn:()=>void)=>effects.push(fn)},
+  'react-native':{Platform:{OS:'web'},AppState:{currentState:'active',addEventListener:()=>({remove(){}})}},
+  'expo-location':{Accuracy:{BestForNavigation:6},requestForegroundPermissionsAsync:async()=>({status:'granted'}),watchPositionAsync:async(_options:unknown,cb:(p:unknown)=>void)=>{locationCallback=cb;return{remove(){}};}},
+  './backgroundLocation':{},'./directionsVoice':{stopDirections:async()=>{}},'./useNavigationActivity':{updateRideActivity:async()=>{},markActivityPaused:async()=>{}},
+  '../core/movement':movement,'../core/rideView':rideView,'../core/navigation':navigation,'../core/geo':geo,
+ };
+ const context={exports:{},require:(name:string)=>{if(!(name in mocks))throw new Error(name);return mocks[name];},Date,setInterval,clearInterval,console};
+ vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/services/useRide.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,context);
+ const route={coordinates:[[0,0],[.002,0]],steps:[],details:{}} as unknown as Route;
+ (context.exports as {useRide:(...args:unknown[])=>unknown}).useRide(route,createVehicle('escooter','test'),{...defaultNavigationOptions,voice:false,backgroundNavigation:false},(raw:unknown)=>{originals.push(raw);});
+ const cleanups=effects.map(fn=>fn()).filter(fn=>typeof fn==='function') as unknown as (()=>void)[];
+ const settle=async()=>{for(let i=0;i<15;i++)await Promise.resolve();};await settle();assert.ok(locationCallback);
+ const now=Date.now();
+ for(let i=0;i<12;i++){locationCallback!({coords:{longitude:(i===0?0:i%2?6:-6)/111195,latitude:0,accuracy:5,speed:0,heading:null},timestamp:now+i*1000});await settle();}
+ const progress=states.filter(value=>value && typeof value==='object' && 'along' in value) as {along:number}[];
+ assert.equal(progress.length,12);assert.ok(progress.every(g=>g.along===0));assert.equal(originals.length,12);
+ assert.notEqual((originals[1] as {coordinate:number[]}).coordinate[0],0,'recording still receives the raw coordinate');
+ locationCallback!({coords:{longitude:NaN,latitude:0,accuracy:5,speed:0,heading:null},timestamp:now+13000});await settle();
+ assert.equal(states.filter(value=>value && typeof value==='object' && 'along' in value).length,12,'invalid coordinates cannot advance navigation');
+ assert.equal(originals.length,13,'invalid readings are preserved only in raw recording data');
+ for(const cleanup of cleanups)cleanup();
 });

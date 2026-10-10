@@ -8,8 +8,8 @@ import { Route, Coord } from '../core/types';
 import { routeBounds } from '../core/geo';
 import { serverUrl } from '../services/api';
 import { mapStyle } from './mapConfig';
-interface MapProps { transit?: boolean; completedMeters?: number; overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; offlineMap?: string; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
-export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, completedMeters, transit }: MapProps) {
+interface MapProps { transit?: boolean; trace?: Coord[][]; completedMeters?: number; overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; offlineMap?: string; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
+export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit }: MapProps) {
   const div = useRef<HTMLDivElement>(null), map = useRef<maplibregl.Map | null>(null);
   const [loaded, setLoaded] = useState(false), [error, setError] = useState(false);
   const user = useRef<maplibregl.Marker | null>(null);
@@ -36,7 +36,7 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
   useEffect(() => { const m = map.current; if (!m || !loaded) return; if (follow) { m.dragRotate.disable(); m.touchZoomRotate.disableRotation(); m.keyboard.disableRotation(); } else { m.dragRotate.enable(); m.touchZoomRotate.enableRotation(); m.keyboard.enableRotation(); } }, [follow, loaded]);
   useEffect(() => {
     const m = map.current; if (!m || !loaded) return;
-    const paths = routeLayers(routes, selected, completedMeters);
+    const paths = routeLayers(routes, selected, completedMeters, trace);
     const wanted = new Set(paths.map(r => `ride-${r.id}`));
     for (const layer of m.getStyle().layers ?? []) if (layer.id.startsWith('ride-') && !wanted.has(layer.id.replace(/-outline$/, ''))) m.removeLayer(layer.id);
     for (const source of Object.keys(m.getStyle().sources)) if (source.startsWith('ride-') && !wanted.has(source)) m.removeSource(source);
@@ -51,7 +51,7 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
       // Existing sources must be moved too when the rider switches candidates.
       m.moveLayer(`${id}-outline`); m.moveLayer(id);
     }
-  }, [routes, selected, loaded, completedMeters]);
+  }, [routes, selected, loaded, completedMeters, trace]);
   useEffect(() => {
     const m = map.current; if (!m || !loaded) return;
     if (selected && !follow && (!navigating || overview)) { const [w, s, e, n] = routeBounds(selected.coordinates); m.jumpTo({ padding: { top: 0, bottom: 0, left: 0, right: 0 } }); m.fitBounds([[w, s], [e, n]], { padding: fitPadding || 24, duration: 400, maxZoom: 17, bearing: 0, pitch: tilted ? 50 : 0 }); }

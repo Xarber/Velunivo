@@ -4,7 +4,7 @@ import { normalizeHeading } from './rideView';
 export const headingDelta = (a: number, b: number) => ((b - a + 540) % 360) - 180;
 export interface CameraSample { position: Coord; heading: number; }
 export interface CameraTarget extends CameraSample { duration: number; }
-// Only visual camera updates are filtered. Guidance, speed and recording use raw fixes.
+// Camera coalescing is independent of the movement filter used by guidance and recording.
 export class CameraTracker {
   last: CameraSample | null = null;
   sentAt = 0;

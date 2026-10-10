@@ -3,8 +3,9 @@ import { cumulative, pointAt } from './geo';
 export const ROUTE_WIDTH = 8;
 export const ROUTE_GREEN = '#28DAB0';
 export const ROUTE_GRAY = '#A7AFBA';
-export function routeLayers(routes: Route[], selected: Route | null, completedMeters?: number) {
-  const alternatives = routes.filter(r => r.id !== selected?.id).map(r => ({ id: `${r.id}-alternative`, coordinates: r.coordinates, color: ROUTE_GRAY, outline: '#56616E' }));
+export function routeLayers(routes: Route[], selected: Route | null, completedMeters?: number, trace?: Coord[][]) {
+  const trail=(trace || []).filter(segment=>segment.length>1).map((coordinates,i)=>({id:`travelled-trace-${i}`,coordinates,color:ROUTE_GRAY,outline:'#56616E'}));
+  const alternatives = [...trail, ...routes.filter(r => r.id !== selected?.id).map(r => ({ id: `${r.id}-alternative`, coordinates: r.coordinates, color: ROUTE_GRAY, outline: '#56616E' }))];
   if (!selected) return alternatives;
   let ahead: Coord[] = selected.coordinates, behind: Coord[] = [];
   if (completedMeters !== undefined && completedMeters > 0) {

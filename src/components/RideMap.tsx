@@ -13,7 +13,7 @@ export default function RideMap(props: MapProps & { offlineMap?: string }) {
   if (props.offlineMap || Platform.OS === 'android') return <OfflineRideMap {...props} offlineStyle={props.offlineMap} />;
   return <DeviceMap {...props} />;
 }
-function DeviceMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, completedMeters, transit }: MapProps) {
+function DeviceMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit }: MapProps) {
   const map = useRef<MapView>(null);
   const [ready, setReady] = useState(false);
   const hasPosition = !!position;
@@ -28,7 +28,7 @@ function DeviceMap({ routes, selected, position, follow, onPick, traffic, startP
   }, [cameraTarget]);
   const [w, s, e, n] = selected ? routeBounds(selected.coordinates) : [9.18, 45.46, 9.20, 45.48];
   return <MapView onPanDrag={onPan} ref={map} style={{ flex: 1 }} mapPadding={follow ? followPadding || fitPadding : { top: 0, bottom: 0, left: 0, right: 0 }} showsTraffic={traffic} mapType={transit ? 'standard' : 'mutedStandard'} showsPointsOfInterests showsBuildings pitchEnabled rotateEnabled={!follow} onMapReady={() => { setReady(true); fit(); }} legalLabelInsets={{ top: 120, left: 12, right: 12, bottom: fitPadding?.bottom || 45 }} initialRegion={{ latitude: (s + n) / 2, longitude: (w + e) / 2, latitudeDelta: Math.max(.005, (n - s) * 1.5), longitudeDelta: Math.max(.005, (e - w) * 1.5) }} onPress={ev => onPick?.([ev.nativeEvent.coordinate.longitude, ev.nativeEvent.coordinate.latitude])}>
-    {routeLayers(routes, selected, completedMeters).flatMap(r => [<Polyline key={`${r.id}-outline`} coordinates={r.coordinates.map(point)} strokeColor={r.outline} strokeWidth={ROUTE_WIDTH + 3} />, <Polyline key={r.id} coordinates={r.coordinates.map(point)} strokeColor={r.color} strokeWidth={ROUTE_WIDTH} />])}
+    {routeLayers(routes, selected, completedMeters, trace).flatMap(r => [<Polyline key={`${r.id}-outline`} coordinates={r.coordinates.map(point)} strokeColor={r.outline} strokeWidth={ROUTE_WIDTH + 3} />, <Polyline key={r.id} coordinates={r.coordinates.map(point)} strokeColor={r.color} strokeWidth={ROUTE_WIDTH} />])}
     {(startPoint || selected?.coordinates[0]) && <Marker coordinate={point(startPoint || selected!.coordinates[0])} title="Start" pinColor="#007F6D" />}
     {(endPoint || selected?.coordinates.at(-1)) && <Marker coordinate={point(endPoint || selected!.coordinates.at(-1)!)} title="Destination" />}
     {position && <Marker coordinate={point(position)} title="Your position" zIndex={1000} flat rotation={heading} anchor={{ x: .5, y: .5 }}><PositionArrow navigating={navigating} /></Marker>}

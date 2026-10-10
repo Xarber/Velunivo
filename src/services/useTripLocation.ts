@@ -1,3 +1,4 @@
+import { MovementTracker } from '../core/movement';
 import { useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 import * as Location from 'expo-location';
@@ -11,9 +12,10 @@ export function useTripLocation(active: boolean, background: boolean, accept: (f
   useEffect(() => {
     if (!active) return;
     let cancelled = false, previous = 0, watch: Location.LocationSubscription | undefined, stopBackground: (() => Promise<void>) | undefined;
+    const movement = new MovementTracker();
     async function receive(next: Fix) {
       if (cancelled || !freshFix(next) || next.timestamp <= previous) return;
-      previous = next.timestamp; setFix(next); await callback.current(next);
+      previous = next.timestamp; const tracked=movement.next(next); if(tracked)setFix(tracked.fix); await callback.current(next);
     }
     async function start() {
       try {
