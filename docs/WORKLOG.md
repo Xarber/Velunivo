@@ -306,3 +306,12 @@ A reviewed, version/hash-guarded postinstall patch applies the small view hooks 
 - Verified the xip Apple signature and iCloud upload status before offloading its local 2.03 GB content. It remains as a dataless iCloud file.
 - Initial simulator download refused insufficient space (requires 7.87 GB). After installer offloading, retried the official iOS 27.1 arm64 runtime download. Removed only a 736 MB downloaded Siri asset from a shutdown, unavailable iPhone Duo simulator; its apps and data remain. Runtime installation/test outcome is pending in the local report.
 - Final checks: 74 app tests, 17 workflow Python tests, lint and typecheck pass. Native simulator testing will use a GitHub-built app, never a local compile.
+
+
+### Completed local setup audit
+
+- Further cache cleanup: npm download cache (~2.1 GB), an old unused updater delta file (471 MB) and already-expanded updater ZIP (686 MB), unused Playwright test-browser cache (554 MB), Android 35 image (2.4 GB; the only configured AVD uses Android 37.1), old unavailable iPhone Duo downloaded Siri assets/caches, and generated wallpaper SnapshotCache.cachedb directories (~2.28 GB). Preserved configured Android 37.1, original simulator application data, personal media, CrossOver and osu!.
+- iOS 27.1 download failed during streaming extraction; normal iOS 18.6 staging also refused disk space. Mounted the pre-existing Apple iOS 18.6 package read-only and registered its unchanged runtime through a per-user runtime symlink. This setup depends on the mounted image and must be remounted after reboot; it is not a permanent runtime installation.
+- Created Velunivo QA iPhone (XS Max, iOS 18.6), booted it, installed the GitHub 0.1.19 simulator artifact and verified its Apple Maps screen rendered. Closed testing processes and shut down that device afterwards. No Velunivo application was compiled locally.
+- Device Hub computer-use permission was denied; actual Lock Screen activity rendering and the 0.1.20 dashboard were not interactively verified. Optional simulator system linker-cache generation failed for disk space; removed its generated cache through simctl and verified the cache directory empty.
+- Full local audit and screenshot are in the task outputs/Velunivo-local-simulator-20261010.md and outputs/Velunivo-iPhone-XS-Max-0.1.19.png. The 0.1.20 GitHub run is 38080793706; preparation and web passed while native builds continued.
