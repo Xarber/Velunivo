@@ -1,6 +1,6 @@
 {
   "name": "velunivo",
-  "version": "0.1.17",
+  "version": "0.1.18",
   "main": "index.js",
   "dependencies": {
     "@expo/ui": "~57.0.22",
