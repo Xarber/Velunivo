@@ -9,7 +9,7 @@ import { NavigationActivity, rideActivity } from '../core/liveActivity';
 import { Route, Profile, NavigationOptions, Fix } from '../core/types';
 import { guidance } from '../core/navigation';
 let lastActivityError = '';
-export function inspectLiveActivity():ActivityReport { const checks=inspectActivityInstallation();let activeCount:number|null=null;try{activeCount=activity.getInstances().length;}catch{}return {checks,activeCount,lastError:lastActivityError}; }
+export function inspectLiveActivity():ActivityReport { const checks=inspectActivityInstallation();let activeCount:number|null=null;try{activeCount=activity.getInstances().length+testActivity.getInstances().length;}catch{}return {checks,activeCount,lastError:lastActivityError}; }
 const NavigationLayout = (p: NavigationActivity, environment: LiveActivityEnvironment) => {
   'widget';
   const accent=environment.isLuminanceReduced ? '#FFFFFF' : '#28DAB0';
@@ -24,6 +24,26 @@ const NavigationLayout = (p: NavigationActivity, environment: LiveActivityEnviro
   };
 };
 const activity=createLiveActivity<NavigationActivity>('VelunivoNavigation',NavigationLayout);
+// Separate factory: tests must never replace, update or end a real ride.
+const testActivity=createLiveActivity<NavigationActivity>('VelunivoNavigationTest',NavigationLayout);
+let testTimer:ReturnType<typeof setTimeout>|undefined;
+export async function stopTestLiveActivity() {
+  if(testTimer)clearTimeout(testTimer);
+  testTimer=undefined;
+  for(const live of testActivity.getInstances())await live.end('immediate');
+}
+export async function startTestLiveActivity() {
+  if(AppState.currentState!=='active')throw new Error('Open the app to start the Live Activity test.');
+  try {
+    await stopTestLiveActivity();
+    testActivity.start({turn:'Live Activity test · Turn right',symbol:'arrow.turn.up.right',distance:'100 m',arrival:new Date(Date.now()+600000).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}),minutes:'10 min',remaining:'2.5 km'},'velunivo:///',new Date(Date.now()+90000));
+    lastActivityError='';
+    // Best-effort cleanup while JS runs. staleDate alone does not end an activity.
+    testTimer=setTimeout(()=>{void stopTestLiveActivity().catch(error=>{lastActivityError=error instanceof Error ? error.message : String(error);});},90000);
+    return inspectLiveActivity();
+  } catch(error) {lastActivityError=error instanceof Error ? error.message : String(error);throw error;}
+}
+
 export function useNavigationActivity(active: boolean, props: NavigationActivity) {
   const instance=useRef<LiveActivity<NavigationActivity> | null>(null), latest=useRef(props), last=useRef('');
   const [status,setStatus]=useState(''); useEffect(()=>{latest.current=props;},[props]);

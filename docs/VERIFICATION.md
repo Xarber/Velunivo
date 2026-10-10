@@ -128,3 +128,12 @@ Automatic metadata-only AltSource workflow 38049619846 succeeded against v0.1.13
 ## 0.1.16 — silent ActivityKit failure diagnostics
 
 63 app tests pass, including missing prerequisites despite an active request, preserved error reasons, and avoiding claims of visible rendering from activity count alone. Lint/typecheck, all-platform JavaScript export and native Swift syntax parsing pass. Expo autolinking resolves the added native class in the VelunivoAudio pod; its compilation/linkage awaits GitHub build. No physical TrollStore Lite/Lock Screen check has been completed. The panel distinguishes bundled metadata from installation/runtime state and never reads private device paths or ride data.
+
+
+## 0.1.17 — Temporary Live Activity test and iOS navigation arrow
+
+Settings → Live Activity check now offers Test Live Activity and Stop test on iOS. The clearly labelled sample uses a separate widget factory with the same navigation layout, no GPS, voice or ride recording. It cannot be started during a ride through the Settings UI, and its cleanup never touches normal navigation activities. A 90-second timer ends the test while JavaScript runs; if iOS suspends the app, Stop test remains available. A requested activity does not prove that iOS rendered it: check the actual Lock Screen. Installation checks count both test and navigation instances and show native errors. These controls are temporary diagnostics.
+
+iOS uses the native location.north.fill SF Symbol (expo-symbols, Expo SDK 57), centered with a blue fill and white edge. The stationary dot and existing heading/anchor math are retained. Android and web marker behavior is unchanged. This requires a new native build; no local SDK was downloaded. Physical iPhone Lock Screen appearance and the map marker remain device checks.
+
+Validation for 0.1.17: 65 application tests and 17 Python release/workflow tests passed, as did lint, TypeScript, all-platform clean-cache JavaScript exports, and diff whitespace checks. The new tests execute the actual iOS activity service with controlled ActivityKit boundaries: distinct factories, repeat-test cleanup, foreground requirement, timer cleanup and real-ride isolation. Expo autolinking resolves ExpoSymbols 57.0.3. Native compilation and physical Lock Screen/marker appearance await the workflow and installation. SDK behavior was checked against [Expo Symbols SDK 57](https://docs.expo.dev/versions/v57.0.0/sdk/symbols/) and the installed Expo Widgets factory implementation.
