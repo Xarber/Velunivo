@@ -27,10 +27,10 @@ export function useNavigationActivity(active: boolean, props: NavigationActivity
   useEffect(()=>{ if(!active)return;
     // The native ActivityKit factory synchronously reports availability.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    try { instance.current=activity.start(latest.current,'velunivo:///',new Date(Date.now()+30000)); setStatus(''); } catch { setStatus('Live Activity unavailable on this installation.'); }
+    try { instance.current=activity.start(latest.current,'velunivo:///',new Date(Date.now()+30000)); setStatus(''); } catch (error) { setStatus(`Live Activity could not start: ${error instanceof Error ? error.message : String(error)}. Check iOS Settings → Apps → Velunivo → Live Activities.`); }
     return ()=>{const live=instance.current;instance.current=null;last.current='';if(live)void live.end('immediate').catch(()=>{});};
   },[active]);
-  useEffect(()=>{ if(!active || !instance.current || AppState.currentState !== 'active')return; const key=JSON.stringify(props);if(key===last.current)return;last.current=key;void instance.current.update(props,new Date(Date.now()+30000)).catch(()=>setStatus('Live Activity could not update.')); },[active,props]);
+  useEffect(()=>{ if(!active || !instance.current || AppState.currentState !== 'active')return; const key=JSON.stringify(props);if(key===last.current)return;last.current=key;void instance.current.update(props,new Date(Date.now()+30000)).catch(error=>setStatus(`Live Activity could not update: ${error instanceof Error ? error.message : String(error)}`)); },[active,props]);
   return {status};
 }
 
