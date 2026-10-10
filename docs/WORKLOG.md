@@ -225,3 +225,7 @@ Added an autolinked iOS speech module that explicitly releases ducking sessions 
 Updated app/package versions to 0.1.13. No local SDK was downloaded, no original project files were edited, no private ride exports were published, and commits remain unsigned. Native project generation was tested only in a disposable temporary copy.
 
 Final staged review removed a whitespace-only line in the new Library screen. Version 0.1.13 source commit 33cec58 contains the feature changes; all commits are unsigned.
+
+## AltSource image refresh — 2026-10-10
+
+Compared the published icon against assets/icon.png; their SHA-256 digests match, so stale source/app imagery is consistent with client caching at the unchanged icon.png URL. Source generation now refreshes both source and app metadata and publishes a content-addressed icon asset. The source description no longer says no installable versions exist. Tablet screenshots are also included in the iPhone gallery because clients select one device gallery; the dedicated iPad gallery remains intact. Existing native iPad imagery is a disclosed older portrait capture; no landscape image was fabricated or rotated. This metadata correction does not require rebuilding the app.

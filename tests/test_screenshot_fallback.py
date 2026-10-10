@@ -63,5 +63,27 @@ class ScreenshotFallbackTests(unittest.TestCase):
             self.assertEqual(result['apps'][0]['versions'][0]['version'], '0.1.11')
 
 
+    def test_source_refreshes_both_icons_and_exposes_tablet_in_phone_gallery(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            meta = {'version':'0.1.13','buildVersion':'23','bundleIdentifier':'app.velunivo.mobile','size':100,'minOSVersion':'16.4','appPermissions':{}}
+            (root/'ios-metadata.json').write_text(json.dumps(meta))
+            shots = {'iphone':[{'imageURL':'https://example.com/phone.png','width':1206,'height':2622}], 'ipad':[{'imageURL':'https://example.com/tablet.png','width':2360,'height':1640}]}
+            source = {'name':'Old','iconURL':'https://example.com/old.png','apps':[{'bundleIdentifier':meta['bundleIdentifier'],'versions':[],'screenshots':shots}],'news':[]}
+            result_path=root/'feed.json'; result_path.write_text(json.dumps(source))
+            script=Path(__file__).parents[1]/'scripts/update-source.py'
+            args=['python3',str(script),'--repo','Xarber/Velunivo','--tag','v0.1.13','--assets',folder,'--existing',str(result_path),'--output',str(result_path)]
+            subprocess.check_call(args)
+            result=json.loads(result_path.read_text())
+            self.assertEqual(result['iconURL'],result['apps'][0]['iconURL'])
+            self.assertIn('/icon-',result['iconURL'])
+            self.assertTrue((root/result['iconURL'].split('/')[-1]).exists())
+            gallery=result['apps'][0]['screenshots']
+            self.assertEqual(gallery['iphone'],shots['iphone']+shots['ipad'])
+            self.assertEqual(gallery['ipad'],shots['ipad'])
+            subprocess.check_call(args)
+            self.assertEqual(json.loads(result_path.read_text())['apps'][0]['screenshots'],gallery)
+
+
 if __name__ == '__main__':
     unittest.main()

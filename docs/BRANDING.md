@@ -31,3 +31,5 @@ Run `npm ci` then `npm run brand:generate`. The single source is `scripts/genera
 The AltSource uses `assets/icon.png` uploaded to the mutable 1.0 release. Its permissions, version metadata and screenshots continue to come from real builds. GitHub description/topics are repository settings; the custom social preview is uploaded in Settings → General → Social preview.
 
 References: [Expo SDK 57 app configuration](https://docs.expo.dev/versions/v57.0.0/config/app/), [splash-screen configuration](https://docs.expo.dev/versions/v57.0.0/sdk/splash-screen/), [GitHub social previews](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/customizing-your-repositorys-social-media-preview).
+
+AltSource icons now use a content-addressed icon-<sha256-prefix>.png asset on the 1.0 release, for both the source and app. Future generated feeds refresh these URLs and source metadata; the compatibility icon.png asset is retained. Native iPad screenshots are also included in the iPhone gallery, alongside the dedicated iPad gallery, so tablet imagery is visible from phone clients.
