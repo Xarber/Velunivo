@@ -3,7 +3,8 @@ import { Profile, Route } from './types';
 const valueAt = (r: Route, key: string, i: number) => r.details[key]?.find(([from, to]) => i >= from && i < to)?.[2];
 export function estimate(route: Route, profile: Profile, from = 0) {
   const cap = Math.max(1, Math.min(profile.maxSpeed, profile.ridingLimit));
-  const cruise = cap * Math.max(0.2, Math.min(1, profile.cruiseFactor));
+  const learned = Number.isFinite(profile.learnedSpeedKmh) && (profile.learnedRideCount ?? 0) >= 3 && profile.learnedSpeedKmh! >= 2;
+  const cruise = learned ? Math.min(cap, profile.learnedSpeedKmh!) : cap * Math.max(0.2, Math.min(1, profile.cruiseFactor));
   const lengths = cumulative(route.coordinates);
   let meters = 0, seconds = 0;
   for (let i = 0; i < route.coordinates.length - 1; i++) {
@@ -22,8 +23,8 @@ export function estimate(route: Route, profile: Profile, from = 0) {
   }
   const turns = route.steps.filter(s => s.sign !== 0 && s.sign !== 4 && lengths[s.index] > from).length;
   // Assumed stop + acceleration loss per maneuver, not traffic prediction.
-  seconds += turns * (profile.stopDelay + cruise / 3.6 / Math.max(0.1, profile.acceleration) / 2);
-  return { meters, minimumSeconds: meters / (cap / 3.6), seconds, cap, turns };
+  if (!learned) seconds += turns * (profile.stopDelay + cruise / 3.6 / Math.max(0.1, profile.acceleration) / 2);
+  return { learned: !!learned, meters, minimumSeconds: meters / (cap / 3.6), seconds, cap, turns };
 }
 export const minutes = (s: number) => `${Math.max(1, Math.ceil(s / 60))} min`;
 export const km = (m: number) => `${(m / 1000).toFixed(1)} km`;

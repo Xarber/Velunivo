@@ -8,8 +8,8 @@ import { Route, Coord } from '../core/types';
 import { routeBounds } from '../core/geo';
 import { serverUrl } from '../services/api';
 import { mapStyle } from './mapConfig';
-interface MapProps { completedMeters?: number; overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; offlineMap?: boolean; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
-export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, completedMeters }: MapProps) {
+interface MapProps { transit?: boolean; completedMeters?: number; overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; offlineMap?: string; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
+export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, completedMeters, transit }: MapProps) {
   const div = useRef<HTMLDivElement>(null), map = useRef<maplibregl.Map | null>(null);
   const [loaded, setLoaded] = useState(false), [error, setError] = useState(false);
   const user = useRef<maplibregl.Marker | null>(null);
@@ -71,6 +71,10 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
     // Camera targets are coalesced independently of raw sensor/marker updates.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraTarget]);
+  useEffect(() => { const m=map.current; if (!m || !loaded || !m.getSource('openmaptiles')) return;
+    if (transit && !m.getLayer('velunivo-transit')) m.addLayer({id:'velunivo-transit',type:'line',source:'openmaptiles','source-layer':'transportation',filter:['match',['get','class'],['rail','transit'],true,false],paint:{'line-color':'#A478E8','line-width':3,'line-opacity':.85}},m.getStyle().layers?.find(l=>l.id.startsWith('ride-'))?.id);
+    if (!transit && m.getLayer('velunivo-transit')) m.removeLayer('velunivo-transit');
+  },[transit,loaded]);
   useEffect(() => {
     const m = map.current; if (!m || !loaded || !serverUrl) return;
     if (traffic && !m.getSource('traffic')) {

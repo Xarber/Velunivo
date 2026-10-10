@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { measuredPace, learnedPace } from '../src/core/learnedEta';
+import { createVehicle, defaultGarage, removeVehicle, restoreGarage } from '../src/core/vehicles';
+import { estimate } from '../src/core/eta';
+import { RecordedRide, RideSample } from '../src/core/recordings';
+import { Route } from '../src/core/types';
+import { maneuverDistance } from '../src/core/rideView';
+import { photonResults } from '../src/core/addresses';
+import { swapEndpoints, searchPlaces, journeyTitle } from '../src/core/places';
+const vehicle=createVehicle('escooter','v');
+const record: RecordedRide={id:'r',name:'Ride',vehicle,startLabel:'A',endLabel:'B',startedAt:0,endedAt:120000,status:'finished',samples:121,chunks:2,meters:400,preview:[]};
+const samples: RideSample[]=Array.from({length:121},(_,i)=>({fix:{coordinate:[i<61 ? i*.00005 : .003,0],timestamp:i*1000,accuracy:3,speed:i<61?5:0},compass:null,accelerometer:null,gyroscope:null}));
+test('learned pace retains stop time and excludes gaps, jumps and poor fixes',()=>{
+ const p=measuredPace(record,samples)!;assert.ok(p);assert.equal(p.seconds,120);assert.ok(p.meters>330&&p.meters<340);assert.ok(p.meters/p.seconds*3.6<11);
+ assert.equal(measuredPace({...record,status:'interrupted'},samples),null);
+ const corrupt=samples.map(s=>({...s,fix:{...s.fix,accuracy:999}}));assert.equal(measuredPace(record,corrupt),null);
+ const jump=samples.map((s,i)=>({...s,fix:{...s.fix,coordinate:i===50?[100,0] as [number,number]:s.fix.coordinate}}));assert.ok(measuredPace(record,jump)!.meters < 400);
+});
+test('learned vehicle ETA needs three matching caps and never raises limits or double counts stop delays',()=>{
+ const p=measuredPace(record,samples)!;const records=[p,{...p,id:'2'},{...p,id:'3'}];assert.equal(learnedPace(records.slice(0,2),vehicle),null);assert.equal(learnedPace(records,{...vehicle,ridingLimit:20}),null);
+ const learned=learnedPace(records,vehicle)!;assert.equal(learned.count,3);
+ const route: Route={id:'x',name:'x',kind:'bike',coordinates:[[0,0],[.01,0]],steps:[{text:'Turn',sign:1,index:1,distance:100}],source:'gpx',warnings:[],details:{}};
+ const tuned={...vehicle,learnedSpeedKmh:learned.speedKmh,learnedRideCount:3};const e=estimate(route,tuned);assert.equal(e.learned,true);assert.ok(e.seconds>=e.minimumSeconds);assert.equal(estimate(route,{...tuned,stopDelay:100}).seconds,e.seconds);
+ const slow=estimate({...route,details:{max_speed:[[0,1,5]]}},tuned);assert.ok(slow.seconds>e.seconds);
+});
+test('swap accepts empty endpoints and preserves current location semantics',()=>{const a={label:'',point:undefined};const b={label:'Current location',current:true};assert.deepEqual(swapEndpoints(a,b),{start:b,end:a});});
+test('distance changes units at a kilometre and uses miles and feet',()=>{for(const [m,label] of [[10,'10 m'],[100,'100 m'],[900,'900 m'],[999,'1 km'],[1000,'1 km'],[1529,'1.5 km']] as const)assert.equal(maneuverDistance(m,'km'),label);assert.equal(maneuverDistance(1609.344,'mi'),'1 mi');assert.equal(maneuverDistance(10,'mi'),'30 ft');});
+test('POI names and municipalities remain distinguishable',()=>{const results=photonResults({features:['San Cesareo','Monte Compatri'].map(city=>({geometry:{type:'Point',coordinates:[12,41]},properties:{name:'Metro shop',street:'Via Casilina',housenumber:'512',city,county:'Roma',state:'Lazio',country:'Italia'}}))});assert.equal(results[0].name,'Metro shop');assert.notEqual(results[0].label,results[1].label);assert.match(results[1].address,/Monte Compatri/);assert.equal(searchPlaces([{id:'p',name:'Home',address:results[1].address,coordinate:[12,41]}],'compATri').length,1);assert.equal(journeyTitle('Duomo, Milano','Castle, Milano','Bicycle candidate'),'Duomo → Castle');assert.equal(journeyTitle(undefined,undefined,'Weekend by the lake',123),'Weekend by the lake');});
+test('Sharing E-Scooter cannot be deleted and is restored if absent',()=>{assert.deepEqual(removeVehicle(defaultGarage,'sharing-scooter'),defaultGarage);const hiddenOld={...defaultGarage,vehicles:[vehicle],activeId:'v',sharingPresetAdded:true};assert.equal(restoreGarage(JSON.stringify(hiddenOld),null).vehicles.some(v=>v.id==='sharing-scooter'),true);});

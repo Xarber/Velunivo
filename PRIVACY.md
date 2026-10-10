@@ -11,3 +11,7 @@ GPS, compass and motion readings support foreground guidance/diagnostics. Vehicl
 The optional development server caches results briefly in memory and is not a production account/access-control system. Deployment operators are responsible for their own access controls, logs, retention and privacy disclosures. The app does not currently provide cloud sync, crash detection or background navigation.
 
 Vehicle pictures use the system photo picker on iOS and Android, without requesting camera or microphone access. Selected pictures are resized to at most 512 pixels and JPEG encoded before local persistence; they are never uploaded. Web file imports remain limited to 1 MB. Explore requests foreground location on opening; location updates pause in the background.
+
+Saved Places and ride recordings remain local. Learned pace is derived on device from qualifying GPS intervals; no ride sample is sent to routing providers. Starting a route again sends only the selected recorded start/end coordinates to the configured routing provider. Developer Mode enables explicit raw JSON sharing; such files include sensitive sensor/location data.
+
+A downloadable-map key is stored in native SecureStore and sent only to Stadia map endpoints. Native map caches and provider requests follow the provider's terms; remove downloaded regions and the key in Settings when no longer needed. Live Activities display next-turn/location-related information on the lock screen; they can be disabled in Settings. No push server is configured, and guidance remains foreground-only.

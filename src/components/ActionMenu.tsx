@@ -1,0 +1,5 @@
+import React from 'react';
+import { Modal, Pressable, Text, View } from 'react-native';
+import { Button, usePalette } from './ui';
+export interface MenuAction { title: string; icon?: React.ComponentProps<typeof Button>['icon']; onPress(): void; }
+export default function ActionMenu({ title, actions, onClose }: { title: string; actions: MenuAction[] | null; onClose(): void }) { const p = usePalette(); return <Modal visible={!!actions} transparent animationType="fade" onRequestClose={onClose}><View style={{ flex:1, justifyContent:'flex-end', backgroundColor:'#00000060', padding:20 }}><Pressable accessibilityLabel="Dismiss actions" onPress={onClose} style={{position:'absolute',inset:0}} /><View style={{width:'100%',maxWidth:560,alignSelf:'center',borderRadius:26,backgroundColor:p.bg,padding:20,gap:12,marginBottom:20}}><Text style={{color:p.text,fontSize:20,fontWeight:'800'}}>{title}</Text>{actions?.map(a=><Button key={a.title} title={a.title} icon={a.icon} secondary onPress={()=>{onClose();a.onPress();}} />)}<Button title="Cancel" icon="close" secondary onPress={onClose} /></View></View></Modal>; }

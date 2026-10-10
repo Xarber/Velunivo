@@ -19,12 +19,12 @@ test('global preferences migrate the selected vehicle switches, then respect glo
   assert.equal(voiceOptions({ voice: true, volume: 'off' }), null);
   assert.equal(voiceOptions({ voice: false, volume: 'loud' }), null);
 });
-test('sharing preset migrates once and deleted presets stay deleted; older pictures survive switching icons', () => {
+test('sharing preset is permanent; older pictures survive switching icons', () => {
   const old = { ...createVehicle('escooter', 'existing'), photo: 'data:image/jpeg;base64,AAA=', photos: ['data:image/jpeg;base64,BBB='] };
   const g = restoreGarage(JSON.stringify({ vehicles: [old], activeId: old.id }), null);
   assert.equal(g.vehicles[1].name, 'Sharing E-Scooter'); assert.equal(sharingVehicle.ridingLimit, 20); assert.equal(sharingVehicle.maxSpeed, 25);
   assert.deepEqual(g.vehicles[0].photos, ['data:image/jpeg;base64,BBB=', old.photo]);
-  const deleted = removeVehicle(g, sharingVehicle.id); assert.equal(restoreGarage(JSON.stringify(deleted), null).vehicles.length, 1);
+  const deleted = removeVehicle(g, sharingVehicle.id); assert.equal(restoreGarage(JSON.stringify(deleted), null).vehicles.length, 2);
   assert.equal(restoreGarage(JSON.stringify({ ...g, vehicles: [{ ...old, photo: null, photos: g.vehicles[0].photos }] }), null).vehicles[0].photos?.length, 2);
 });
 const r: RecordedRide = { id: 'ride', name: 'Ride', vehicle: createVehicle('escooter', 'scooter'), startedAt: 1000, endedAt: 61000, status: 'finished', samples: 2, chunks: 1, meters: 200, preview: [], startLabel: 'Start', endLabel: 'End' };

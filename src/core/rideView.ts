@@ -19,6 +19,7 @@ export function roadSpeedLimit(route: Route | null, index: number | undefined) {
   return Number.isFinite(n) && n > 0 && n <= 200 ? n : null;
 }
 export const displaySpeed = (kmh: number, unit: 'km' | 'mi') => unit === 'mi' ? kmh / 1.609344 : kmh;
+export function maneuverDistance(meters: number, unit: 'km' | 'mi') { const d = Math.max(0, meters); if (unit === 'mi') { const miles = d / 1609.344; return miles >= .1 ? `${Number(miles.toFixed(1))} mi` : `${Math.round(d * 3.28084 / 10) * 10} ft`; } return Math.round(d / 10) * 10 >= 1000 ? `${Number((d / 1000).toFixed(1))} km` : `${Math.round(d / 10) * 10} m`; }
 export function distanceLeft(meters: number, unit: 'km' | 'mi') { return `${(meters / 1000 / (unit === 'mi' ? 1.609344 : 1)).toFixed(1)} ${unit === 'mi' ? 'mi' : 'km'}`; }
 export function arrivalTime(seconds: number, now = Date.now()) {
   const arrival = new Date(now + seconds * 1000), today = new Date(now);

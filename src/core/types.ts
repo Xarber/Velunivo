@@ -10,7 +10,7 @@ export interface Route {
 }
 export interface Profile {
   name: string; maxSpeed: number; ridingLimit: number; cruiseFactor: number;
-  acceleration: number; stopDelay: number; voice: boolean; motion: boolean;
+  acceleration: number; stopDelay: number; voice: boolean; motion: boolean; learnedSpeedKmh?: number; learnedRideCount?: number;
 }
 export const defaultProfile: Profile = {
   name: 'E-scooter', maxSpeed: 25, ridingLimit: 25, cruiseFactor: 0.8,
@@ -20,5 +20,5 @@ export interface Fix { coordinate: Coord; accuracy: number; speed: number | null
 
 export interface Vehicle extends Profile { id: string; kind: 'escooter' | 'ebike'; rangeKm: number | null; rangeUnit: 'km' | 'mi'; icon: string; photo: string | null; photos?: string[]; }
 
-export interface NavigationOptions { compass: boolean; tilted: boolean; unit: 'km' | 'mi'; voice: boolean; motion: boolean; volume: 'loud' | 'quiet' | 'off'; recordRides: boolean; downloadedMaps: boolean; }
-export const defaultNavigationOptions: NavigationOptions = { compass: true, tilted: false, unit: 'km', voice: true, motion: false, volume: 'loud', recordRides: true, downloadedMaps: true };
+export interface NavigationOptions { compass: boolean; tilted: boolean; unit: 'km' | 'mi'; voice: boolean; motion: boolean; volume: 'loud' | 'quiet' | 'off'; recordRides: boolean; downloadedMaps: boolean; developerMode: boolean; showSharingVehicle: boolean; learnedEta: boolean; transit: boolean; traffic: boolean; liveActivities: boolean; }
+export const defaultNavigationOptions: NavigationOptions = { compass: true, tilted: false, unit: 'km', voice: true, motion: false, volume: 'loud', recordRides: true, downloadedMaps: true, developerMode: false, showSharingVehicle: true, learnedEta: true, transit: false, traffic: false, liveActivities: true };

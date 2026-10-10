@@ -103,3 +103,12 @@ Lint/typecheck and 40 app tests pass; web and iOS JavaScript exports pass. Nativ
 - GitHub run 37953688059: iOS compilation succeeded; Android stopped before compilation because the Gradle cache action ran before Expo generated files. Fixed ordering. iPad cleanup exceeded its timeout due to inherited output pipes; process-group termination now completes the reproduction in 0.2 seconds. Screenshot fallback remains honest about reused images.
 
 - Replacement run 37966930215 passed prepare and web. Android passed the repaired cache stage and reached Build APK; iOS reached Archive iPhone app without signing. Native results and physical-device checks remain pending. Browser proof images are in the chat outputs; no user location was published.
+
+## 0.1.13 validation
+
+- Lint and TypeScript checks pass. All 54 app tests and 16 Python workflow/screenshot tests pass. New regressions cover GPS pace learning, minimum three matched records, stops/caps, empty endpoint swapping, large turn-distance units, full municipality addresses and the permanent Sharing E-Scooter migration/delete guard.
+- Final Expo export completed for web, iOS and Android. Native exports verify JavaScript bundling, not native compilation or device behavior.
+- A disposable offline iOS prebuild completed without installing Pods or downloading SDKs; it generated ExpoWidgetsTarget, App Group configuration and the widget Podfile hook. Autolinking resolves VelunivoAudioModule. Swift frontend syntax parsing of that module passes. Local selected developer tools are Command Line Tools, so native compilation is delegated to GitHub Actions.
+- Local web preview /offline returns HTTP 200. Interactive browser inspection was unavailable: the computer-use service reported no enabled browser surfaces. No system file picker or blocking dialog was opened. Existing README screenshots illustrate earlier UI, not this revision.
+- No Stadia account/key was available to test native region downloads, cache limits or airplane-mode map reopening. These require provider configuration and a fresh native build. Physical-device audio restoration and Dynamic Island/lock-screen rendering are also pending; a successfully generated extension does not prove LiveContainer registration.
+- The prior 0.1.12 release run 37966930215 is cancelled. Version 0.1.13 requires a new native workflow run; app and package versions are aligned.

@@ -1,7 +1,9 @@
+import { photonResults, AddressResult } from '../core/addresses';
 import { Coord, Profile, Route } from '../core/types';
 import { requestJson } from './request';
 import { fromValhalla, valhallaRequest, valhallaAttributesRequest } from '../core/valhalla';
 import { fromGraphHopper } from '../core/routing';
+export type { AddressResult } from '../core/addresses';
 export const serverUrl = process.env.EXPO_PUBLIC_ROUTING_URL ?? '';
 export async function fetchRoute(start: Coord, end: Coord, kind: 'bike' | 'car', profile: Profile): Promise<Route> {
   if (!serverUrl) {
@@ -17,13 +19,12 @@ export async function fetchRoute(start: Coord, end: Coord, kind: 'bike' | 'car',
   return { ...fromGraphHopper(body.paths[0], kind), plannedCap: Math.min(profile.maxSpeed, profile.ridingLimit) };
 }
 
-export interface AddressResult { label: string; coordinate: Coord; }
 export async function searchAddresses(query: string): Promise<AddressResult[]> {
   if (query.trim().length < 3 || query.length > 200) throw new Error('Enter an address or place between 3 and 200 characters.');
-  if (!serverUrl) { const data = await publicJson(`https://photon.komoot.io/api/?q=${encodeURIComponent(query.trim())}&limit=5`); return (data.features || []).filter((f: any) => f.geometry?.type === 'Point' && f.geometry.coordinates?.every(Number.isFinite)).map((f: any) => ({ coordinate: f.geometry.coordinates.slice(0, 2), label: [...new Set([f.properties.name, [f.properties.street, f.properties.housenumber].filter(Boolean).join(' '), f.properties.postcode, f.properties.city, f.properties.country].filter(Boolean))].join(', ') })); }
+  if (!serverUrl) { const data = await publicJson(`https://photon.komoot.io/api/?q=${encodeURIComponent(query.trim())}&limit=5`); return photonResults(data); }
   const { response, body } = await requestJson(`${serverUrl.replace(/\/$/, '')}/geocode?q=${encodeURIComponent(query.trim())}`, {}, 15000);
   if (!response.ok) throw new Error(body.error || 'Address search unavailable');
-  return body.results;
+  return body.results.map((r: any) => ({...r, name:r.name || r.label.split(',')[0],address:r.address || r.label}));
 }
 
 let publicQueue = Promise.resolve();

@@ -31,7 +31,7 @@ createServer(async (req, res) => {
       const upstream = await fetch(`https://graphhopper.com/api/1/geocode?q=${encodeURIComponent(query)}&limit=5&key=${encodeURIComponent(key)}`, { signal: AbortSignal.timeout(10000) });
       const data = await upstream.json();
       if (!upstream.ok) { send(upstream.status === 429 ? 429 : 502, { error: data.message || 'Address provider unavailable.' }); return; }
-      const results = (data.hits || []).filter((h: any) => Number.isFinite(h.point?.lng) && Number.isFinite(h.point?.lat)).map((h: any) => ({ label: [h.name, [h.street, h.housenumber].filter(Boolean).join(' '), h.postcode, h.city, h.country].filter(Boolean).join(', '), coordinate: [h.point.lng, h.point.lat] }));
+      const results = (data.hits || []).filter((h: any) => Number.isFinite(h.point?.lng) && Number.isFinite(h.point?.lat)).map((h: any) => ({ name: h.name || h.street || h.city, address: [...new Set([[h.street, h.housenumber].filter(Boolean).join(' '), h.postcode, h.district, h.city, h.county, h.state, h.country].filter(Boolean))].join(', '), label: [...new Set([h.name, [h.street, h.housenumber].filter(Boolean).join(' '), h.postcode, h.district, h.city, h.county, h.state, h.country].filter(Boolean))].join(', '), coordinate: [h.point.lng, h.point.lat] }));
       send(200, { results });
     } catch { send(502, { error: 'Address search unavailable or timed out.' }); }
     return;

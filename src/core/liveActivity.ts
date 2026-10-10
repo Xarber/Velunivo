@@ -1,0 +1,1 @@
+export interface NavigationActivity { turn: string; symbol: 'flag.fill' | 'arrow.turn.up.left' | 'arrow.turn.up.right' | 'arrow.up'; distance: string; arrival: string; minutes: string; remaining: string; }

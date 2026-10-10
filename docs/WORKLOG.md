@@ -211,3 +211,15 @@ Run 37953688059 failed before Android compilation: setup-gradle v6 could not fin
 ### Background verification after popup dismissal
 - Resumed screen-only browser checks at the user’s request, avoiding file pickers, system dialogs and blocking confirmations. Verified Library route preview/endpoints, garage navigation and appearance controls, and global settings. Browser download verification was rejected by automatic approval review because permission was declined; left it untested interactively and did not attempt a workaround.
 - Build 37966930215 passed prepare/web and the previously failing Android cache step; native compilation is running. This documentation update does not trigger a replacement release. Source app build remains a018db17d083d04b2078a86315375b7eb0923fad (0.1.12).
+
+## 0.1.13 — learned pace, Library, native guidance and permanent sharing preset
+
+Implemented local per-vehicle pace learning after three qualifying rides, with stop-inclusive intervals, accuracy/gap/jump filtering and matching vehicle limits. Reviewed two user-provided exports locally; they were neither copied into the repository nor uploaded to routing. Their valid-interval paces differed, supporting weighted observed pace rather than using maximum speed as an average.
+
+Added Saved Places and Library submenus, recorded Start Again planning, hidden version-tap Developer Mode, GPX-default sharing and developer JSON/simulation. Reworked route controls, empty endpoint swapping, POI/full-address presentation and pin inspection. Shared turn cards format large distances in km/miles; active navigation exposes an upcoming-turn sheet by swipe.
+
+Added native Stadia key setup with host-scoped authentication, limited region downloads, budget/one-download resume guards and automatic coverage selection. Kept online default renderers. OpenFreeMap bulk downloads were not enabled because public tile access does not grant automated collection permission. Added honest transit/traffic preview controls without traffic ETA.
+
+Added an autolinked iOS speech module that explicitly releases ducking sessions and a generated Expo Widgets Live Activity extension. Both need a fresh native build and target validation. Background navigation remains paused; LiveContainer extension support is installation-dependent. Sharing E-Scooter is permanent at 25/20 limits, restored on migration and hidden only through Settings.
+
+Updated app/package versions to 0.1.13. No local SDK was downloaded, no original project files were edited, no private ride exports were published, and commits remain unsigned. Native project generation was tested only in a disposable temporary copy.

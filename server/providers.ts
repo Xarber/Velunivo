@@ -1,3 +1,4 @@
+import { photonResults } from '../src/core/addresses';
 import { fromValhalla, valhallaRequest, valhallaAttributesRequest } from '../src/core/valhalla';
 import { Coord, Profile } from '../src/core/types';
 const valhalla = process.env.VALHALLA_URL || 'https://valhalla1.openstreetmap.de';
@@ -13,7 +14,7 @@ const cache = new Map<string, { until: number; data: unknown }>();
 export async function addresses(query: string) {
   const id = `search:${query.toLowerCase()}`, hit = cache.get(id); if (hit && hit.until > Date.now()) return hit.data;
   const data = await provider(`${photon}/api/?q=${encodeURIComponent(query)}&limit=5`);
-  const results = (data.features || []).filter((f: any) => f.geometry?.type === 'Point' && f.geometry.coordinates?.every(Number.isFinite)).map((f: any) => ({ coordinate: f.geometry.coordinates.slice(0, 2), label: [...new Set([f.properties.name, [f.properties.street, f.properties.housenumber].filter(Boolean).join(' '), f.properties.postcode, f.properties.city, f.properties.country].filter(Boolean))].join(', ') }));
+  const results = photonResults(data);
   remember(id, results); return results;
 }
 function remember(id: string, data: unknown) { if (cache.size >= 100) cache.delete(cache.keys().next().value!); cache.set(id, { until: Date.now() + 300000, data }); }
