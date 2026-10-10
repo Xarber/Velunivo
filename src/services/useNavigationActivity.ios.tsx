@@ -35,10 +35,10 @@ export function useNavigationActivity(active: boolean, props: NavigationActivity
 }
 
 // Called directly by GPS task delivery; does not depend on a background React render.
-export async function updateRideActivity(route:Route,profile:Profile,options:NavigationOptions,g:ReturnType<typeof guidance>,fix:Fix) {
+export async function updateRideActivity(route:Route,profile:Profile,options:NavigationOptions,g:ReturnType<typeof guidance>,fix:Fix,simulation=false) {
  try { for(const live of activity.getInstances()) {
    if(g.arrived || !options.liveActivities)await live.end('immediate');
-   else await live.update(rideActivity(route,profile,options,g,fix),new Date(Date.now()+30000));
+   else await live.update(rideActivity(route,profile,options,g,fix,simulation),new Date(Date.now()+30000));
  } } catch { /* UI hook reports extension availability; GPS must continue. */ }
 }
 export async function markActivityPaused() {try {for(const live of activity.getInstances())await live.update({turn:'Guidance paused · enable background location',symbol:'arrow.up',distance:'—',arrival:'—',minutes:'—',remaining:'—'},new Date());} catch { /* Unsupported extension. */ }}

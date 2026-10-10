@@ -48,6 +48,7 @@ export default function Explore() {
   const wide = width >= 700, insets = useSafeAreaInsets();
   const [panelOpen, setPanelOpen] = useState(false);
   const [externalJourney, setExternalJourney] = useState<ExternalNavigation | null>(null);
+  const warningSimulation = useRef(false);
   const [warningRoute, setWarningRoute] = useState<Route | null>(null);
   const [mapHeight, setMapHeight] = useState(height);
   const [overlayHeight, setOverlayHeight] = useState(height);
@@ -75,22 +76,22 @@ export default function Explore() {
   const webLeft = Platform.OS === 'web' ? insets.left : 0, webRight = Platform.OS === 'web' ? insets.right : 0;
   const recordingAccept = useRef<(fix: Fix, arrived?: boolean) => void | Promise<void>>(() => {});
   const [picking, setPicking] = useState<'start' | 'end' | null>(null), [follow, setFollow] = useState(true);
-  const ride = useRide(selected, profile, navigationOptions, (fix,arrived) => recordingAccept.current(fix,arrived)), motion = useMotion((navigationOptions.motion || navigationOptions.recordRides) && ride.mode === 'gps');
+  const ride = useRide(selected, profile, navigationOptions, (fix,arrived) => recordingAccept.current(fix,arrived)), motion = useMotion((navigationOptions.motion && ride.mode !== 'idle') || (navigationOptions.recordRides && ride.mode === 'gps'));
   const active = ride.mode !== 'idle', g = ride.progress;
   const expandedPanel = panelOpen || (wide && !active);
   const panelP = expandedPanel ? { ...p, dark: true, bg: '#071118', card: '#15222C', text: '#F6FAFC', muted: '#ADBCC6', line: '#30434B', accent: '#64DCC5' } : p;
-  const live = useLocation(ride.mode !== 'gps');
+  const live = useLocation(ride.mode === 'idle');
   const mapFix = active ? ride.fix : live.fix;
   const mapPosition = mapFix && mapFix.accuracy <= 100 && now - mapFix.timestamp <= 15000 ? mapFix.coordinate : undefined;
   const visibleRoutes = useMemo(() => active && selected ? [selected] : routes, [active, selected, routes]);
   const compactHeight = active ? 180 : 176, visiblePanelHeight = panelOpen ? panelHeight : compactHeight;
-  const compass = useHeading(ride.mode !== 'simulation' && (navigationOptions.compass || (navigationOptions.recordRides && ride.mode === 'gps')) && !!mapPosition);
+  const compass = useHeading((navigationOptions.compass || (navigationOptions.recordRides && ride.mode === 'gps')) && !!mapPosition);
   const direction = forwardHeading(selected, g?.index, freshFix(mapFix, now) ? mapFix : null);
   const recorder = useRideRecorder(ride.mode === 'gps', navigationOptions.recordRides, g?.arrived === true, selected, profile, motion, compass); useEffect(() => { recordingAccept.current = recorder.accept; }, [recorder.accept]);
   const offlineMap = useDownloadedMaps(navigationOptions.downloadedMaps, mapPosition, selected);
   const compassFresh = navigationOptions.compass && compass.heading !== null;
   const heading = compassFresh ? compass.heading! : direction.heading;
-  const headingSource = ride.mode === 'simulation' ? 'Demo travel direction' : compassFresh ? compass.status : direction.source;
+  const headingSource = compassFresh ? compass.status : ride.mode === 'simulation' ? 'Demo travel direction' : direction.source;
   const precise = freshFix(ride.fix, now);
   useEffect(() => { const clock = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(clock); }, []);
   useEffect(() => () => { if (overviewTimer.current) clearTimeout(overviewTimer.current); }, []);
@@ -102,8 +103,8 @@ export default function Explore() {
   }, [wide, active, picking, visiblePanelHeight, controlsHeight, bottomObstruction]);
   const followPadding = useMemo(() => ({ ...fitPadding, top: fitPadding.top + Math.max(0, (mapHeight - fitPadding.top - fitPadding.bottom) * .42) }), [fitPadding, mapHeight]);
   const eta = selected ? estimate(selected, profile, active && g && !g.offRoute ? g.along : 0) : null;
-  const activityProps = useMemo<import('../core/liveActivity').NavigationActivity>(()=>({turn:g?.offRoute ? 'Off route · stop safely to replan' : g?.next?.text || 'Follow the route',symbol:g?.next?.sign === 4 ? 'flag.fill' : g?.next?.sign && g.next.sign < 0 ? 'arrow.turn.up.left' : g?.next?.sign && g.next.sign > 0 ? 'arrow.turn.up.right' : 'arrow.up',distance:g?.maneuverMeters === undefined ? '—' : maneuverDistance(g.maneuverMeters,navigationOptions.unit),arrival:eta ? arrivalTime(eta.seconds,now) : '—',minutes:eta ? minutes(eta.seconds) : '—',remaining:eta ? distanceLeft(eta.meters,navigationOptions.unit) : '—'}),[g,eta,now,navigationOptions.unit]);
-  const activity = useNavigationActivity(ride.mode === 'gps' && !g?.arrived && navigationOptions.liveActivities, activityProps);
+  const activityProps = useMemo<import('../core/liveActivity').NavigationActivity>(()=>({turn:(ride.mode === 'simulation' ? 'Simulation · ' : '') + (g?.offRoute ? 'Off route · stop safely to replan' : g?.next?.text || 'Follow the route'),symbol:g?.next?.sign === 4 ? 'flag.fill' : g?.next?.sign && g.next.sign < 0 ? 'arrow.turn.up.left' : g?.next?.sign && g.next.sign > 0 ? 'arrow.turn.up.right' : 'arrow.up',distance:g?.maneuverMeters === undefined ? '—' : maneuverDistance(g.maneuverMeters,navigationOptions.unit),arrival:eta ? arrivalTime(eta.seconds,now) : '—',minutes:eta ? minutes(eta.seconds) : '—',remaining:eta ? distanceLeft(eta.meters,navigationOptions.unit) : '—'}),[g,eta,now,navigationOptions.unit,ride.mode]);
+  const activity = useNavigationActivity(active && !g?.arrived && navigationOptions.liveActivities, activityProps);
   const run = async (task: () => Promise<unknown>) => { try { await task(); } catch (e) { setNotice(e instanceof Error ? e.message : String(e)); } };
   async function plan(journey?: Journey) {
     const request = ++planRequest.current; setError(''); setExternalJourney(null); setBusy(true);
@@ -132,6 +133,7 @@ export default function Explore() {
   function shareRoute() { if (!selected) return; const r=selected; setActions([{title:'Save to Library',icon:'bookmark-outline',onPress:()=>void run(async()=>{await save(r);setNotice('Saved to your Library.');})},{title:'Export GPX',icon:'share-outline',onPress:()=>void run(()=>shareTrack(r.coordinates))}]); }
   async function resolveCurrentLocation() {
     const request = ++locationRequest.current;
+    if (ride.mode === 'simulation' && freshFix(ride.fix, Date.now())) { const coordinate = ride.fix!.coordinate; setStart('Simulation location'); setStartPoint(coordinate); setGpsStart(false); return coordinate; }
     if (live.fix && live.fix.accuracy <= 100 && Date.now() - live.fix.timestamp <= 15000) { setStart('Current location'); setStartPoint(live.fix.coordinate); setGpsStart(true); return live.fix.coordinate; }
     const permission = await Location.requestForegroundPermissionsAsync();
     if (permission.status !== 'granted') throw new Error('Allow precise location to use your current position.');
@@ -146,7 +148,7 @@ export default function Explore() {
   function picked(c: Coord) { if (!picking) return; const label = `${c[1].toFixed(6)}, ${c[0].toFixed(6)}`; if (picking === 'start') { manualStart(); setStart(label); setStartPoint(c); } else { setEnd(label); setEndPoint(c); } setPicking(null); setPlanner(true); }
   function cancelPendingLocation() { locationRequest.current++; setLocating(false); }
   function manualStart() { cancelPendingLocation(); setGpsStart(false); }
-  function beginRide(simulate = false, confirmed = false) { if (!simulate && !confirmed && selected?.safetyWarnings?.length) { setWarningRoute(selected); return; } setNow(Date.now()); setPanelOpen(false); resumeFollowing(); ride.start(simulate); }
+  function beginRide(simulate = false, confirmed = false) { if (!confirmed && selected?.safetyWarnings?.length) { warningSimulation.current = simulate; setWarningRoute(selected); return; } setNow(Date.now()); setPanelOpen(false); resumeFollowing(); ride.start(simulate); }
   function openPlanner() {
     setPreviewPin(undefined); setPlanner(true);
     if (gpsStart && !locating) { setLocating(true); const pending = resolveCurrentLocation(), request = locationRequest.current; void pending.catch(e => { if (request === locationRequest.current) setError(e.message); }).finally(() => { if (request === locationRequest.current) setLocating(false); }); }
@@ -188,7 +190,7 @@ export default function Explore() {
       {active ? <View style={[styles.card, { backgroundColor: panelP.card }]}>
         <RideDashboard etaOnly simulation={ride.mode === 'simulation'} profile={profile} route={selected} fix={ride.fix} index={g?.index} offRoute={g?.offRoute} seconds={eta?.seconds} meters={eta?.meters} now={now} unit={navigationOptions.unit} />
         <Text style={{ color: panelP.muted, fontSize: 12 }}>{profile.name} · Cap {displaySpeed(Math.min(profile.maxSpeed, profile.ridingLimit), navigationOptions.unit).toFixed(0)} {navigationOptions.unit === 'mi' ? 'mph' : 'km/h'} · {eta ? batteryLabel(eta.meters, profile) : 'Range unknown'}</Text>
-        <Text style={{ color: panelP.muted, fontSize: 11 }}>{headingSource}{ride.mode === 'gps' && navigationOptions.compass && !compassFresh ? ` · ${compass.status}` : ''}{!precise ? ' · Waiting for a precise GPS fix' : ''}</Text>
+        <Text style={{ color: panelP.muted, fontSize: 11 }}>{headingSource}{active && navigationOptions.compass && !compassFresh ? ` · ${compass.status}` : ''}{!precise ? ' · Waiting for a precise GPS fix' : ''}</Text>
 
         {navigationOptions.motion && motion.status !== 'Off' && <Text style={{ color: panelP.muted, fontSize: 12 }}>Motion: {motion.status} · {motion.acceleration.toFixed(2)} g · {motion.rotation.toFixed(2)} rad/s</Text>}
         {g?.offRoute && <Button title="End ride & replan" secondary onPress={() => { ride.stop(); setGpsStart(true); setStart('Current location'); setStartPoint(undefined); setPlanner(true); }} />}
@@ -221,7 +223,7 @@ export default function Explore() {
     <ActionMenu title="Share route" actions={actions} onClose={()=>setActions(null)} />
     <Modal visible={turnList && active} transparent animationType="slide" onRequestClose={()=>setTurnList(false)}><View style={{flex:1,padding:12,paddingTop:insets.top+12,backgroundColor:'#00000050'}}><Pressable accessibilityLabel="Dismiss upcoming directions" onPress={()=>setTurnList(false)} style={StyleSheet.absoluteFill} /><View style={{maxHeight:'80%',width:'100%',maxWidth:560,alignSelf:wide?'flex-start':'center',backgroundColor:p.bg,borderRadius:24,overflow:'hidden'}}><SwipeArea onSwipe={open=>{if(open)setTurnList(false);}}><View style={{padding:16,flexDirection:'row',alignItems:'center',gap:12}}><Text style={{flex:1,color:p.text,fontSize:22,fontWeight:'800'}}>Upcoming directions</Text><IconButton label="Close directions" icon="close" onPress={()=>setTurnList(false)} /></View></SwipeArea><ScrollView contentContainerStyle={{padding:10,gap:8}}>{selected?.steps.filter(step=>!g?.next || step.index >= g.next.index).map((step,i)=><View key={`${i}-${step.index}`} style={{backgroundColor:p.card,borderRadius:20}}><TurnDirection unit={navigationOptions.unit} sign={step.sign} text={step.text} meters={Math.max(0,(cumulative(selected.coordinates)[step.index] || 0)-(g?.along || 0))} /></View>)}</ScrollView></View></View></Modal>
     {externalJourney && <ExternalMapsWarning journey={externalJourney} onCancel={() => { setExternalJourney(null); setPlanner(true); }} />}
-    <RouteWarning key={warningRoute?.id ?? 'closed'} route={warningRoute} onCancel={() => setWarningRoute(null)} onConfirm={route => { if (route.id === selected?.id) { setWarningRoute(null); beginRide(false, true); } }} />
+    <RouteWarning key={warningRoute?.id ?? 'closed'} route={warningRoute} onCancel={() => setWarningRoute(null)} onConfirm={route => { if (route.id === selected?.id) { setWarningRoute(null); beginRide(warningSimulation.current, true); } }} />
     <Modal visible={planner} animationType={reducedMotion ? 'none' : 'fade'} transparent presentationStyle="overFullScreen" onRequestClose={() => setPlanner(false)}><View style={{ flex: 1, justifyContent: 'center', padding: wide ? 24 : 12, backgroundColor: '#00000025' }}><Pressable accessibilityLabel="Dismiss route planner" onPress={() => setPlanner(false)} style={StyleSheet.absoluteFill} /><SafeAreaView {...motionProps('planner', planner ? 'open' : 'closed')} edges={['top', 'bottom']} style={{ width: '100%', maxWidth: 560, maxHeight: '92%', alignSelf: wide ? 'flex-start' : 'center', backgroundColor: p.bg, borderRadius: 28, overflow: 'hidden', boxShadow: '0 12px 36px #00000030' }}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 24, gap: 18, width: '100%', maxWidth: 780, alignSelf: 'center' }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><Text style={[styles.title, { color: p.text }]}>Where to?</Text><Pressable accessibilityLabel="Close planner" onPress={() => setPlanner(false)}><Ionicons name="close-circle" size={30} color={p.muted} /></Pressable></View>
       <Text style={[styles.subtitle, { color: p.muted }]}>Search an address or choose a point on the map. Compare bicycle and car-road routes at your riding speed.</Text>

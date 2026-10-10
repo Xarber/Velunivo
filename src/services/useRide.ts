@@ -25,7 +25,7 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setProgress(null); setFix(null); setCompletedMeters(0);
     if (mode === 'idle' || !route) return;
-    let cancelled = false, paused = AppState.currentState !== 'active', background = false, halted = false, lastAccepted = 0, stopBackground: (()=>Promise<void>) | undefined, subscription: Location.LocationSubscription | undefined, timer: ReturnType<typeof setInterval> | undefined;
+    let cancelled = false, paused = mode === 'gps' && AppState.currentState !== 'active', background = false, halted = false, lastAccepted = 0, stopBackground: (()=>Promise<void>) | undefined, subscription: Location.LocationSubscription | undefined, timer: ReturnType<typeof setInterval> | undefined;
     async function accept(next: Fix) {
       if (cancelled || paused || halted || next.timestamp <= lastAccepted) return;
       lastAccepted=next.timestamp;
@@ -38,17 +38,17 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
       if(mode==='gps')await onFixRef.current?.(next,g.arrived);
       if(cancelled || lastAccepted!==next.timestamp)return;
       const cue = g.next ? `${g.next.index}-${(g.maneuverMeters ?? 0) < 40 ? 'near' : 'ahead'}` : '';
-      if (preferencesRef.current.voice && preferencesRef.current.volume !== 'off' && mode === 'gps' && !g.offRoute && g.next && (g.maneuverMeters ?? 999) < 150 && cue !== spoken.current) {
+      if (preferencesRef.current.voice && preferencesRef.current.volume !== 'off' && !g.offRoute && g.next && (g.maneuverMeters ?? 999) < 150 && cue !== spoken.current) {
         spoken.current = cue; await speakDirection(`${maneuverDistance(g.maneuverMeters ?? 0, unitRef.current)}. ${g.next.text}`, preferencesRef.current);
       }
-      if(mode==='gps')await updateRideActivity(route!,profileRef.current,preferencesRef.current,g,next);
+      await updateRideActivity(route!,profileRef.current,preferencesRef.current,g,next,mode === 'simulation');
       if (g.arrived) { halted=true; if (timer) clearInterval(timer); subscription?.remove(); await stopBackground?.(); await stopDirections(); }
     }
-    const app = AppState.addEventListener('change', s => { paused = s !== 'active' && !background; if (paused) { setStatus('Background location unavailable · keep the app open'); void stopDirections(); void markActivityPaused(); } });
+    const app = AppState.addEventListener('change', s => { paused = mode === 'gps' && s !== 'active' && !background; if (paused) { setStatus('Background location unavailable · keep the app open'); void stopDirections(); void markActivityPaused(); } });
     if (mode === 'simulation') {
-      let meters = 0; const total = cumulative(route.coordinates).at(-1)!;
+      let meters = 0, previousTick = Date.now(); const total = cumulative(route.coordinates).at(-1)!;
       void accept({ coordinate: route.coordinates[0], accuracy: 3, speed: 0, timestamp: Date.now() });
-      timer = setInterval(() => { if (paused) return; const speed = Math.min(profileRef.current.maxSpeed, profileRef.current.ridingLimit) * profileRef.current.cruiseFactor / 3.6; const before = pointAt(route.coordinates, meters); meters = Math.min(total, meters + speed * .5); const coordinate = pointAt(route.coordinates, meters); void accept({ coordinate, accuracy: 3, speed: meters < total ? speed : 0, heading: bearing(before, coordinate) ?? undefined, timestamp: Date.now() }); }, 500);
+      timer = setInterval(() => { if (paused) return; const speed = Math.min(profileRef.current.maxSpeed, profileRef.current.ridingLimit) * profileRef.current.cruiseFactor / 3.6; const tick = Date.now(), elapsed = Math.max(0, tick - previousTick) / 1000; previousTick = tick; const before = pointAt(route.coordinates, meters); meters = Math.min(total, meters + speed * elapsed); const coordinate = pointAt(route.coordinates, meters); void accept({ coordinate, accuracy: 3, speed: meters < total ? speed : 0, heading: bearing(before, coordinate) ?? undefined, timestamp: Date.now() }); }, 500);
     } else {
       setStatus('Requesting GPS permission');
       (async () => {
