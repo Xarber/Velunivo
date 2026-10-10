@@ -106,3 +106,11 @@ Turn cards use readable metre/kilometre or feet/mile distances; swipe down on th
 The web release includes an installable PWA with Velunivo Home Screen icons, install screenshots, app shortcuts and sharing metadata. Open Settings → Install Velunivo. Safari uses Share → Add to Home Screen on iPhone/iPad, or File → Add to Dock on Mac. Serve the exported site over HTTPS at the domain root; see [setup](docs/SETUP.md#installable-web-app-pwa). Web GPS needs the page open; cached app assets and local Library do not provide offline routing or downloaded web maps.
 
 Native active rides can continue GPS guidance, recording and registered iOS Live Activity updates with background location permission. The OS controls update delivery; force-quitting ends updates. Motion/compass samples may pause when locked. Saved Places can be renamed using the pencil button. These native changes require the 0.1.14 build and physical-device verification.
+
+### Record a trip without a destination
+
+Open **Library → Recorded Rides → Record trip**, select your vehicle and start recording. The same action is in expanded **Your ride** before selecting a destination. The map dashboard displays speed, trip time, distance, average/top speed, GPS accuracy and range-based battery estimates, without turns or ETA. Explicit recording works independently of the automatic Record Rides preference. Finish & save returns the trip to Library for GPX export and insights. Keep the web page open; native background recording needs Always location permission and the global background-navigation setting.
+
+Road limits are optional online OpenStreetMap lookups; your recording position is sent to Overpass at most once every 30 seconds. Missing/ambiguous data shows **Limit unknown** and never prevents recording. Your vehicle riding limit is displayed separately. Follow posted signs.
+
+Developer tools are hidden: tap the Settings version three times in under three seconds, enable Developer Mode, then open **Developer Options** for Live Activity installation checks.
