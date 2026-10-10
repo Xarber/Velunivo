@@ -223,3 +223,5 @@ Added native Stadia key setup with host-scoped authentication, limited region do
 Added an autolinked iOS speech module that explicitly releases ducking sessions and a generated Expo Widgets Live Activity extension. Both need a fresh native build and target validation. Background navigation remains paused; LiveContainer extension support is installation-dependent. Sharing E-Scooter is permanent at 25/20 limits, restored on migration and hidden only through Settings.
 
 Updated app/package versions to 0.1.13. No local SDK was downloaded, no original project files were edited, no private ride exports were published, and commits remain unsigned. Native project generation was tested only in a disposable temporary copy.
+
+Final staged review removed a whitespace-only line in the new Library screen. Version 0.1.13 source commit 33cec58 contains the feature changes; all commits are unsigned.
