@@ -20,9 +20,9 @@ export function NavigationWarning({ visible, title, messages, description, confi
   // Parent keys the dialog by route so each new warning starts at three seconds.
   return <Modal visible={visible} transparent animationType={reduced ? 'none' : 'fade'} onRequestClose={onCancel}>
     <View style={{ flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#00000080' }}>
-      <ScrollView accessibilityViewIsModal style={{ maxWidth: 480, maxHeight: '95%', width: '100%', alignSelf: 'center', borderRadius: 26, backgroundColor: p.bg }} contentContainerStyle={{ padding: 24, gap: 18 }}>
+      <ScrollView accessibilityViewIsModal style={{ flexGrow: 0, maxWidth: 480, maxHeight: '95%', width: '100%', alignSelf: 'center', borderRadius: 26, backgroundColor: p.bg }} contentContainerStyle={{ padding: 24, gap: 18 }}>
         <Text accessibilityRole="header" style={{ color: p.text, fontWeight: '800', fontSize: 24 }}>{title}</Text>
-        <ScrollView style={{ maxHeight: 260 }} contentContainerStyle={{ gap: 12 }}>{messages.map(w => <Text key={w} style={{ color: p.text, lineHeight: 22 }}>⚠ {w}</Text>)}</ScrollView>
+        <ScrollView style={{ flexGrow: 0, maxHeight: 260 }} contentContainerStyle={{ gap: 12 }}>{messages.map(w => <Text key={w} style={{ color: p.text, lineHeight: 22 }}>⚠ {w}</Text>)}</ScrollView>
         <Text style={{ color: p.muted, lineHeight: 21 }}>{description}</Text>
         {children}
         <Button title={t(cancelLabel)} secondary onPress={onCancel} />
