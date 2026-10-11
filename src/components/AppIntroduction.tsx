@@ -10,7 +10,7 @@ import {welcomePages,releaseHighlights,initialIntroduction} from '../core/appInt
 import Text from './LocalizedText';
 import {Button,styles,usePalette} from './ui';
 import {t} from '../i18n/core';
-export default function AppIntroduction(){const p=usePalette(),{ready,vehicleLocked}=useStore(),[kind,setKind]=useState<'welcome'|'news'|null>(null),[page,setPage]=useState(0);const version=Constants.expoConfig?.version || '0.1.31';
+export default function AppIntroduction(){const p=usePalette(),{ready,vehicleLocked}=useStore(),[kind,setKind]=useState<'welcome'|'news'|null>(null),[page,setPage]=useState(0);const version=Constants.expoConfig?.version || '0.1.32';
  useEffect(()=>{let live=true;void AsyncStorage.multiGet(['welcome-seen-v1','release-seen-v1','vehicles-v1']).then(values=>{let seen:string[]=[];try{const parsed=JSON.parse(values[1][1]||'[]');if(Array.isArray(parsed))seen=parsed;}catch{}if(live)setKind(initialIntroduction(values[0][1]==='true',!!values[2][1],seen,version));}).catch(()=>{});const unsub=subscribeIntroduction(value=>{setPage(0);setKind(value);});return()=>{live=false;unsub();};},[version]);
  async function finish(){const closing=kind;setKind(null);try{if(closing==='welcome')await AsyncStorage.setItem('welcome-seen-v1','true');let seen:string[]=[];try{seen=JSON.parse(await AsyncStorage.getItem('release-seen-v1')||'[]');}catch{}await AsyncStorage.setItem('release-seen-v1',JSON.stringify([...new Set([...(Array.isArray(seen)?seen:[]),version])].slice(-100)));}catch{/* No modal should prevent using the app when storage is unavailable. */}}
  const welcome=welcomePages[page],news=releaseHighlights.find(v=>v.version===version)?.items || [];

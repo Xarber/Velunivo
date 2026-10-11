@@ -5,12 +5,14 @@ Settings → General → Data transfer exports/imports JSON backups or opens a o
 ## Device flow
 
 1. Create a code, or enter the other device's eight-character code (`XXXX-XXXX`). No PeerServer connection occurs before either action.
-2. Wait for Connected. The first connection consumes the code: signaling disconnects while the established data channel remains open; additional channels are rejected. The code cannot reconnect after a disconnection. Create a fresh code.
+2. Wait for Connected. The first connection consumes the code: the accepted data channel remains authoritative and additional channels receive a busy response. Signaling stays connected for WebRTC reliability. The code cannot reconnect after a disconnection. Create a fresh code.
 3. Either endpoint chooses Send data and overwrite or Merge data. The code owner arbitrates competing choices; the first choice it receives wins. Overwrite sends from the choosing endpoint to the other endpoint. Merge exchanges both collections.
-4. Both endpoints review the mode and counts and independently accept. No backup payload moves before both approvals. For merge, the return transfer follows under that same consent.
-5. Done reloads app state. Keep both apps open and online. Connection attempts time out after 15 seconds; sessions expire after ten minutes. Import is blocked during active rides.
+4. Choosing Send or Merge is the initiating device’s approval. Only the other endpoint reviews the mode and counts and presses Accept. No backup payload moves before that second approval. For merge, the return transfer follows under that same consent.
+5. Done reloads app state. Keep both apps open and online. Joining attempts time out after 15 seconds; creating a code waits for the other device until the session expires; sessions expire after ten minutes. Import is blocked during active rides.
 
-Vehicles, places, routes and ride summaries retain their original IDs; recording samples remain linked to their ride IDs. Repeating a merge adds no duplicates for matching IDs. Each device retains its own matching-ID item values and preferences during a merge. Therefore conflicting edits are not resolved automatically. Separately created items with different IDs remain separate even if their names match. Overwrite replaces the receiving device's portable data and preferences.
+Personal default vehicles from older installs had identical local IDs. Exports now scope those historical IDs with a securely generated, persistent installation identifier, updating ride/telemetry references together. Import restores this device’s own historical IDs locally so existing Bluetooth associations remain intact. The public sharing preset stays a single shared identity. Old unscoped backups cannot distinguish two installations’ same default vehicle; export again from the updated app before merging.
+
+Vehicles, places, routes and ride summaries otherwise retain their original IDs; recording samples remain linked to their ride IDs. Repeating a merge adds no duplicates for matching IDs. Each device retains its own matching-ID item values and preferences during a merge. Therefore conflicting edits are not resolved automatically. Separately created items with different IDs remain separate even if their names match. Overwrite replaces the receiving device's portable data and preferences.
 
 ## Data and privacy
 
@@ -24,4 +26,4 @@ The JSON limit is 64 million characters (file selection also checks 64 MB). Vali
 
 Update the curated releaseHighlights entry in src/core/appIntroduction.ts for each release, with brief English/Italian feature descriptions. Existing installs see news once per version; fresh installs see the welcome tour once. General settings replays the tour and opens the changelog.
 
-Tests cover schema validation, ID-preserving merge, rollback, random code format, negotiation, dual consent, wrong-session rejection, chunk acknowledgements, bidirectional merge and native WebView script/channel lifecycle. Actual two-origin web transfer was tested with synthetic public fixtures and persisted through reload. Native file/photo import and WebRTC transfer still require an installed GitHub-built app; no local native compilation was performed.
+Tests cover schema validation, ID-preserving merge, rollback, random code format, negotiation, initiating-action consent plus receiving-device approval, wrong-session rejection, chunk acknowledgements, bidirectional merge and native WebView script/channel lifecycle. Actual two-origin web transfer was tested with synthetic public fixtures and persisted through reload. Native file/photo import and WebRTC transfer still require an installed GitHub-built app; no local native compilation was performed.

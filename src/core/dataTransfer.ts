@@ -36,3 +36,5 @@ export const CODE_ALPHABET='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 export function transferCode(bytes:Uint8Array){if(bytes.length<8)throw new Error('Secure randomness unavailable.');const code=Array.from(bytes.slice(0,8),b=>CODE_ALPHABET[b%32]).join('');return code.slice(0,4)+'-'+code.slice(4);}
 export const normalizeCode=(code:string)=>code.toUpperCase().replace(/[^A-Z0-9]/g,'');
 export const validCode=(code:string)=>/^[A-HJ-NP-Z2-9]{8}$/.test(normalizeCode(code));
+
+export function formatTransferCode(value:string){const letters=normalizeCode(value).slice(0,8);return letters.length>4?letters.slice(0,4)+'-'+letters.slice(4):letters;}

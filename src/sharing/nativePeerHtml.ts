@@ -1,9 +1,11 @@
-import {createViewerPresence} from './viewerPresence';
+import {clientPeerIdScript} from './peerIdentity';
 import {peerRuntime} from './peerRuntime.generated';
 import {peerOptions} from './peerOptions';
 export function nativePeerHtml(role:'host'|'viewer',pin:string){return `<!doctype html><meta name="viewport" content="width=device-width"><script>${peerRuntime.replace(/<\/script/gi,'<\\/script')}</script><script>
+ ${clientPeerIdScript}
  const role=${JSON.stringify(role)},pin=${JSON.stringify(pin)};let peer,connections=[],route,progress,closed=false,lastSent=0;
- const presence=(${createViewerPresence.toString()})();let viewerCount=-1;
+ // Literal JavaScript is intentional: Hermes function.toString() returns bytecode, not source.
+ const presence=(()=>{const sent=new Map();return {mark:id=>sent.set(id,Date.now()),count:()=>{const now=Date.now();for(const [id,at] of sent)if(now-at>=60000)sent.delete(id);return sent.size;},clear:()=>sent.clear()};})();let viewerCount=-1;
  const report=()=>{if(role!=='host')return;const count=presence.count();if(count!==viewerCount){viewerCount=count;emit('viewers',count);}};
  const send=(c,m)=>{try{c.send(m);if(m.type==='progress'){presence.mark(c.peer||c);report();}}catch(e){c.close();}};
  let presenceTimer;
@@ -12,7 +14,7 @@ export function nativePeerHtml(role:'host'|'viewer',pin:string){return `<!doctyp
  const timer=setTimeout(()=>{emit('status','Connection timed out. Retry when both devices are online.');stop();},20000);
  const attach=c=>{if(connections.length>=8){c.close();return;}connections.push(c);c.on('open',()=>{if(closed){c.close();return;}if(role==='host'){if(route)send(c,route);if(progress)send(c,progress);}else{clearTimeout(timer);emit('ready',true);emit('status','Connected · waiting for location');}});if(role==='viewer')c.on('data',m=>{if(JSON.stringify(m).length>1000000)return;emit('message',m);if(m.type==='ended'){emit('status','Trip sharing ended');stop();}});c.on('close',()=>{connections=connections.filter(x=>x!==c);if(role==='viewer'&&!closed){emit('status','Rider disconnected · updates stopped');stop();}});c.on('error',()=>{c.close();if(role==='viewer'){emit('status','Connection lost · retry to reconnect');stop();}});};
  window.publish=m=>{if(role!=='host'||closed)return;if(m.type==='route'){if(JSON.stringify(route)===JSON.stringify(m))return;route=m;}if(m.type==='progress'){progress=m;if(m.progress.updatedAt-lastSent<5000)return;lastSent=m.progress.updatedAt;}connections.forEach(c=>{if(c.open)send(c,m);});};
- try{peer=role==='host'?new Peer('velunivo-'+pin,${JSON.stringify(peerOptions)}):new Peer(${JSON.stringify(peerOptions)});peer.on('open',()=>{if(closed)return;if(role==='host'){clearTimeout(timer);emit('ready',true);emit('status','Live trip sharing is on');}else attach(peer.connect('velunivo-'+pin,{reliable:true,serialization:'json'}));});peer.on('connection',c=>role==='host'&&!closed?attach(c):c.close());peer.on('call',c=>c.close());peer.on('error',()=>{emit('status','Sharing connection unavailable. Retry when online.');stop();});peer.on('disconnected',()=>emit('status','Signaling disconnected. Sharing may be interrupted.'));}catch(e){emit('status','Sharing unavailable on this device.');stop();}
+ try{peer=role==='host'?new Peer('velunivo-'+pin,${JSON.stringify(peerOptions)}):new Peer(clientPeerId('viewer'),${JSON.stringify(peerOptions)});peer.on('open',()=>{if(closed)return;if(role==='host'){clearTimeout(timer);emit('ready',true);emit('status','Live trip sharing is on');}else attach(peer.connect('velunivo-'+pin,{reliable:true,serialization:'json'}));});peer.on('connection',c=>role==='host'&&!closed?attach(c):c.close());peer.on('call',c=>c.close());peer.on('error',()=>{if(closed)return;emit('status','Sharing connection unavailable. Retry when online.');stop();});peer.on('disconnected',()=>{if(!closed)emit('status','Signaling disconnected. Sharing may be interrupted.');});}catch(e){emit('status','Sharing unavailable on this device.');stop();}
  if(role==='host'){report();presenceTimer=setInterval(report,1000);}
  window.addEventListener('pagehide',stop);emit('loaded',true);
  </script>`;}

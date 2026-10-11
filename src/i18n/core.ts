@@ -23,8 +23,9 @@ export function subscribeLanguage(fn:()=>void){listeners.add(fn);return()=>{list
 export function translate(text:string,language:Language=getLanguage()):string{
  if(language==='en')return text;
  const key=text.trim(),value=italian[key];if(value)return text.replace(key,value);
- for(const [source,target] of templates){const match=source.regex.exec(key);if(match){let result=target;source.names.forEach((name,i)=>{result=result.replaceAll('{'+name+'}',translate(match[i+1],language));});return text.replace(key,result);}}
+ for(const [source,target] of templates){const match=source.regex.exec(key);if(match&&!match.slice(1).some(value=>/ · |\.\s+[A-Za-z]/.test(value))){let result=target;source.names.forEach((name,i)=>{result=result.replaceAll('{'+name+'}',translate(match[i+1],language));});return text.replace(key,result);}}
 
+ if(/\.\s+[A-Za-z]/.test(text))return text.split(/(?<=\.)(\s+)/).map(part=>part.trim()?translate(part,language):part).join('');
  if(text.includes(' · '))return text.split(' · ').map(part=>translate(part,language)).join(' · ');
  return text;
 }

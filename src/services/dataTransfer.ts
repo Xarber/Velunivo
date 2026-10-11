@@ -1,3 +1,5 @@
+import * as Crypto from 'expo-crypto';
+import {portableVehicleIds} from '../core/portableVehicleIds';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Platform} from 'react-native';
 import {File,Paths} from 'expo-file-system';
@@ -12,15 +14,17 @@ import {loadSavedRoutes} from './routeLibrary';
 import {recordedRides,rideSamples} from './rideHistory';
 import {portablePhoto,importPhoto,deletePhoto} from './vehiclePhotos';
 import {commitDataEntries} from '../core/dataStorage';
+let identity:Promise<string>|undefined;
+function installationId(){return identity??=(async()=>{const key='portable-installation-id-v1';const old=await AsyncStorage.getItem(key);if(old&&/^[a-f0-9]{32}$/.test(old))return old;const value=Array.from(Crypto.getRandomBytes(16),b=>b.toString(16).padStart(2,'0')).join('');await AsyncStorage.setItem(key,value);return value;})();}
 export async function exportAppData():Promise<AppBackup>{
  const values=Object.fromEntries(await AsyncStorage.multiGet(['vehicles-v1','profile-v1','places-v1','navigation-v1','ui-language-v1','bluetooth-preferences-v1','routes-v1'])),garage=restoreGarage(values['vehicles-v1'],values['profile-v1']);
  const vehicles=await Promise.all(garage.vehicles.map(async v=>{const photos=await Promise.all((v.photos||[]).map(portablePhoto));return{...v,photo:v.photo?await portablePhoto(v.photo):null,photos};}));
  const rides=await recordedRides();const archive=await Promise.all(rides.map(async summary=>({summary,samples:await rideSamples(summary)})));
- return parseBackup(JSON.stringify({format:'velunivo',schema:1,createdAt:Date.now(),garage:{...garage,vehicles},places:restorePlaces(values['places-v1']),routes:await loadSavedRoutes(values['routes-v1']),rides:archive,navigation:restorePreferences(values['navigation-v1'],garage.vehicles[0]),language:['en','it','system'].includes(values['ui-language-v1']||'')?values['ui-language-v1']:'system',bluetooth:restoreBluetoothPreferences(values['bluetooth-preferences-v1'])}));
+ return portableVehicleIds(parseBackup(JSON.stringify({format:'velunivo',schema:1,createdAt:Date.now(),garage:{...garage,vehicles},places:restorePlaces(values['places-v1']),routes:await loadSavedRoutes(values['routes-v1']),rides:archive,navigation:restorePreferences(values['navigation-v1'],garage.vehicles[0]),language:['en','it','system'].includes(values['ui-language-v1']||'')?values['ui-language-v1']:'system',bluetooth:restoreBluetoothPreferences(values['bluetooth-preferences-v1'])})),await installationId());
 }
 let applying=false;
 export async function importAppData(incoming:AppBackup,mode:ImportMode){if(applying)throw new Error('A data transfer is already in progress.');applying=true;try{
- const validated=parseBackup(JSON.stringify(incoming)),combined=combineBackups(await exportAppData(),validated,mode);
+ const validated=parseBackup(JSON.stringify(incoming)),combined=portableVehicleIds(combineBackups(await exportAppData(),validated,mode),await installationId(),true);
  const createdPhotos:string[]=[],photoCache=new Map<string,string>();const materialize=(photo:string)=>{if(photoCache.has(photo))return photoCache.get(photo)!;const imported=importPhoto(photo);if(imported!==photo)createdPhotos.push(imported);photoCache.set(photo,imported);return imported;};
  try{combined.garage={...combined.garage,vehicles:combined.garage.vehicles.map(v=>({...v,photo:v.photo?materialize(v.photo):null,photos:(v.photos||[]).map(materialize)}))};}catch(error){createdPhotos.forEach(deletePhoto);throw error;}
  const entries:[string,string][]=[['vehicles-v1',JSON.stringify(combined.garage)],['places-v1',JSON.stringify(combined.places)],['navigation-v1',JSON.stringify(combined.navigation)],['ui-language-v1',combined.language],['bluetooth-preferences-v1',JSON.stringify(combined.bluetooth)],['route-library-ids-v2',JSON.stringify(combined.routes.map(r=>r.id))],['ride-history-ids-v1',JSON.stringify(combined.rides.map(r=>r.summary.id))]];

@@ -1,5 +1,8 @@
 import {createViewerPresence} from './viewerPresence';
-import type { Peer, DataConnection } from 'peerjs';
+import {Peer} from 'peerjs';
+import type {DataConnection} from 'peerjs';
+import {clientPeerId} from './peerIdentity';
+import {peerOptions} from './peerOptions';
 import { parseTripMessage, PIN_PATTERN, TripMessage } from './model';
 export interface SessionEvents { status(s:string):void; message?(m:TripMessage):void; ready?():void; viewers?(count:number):void; }
 export class PeerSession {
@@ -17,8 +20,8 @@ export class PeerSession {
   constructor(private peer:Peer,private role:'host'|'viewer',private pin:string,private events:SessionEvents) {
     if(role==='host'){this.reportViewers();this.presenceTimer=setInterval(()=>this.reportViewers(),1000);}
     this.timer=setTimeout(()=>{events.status('Connection timed out. Retry when both devices are online.');this.close();},20000);
-    peer.on('error',()=>{events.status('Sharing connection unavailable. Retry when online.');this.close();});
-    peer.on('disconnected',()=>{events.status('Signaling disconnected. Sharing may be interrupted.');});
+    peer.on('error',()=>{if(this.closed)return;events.status('Sharing connection unavailable. Retry when online.');this.close();});
+    peer.on('disconnected',()=>{if(this.closed)return;events.status('Signaling disconnected. Sharing may be interrupted.');});
     peer.on('open',()=>{
       if(this.closed)return;
       if(role==='host'){clearTimeout(this.timer);events.status('Live trip sharing is on');events.ready?.();}
@@ -43,6 +46,6 @@ export class PeerSession {
 }
 export async function createSession(role:'host'|'viewer',pin:string,events:SessionEvents){
   if(!PIN_PATTERN.test(pin))throw new Error('Invalid sharing code');
-  const {Peer}=await import('peerjs');const {peerOptions}=await import('./peerOptions');
-  return new PeerSession(role==='host'?new Peer(`velunivo-${pin}`,peerOptions):new Peer(peerOptions),role,pin,events);
+
+  return new PeerSession(role==='host'?new Peer(`velunivo-${pin}`,peerOptions):new Peer(clientPeerId('viewer',crypto.getRandomValues(new Uint8Array(16))),peerOptions),role,pin,events);
 }

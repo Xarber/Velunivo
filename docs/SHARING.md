@@ -47,3 +47,11 @@ References: [PeerJS data API](https://peerjs.com/client/getting-started), [PeerS
 ## Viewer presence
 
 The host counts each peer after successfully sending a progress update. A closed channel retains presence until 60 seconds after its last progress update; repeated channels from the same peer do not double-count. A one-second host timer expires presence even when there are no further location updates. Closing the sharing session clears presence immediately. Web and native transports share this rule; speed, road limits, battery and telemetry remain excluded from shared data.
+
+## Native hosting and connection reliability (0.1.32)
+
+The native WebView runtime no longer embeds `createViewerPresence.toString()`. Hermes can return a bytecode placeholder instead of source, crashing the script before its PeerServer connection and timeout are established. Viewer-presence code is now literal JavaScript, with matching sixty-second expiry tests. Reference: [Hermes source-visibility issue](https://github.com/facebook/hermes/issues/1583). A React-side startup watchdog also reports failure if the WebView never reaches ready; terminated WebView processes report a usable error. Closing a failed session does not overwrite its timeout/error with a later signaling-disconnected event.
+
+Joining clients generate their own 128-bit random PeerJS IDs. This avoids the server `/id` request, which can fail under cross-origin restrictions in WebViews, alternate browser origins and local previews. Existing PeerServer CORS restrictions remain intact. Web trip sharing statically loads PeerJS; it has no lazy-import startup dependency. No connection starts until the user's existing sharing confirmation.
+
+The public `velunivo.xcenter.it` signaling endpoint was checked over HTTPS and WebSocket. The actual bundled native HTML script hosted a synthetic public-Milan trip and delivered its route/progress to a second isolated browser through that PeerServer; the host reported ready and one viewer. This is browser validation of the native script, not an installed iOS/WKWebView test. No private ride or device position was transmitted. The server protocol did not change and no PeerServer software update is required. Deploy the updated web client to fix hosted web UI behavior; native users need the new binary.
