@@ -1,0 +1,12 @@
+export const welcomePages=[
+ {icon:'navigate-outline',title:'Welcome to Velunivo',text:'Compare bicycle and road routes, with travel times tailored to your vehicle.'},
+ {icon:'bicycle-outline',title:'Make it your ride',text:'Choose your vehicle and riding limit. Connect a supported personal vehicle for live battery and speed.'},
+ {icon:'recording-outline',title:'Ride your way',text:'Follow directions, or record a trip without a destination. Your Library keeps places, routes and rides.'},
+ {icon:'shield-checkmark-outline',title:'You stay in control',text:'Check road signs and local rules. Your records stay on your device until you export or share them.'},
+] as const;
+export const releaseHighlights=[
+ {version:'0.1.31',items:[{icon:'sparkles-outline',title:'A friendly start',text:'A quick welcome tour and short update highlights.'},{icon:'swap-horizontal-outline',title:'Your data, on both devices',text:'Export a backup or transfer with a code. Merge or replace after both devices accept.'},{icon:'create-outline',title:'A clearer vehicle picker',text:'Your chosen vehicle is outlined, with a quick edit button.'}]},
+ {version:'0.1.30',items:[{icon:'language-outline',title:'Reliable language detection',text:'System language now works safely at startup.'},{icon:'volume-high-outline',title:'Your default voice',text:'Automatic keeps the system voice unless a higher-quality voice is available.'},{icon:'grid-outline',title:'More compact previews',text:'Smaller Library cards and clearer help placement.'}]},
+ {version:'0.1.29',items:[{icon:'play-outline',title:'Replay your rides',text:'See your recorded route and vehicle readings again.'},{icon:'language-outline',title:'English and Italian',text:'Use your device language or choose your own.'},{icon:'bluetooth-outline',title:'Connected vehicle readings',text:'Keep recent readings visible when updates pause.'}]},
+] as const;
+export function initialIntroduction(welcomed:boolean,existingData:boolean,seen:string[],version:string){return !welcomed&&!existingData?'welcome':!seen.includes(version)?'news':null;}

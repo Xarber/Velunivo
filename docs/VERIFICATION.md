@@ -209,3 +209,13 @@ No local native compilation or physical Bluetooth testing took place in this bat
 Responsive Library follow-up: isolated web UI verified at 390px and 1280px. Preview cards use 90% of narrow rows and equal flexible columns on wide rows. Settings map-key placeholder and full Privacy & Data paragraphs were checked in Italian. Long help and known connection/status text were audited against the Italian catalog. External provider error text and user-authored names remain unchanged.
 
 0.1.30: 148 JavaScript tests pass, with new native-navigator/missing-Intl startup regressions and default-voice selection cases. Type checking and lint pass. The 390px isolated Library UI shows readable 80%-width, 236px-high cards. Explore's brief instruction is visible without an info control; remaining info actions are anchored inline to headings. Native locale and audio changes are source/test validated, not locally compiled or physically tested.
+
+## 0.1.31
+
+- Type checking and Expo lint: required before commit.
+- 161 JS tests passed, including introduction gating, portable schema/rollback, stable-ID merge, dual consent, symmetric choice, two-way exchange and native WebView-script isolation.
+- Real local PeerServer with separate synthetic web origins: Connected on both screens, guest chooses Merge, no payload after only one approval, transfer completes on both, additional public fixture place survives recipient page reload.
+- Voice fixture: 3 initial voices, increments of 5, collapse back to 3, inline play invokes the requested voice without persisting selection. Mocked speech avoids playing audio on the user's PC; it does not prove hardware voice quality.
+- No private ride data, BLE credentials or user's browser session used. No native compilation. iOS/Android transfer and image materialization still need installed-app validation.
+
+- Final web overwrite: code owner selects overwrite, both confirm, sender shows Data transferred and recipient Data imported. No new client receives an already consumed session.

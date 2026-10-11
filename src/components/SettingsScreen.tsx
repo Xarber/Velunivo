@@ -1,3 +1,4 @@
+import {showIntroduction} from '../services/introduction';
 import {t} from '../i18n/core';
 import Text from './LocalizedText';
 import {useLanguage} from '../i18n/react';
@@ -36,6 +37,7 @@ export default function SettingsScreen({section}:{section?:string}) {
     {section==='privacy' && card(<><Text style={{color:p.text,fontSize:18,fontWeight:'700'}}>Your ride data</Text><Text style={{color:p.muted,lineHeight:22}}>Recorded GPS, sensor readings and battery feedback stay on your device until you share them. Manage exports and deletion in Library → Recorded Rides. Battery feedback is used only for the same vehicle, and never reads your phone’s battery.</Text><Text style={{color:p.muted,lineHeight:22}}>Address search and route planning use Photon and Valhalla public services unless a GraphHopper server key is configured. Searches and endpoints are sent to these providers. Imported GPX stays on your device unless you explicitly plan a new route from its endpoints. Scheduled ETA never predicts traffic.</Text><Button title={t("Recorded Rides")} icon="recording-outline" secondary onPress={()=>router.push('/offline/rides')} /></>)}
     {section==='general' && card(<><Text style={{color:p.text,fontWeight:'700',fontSize:18}}>App language</Text>{(['system','en','it'] as const).map(value=><Button key={value} title={t(value==='system'?'System':value==='en'?'English':'Italian')} icon={language.choice===value?'checkmark-circle':'ellipse-outline'} secondary={language.choice!==value} onPress={()=>language.choose(value)} />)}<Text style={{color:p.muted}}>Follow your device language.</Text></>)}
     {section==='navigation' && <VoiceSettings />}
+    {section==='general'&&card(<><Button title={t('Show welcome tour')} icon="sparkles-outline" secondary onPress={()=>showIntroduction('welcome')}/><Button title={t('What’s new')} icon="gift-outline" secondary onPress={()=>router.push('/settings/whats-new')}/><Button title={t('Data transfer')} icon="swap-horizontal-outline" secondary disabled={vehicleLocked} onPress={()=>router.push('/settings/data')}/></>)}
     {section==='bluetooth' && <BluetoothSettings />}
     {developer && <ActivityDiagnostics developerMode rideActive={vehicleLocked} />}{section && !group && !developer && <Text style={{color:p.muted}}>These options are unavailable.</Text>}
   </ScrollView></SafeAreaView>;

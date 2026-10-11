@@ -1,0 +1,18 @@
+import React,{useEffect,useState} from 'react';
+import {Modal,ScrollView,View} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+import {Ionicons} from '@expo/vector-icons';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {useStore} from '../services/store';
+import {subscribeIntroduction} from '../services/introduction';
+import {welcomePages,releaseHighlights,initialIntroduction} from '../core/appIntroduction';
+import Text from './LocalizedText';
+import {Button,styles,usePalette} from './ui';
+import {t} from '../i18n/core';
+export default function AppIntroduction(){const p=usePalette(),{ready,vehicleLocked}=useStore(),[kind,setKind]=useState<'welcome'|'news'|null>(null),[page,setPage]=useState(0);const version=Constants.expoConfig?.version || '0.1.31';
+ useEffect(()=>{let live=true;void AsyncStorage.multiGet(['welcome-seen-v1','release-seen-v1','vehicles-v1']).then(values=>{let seen:string[]=[];try{const parsed=JSON.parse(values[1][1]||'[]');if(Array.isArray(parsed))seen=parsed;}catch{}if(live)setKind(initialIntroduction(values[0][1]==='true',!!values[2][1],seen,version));}).catch(()=>{});const unsub=subscribeIntroduction(value=>{setPage(0);setKind(value);});return()=>{live=false;unsub();};},[version]);
+ async function finish(){const closing=kind;setKind(null);try{if(closing==='welcome')await AsyncStorage.setItem('welcome-seen-v1','true');let seen:string[]=[];try{seen=JSON.parse(await AsyncStorage.getItem('release-seen-v1')||'[]');}catch{}await AsyncStorage.setItem('release-seen-v1',JSON.stringify([...new Set([...(Array.isArray(seen)?seen:[]),version])].slice(-100)));}catch{/* No modal should prevent using the app when storage is unavailable. */}}
+ const welcome=welcomePages[page],news=releaseHighlights.find(v=>v.version===version)?.items || [];
+ return <Modal visible={!!kind&&ready&&!vehicleLocked} transparent animationType="fade" onRequestClose={()=>void finish()}><View style={{flex:1,justifyContent:'center',backgroundColor:'#0008',padding:20}}><SafeAreaView style={[styles.card,{backgroundColor:p.card,maxWidth:520,width:'100%',alignSelf:'center',maxHeight:'90%'}]}><ScrollView contentContainerStyle={{gap:24,padding:6}}><View style={{alignItems:'center',gap:16,paddingTop:12}}><Ionicons name={kind==='welcome'?welcome.icon:'sparkles-outline'} size={70} color={p.accent}/><Text style={[styles.title,{color:p.text,textAlign:'center'}]}>{kind==='welcome'?welcome.title:'What’s new'}</Text>{kind==='news'&&<Text style={{color:p.muted}}>Velunivo {version}</Text>}</View>{kind==='welcome'?<Text style={{color:p.muted,lineHeight:25,fontSize:17,textAlign:'center'}}>{welcome.text}</Text>:news.map(item=><View key={item.title} style={{flexDirection:'row',gap:16}}><Ionicons name={item.icon} size={30} color={p.accent}/><View style={{flex:1,gap:4}}><Text style={{color:p.text,fontWeight:'700',fontSize:17}}>{item.title}</Text><Text style={{color:p.muted,lineHeight:22}}>{item.text}</Text></View></View>)}{kind==='welcome'&&<View style={{flexDirection:'row',justifyContent:'center',gap:7}}>{welcomePages.map((_,i)=><View key={i} style={{width:7,height:7,borderRadius:4,backgroundColor:i===page?p.accent:p.line}}/>)}</View>}<Button title={t(kind==='welcome'&&page<welcomePages.length-1?'Continue':'Let’s ride')} icon="arrow-forward-outline" onPress={()=>{if(kind==='welcome'&&page<welcomePages.length-1)setPage(i=>i+1);else void finish();}}/>{kind==='welcome'&&<Button title={t('Skip tour')} secondary icon="close-outline" onPress={()=>void finish()}/>}</ScrollView></SafeAreaView></View></Modal>;
+}

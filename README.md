@@ -134,3 +134,5 @@ Browser pairing keeps its verified connection without a second confirmation. Pai
 Library now previews up to three Saved Places, Saved Routes and Recorded Rides in a single horizontal row per category, with existing Go here/Open/Replay actions. Full-category buttons remain available. Downloaded Maps is unchanged; preview tiles expose no edit/delete controls.
 
 **Languages:** Settings → General → App language offers System (default), English and Italian. New routes request directions in that language. Settings → Navigation & audio offers installed speech voices and a test button; iOS automatically prefers exposed premium/enhanced voices. Siri voices depend on OS exposure. See [localization and speech requirements](docs/LOCALIZATION.md).
+
+Device backup and account-free transfers are available in Settings → General → Data transfer. See [portable data and transfer details](docs/DATA_TRANSFER.md) for consent, stable-ID merging, server configuration and device-testing limits. General also replays the welcome tour and opens the concise release changelog.

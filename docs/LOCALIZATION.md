@@ -17,3 +17,5 @@ Android and web use Expo Speech and the platform/browser voice list. The Web Spe
 References: [Expo SDK 57 Speech](https://docs.expo.dev/versions/v57.0.0/sdk/speech/), [Apple speech voices](https://developer.apple.com/documentation/avfaudio/avspeechsynthesisvoice), [Web SpeechSynthesis](https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis).
 
 Native System language is read synchronously through Expo SDK 57 `expo-localization.getLocales()`. The pure core checks every locale source, ignores incomplete React Native navigator shims, and safely falls back through Intl to English. Missing locale values cannot crash initial Layout rendering. The new module requires a fresh native build. [Expo Localization](https://docs.expo.dev/versions/v57.0.0/sdk/localization/)
+
+0.1.31 adds natural Italian strings for the welcome tour, release highlights, portable backups, symmetric device-transfer consent/status, voice-list expansion and inline tests. Dynamic voice names and XXXX-XXXX codes remain unchanged; counts use the existing parameterized translation convention.

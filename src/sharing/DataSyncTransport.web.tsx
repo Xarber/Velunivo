@@ -1,0 +1,10 @@
+import {useEffect,useRef} from 'react';
+import {Peer} from 'peerjs';
+import type {DataConnection} from 'peerjs';
+import {peerOptions} from './peerOptions';
+import {normalizeCode,validCode} from '../core/dataTransfer';
+import {SyncPacket} from '../core/dataSync';
+import {SyncChoicePacket} from '../core/dataSyncChoice';
+export interface DataSyncTransportProps {role:'sender'|'receiver';code:string;onOpen(send:(p:SyncPacket|SyncChoicePacket)=>void):void;onData(data:unknown):void;onError():void;}
+export default function DataSyncTransport(props:DataSyncTransportProps){const latest=useRef(props);useEffect(()=>{latest.current=props;},[props]);useEffect(()=>{let peer:Peer|undefined,connection:DataConnection|undefined,disposed=false;const connectionTimer=setTimeout(()=>{if(!connection?.open)latest.current.onError();},15000);const timer=setTimeout(()=>latest.current.onError(),600000);function attach(c:DataConnection){if(connection){c.close();return;}connection=c;c.on('open',()=>{clearTimeout(connectionTimer);if(props.role==='sender')peer?.disconnect();latest.current.onOpen(p=>{if(c.open)c.send(p);});});c.on('data',v=>latest.current.onData(v));c.on('error',error=>{console.warn('Data sync channel',error);latest.current.onError();});c.on('close',()=>{if(!disposed)latest.current.onError();});}
+ if(!validCode(props.code))return;try{peer=props.role==='sender'?new Peer('velunivo-sync-'+normalizeCode(props.code),peerOptions):new Peer(peerOptions);peer.on('open',()=>{if(props.role==='receiver')attach(peer!.connect('velunivo-sync-'+normalizeCode(props.code),{reliable:true,serialization:'json'}));});peer.on('connection',c=>props.role==='sender'?attach(c):c.close());peer.on('error',error=>{console.warn('Data sync signaling',error);latest.current.onError();});peer.on('call',c=>c.close());}catch{latest.current.onError();}return()=>{disposed=true;clearTimeout(timer);clearTimeout(connectionTimer);connection?.close();peer?.destroy();};},[props.role,props.code]);return null;}
