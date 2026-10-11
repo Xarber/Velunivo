@@ -1,3 +1,5 @@
+import * as Crypto from 'expo-crypto';
+import {clientPeerId} from '../../sharing/peerIdentity';
 import {t} from '../../i18n/core';
 import Text from '../../components/LocalizedText';
 import React,{useState,useEffect,useMemo,useCallback} from 'react';
@@ -18,6 +20,8 @@ export default function SharedTrip(){
  const valid=typeof pin==='string'&&PIN_PATTERN.test(pin),[connected,setConnected]=useState(false),[retry,setRetry]=useState(0),[status,setStatus]=useState(''),[route,setRoute]=useState<SharedRoute|null>(null),[progress,setProgress]=useState<SharedProgress|null>(null),[ended,setEnded]=useState(false),[now,setNow]=useState(()=>Date.now());
  useFocusEffect(useCallback(()=>()=>setConnected(false),[]));
  useEffect(()=>{const t=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(t);},[]);
+ // Scoped to this viewing session, retained across transport retries; never a device identifier.
+ const viewerId=useMemo(()=>typeof pin==='string' && PIN_PATTERN.test(pin)?clientPeerId('viewer',Crypto.getRandomBytes(16)):undefined,[pin]);
  const wide=width>=700,[panelHeight,setPanelHeight]=useState(340);
  const padding=useMemo(()=>wide?{top:110,bottom:45,left:450,right:45}:{top:insets.top+115,bottom:insets.bottom+panelHeight+30,left:28,right:28},[wide,panelHeight,insets.top,insets.bottom]);
  const preview=useMemo(()=>route?previewRoute(route):null,[route]);
@@ -26,7 +30,7 @@ export default function SharedTrip(){
  const stale=!progress||now-progress.updatedAt>20000||progress.updatedAt>now+30000;
  const usable=progress&&!stale&&!ended;
  return <PaletteProvider value={p}><SafeAreaView edges={[]} style={{flex:1,backgroundColor:p.bg}}>
-  {connected&&valid&&<PeerTransport key={`${pin}-${retry}`} role="viewer" pin={pin} onMessage={receive} onStatus={setStatus} />}
+  {connected&&valid&&<PeerTransport key={`${pin}-${retry}`} role="viewer" pin={pin} viewerId={viewerId} onMessage={receive} onStatus={setStatus} />}
   <View style={{flex:1}}><RideMap key={wide?'wide-preview':'compact-preview'} routes={routes} selected={preview} positionLabel="Rider location" position={progress?.position||undefined} follow={false} overview tilted={false} fitPadding={padding} /></View>
   <GlassSurface expanded style={{position:'absolute',top:insets.top+12,left:16,right:wide?undefined:16,width:wide?390:undefined,padding:16,borderRadius:22}}><Text style={{color:p.text,fontWeight:'800',fontSize:22}}>Live trip · full route</Text><Text style={{color:p.muted}}>{route?`${route.startLabel} → ${route.endLabel}`:'No location is requested from your device.'}</Text></GlassSurface>
   <GlassSurface expanded onLayout={e=>setPanelHeight(e.nativeEvent.layout.height)} style={{position:'absolute',bottom:insets.bottom+12,left:16,right:wide?undefined:16,width:wide?390:undefined,padding:18,borderRadius:24,gap:12}}>

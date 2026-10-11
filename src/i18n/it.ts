@@ -367,3 +367,5 @@ Object.assign(italian,{'Xiaomi authentication timed out. Try connecting again.':
 Object.assign(italian,{'Review the transfer and accept on this device.':'Controlla il trasferimento e conferma su questo dispositivo.'});
 
 Object.assign(italian,{'Clearer Bluetooth pairing':'Associazione Bluetooth più chiara','Connection steps wait for the scooter and recover from stalled Bluetooth operations.':'La connessione attende le risposte dello scooter e gestisce le comunicazioni Bluetooth bloccate.'});
+
+Object.assign(italian,{'More useful Live Activities':'Attività live più utili','See vehicle battery and trip viewers on your Lock Screen and expanded Dynamic Island.':'Vedi la batteria del veicolo e chi segue il viaggio sulla schermata di blocco e nella Dynamic Island espansa.','Accurate viewer counts':'Conteggio spettatori corretto','Reconnecting no longer counts the same viewer twice.':'Riconnettersi non conta più lo stesso spettatore due volte.'});

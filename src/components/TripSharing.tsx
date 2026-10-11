@@ -1,3 +1,4 @@
+import {setHostPresence} from '../sharing/hostPresence';
 import {t} from '../i18n/core';
 import Text from './LocalizedText';
 import {Ionicons} from '@expo/vector-icons';
@@ -22,6 +23,8 @@ export default function TripSharing({active,children,route,position,seconds,mete
  useEffect(()=>{if(!active){setPin(null);setConfirm(false);setReady(false);}},[active]);
  useEffect(()=>{if(!pin)return;const timeout=setTimeout(()=>{setPin(null);setReady(false);setStatus('Sharing expired after 12 hours.');},12*60*60*1000);return()=>clearTimeout(timeout);},[pin]);
 
+ useEffect(()=>{setHostPresence(active && !!pin && ready,viewers);},[active,pin,ready,viewers]);
+ useEffect(()=>()=>setHostPresence(false,0),[]);
  const link=pin?`${SHARE_ORIGIN}/share/trip?pin=${pin}`:'';
  const controls=active&&coordinates?<SharingControls pin={pin} viewers={viewers} status={status} ready={ready} onShare={()=>void shareLink(link,'Follow my Velunivo trip').catch(()=>setStatus('Could not share the link. Try again.'))} onStop={()=>{setPin(null);setReady(false);setStatus('');}} onConfirm={()=>setConfirm(true)} />:null;
  return <>

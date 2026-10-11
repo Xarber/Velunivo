@@ -86,3 +86,21 @@ test('native host startup remains valid when Hermes returns bytecode for functio
 test('closing a failed host preserves its actionable timeout instead of overwriting it with disconnection',t=>{t.mock.timers.enable({apis:['setTimeout']});class DisconnectingPeer extends FakePeer{destroy(){super.destroy();this.emit('disconnected');}}const statuses:string[]=[];const session=new PeerSession(new DisconnectingPeer() as any,'host',pin,{status:s=>statuses.push(s)});t.mock.timers.tick(20000);assert.equal(statuses.at(-1),'Connection timed out. Retry when both devices are online.');session.close();});
 import {clientPeerId,clientPeerIdScript} from '../src/sharing/peerIdentity';
 test('native and web clients allocate matching unique IDs without calling the server ID endpoint',()=>{const bytes=new Uint8Array(16).fill(10);const expected=clientPeerId('viewer',bytes);const actual=vm.runInNewContext(clientPeerIdScript+";clientPeerId('viewer')",{crypto:{getRandomValues:(out:Uint8Array)=>{out.set(bytes);return out;}}});assert.equal(actual,expected);assert.equal(expected.length,48);assert.notEqual(clientPeerId('sync',bytes),expected);});
+
+test('web host replaces repeated viewer connections with stable metadata without inflating count',t=>{
+ t.mock.timers.enable({apis:['Date','setInterval','setTimeout'],now:100000});
+ const peer=new FakePeer(),counts:number[]=[];const session=new PeerSession(peer as any,'host',pin,{status:()=>{},viewers:n=>counts.push(n)});peer.emit('open');session.publish({type:'progress',progress:sharedProgress(null,300,1000,100000)});
+ const connect=(viewerId:string,peerId:string)=>{const c=Object.assign(new Connection(),{metadata:{viewerId},peer:peerId});peer.emit('connection',c);c.open=true;c.emit('open');return c;};
+ const id=clientPeerId('viewer',new Uint8Array(16).fill(1));let previous=connect(id,'first');
+ for(let i=0;i<12;i++){const next=connect(id,'retry-'+i);assert(previous.closed);assert.equal(counts.at(-1),1);previous=next;}
+ connect(clientPeerId('viewer',new Uint8Array(16).fill(2)),'another');assert.equal(counts.at(-1),2);
+ previous.close();t.mock.timers.tick(59000);assert.equal(counts.at(-1),2);t.mock.timers.tick(1000);assert.equal(counts.at(-1),0);session.close();
+});
+test('native host deduplicates viewer retry identities and still distinguishes other viewers',()=>{
+ const emitted:any[]=[];let peer:FakePeer|undefined;
+ const script=nativePeerHtml('host',pin).split('<script>').at(-1)!.split('</script>')[0];
+ const context=vm.createContext({window:{ReactNativeWebView:{postMessage:(s:string)=>emitted.push(JSON.parse(s))},addEventListener:()=>{}},Peer:class extends FakePeer{constructor(){super();peer=this;}},setTimeout,clearTimeout,setInterval,clearInterval,Date,Map,JSON});vm.runInContext(script,context);peer!.emit('open');vm.runInContext(`window.publish(${JSON.stringify({type:'progress',progress:sharedProgress(null,300,1000,100000)})})`,context);
+ const id=clientPeerId('viewer',new Uint8Array(16).fill(3));let previous:Connection|undefined;
+ for(let i=0;i<12;i++){const c=Object.assign(new Connection(),{metadata:{viewerId:id},peer:'retry-'+i});peer!.emit('connection',c);c.open=true;c.emit('open');if(previous)assert(previous.closed);previous=c;assert.equal(emitted.filter(e=>e.type==='viewers').at(-1).value,1);}
+ const other=Object.assign(new Connection(),{metadata:{viewerId:clientPeerId('viewer',new Uint8Array(16).fill(4))},peer:'another'});peer!.emit('connection',other);other.open=true;other.emit('open');assert.equal(emitted.filter(e=>e.type==='viewers').at(-1).value,2);vm.runInContext('stop()',context);
+});

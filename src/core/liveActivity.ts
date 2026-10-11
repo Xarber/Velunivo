@@ -1,9 +1,10 @@
+import {ActivityExtras} from './activityTelemetry';
 import {t} from '../i18n/core';
 import { Route, Profile, NavigationOptions, Fix } from './types';
 import { guidance } from './navigation';
 import { estimate, minutes } from './eta';
 import { arrivalTime, maneuverDistance, distanceLeft } from './rideView';
-export interface NavigationActivity { turn: string; symbol: 'flag.fill' | 'arrow.turn.up.left' | 'arrow.turn.up.right' | 'arrow.up'; distance: string; arrival: string; minutes: string; remaining: string; }
+export interface NavigationActivity extends ActivityExtras { turn: string; symbol: 'flag.fill' | 'arrow.turn.up.left' | 'arrow.turn.up.right' | 'arrow.up'; distance: string; arrival: string; minutes: string; remaining: string; }
 
 export function rideActivity(route:Route,profile:Profile,options:NavigationOptions,g:ReturnType<typeof guidance>,fix?:Fix,simulation=false):NavigationActivity {
  const eta=estimate(route,profile,g.offRoute ? 0 : g.along);

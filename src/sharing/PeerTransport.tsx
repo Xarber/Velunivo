@@ -5,11 +5,11 @@ import {nativePeerHtml} from './nativePeerHtml';
 import {parseTripMessage,SHARE_ORIGIN} from './model';
 import {TransportProps} from './transportTypes';
 // Native WebRTC data channels run in WKWebView/Android WebView, with no media permissions.
-export default function PeerTransport({role,pin,messages,onMessage,onStatus,onReady,onViewers}:TransportProps){
+export default function PeerTransport({role,pin,viewerId,messages,onMessage,onStatus,onReady,onViewers}:TransportProps){
  const callbacks=useRef({onStatus,onReady,onViewers,onMessage});useEffect(()=>{callbacks.current={onStatus,onReady,onViewers,onMessage};},[onStatus,onReady,onViewers,onMessage]);const startup=useRef<ReturnType<typeof setTimeout>|undefined>(undefined);
  const ref=useRef<WebView>(null),loaded=useRef(false),latest=useRef(messages);useEffect(()=>{latest.current=messages;},[messages]);
- const html=useMemo(()=>nativePeerHtml(role,pin),[role,pin]);const source=useMemo(()=>({html,baseUrl:SHARE_ORIGIN}),[html]);
- useEffect(()=>{loaded.current=false;startup.current=setTimeout(()=>callbacks.current.onStatus('Connection timed out. Retry when both devices are online.'),20000);return()=>clearTimeout(startup.current);},[role,pin]);
+ const html=useMemo(()=>nativePeerHtml(role,pin,viewerId),[role,pin,viewerId]);const source=useMemo(()=>({html,baseUrl:SHARE_ORIGIN}),[html]);
+ useEffect(()=>{loaded.current=false;startup.current=setTimeout(()=>callbacks.current.onStatus('Connection timed out. Retry when both devices are online.'),20000);return()=>clearTimeout(startup.current);},[role,pin,viewerId]);
  const failed=()=>{clearTimeout(startup.current);loaded.current=false;callbacks.current.onStatus('Sharing unavailable on this device.');};
  const publish=useCallback((m:typeof messages)=>{if(m)ref.current?.injectJavaScript(`${JSON.stringify(m)}.forEach(window.publish);true;`);},[]);
  useEffect(()=>{if(loaded.current)publish(messages);},[messages,publish]);

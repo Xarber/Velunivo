@@ -1,3 +1,5 @@
+import {activityExtras} from '../core/activityTelemetry';
+import {getHostPresence,subscribeHostPresence} from '../sharing/hostPresence';
 import {publicError} from '../core/publicErrors';
 import {t} from '../i18n/core';
 import Text from '../components/LocalizedText';
@@ -9,7 +11,7 @@ import MapControls from '../components/MapControls';
 import { router } from 'expo-router';
 import { useNavigationActivity } from '../services/useNavigationActivity';
 import { maneuverDistance, arrivalTime , forwardHeading, freshFix, distanceLeft, displaySpeed } from '../core/rideView';
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import {View, ScrollView, Pressable, Modal, Platform, ActivityIndicator, StyleSheet, useWindowDimensions} from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,7 +38,7 @@ import VehicleTelemetryPanel from '../components/VehicleTelemetryPanel';
 import RideDashboard from '../components/RideDashboard';
 import { useHeading } from '../services/useHeading';
 import VehicleSelector from '../components/VehicleSelector';
-import {useBluetoothLease,useBluetoothPreferences} from '../bluetooth/react';
+import {useBluetoothLease,useBluetoothPreferences,useBluetoothVehicle} from '../bluetooth/react';
 import { batteryLabel } from '../core/vehicles';
 import ScheduleControl from '../components/ScheduleControl';
 import { scheduleSummary } from '../core/schedule';
@@ -117,7 +119,9 @@ export default function Explore() {
   }, [wide, active, picking, visiblePanelHeight, controlsHeight, bottomObstruction]);
   const followPadding = useMemo(() => ({ ...fitPadding, top: fitPadding.top + Math.max(0, (mapHeight - fitPadding.top - fitPadding.bottom) * .42) }), [fitPadding, mapHeight]);
   const eta = selected ? estimate(selected, profile, active && g && !g.offRoute ? g.along : 0) : null;
-  const activityProps = useMemo<import('../core/liveActivity').NavigationActivity>(()=>({turn:(ride.mode === 'simulation' ? 'Simulation · ' : '') + (g?.offRoute ? 'Off route · stop safely to replan' : g?.next?.text || 'Follow the route'),symbol:g?.next?.sign === 4 ? 'flag.fill' : g?.next?.sign && g.next.sign < 0 ? 'arrow.turn.up.left' : g?.next?.sign && g.next.sign > 0 ? 'arrow.turn.up.right' : 'arrow.up',distance:g?.maneuverMeters === undefined ? '—' : maneuverDistance(g.maneuverMeters,navigationOptions.unit),arrival:eta ? arrivalTime(eta.seconds,now) : '—',minutes:eta ? minutes(eta.seconds) : '—',remaining:eta ? distanceLeft(eta.meters,navigationOptions.unit) : '—'}),[g,eta,now,navigationOptions.unit,ride.mode]);
+  const bluetoothSnapshot=useBluetoothVehicle(profile.id);
+  const sharingPresence=useSyncExternalStore(subscribeHostPresence,getHostPresence,getHostPresence);
+  const activityProps = useMemo<import('../core/liveActivity').NavigationActivity>(()=>({...activityExtras(bluetoothSnapshot,bluetoothPreferences,profile.id,sharingPresence,now),turn:(ride.mode === 'simulation' ? 'Simulation · ' : '') + (g?.offRoute ? 'Off route · stop safely to replan' : g?.next?.text || 'Follow the route'),symbol:g?.next?.sign === 4 ? 'flag.fill' : g?.next?.sign && g.next.sign < 0 ? 'arrow.turn.up.left' : g?.next?.sign && g.next.sign > 0 ? 'arrow.turn.up.right' : 'arrow.up',distance:g?.maneuverMeters === undefined ? '—' : maneuverDistance(g.maneuverMeters,navigationOptions.unit),arrival:eta ? arrivalTime(eta.seconds,now) : '—',minutes:eta ? minutes(eta.seconds) : '—',remaining:eta ? distanceLeft(eta.meters,navigationOptions.unit) : '—'}),[g,eta,now,navigationOptions.unit,ride.mode,bluetoothSnapshot,bluetoothPreferences,profile.id,sharingPresence]);
   const activity = useNavigationActivity(active && !g?.arrived && navigationOptions.liveActivities, activityProps);
   const run = async (task: () => Promise<unknown>) => { try { await task(); } catch (e) { setNotice(e instanceof Error ? e.message : String(e)); } };
   async function plan(journey?: Journey) {

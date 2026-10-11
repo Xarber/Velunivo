@@ -1,8 +1,9 @@
+import {currentActivityExtras} from './activityExtras';
 import React, { useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { inspectActivityInstallation } from './activityInstallation';
 import { ActivityReport, activityDiagnosis } from '../core/activityDiagnostics';
-import { Image, Text, VStack } from '@expo/ui/swift-ui';
+import { Image, Text, VStack, HStack } from '@expo/ui/swift-ui';
 import { font, foregroundStyle, padding } from '@expo/ui/swift-ui/modifiers';
 import { createLiveActivity, LiveActivity, LiveActivityEnvironment } from 'expo-widgets';
 import { NavigationActivity, rideActivity } from '../core/liveActivity';
@@ -13,14 +14,15 @@ export function inspectLiveActivity():ActivityReport { const checks=inspectActiv
 const NavigationLayout = (p: NavigationActivity, environment: LiveActivityEnvironment) => {
   'widget';
   const accent=environment.isLuminanceReduced ? '#FFFFFF' : '#28DAB0';
+  const badges=<HStack spacing={16}>{p.batteryPercent!==undefined && <HStack spacing={5}><Image systemName={p.batterySymbol || 'battery.100percent'} color={p.batteryColor || accent} /><Text modifiers={[foregroundStyle(p.batteryColor || accent)]}>{p.batteryPercent}%</Text></HStack>}{p.viewerCount!==undefined && <HStack spacing={5}><Image systemName="person.fill" color={accent} /><Text>{p.viewerCount}</Text></HStack>}</HStack>;
   return {
-    banner: <VStack modifiers={[padding({all:12})]}><Text modifiers={[font({weight:'bold',size:20}),foregroundStyle(accent)]}>{p.distance} · {p.turn}</Text><Text>{p.arrival} arrival · {p.minutes} · {p.remaining}</Text></VStack>,
+    banner: <VStack modifiers={[padding({all:12})]}><Text modifiers={[font({weight:'bold',size:20}),foregroundStyle(accent)]}>{p.distance} · {p.turn}</Text><Text>{p.arrival} arrival · {p.minutes} · {p.remaining}</Text>{badges}</VStack>,
     compactLeading: <Image systemName={p.symbol} color={accent} />,
     compactTrailing: <Text>{p.distance}</Text>,
     minimal: <Image systemName={p.symbol} color={accent} />,
     expandedLeading: <Image systemName={p.symbol} color={accent} />,
     expandedTrailing: <Text modifiers={[font({size:20,weight:'bold'})]}>{p.distance}</Text>,
-    expandedBottom: <VStack modifiers={[padding({all:8})]}><Text>{p.turn}</Text><Text>{p.arrival} arrival · {p.minutes} · {p.remaining}</Text></VStack>,
+    expandedBottom: <VStack modifiers={[padding({all:8})]}><Text>{p.turn}</Text><Text>{p.arrival} arrival · {p.minutes} · {p.remaining}</Text>{badges}</VStack>,
   };
 };
 const activity=createLiveActivity<NavigationActivity>('VelunivoNavigation',NavigationLayout);
@@ -59,10 +61,10 @@ export function useNavigationActivity(active: boolean, props: NavigationActivity
 }
 
 // Called directly by GPS task delivery; does not depend on a background React render.
-export async function updateRideActivity(route:Route,profile:Profile,options:NavigationOptions,g:ReturnType<typeof guidance>,fix:Fix,simulation=false) {
+export async function updateRideActivity(route:Route,profile:Profile & {id?:string},options:NavigationOptions,g:ReturnType<typeof guidance>,fix:Fix,simulation=false) {
  try { for(const live of activity.getInstances()) {
    if(g.arrived || !options.liveActivities)await live.end('immediate');
-   else await live.update(rideActivity(route,profile,options,g,fix,simulation),new Date(Date.now()+30000));
+   else await live.update({...rideActivity(route,profile,options,g,fix,simulation),...currentActivityExtras(profile.id ?? '')},new Date(Date.now()+30000));
  } } catch (error) { lastActivityError=error instanceof Error ? error.message : String(error); }
 }
 export async function markActivityPaused() {try {for(const live of activity.getInstances())await live.update({turn:'Guidance paused · enable background location',symbol:'arrow.up',distance:'—',arrival:'—',minutes:'—',remaining:'—'},new Date());} catch { /* Unsupported extension. */ }}
