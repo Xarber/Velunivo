@@ -1,15 +1,16 @@
+import { VehicleApprovalRequiredError } from '../approvalRetry';
 import { BLEDeviceInfo, VehicleProtocolPlugin, ProtocolSession, Capabilities } from '../types';
 import { NUS, TX, RX, PacketStream, validPlain, readPacket, reads, decodeRead } from './m365Packets';
 import { LegacyCrypto } from './legacyCrypto';
 const capabilities:Capabilities={fields:['speed','batteryPercent','voltage','current','power','batteryTemperature','odometer','tripDistance','signal'],commands:['readTelemetry'],authentication:'Plain legacy UART or first-generation encrypted 5AA5 with power-button confirmation',limitations:['Mi 5AAB/FE95 token authentication is not supported.','Pro 2 BLE129/compatible first-generation crypto requires hardware validation.','Charging, mode, cycles and motor/controller temperature are not declared: register semantics are not verified.','Current is positive discharge, negative return current; regeneration is not charging.']};
-export const XiaomiM365Plugin:VehicleProtocolPlugin={id:'xiaomi-m365-v1',manufacturer:'Xiaomi',vehicleTypes:['electric_scooter'],models:['M365 family','Mi Electric Scooter Pro 2 (compatible BLE firmware)'],services:[NUS],capabilities,
+export const XiaomiM365Plugin:VehicleProtocolPlugin={id:'xiaomi-m365-v1',manufacturer:'Xiaomi',vehicleTypes:['electric_scooter'],models:['M365 family','Mi Electric Scooter Pro 2 (compatible BLE firmware)'],services:[NUS],manufacturerFilters:[0x20,0x22,0x25,0x28,0x29,0x2b].flatMap(model=>[{companyIdentifier:0x424e,dataPrefix:[model]},{companyIdentifier:0x434e,dataPrefix:[0,model]}]),capabilities,
  detect(device:BLEDeviceInfo){
   const hasUART=device.services.some(x=>x.toLowerCase()===NUS),m=device.manufacturerData;
-  const signature=!!m && m.length>=3 && m[0]===0x4e && m[1]===0x42 && m[2]===0x20;
+  const signature=!!m && m[0]===0x4e && ((m[1]===0x42 && [0x20,0x22,0x25,0x28,0x29,0x2b].includes(m[2])) || (m[1]===0x43 && m[2]===0 && [0x20,0x22,0x25,0x28,0x29,0x2b].includes(m[3])));
   // Names are user-editable, not vehicle identity. Browser candidates stay uncertain until a real handshake.
-  return hasUART && (signature || device.verifiedProtocol==='xiaomi-m365-v1')
+  return signature || (hasUART && device.verifiedProtocol==='xiaomi-m365-v1')
    ? {compatible:true,model:'Xiaomi M365 family'}
-   : {compatible:false,uncertain:hasUART && device.discoverySource==='web-gatt',reason:'Requires a documented NB/20 advertisement signature or verified read-only vehicle identity and telemetry.'};
+   : {compatible:false,uncertain:hasUART && device.discoverySource==='web-gatt',reason:'Requires a documented Xiaomi-family manufacturer advertisement signature or verified read-only vehicle identity and telemetry.'};
  },
  async open(link,ctx){
  if(ctx.signal?.aborted)throw new Error('Connection cancelled');
@@ -28,14 +29,14 @@ export const XiaomiM365Plugin:VehicleProtocolPlugin={id:'xiaomi-m365-v1',manufac
   if(closed)throw new Error('Connection cancelled');
   encrypted=true;crypto=new LegacyCrypto(link.device.name || '');ctx.phase('Checking encrypted vehicle authentication…');
   const first=await exchange(crypto.encrypt(Uint8Array.from([0x3e,0x21,0x5b,0])),b=>b[0]===0x21 && b[1]===0x3e && b[2]===0x5b && b.length===34,4000);serial=first.slice(20,34);
-  const appKey=ctx.random(16);ctx.phase('Press the vehicle power button once to approve Velunivo.');
-  let approved=false;for(let retry=0;retry<15 && !approved && !closed;retry++){const at=Date.now();try{const response=await exchange(crypto.encrypt(Uint8Array.from([0x3e,0x21,0x5c,0,...appKey])),b=>b[0]===0x21 && b[1]===0x3e && b[2]===0x5c,2500);approved=response[3]===1;}catch{/* bounded retry with the same ephemeral app key */}if(!approved)await new Promise(resolve=>setTimeout(resolve,Math.max(0,1000-(Date.now()-at))));approved ||= powerApproved;}
-  if(!approved)throw new Error('Authentication was not confirmed. Press the power button and try again.');
-  let authenticated=false;for(let retry=0;retry<3 && !authenticated;retry++){try{await exchange(crypto.encrypt(Uint8Array.from([0x3e,0x21,0x5d,0,...serial])),b=>b[0]===0x21 && b[1]===0x3e && b[2]===0x5d && b[3]===1,2500);authenticated=true;}catch{/* bounded retry */}}
+  const appKey=ctx.random(16);ctx.phase('Toggle the vehicle headlight to approve Velunivo. If it is already on, turn it off and back on with short power-button presses.');
+  const approvalDeadline=ctx.approvalDeadline ?? Date.now()+5000;let approved=false;for(let retry=0;retry<5 && Date.now()<approvalDeadline && !approved && !closed;retry++){const at=Date.now();try{const response=await exchange(crypto.encrypt(Uint8Array.from([0x3e,0x21,0x5c,0,...appKey])),b=>b[0]===0x21 && b[1]===0x3e && b[2]===0x5c,2500);approved=response[3]===1;}catch{/* bounded retry with the same ephemeral app key */}if(!approved)await new Promise(resolve=>setTimeout(resolve,Math.max(0,1000-(Date.now()-at))));approved ||= powerApproved;}
+  if(!approved)throw new VehicleApprovalRequiredError('Turn on the headlight. Velunivo will reconnect and retry automatically.');
+  ctx.phase('Headlight approval received. Completing authentication…');let authenticated=false;for(let retry=0;retry<3 && !authenticated;retry++){try{await exchange(crypto.encrypt(Uint8Array.from([0x3e,0x21,0x5d,0,...serial])),b=>b[0]===0x21 && b[1]===0x3e && b[2]===0x5d && b[3]===1,2500);authenticated=true;}catch{/* bounded retry */}}
   if(!authenticated)throw new Error('This Bluetooth firmware uses unsupported authentication. GPS navigation remains available.');
  }
  const serialText=String.fromCharCode(...serial).replace(/\0/g,'');if(!/^[\x20-\x7e]{6,14}$/.test(serialText))throw new Error('The vehicle identity could not be verified.');
- ctx.phase('Verifying real vehicle telemetry…');const first=await read(0x20,0xb4,16);const verified=decodeRead(0x23,0xb4,first);if(Number(verified.fields.batteryPercent?.value)>100 || Number(verified.fields.speed?.value)<0 || Number(verified.fields.speed?.value)>55)throw new Error('Vehicle returned unsupported telemetry registers.');ctx.emit(verified);
+ ctx.phase('Verifying real vehicle telemetry…');const first=await read(0x20,0xb4,16).catch(()=>{throw new Error('Bluetooth authentication completed, but the controller telemetry did not respond. Try again; this firmware may use unsupported telemetry registers.');});const verified=decodeRead(0x23,0xb4,first);if(Number(verified.fields.batteryPercent?.value)>100 || Number(verified.fields.speed?.value)<0 || Number(verified.fields.speed?.value)>55)throw new Error('Vehicle returned unsupported telemetry registers.');ctx.emit(verified);
  let firmware:string|undefined;try{const v=await read(0x20,0x1a,2);firmware=`0x${(v[0]+v[1]*256).toString(16)}`;}catch{/* optional identity register */}
  const unavailable=new Set<number>();let tick=0;
  async function cycle(){if(closed)return;try{const request=reads[tick++%reads.length];if(!unavailable.has(request.reg)){try{const data=await read(request.target,request.reg,request.size);ctx.emit(decodeRead(request.target===0x20?0x23:0x25,request.reg,data));if(request.reg===0xb4)failures=0;}catch{if(request.reg!==0xb4)unavailable.add(request.reg);else if(++failures>=3){await link.disconnect();return;}}}if(tick%10===0){const signal=await link.readRSSI();if(signal!==null)ctx.emit({fields:{signal:{value:signal,timestamp:Date.now(),source:'vehicle',unit:'dBm'}}});}}catch{/* disconnection is owned by bridge */}if(!closed)poll=setTimeout(()=>void cycle(),350);}

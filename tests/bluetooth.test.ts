@@ -16,7 +16,7 @@ const reading=(value:number,timestamp=1000):Reading=>({value,timestamp,unit:'%',
 test('registry strictly filters vehicle type, uncertain identities and developer simulations',()=>{
  const r=new PluginRegistry().register(XiaomiM365Plugin).register(SimulatorPlugin);assert.throws(()=>r.register(XiaomiM365Plugin));assert.equal(r.forType('electric_bike').length,0);assert.equal(r.forType('electric_bike',true).length,1);
  assert.equal(r.identify(device,'electric_scooter')?.plugin.id,XiaomiM365Plugin.id);assert.equal(r.identify(device,'electric_bike'),null);
- assert.equal(r.identify({...device,services:[]},'electric_scooter'),null);assert.equal(r.identify({...device,manufacturerData:undefined},'electric_scooter'),null);assert.equal(r.identify({...device,name:'Renamed scooter'},'electric_scooter')?.plugin.id,XiaomiM365Plugin.id);assert.equal(r.identify({...device,manufacturerData:Uint8Array.from([1,2,3])},'electric_scooter'),null);
+ assert.equal(r.identify({...device,services:[]},'electric_scooter')?.plugin.id,XiaomiM365Plugin.id);assert.equal(r.identify({...device,manufacturerData:undefined},'electric_scooter'),null);assert.equal(r.identify({...device,name:'Renamed scooter'},'electric_scooter')?.plugin.id,XiaomiM365Plugin.id);assert.equal(r.identify({...device,manufacturerData:Uint8Array.from([1,2,3])},'electric_scooter'),null);
  assert.equal(r.identify(simulatorDevice,'electric_scooter'),null);assert.equal(r.identify(simulatorDevice,'electric_scooter',true)?.plugin.simulator,true);
 });
 test('normalization keeps partial timestamps, rejects unsupported/invalid data, and expires actual telemetry',()=>{
@@ -140,4 +140,19 @@ test('browser discovery verifies actual protocol before listing, retains user ac
 test('leaving browser discovery cancels verification and does not list a late chooser result',async()=>{
  const f=fixture();let resolve!:(device:BLEDeviceInfo)=>void;f.transport.chooseDevice=()=>new Promise(r=>{resolve=r;});let listed=false;
  const discovery=f.bridge.discover('electric_scooter',()=>{listed=true;});await new Promise(r=>setTimeout(r,0));f.bridge.endScan();resolve({...device,manufacturerData:undefined,discoverySource:'web-gatt'});await discovery;assert.equal(listed,false);assert.equal(f.connects,0);
+});
+
+test('Pro 2 NB and NC signatures work without advertised UART and never identify an e-bike or arbitrary model',()=>{const r=new PluginRegistry().register(XiaomiM365Plugin);for(const model of [0x20,0x22,0x25,0x28,0x29,0x2b])for(const manufacturerData of [Uint8Array.of(0x4e,0x42,model),Uint8Array.of(0x4e,0x43,0,model)]){const d={...device,name:'Custom vehicle',services:[],manufacturerData};assert.equal(r.identify(d,'electric_scooter')?.plugin.id,XiaomiM365Plugin.id);assert.equal(r.identify(d,'electric_bike'),null);}assert.equal(r.identify({...device,services:[],manufacturerData:Uint8Array.of(0x4e,0x42,0x99)},'electric_scooter'),null);});
+
+import {openWithApprovalRetry,VehicleApprovalRequiredError} from '../src/bluetooth/approvalRetry';
+test('headlight retry reconnects with fresh links every five seconds and succeeds after approval',async()=>{
+ const f=fixture();let now=0,opens=0;const links:BLELink[]=[];const transport={...f.transport,connect:async()=>{const link={...f.link};links.push(link);return link;}};
+ const plugin={...XiaomiM365Plugin,open:async(link:BLELink)=>{opens++;if(opens<3)throw new VehicleApprovalRequiredError('Enable headlight');return {identity:{model:'fixture'},capabilities:XiaomiM365Plugin.capabilities,close:async()=>{}};}};
+ const opened=await openWithApprovalRetry(plugin,f.link,transport,{emit:()=>{},phase:()=>{},random:n=>new Uint8Array(n)},()=>{},{now:()=>now,sleep:async ms=>{now+=ms;},windowMs:30000,intervalMs:5000});assert.equal(opens,3);assert.equal(now,10000);assert.equal(links.length,2);assert.equal(opened.link,links[1]);assert.notEqual(links[0],links[1]);
+});
+test('headlight retry stops after thirty seconds, does not retry unrelated errors and cancels promptly',async()=>{
+ const f=fixture();let now=0,opens=0;const plugin={...XiaomiM365Plugin,open:async()=>{opens++;throw new VehicleApprovalRequiredError('Enable headlight');}};const ctx={emit:()=>{},phase:()=>{},random:(n:number)=>new Uint8Array(n)};
+ await assert.rejects(openWithApprovalRetry(plugin,f.link,f.transport,ctx,()=>{},{now:()=>now,sleep:async ms=>{now+=ms;},windowMs:30000,intervalMs:5000}),/within 30 seconds/);assert.equal(opens,6);assert.equal(now,30000);
+ const bad={...plugin,open:async()=>{throw new Error('Unsupported firmware');}};const connects=f.connects;await assert.rejects(openWithApprovalRetry(bad,f.link,f.transport,ctx,()=>{}),/Unsupported firmware/);assert.equal(f.connects,connects);
+ const abort=new AbortController();await assert.rejects(openWithApprovalRetry(plugin,f.link,f.transport,{...ctx,signal:abort.signal},()=>{},{now:()=>0,sleep:async()=>{abort.abort();},windowMs:30000,intervalMs:5000}),/cancelled/);assert.equal(f.connects,connects);
 });

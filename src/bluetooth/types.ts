@@ -17,12 +17,13 @@ export interface BLELink {
   disconnect():Promise<void>;
   readRSSI():Promise<number|null>;
 }
-export interface BLETransport { chooseDevice?(services:string[]):Promise<BLEDeviceInfo>; ready(requestPermission:boolean):Promise<void>; observeState(listener:(state:AdapterState)=>void):()=>void; scan(services:string[],listener:(device:BLEDeviceInfo)=>void,error:(e:Error)=>void):Promise<()=>void>; connect(device:BLEDeviceInfo):Promise<BLELink>; }
+export interface ManufacturerDiscoveryFilter { companyIdentifier:number; dataPrefix:readonly number[]; }
+export interface BLETransport { chooseDevice?(services:string[],manufacturerFilters?:readonly ManufacturerDiscoveryFilter[]):Promise<BLEDeviceInfo>; ready(requestPermission:boolean):Promise<void>; observeState(listener:(state:AdapterState)=>void):()=>void; scan(services:string[],listener:(device:BLEDeviceInfo)=>void,error:(e:Error)=>void):Promise<()=>void>; connect(device:BLEDeviceInfo):Promise<BLELink>; }
 export interface ProtocolSession { identity:{serial?:string; firmware?:string; model:string}; capabilities:Capabilities; close():Promise<void>; }
 export interface VehicleProtocolPlugin {
- id:string; manufacturer:string; vehicleTypes:readonly VehicleType[]; models:readonly string[]; services:readonly string[]; capabilities:Capabilities; simulator?:boolean;
+ id:string; manufacturer:string; vehicleTypes:readonly VehicleType[]; models:readonly string[]; services:readonly string[]; capabilities:Capabilities; simulator?:boolean; manufacturerFilters?:readonly ManufacturerDiscoveryFilter[];
  detect(device:BLEDeviceInfo):Detection;
- open(link:BLELink,context:{signal?:AbortSignal;emit(update:TelemetryUpdate):void; phase(message:string):void; random(length:number):Uint8Array}):Promise<ProtocolSession>;
+ open(link:BLELink,context:{signal?:AbortSignal;approvalDeadline?:number;emit(update:TelemetryUpdate):void; phase(message:string):void; random(length:number):Uint8Array}):Promise<ProtocolSession>;
 }
 export interface Association { schema:1; vehicleId:string; vehicleType:VehicleType; device:BLEDeviceInfo; pluginId:string; identity:ProtocolSession['identity']; associatedAt:number; simulated?:boolean; }
 export interface BridgeSnapshot { state:ConnectionState; message:string; vehicleId?:string; device?:BLEDeviceInfo; pluginId?:string; simulated?:boolean; fields:Telemetry; extensions:Record<string,Reading>; capabilities?:Capabilities; connectedAt?:number; }
