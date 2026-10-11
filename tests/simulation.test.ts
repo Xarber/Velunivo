@@ -18,6 +18,7 @@ test('simulated fixes drive voice and activity while recording and real GPS stay
   let recordings=0, gpsRequests=0, pausedActivities=0, spoken=0, stopped=false;
   const updates: unknown[][]=[], effects:(()=>void)[]=[];
   const mocks: Record<string,unknown>={
+    './rideNotice':{notifyRideNotice:()=>{}},
     react:{useState:(initial:unknown)=>[initial==='idle'?'simulation':initial,()=>{}],useRef:(initial:unknown)=>({current:initial}),useEffect:(fn:()=>void)=>effects.push(fn)},
     'react-native':{Platform:{OS:'ios'},AppState:{currentState:'active',addEventListener:(_name:string,fn:(state:string)=>void)=>{appChange=fn;return{remove(){}};}}},
     'expo-location':{requestForegroundPermissionsAsync:async()=>{gpsRequests++;return{status:'denied'};}},
@@ -58,6 +59,7 @@ test('real GPS subscription keeps stationary progress still while delivering ori
  const states:unknown[]=[], effects:(()=>void)[]=[], originals:unknown[]=[];
  let locationCallback:((p:unknown)=>void)|undefined;
  const mocks:Record<string,unknown>={
+  './rideNotice':{notifyRideNotice:()=>{}},
   react:{useState:(initial:unknown)=>[initial==='idle'?'gps':initial,(value:unknown)=>{if(typeof value!=='function')states.push(value);}],useRef:(initial:unknown)=>({current:initial}),useEffect:(fn:()=>void)=>effects.push(fn)},
   'react-native':{Platform:{OS:'web'},AppState:{currentState:'active',addEventListener:()=>({remove(){}})}},
   'expo-location':{Accuracy:{BestForNavigation:6},requestForegroundPermissionsAsync:async()=>({status:'granted'}),watchPositionAsync:async(_options:unknown,cb:(p:unknown)=>void)=>{locationCallback=cb;return{remove(){}};}},
@@ -79,4 +81,24 @@ test('real GPS subscription keeps stationary progress still while delivering ori
  assert.equal(states.filter(value=>value && typeof value==='object' && 'along' in value).length,12,'invalid coordinates cannot advance navigation');
  assert.equal(originals.length,13,'invalid readings are preserved only in raw recording data');
  for(const cleanup of cleanups)cleanup();
+});
+
+
+test('denied GPS warns first, cancels recording and closes navigation on acknowledgement',async()=>{
+ const states:unknown[]=[],effects:(()=>void)[]=[];let notice:{title:string;message:string;confirm:()=>void}|undefined,cancelled=0,watched=0;
+ const mocks:Record<string,unknown>={
+  './rideNotice':{notifyRideNotice:(value:typeof notice)=>{notice=value;}},
+  react:{useState:(initial:unknown)=>[initial==='idle'?'gps':initial,(value:unknown)=>states.push(value)],useRef:(initial:unknown)=>({current:initial}),useEffect:(fn:()=>void)=>effects.push(fn)},
+  'react-native':{Platform:{OS:'web'},AppState:{currentState:'active',addEventListener:()=>({remove(){}})}},
+  'expo-location':{requestForegroundPermissionsAsync:async()=>({status:'denied'}),watchPositionAsync:async()=>{watched++;}},
+  './backgroundLocation':{},'./directionsVoice':{stopDirections:async()=>{}},'./useNavigationActivity':{},
+  '../core/movement':movement,'../core/rideView':rideView,'../core/navigation':navigation,'../core/geo':geo,
+ };
+ const context={exports:{},require:(name:string)=>mocks[name],Date,setInterval,clearInterval,console};
+ vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/services/useRide.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,context);
+ (context.exports as {useRide:(...args:unknown[])=>unknown}).useRide({coordinates:[[0,0],[.002,0]],steps:[],details:{}},createVehicle('escooter','test'),defaultNavigationOptions,undefined,()=>cancelled++);
+ const cleanups=effects.map(fn=>fn()).filter(fn=>typeof fn==='function') as unknown as (()=>void)[];
+ for(let i=0;i<10;i++)await Promise.resolve();
+ assert.equal(cancelled,1);assert.equal(watched,0);assert.equal(notice?.title,'GPS permission is off');assert.ok(!states.includes('idle'));
+ notice!.confirm();assert.ok(states.includes('idle'));for(const cleanup of cleanups)cleanup();
 });

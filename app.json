@@ -14,7 +14,12 @@
         "UIBackgroundModes": [
           "audio"
         ],
-        "VelunivoNativeActivityRenderer": true
+        "VelunivoNativeActivityRenderer": true,
+        "CFBundleLocalizations": [
+          "en",
+          "it"
+        ],
+        "CFBundleDevelopmentRegion": "en"
       },
       "buildNumber": "1",
       "icon": {

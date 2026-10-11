@@ -7,9 +7,9 @@ export function decodeShape(shape: string): Coord[] {
   while (cursor < shape.length) { lat += number(); lon += number(); const p: Coord = [lon / 1e6, lat / 1e6]; if (Math.abs(p[0]) > 180 || Math.abs(p[1]) > 85 || points.length >= 20000) throw new Error('Invalid route coordinates'); points.push(p); }
   if (points.length < 2) throw new Error('No route geometry'); return points;
 }
-export function valhallaRequest(start: Coord, end: Coord, kind: 'bike' | 'car', profile: Pick<Profile, 'maxSpeed' | 'ridingLimit'>) {
+export function valhallaRequest(start: Coord, end: Coord, kind: 'bike' | 'car', profile: Pick<Profile, 'maxSpeed' | 'ridingLimit'>,language:'en'|'it'='en') {
   const costing = kind === 'bike' ? 'bicycle' : 'auto', cap = Math.min(profile.maxSpeed, profile.ridingLimit);
-  return { locations: [start, end].map(([lon, lat]) => ({ lon, lat })), costing, units: 'kilometers', directions_options: { language: 'en-US' }, costing_options: { [costing]: { exclude_highways: true, exclude_ferries: true, use_ferry: 0, use_highways: 0, speed_types: ['freeflow'], ...(kind === 'car' ? { top_speed: Math.max(10, cap), use_distance: .6 } : { bicycle_type: 'hybrid', cycling_speed: Math.max(5, Math.min(60, cap)), avoid_bad_surfaces: 1, use_roads: .4 }) } } };
+  return { locations: [start, end].map(([lon, lat]) => ({ lon, lat })), costing, units: 'kilometers', directions_options: { language: language==='it'?'it-IT':'en-US' }, costing_options: { [costing]: { exclude_highways: true, exclude_ferries: true, use_ferry: 0, use_highways: 0, speed_types: ['freeflow'], ...(kind === 'car' ? { top_speed: Math.max(10, cap), use_distance: .6 } : { bicycle_type: 'hybrid', cycling_speed: Math.max(5, Math.min(60, cap)), avoid_bad_surfaces: 1, use_roads: .4 }) } } };
 }
 // Preserve the exact route's costing options when matching its roads. Otherwise
 // bicycle access/preferences can produce a different path in the second request.

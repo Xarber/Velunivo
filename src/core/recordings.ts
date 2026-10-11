@@ -18,3 +18,8 @@ export function appendSample(r: RecordedRide, sample: RideSample, previous: Fix 
   }
   return { ...r, bluetooth:sample.bluetooth?updateTripBluetooth(r.bluetooth,sample.bluetooth,r.startedAt):r.bluetooth, trace, samples: r.samples + 1, lastFixAt: sample.fix.timestamp, meters: r.meters + meters, preview, start: r.start || (usable ? f.coordinate : undefined), end: usable ? f.coordinate : r.end };
 }
+
+/** Uses accumulated filtered path length, so loops count and stationary GPS drift does not. */
+export const qualifiesRecordedRide=(meters:number,minimumMeters=0)=>Number.isFinite(meters) && meters>=minimumMeters;
+
+export function minimumRideDistance(route?:Pick<import('./types').Route,'coordinates'> | null){const points=route?.coordinates;return points && points.length>1 && distance(points[0],points.at(-1)!)<100?15:100;}

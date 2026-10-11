@@ -43,3 +43,7 @@ Anyone possessing the code/link can view location/route while sharing is active;
 Background GPS may continue normally, but iOS can suspend WKWebView/WebRTC, and mobile browsers can suspend background tabs. **Continuous locked-screen/background peer sharing is not guaranteed**. Viewers mark stale data, not an invented ETA. Native iOS/Android peer transport and cross-network cellular/TURN reliability require physical-device testing. Web RTC communication was verified locally using public Milan landmark QA data with self-hosted signaling; no private location was used. Protocol/session tests and native HTML runtime contract tests do not constitute physical iPhone proof.
 
 References: [PeerJS data API](https://peerjs.com/client/getting-started), [PeerServer/Express integration](https://github.com/peers/peerjs-server), [Expo57 WebView](https://docs.expo.dev/versions/v57.0.0/sdk/webview/), [Expo build environment variables](https://docs.expo.dev/guides/environment-variables/), [Expo Router native intents](https://docs.expo.dev/router/advanced/native-intent/).
+
+## Viewer presence
+
+The host counts each peer after successfully sending a progress update. A closed channel retains presence until 60 seconds after its last progress update; repeated channels from the same peer do not double-count. A one-second host timer expires presence even when there are no further location updates. Closing the sharing session clears presence immediately. Web and native transports share this rule; speed, road limits, battery and telemetry remain excluded from shared data.

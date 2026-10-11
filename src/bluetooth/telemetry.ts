@@ -10,3 +10,6 @@ export function freshReading(fields:Telemetry,metric:Metric,now=Date.now(),actua
 export const batteryColor=(percent:number)=>percent<20?'#D75451':percent<40?'#E49235':undefined;
 
 export const metricLabels:Record<Metric,string>={speed:'Speed',batteryPercent:'Vehicle battery',voltage:'Battery voltage',current:'Battery current',charging:'Charging status',batteryTemperature:'Battery temperature',controllerTemperature:'Controller temperature',motorTemperature:'Motor temperature',power:'Electrical power',odometer:'Odometer',tripDistance:'Trip distance',chargeCycles:'Charge cycles',ridingMode:'Riding mode',remainingRange:'Remaining range',signal:'Signal strength'};
+
+/** Presentation may retain valid last readings; live speed and analytics still use freshness checks. */
+export function retainedReading(fields:Telemetry,metric:Metric,now=Date.now()){const reading=fields[metric];return reading && reading.timestamp<=now+2000?{reading,stale:now-reading.timestamp>=60000}:undefined;}

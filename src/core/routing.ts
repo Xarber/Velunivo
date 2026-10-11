@@ -1,8 +1,8 @@
 import { Coord, Profile, Route, RouteKind } from './types';
-export function routeRequest(start: Coord, end: Coord, kind: 'car' | 'bike', profile: Profile) {
+export function routeRequest(start: Coord, end: Coord, kind: 'car' | 'bike', profile: Profile, language:'en'|'it'='en') {
   return {
     points: [start, end], profile: kind, points_encoded: false, instructions: true,
-    locale: 'en', 'ch.disable': true,
+    locale: language, 'ch.disable': true,
     details: ['road_class', 'surface', 'average_speed', 'max_speed'],
     custom_model: {
       speed: [{ if: 'true', limit_to: String(Math.min(profile.maxSpeed, profile.ridingLimit)) }],

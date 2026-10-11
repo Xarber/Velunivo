@@ -1,5 +1,7 @@
+import {t} from '../i18n/core';
+import Text from './LocalizedText';
 import React,{useState} from 'react';
-import { Platform,Text,View } from 'react-native';
+import {Platform, View} from 'react-native';
 import { activityDiagnosis,ActivityReport } from '../core/activityDiagnostics';
 import { inspectLiveActivity,startTestLiveActivity,stopTestLiveActivity } from '../services/useNavigationActivity';
 import { Button,styles,usePalette } from './ui';
@@ -14,5 +16,5 @@ export default function ActivityDiagnostics({developerMode,rideActive}:{develope
   }catch(e){setError(e instanceof Error ? e.message : String(e));}
   finally{setBusy(false);}
  }
- return <View style={[styles.card,{backgroundColor:p.card}]}><Text style={{color:p.text,fontSize:18,fontWeight:'700'}}>Live Activity check</Text><Text style={{color:p.muted}}>Temporary test controls. No ride, GPS or recording is needed. Check during a ride if navigation is missing from the Lock Screen.</Text><Button title="Test Live Activity" icon="play-outline" disabled={busy||rideActive} onPress={()=>void testActivity()} /><Button title="Stop test" icon="stop-outline" secondary disabled={busy} onPress={()=>void testActivity(true)} />{rideActive && <Text style={{color:p.muted}}>End your current ride before starting a test.</Text>}<Button title="Check Live Activity" icon="pulse-outline" onPress={()=>{try{setReport(inspectLiveActivity());setError('');}catch(e){setError(e instanceof Error ? e.message : String(e));}}} />{message && <Text accessibilityLiveRegion="polite" style={{color:p.text}}>{message}</Text>}{report && <Text accessibilityLiveRegion="polite" style={{color:p.text,lineHeight:22}}>{activityDiagnosis(report)}</Text>}{error && <Text accessibilityRole="alert" style={{color:p.text}}>{error}</Text>}{report && developerMode && <Text selectable style={{color:p.muted,fontSize:12}}>{JSON.stringify(report,null,2)}</Text>}</View>;
+ return <View style={[styles.card,{backgroundColor:p.card}]}><Text style={{color:p.text,fontSize:18,fontWeight:'700'}}>Live Activity check</Text><Text style={{color:p.muted}}>Temporary test controls. No ride, GPS or recording is needed. Check during a ride if navigation is missing from the Lock Screen.</Text><Button title={t("Test Live Activity")} icon="play-outline" disabled={busy||rideActive} onPress={()=>void testActivity()} /><Button title={t("Stop test")} icon="stop-outline" secondary disabled={busy} onPress={()=>void testActivity(true)} />{rideActive && <Text style={{color:p.muted}}>End your current ride before starting a test.</Text>}<Button title={t("Check Live Activity")} icon="pulse-outline" onPress={()=>{try{setReport(inspectLiveActivity());setError('');}catch(e){setError(e instanceof Error ? e.message : String(e));}}} />{message && <Text accessibilityLiveRegion="polite" style={{color:p.text}}>{message}</Text>}{report && <Text accessibilityLiveRegion="polite" style={{color:p.text,lineHeight:22}}>{activityDiagnosis(report)}</Text>}{error && <Text accessibilityRole="alert" style={{color:p.text}}>{error}</Text>}{report && developerMode && <Text selectable style={{color:p.muted,fontSize:12}}>{JSON.stringify(report,null,2)}</Text>}</View>;
 }

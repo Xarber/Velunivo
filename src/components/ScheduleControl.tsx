@@ -1,5 +1,6 @@
+import Text from './LocalizedText';
 import React, { useState } from 'react';
-import { View, Text } from 'react-native';
+import {View} from 'react-native';
 import SchedulePicker from './SchedulePicker';
 import { usePalette } from './ui';
 import { parseSchedule } from '../core/schedule';

@@ -414,3 +414,25 @@ Physical Velunivo verification succeeded on the user's Pro 2 in Chrome after a s
 Paired vehicles now open to status after storage hydration, automatically reconnect on entering Vehicle Bluetooth, and keep a shared app-level lease for the selected vehicle when automatic reconnection is enabled. Rediscovery of an associated device reuses its saved connection and credentials without another registration or a discovery cleanup disconnect. Repeated opening of a connected vehicle is idempotent. Browser permission restoration is separate from protocol registration and never erases the saved token. A rejected token pauses automatic attempts and retains the association instead of repeatedly beeping or telling users to forget it.
 
 Chrome previously reported zero retained grants after reload; an intermediate attempt also rejected its saved authentication proof. These are distinct from the successful physical sessions. Full reload reconnection still needs an uninterrupted hardware test with retained browser permission; do not claim it was verified. Native iOS, Android and Bluefy remain untested. No private Bluetooth identities or tokens were added to documentation.
+
+### Ride lifecycle, replay, telemetry and layout — 2026-10-11
+
+Implemented connection adoption directly after browser verification, paired connection actions, retained/stale telemetry, explicit navigation/recording reconnect requests and optional-register retries. Forgetting a vehicle clears its snapshot readings. Kept the existing read-only protocol and user radio sessions untouched.
+
+Added recorded timeline replay, total filtered movement thresholds (100 m normally; hard 15 m for destinations less than 100 m from the start), a short-ride notice, and cancellation without recording/battery prompts when GPS permission is denied. The denied-permission modal closes the ride on acknowledgement. Transient GPS initialization failures still show a status and retry action.
+
+Added sharing viewer presence with 60-second expiry from the last sent update, informational popovers, content-fitting Explore/recording/replay controls, even collapsed padding and an icon-only gray Explore recording shortcut. No local native compilation, simulator installation, private ride uploads or physical Bluetooth reconnection testing occurred in this batch.
+
+Library now previews up to three Saved Places, Saved Routes and Recorded Rides in a single horizontal row per category, with existing Go here/Open/Replay actions. Full-category buttons remain available. Downloaded Maps is unchanged; preview tiles expose no edit/delete controls.
+
+Added English/Italian UI localization with a default System option, persistent override, immediate text/accessibility updates and localized new route instructions through both providers. General now appears first, followed by Navigation & audio, Maps & downloads, Recording & battery, Bluetooth and Privacy & data. Library category headers have icons and Show All actions above three read-only preview tiles; Downloaded Maps retains its existing entry.
+
+Added installed-language speech voice selection and a test action. Native iOS prefers actual exposed premium/enhanced voices without changing the audio-session cleanup; web/Android use their speech API. No voices were downloaded and no Siri/private API was used. The native API addition needs the new GitHub-built binary; it was not compiled locally. Localization and speech contract/limits are documented in LOCALIZATION.md.
+
+### Translation audit and responsive Library previews — 2026-10-11
+
+Expanded the Italian catalog to cover long map-download, Bluetooth, privacy, recording, safety and sharing explanations, connection messages and the account-key placeholder. Privacy & Data keeps its explanations directly visible. The map-download information action sits inline beside its heading instead of occupying a separate row.
+
+Library preview tiles now use 140px maps and larger padding. At 744px of available row width, three equal flexible columns fill the row; narrower rows use 90% widths with a visible next-card hint and horizontal scrolling. The Library content can grow to 1100px on desktop. Downloaded Maps retains its existing behavior.
+
+Verified the actual isolated web UI at 390px and 1280px: mobile card width 275.4px for a 306px row (90%), desktop width 330.7px in a 1016px row with equal columns and 12px gaps. Verified translated map-key placeholder and expanded Italian privacy paragraphs. Synthetic public Milan fixtures were used; no private ride data or Bluetooth credentials were published. Type checking, lint and all 145 JavaScript tests passed. No local native compilation occurred.

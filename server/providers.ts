@@ -18,8 +18,8 @@ export async function addresses(query: string) {
   remember(id, results); return results;
 }
 function remember(id: string, data: unknown) { if (cache.size >= 100) cache.delete(cache.keys().next().value!); cache.set(id, { until: Date.now() + 300000, data }); }
-export async function publicRoute(start: Coord, end: Coord, kind: 'bike' | 'car', profile: Profile) {
-  const q = valhallaRequest(start, end, kind, profile), id = JSON.stringify(q), hit = cache.get(id); if (hit && hit.until > Date.now()) return hit.data;
+export async function publicRoute(start: Coord, end: Coord, kind: 'bike' | 'car', profile: Profile, language:'en'|'it'='en') {
+  const q = valhallaRequest(start, end, kind, profile,language), id = JSON.stringify(q), hit = cache.get(id); if (hit && hit.until > Date.now()) return hit.data;
   const data = await provider(`${valhalla}/route`, q), shape = data?.trip?.legs?.[0]?.shape;
   if (!shape) throw new Error('No route found');
   const attributes = await provider(`${valhalla}/trace_attributes`, valhallaAttributesRequest(shape, q)).catch(error => ({ verificationError: error instanceof Error ? error.message : 'Road verification unavailable' }));

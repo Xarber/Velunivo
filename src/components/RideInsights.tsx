@@ -1,5 +1,6 @@
+import Text from './LocalizedText';
 import React from 'react';
-import { Text, View } from 'react-native';
+import {View} from 'react-native';
 import { RecordedRide } from '../core/recordings';
 import { rideInsights } from '../core/rideInsights';
 import { distanceLeft, displaySpeed } from '../core/rideView';

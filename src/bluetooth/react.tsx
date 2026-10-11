@@ -23,4 +23,4 @@ export function BluetoothProvider({children}:{children:React.ReactNode}){
 export const useBluetoothPreferences=()=>useContext(Context);
 export function useBluetoothVehicle(vehicleId:string,active=false){const {ready}=useBluetoothPreferences();useEffect(()=>{if(active && ready)return bluetoothBridge.acquire(vehicleId);},[vehicleId,active,ready]);return useSyncExternalStore(bluetoothBridge.subscribe,bluetoothBridge.getSnapshot,bluetoothBridge.getSnapshot);}
 /** A ride owns a lease, not a per-screen connection. It need not rerender on every packet. */
-export function useBluetoothLease(vehicleId:string,active:boolean){const {ready}=useBluetoothPreferences();useEffect(()=>{if(active && ready)return bluetoothBridge.acquire(vehicleId);},[vehicleId,active,ready]);}
+export function useBluetoothLease(vehicleId:string,active:boolean){const {ready}=useBluetoothPreferences();useEffect(()=>{if(active && ready){const release=bluetoothBridge.acquire(vehicleId);if(bluetoothBridge.association(vehicleId) && !bluetoothBridge.getSnapshot().simulated)void bluetoothBridge.reconnect(vehicleId).catch(()=>{});return release;}},[vehicleId,active,ready]);}

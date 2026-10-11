@@ -1,5 +1,7 @@
+import {t,languageTag} from '../i18n/core';
+import Text from './LocalizedText';
 import React from 'react';
-import { Platform, View, Text } from 'react-native';
+import {Platform, View} from 'react-native';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { Button, usePalette } from './ui';
 import { localDateTime, parseSchedule } from '../core/schedule';
@@ -16,5 +18,5 @@ export default function SchedulePicker({ value, onChange }: SchedulePickerProps)
       } });
     } });
   }
-  return <View style={{ gap: 8 }}><Text style={{ color: p.muted, fontSize: 12 }}>LOCAL DATE & TIME</Text>{Platform.OS === 'ios' ? <DateTimePicker accessibilityLabel="Scheduled date and time" value={date} mode="datetime" display="compact" accentColor={p.accent} onChange={(_, selected) => { if (selected) onChange(localDateTime(selected)); }} /> : <Button title={value ? date.toLocaleString() : 'Choose date & time'} secondary onPress={android} />}{value && <Button title="Clear schedule · ride now" secondary icon="close-circle-outline" onPress={() => onChange('')} />}</View>;
+  return <View style={{ gap: 8 }}><Text style={{ color: p.muted, fontSize: 12 }}>LOCAL DATE & TIME</Text>{Platform.OS === 'ios' ? <DateTimePicker accessibilityLabel={t("Scheduled date and time")} value={date} locale={languageTag()} mode="datetime" display="compact" accentColor={p.accent} onChange={(_, selected) => { if (selected) onChange(localDateTime(selected)); }} /> : <Button title={t(value ? date.toLocaleString(languageTag()) : 'Choose date & time')} secondary onPress={android} />}{value && <Button title={t("Clear schedule · ride now")} secondary icon="close-circle-outline" onPress={() => onChange('')} />}</View>;
 }

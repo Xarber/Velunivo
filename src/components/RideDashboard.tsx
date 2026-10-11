@@ -1,5 +1,7 @@
+import {t} from '../i18n/core';
+import Text from './LocalizedText';
 import React from 'react';
-import { Text, View } from 'react-native';
+import {View} from 'react-native';
 import { Vehicle, Fix, Route } from '../core/types';
 import { arrivalTime, displaySpeed, distanceLeft, freshFix, roadSpeedLimit } from '../core/rideView';
 import { minutes } from '../core/eta';
@@ -12,7 +14,7 @@ export default function RideDashboard({ profile, route, fix, index, offRoute, se
   const number = (n: number | null) => n === null ? '—' : displaySpeed(n, unit).toFixed(0), speedUnit = unit === 'mi' ? 'mph' : 'km/h';
   const metric = (label: string, value: string, color = p.text) => <View style={{ flex: 1, minWidth: 0 }}><Text numberOfLines={label === 'Arrival' ? 2 : 1} adjustsFontSizeToFit style={{ fontSize: compact || label === 'Arrival' ? 20 : 24, fontWeight: '800', color }}>{value}</Text><Text style={{ color: p.muted, fontSize: 11 }}>{label}</Text></View>;
   return <View style={{ gap: compact ? 6 : 12 }}>
-    {!etaOnly && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>{metric(`${simulation ? 'Demo speed' : 'Speed'} · ${speedUnit}`, number(speed), exceeded ? '#E97C64' : p.text)}<View style={{ flex: 1, alignItems: 'center' }}><View accessibilityLabel={`Mapped road speed limit ${roadLimit === null ? 'unknown' : number(roadLimit) + ' ' + speedUnit}`} style={{ borderRadius: 25, width: 48, height: 48, borderWidth: 4, borderColor: '#D85847', backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 21, color: '#162C35', fontWeight: '800' }}>{number(roadLimit)}</Text></View><Text style={{ color: p.muted, fontSize: 10 }}>Road limit · {speedUnit}</Text></View>{metric(`Your cap · ${speedUnit}`, number(cap))}</View>}
+    {!etaOnly && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>{metric(`${simulation ? 'Demo speed' : 'Speed'} · ${speedUnit}`, number(speed), exceeded ? '#E97C64' : p.text)}<View style={{ flex: 1, alignItems: 'center' }}><View accessibilityLabel={t(`Mapped road speed limit ${roadLimit === null ? 'unknown' : number(roadLimit) + ' ' + speedUnit}`)} style={{ borderRadius: 25, width: 48, height: 48, borderWidth: 4, borderColor: '#D85847', backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' }}><Text style={{ fontSize: 21, color: '#162C35', fontWeight: '800' }}>{number(roadLimit)}</Text></View><Text style={{ color: p.muted, fontSize: 10 }}>Road limit · {speedUnit}</Text></View>{metric(`Your cap · ${speedUnit}`, number(cap))}</View>}
     <View style={{ flexDirection: 'row', gap: 10 }}>{metric('Arrival', seconds === undefined ? '—' : arrivalTime(seconds, now))}{metric('Time left', seconds === undefined ? '—' : minutes(seconds))}{metric('Distance left', meters === undefined ? '—' : distanceLeft(meters, unit))}</View>
     {!compact && !etaOnly && <Text style={{ color: exceeded ? '#E97C64' : p.muted, fontSize: 11 }}>{exceeded ? 'Above your configured or mapped speed limit. ' : ''}{roadLimit === null ? 'Road limit unknown · check local signs.' : 'Mapped road limit · check local signs.'} ETA excludes traffic.</Text>}
   </View>;

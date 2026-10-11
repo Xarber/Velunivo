@@ -1,3 +1,4 @@
+import {notifyRideNotice} from './rideNotice';
 import { MovementTracker, usableMovementFix } from '../core/movement';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
@@ -9,11 +10,13 @@ import { updateRideActivity, markActivityPaused } from './useNavigationActivity'
 import { maneuverDistance, bearing } from '../core/rideView';
 import { guidance } from '../core/navigation';
 import { cumulative, pointAt } from '../core/geo';
-export function useRide(route: Route | null, profile: Profile, preferences: NavigationOptions, onFix?: (fix: Fix, arrived?: boolean) => void | Promise<void>) {
+export function useRide(route: Route | null, profile: Profile, preferences: NavigationOptions, onFix?: (fix: Fix, arrived?: boolean) => void | Promise<void>, onPermissionDenied?:()=>void) {
+  const [gpsAttempt,retryGPS]=useState(0);
   const [completedMeters, setCompletedMeters] = useState(0);
   const [mode, setMode] = useState<'idle' | 'gps' | 'simulation'>('idle');
   const [fix, setFix] = useState<Fix | null>(null), [status, setStatus] = useState('Ready to ride');
   const [progress, setProgress] = useState<ReturnType<typeof guidance> | null>(null);
+  const deniedRef=useRef(onPermissionDenied);useEffect(()=>{deniedRef.current=onPermissionDenied;},[onPermissionDenied]);
   const onFixRef = useRef(onFix); useEffect(() => { onFixRef.current = onFix; }, [onFix]);
   const along = useRef<number | undefined>(undefined), spoken = useRef('');
   const unitRef = useRef(preferences.unit), preferencesRef = useRef(preferences);
@@ -26,7 +29,7 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setProgress(null); setFix(null); setCompletedMeters(0);
     if (mode === 'idle' || !route) return;
-    let cancelled = false, paused = mode === 'gps' && AppState.currentState !== 'active', background = false, halted = false, lastAccepted = 0, stopBackground: (()=>Promise<void>) | undefined, subscription: Location.LocationSubscription | undefined, timer: ReturnType<typeof setInterval> | undefined;
+    let cancelled = false, paused = mode === 'gps' && AppState.currentState === 'background', background = false, halted = false, lastAccepted = 0, stopBackground: (()=>Promise<void>) | undefined, subscription: Location.LocationSubscription | undefined, timer: ReturnType<typeof setInterval> | undefined;
     const movement = new MovementTracker();
     async function accept(raw: Fix) {
       if (cancelled || paused || halted || raw.timestamp <= lastAccepted) return;
@@ -60,7 +63,7 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
         try {
           const permission = await Location.requestForegroundPermissionsAsync();
           if (cancelled) return;
-          if (permission.status !== 'granted') { setStatus('Location permission denied. Enable it in Settings.'); setMode('idle'); return; }
+          if (permission.status !== 'granted') { deniedRef.current?.(); setStatus('Location permission denied'); notifyRideNotice({title:'GPS permission is off',message:'Velunivo needs location permission to navigate. Enable it in your browser or device Settings before starting another ride.',confirm:()=>{if(!cancelled)setMode('idle');}}); return; }
           if(Platform.OS!=='web' && preferencesRef.current.backgroundNavigation) {
             try { const stop=await beginBackgroundLocation(accept,msg=>{if(!cancelled){background=false;paused=AppState.currentState!=='active';setStatus(`Background location interrupted: ${msg}`);void markActivityPaused();}},()=>cancelled || halted);
               if(cancelled || halted) {await stop();return;} stopBackground=stop;background=true;paused=false;
@@ -69,10 +72,10 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
           if(cancelled)return;
           const watch = await Location.watchPositionAsync({ accuracy: Location.Accuracy.BestForNavigation, timeInterval: 1000, distanceInterval: 0 }, p => {void accept({ coordinate: [p.coords.longitude, p.coords.latitude], accuracy: p.coords.accuracy ?? 999, speed: p.coords.speed !== null && Number.isFinite(p.coords.speed) && p.coords.speed >= 0 ? p.coords.speed : null, heading: p.coords.heading !== null && p.coords.heading >= 0 ? p.coords.heading : undefined, timestamp: p.timestamp }).catch(e=>{if(!cancelled)setStatus(e instanceof Error ? e.message : 'GPS update failed');});});
           if (cancelled) watch.remove(); else subscription = watch;
-        } catch (e) { if (!cancelled) { setStatus(e instanceof Error ? e.message : 'GPS unavailable'); setMode('idle'); } }
+        } catch (e) { if (!cancelled) { setStatus(`GPS unavailable · ${e instanceof Error ? e.message : 'retry GPS'}`); } }
       })();
     }
     return () => { cancelled = true; subscription?.remove(); void stopBackground?.().catch(console.warn); if (timer) clearInterval(timer); app.remove(); void stopDirections(); };
-  }, [mode, route]);
-  return { completedMeters, mode, fix, progress, status, start: (simulate = false) => setMode(simulate ? 'simulation' : 'gps'), stop: () => { setMode('idle'); setStatus('Ride ended'); } };
+  }, [mode, route,gpsAttempt]);
+  return { retryGPS:()=>retryGPS(v=>v+1), completedMeters, mode, fix, progress, status, start: (simulate = false) => setMode(simulate ? 'simulation' : 'gps'), stop: () => { setMode('idle'); setStatus('Ride ended'); } };
 }

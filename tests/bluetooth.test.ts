@@ -169,3 +169,5 @@ test('opening a connected vehicle repeatedly does not disturb its session or sav
  await Promise.all([f.bridge.reconnect('scooter'),f.bridge.reconnect('scooter')]);
  assert.equal(f.connects,1);assert.equal(f.disconnects,before);assert.equal(f.records.length,1);await f.bridge.disconnect();
 });
+
+test('browser pairing adopts the verified session immediately, with no second confirmation or radio connection',async()=>{const f=fixture();f.transport.chooseDevice=async()=>({...device,discoverySource:'web-gatt',manufacturerData:undefined});let selected=0;await f.bridge.discover('electric_scooter',()=>selected++,'scooter');assert.equal(selected,1);assert.equal(f.bridge.getSnapshot().state,'connected');assert.equal(f.bridge.getSnapshot().fields.batteryPercent?.value,60);assert.equal(f.connects,1);assert.equal(f.disconnects,0);assert.equal(f.records.length,1);assert.equal(f.bridge.association('scooter')?.identity.serial,'12345/12345678');await f.bridge.disconnect();assert.equal(f.bridge.getSnapshot().fields.batteryPercent?.value,60);await f.bridge.reconnect('scooter');assert.equal(f.records.length,1);await f.bridge.disconnect();});

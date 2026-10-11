@@ -1,5 +1,6 @@
+import Text from './LocalizedText';
 import React from 'react';
-import { Text, View } from 'react-native';
+import {View} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { maneuverDistance } from '../core/rideView';
 import { usePalette } from './ui';

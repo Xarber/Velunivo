@@ -1,10 +1,12 @@
+import {t} from '../i18n/core';
+import Text from './LocalizedText';
 import React, { useEffect, useState } from 'react';
-import { Modal, View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
+import {Modal, View, ScrollView, Pressable, StyleSheet} from 'react-native';
 import { Button, usePalette } from './ui';
 import { useReducedMotion } from './WebMotion';
 import { Route } from '../core/types';
 export default function RouteWarning({ route, onCancel, onConfirm }: { route: Route | null; onCancel(): void; onConfirm(route: Route): void }) {
-  return <NavigationWarning visible={!!route} title="Review route restrictions" messages={route?.safetyWarnings ?? []} description="This route may be unsafe or prohibited for your vehicle. Continuing does not establish permission to ride. Check signs and local rules, and walk or choose another route where needed." confirmLabel="I understand · continue" onCancel={onCancel} onConfirm={() => { if (route) onConfirm(route); }} />;
+  return <NavigationWarning visible={!!route} title={t("Review route restrictions")} messages={route?.safetyWarnings ?? []} description="This route may be unsafe or prohibited for your vehicle. Continuing does not establish permission to ride. Check signs and local rules, and walk or choose another route where needed." confirmLabel="I understand · continue" onCancel={onCancel} onConfirm={() => { if (route) onConfirm(route); }} />;
 }
 export function NavigationWarning({ visible, title, messages, description, confirmLabel, onCancel, onConfirm, children, disabled = false, cancelLabel = 'Choose another route' }: { visible: boolean; title: string; messages: string[]; description: string; confirmLabel: string; onCancel(): void; onConfirm(): void; children?: React.ReactNode; disabled?: boolean; cancelLabel?: string }) {
   const p = usePalette(), reduced = useReducedMotion();
@@ -23,8 +25,8 @@ export function NavigationWarning({ visible, title, messages, description, confi
         <ScrollView style={{ maxHeight: 260 }} contentContainerStyle={{ gap: 12 }}>{messages.map(w => <Text key={w} style={{ color: p.text, lineHeight: 22 }}>⚠ {w}</Text>)}</ScrollView>
         <Text style={{ color: p.muted, lineHeight: 21 }}>{description}</Text>
         {children}
-        <Button title={cancelLabel} secondary onPress={onCancel} />
-        <Pressable accessibilityRole="button" accessibilityLabel={remaining ? `Continue available in ${remaining} seconds` : confirmLabel} disabled={remaining > 0 || disabled} onPress={() => { if (remaining === 0 && !disabled) onConfirm(); }} style={[styles.confirm, { opacity: remaining || disabled ? .45 : 1 }]}><Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 16 }}>{remaining ? `Continue in ${remaining}s` : confirmLabel}</Text></Pressable>
+        <Button title={t(cancelLabel)} secondary onPress={onCancel} />
+        <Pressable accessibilityRole="button" accessibilityLabel={t(remaining ? `Continue available in ${remaining} seconds` : confirmLabel)} disabled={remaining > 0 || disabled} onPress={() => { if (remaining === 0 && !disabled) onConfirm(); }} style={[styles.confirm, { opacity: remaining || disabled ? .45 : 1 }]}><Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 16 }}>{remaining ? `Continue in ${remaining}s` : confirmLabel}</Text></Pressable>
       </ScrollView>
     </View>
   </Modal>;

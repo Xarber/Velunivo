@@ -1,3 +1,4 @@
+import {t} from '../i18n/core';
 import { routeLayers, ROUTE_WIDTH } from '../core/routeLayers';
 import { useCameraTarget } from '../services/useCameraTarget';
 import React, { useEffect, useRef, useState } from 'react';
@@ -28,6 +29,6 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
     {routeLayers(routes, selected, completedMeters, trace).map(r => <GeoJSONSource key={r.id} id={r.id} data={{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: r.coordinates } }}><Layer id={`${r.id}-outline`} type="line" paint={{ 'line-color': r.outline, 'line-width': ROUTE_WIDTH + 3 }} layout={{ 'line-cap': 'round', 'line-join': 'round' }} /><Layer id={`${r.id}-line`} type="line" paint={{ 'line-color': r.color, 'line-width': ROUTE_WIDTH }} layout={{ 'line-cap': 'round', 'line-join': 'round' }} /></GeoJSONSource>)}
     {selected && <GeoJSONSource id="endpoints" data={{ type: 'FeatureCollection', features: [selected.coordinates[0], selected.coordinates.at(-1)!].map((p, i) => ({ type: 'Feature' as const, properties: { end: i }, geometry: { type: 'Point' as const, coordinates: p } })) }}><Layer type="circle" paint={{ 'circle-radius': 7, 'circle-color': '#007F6D', 'circle-stroke-width': 3, 'circle-stroke-color': '#FFFFFF' }} /></GeoJSONSource>}
     {(startPoint || endPoint) && <GeoJSONSource id="planning" data={{ type: 'FeatureCollection', features: [startPoint, endPoint].filter((p): p is Coord => !!p).map(p => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: p } })) }}><Layer type="circle" paint={{ 'circle-radius': 7, 'circle-color': '#007F6D', 'circle-stroke-width': 3, 'circle-stroke-color': '#FFFFFF' }} /></GeoJSONSource>}
-    {position && <Marker id="navigation-position" lngLat={position} accessibilityLabel={positionLabel || 'Current position'}><PositionArrow navigating={navigating} rotation={follow ? 0 : heading} /></Marker>}
+    {position && <Marker id="navigation-position" lngLat={position} accessibilityLabel={t(positionLabel || 'Current position')}><PositionArrow navigating={navigating} rotation={follow ? 0 : heading} /></Marker>}
   </Map>;
 }

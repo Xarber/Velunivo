@@ -35,14 +35,18 @@ private final class NavigationSpeech: NSObject, AVSpeechSynthesizerDelegate {
       }
     }
   }
-  func speak(_ text: String, volume: Double) throws {
+  func speak(_ text: String, volume: Double, language: String, identifier: String) throws {
     stop()
     let session = AVAudioSession.sharedInstance()
     do {
       try session.setCategory(.playback, mode: .voicePrompt, options: [.duckOthers, .mixWithOthers])
       try session.setActive(true); ownsSession = true
       let utterance = AVSpeechUtterance(string: text)
-      utterance.voice = AVSpeechSynthesisVoice(language: "en")
+      let family = language.components(separatedBy: "-").first ?? language
+      let voices = AVSpeechSynthesisVoice.speechVoices().filter { $0.language.components(separatedBy: "-").first == family }
+      let selected = voices.first { $0.identifier == identifier }
+      let best = voices.sorted { $0.quality.rawValue > $1.quality.rawValue }.first
+      utterance.voice = selected ?? best ?? AVSpeechSynthesisVoice(language: language)
       utterance.volume = Float(min(1, max(0, volume)))
       current = utterance
       synthesizer.speak(utterance)
@@ -64,9 +68,15 @@ public final class VelunivoAudioModule: Module {
   private var speech: NavigationSpeech?
   public func definition() -> ModuleDefinition {
     Name("VelunivoAudio")
-    AsyncFunction("speak") { (text: String, volume: Double) in
+    AsyncFunction("speak") { (text: String, volume: Double, language: String, identifier: String) in
       if self.speech == nil { self.speech = NavigationSpeech() }
-      try self.speech?.speak(text, volume: volume)
+      try self.speech?.speak(text, volume: volume, language: language, identifier: identifier)
+    }.runOnQueue(.main)
+    AsyncFunction("voices") { () -> [[String: String]] in
+      AVSpeechSynthesisVoice.speechVoices().map { voice in
+        ["identifier": voice.identifier, "name": voice.name, "language": voice.language,
+         "quality": voice.quality == .premium ? "Premium" : voice.quality == .enhanced ? "Enhanced" : "Default"]
+      }
     }.runOnQueue(.main)
     AsyncFunction("stop") { self.speech?.stop() }.runOnQueue(.main)
     OnDestroy { DispatchQueue.main.async { self.speech?.stop(); self.speech = nil } }

@@ -1,0 +1,11 @@
+import React,{useEffect,useState} from 'react';
+import {View} from 'react-native';
+import Text from './LocalizedText';
+import {Button,styles,usePalette} from './ui';
+import InfoButton from './InfoButton';
+import {useLanguage} from '../i18n/react';
+import {t,languageTag} from '../i18n/core';
+import {availableSpeechVoices,speakDirection} from '../services/directionsVoice';
+import {matchingVoices,SpeechVoice} from '../core/speechVoices';
+import {useStore} from '../services/store';
+export default function VoiceSettings(){const p=usePalette(),{navigationOptions:n,updateNavigationOptions}=useStore(),language=useLanguage(),[voices,setVoices]=useState<SpeechVoice[]>([]),[error,setError]=useState('');useEffect(()=>{let live=true;void availableSpeechVoices().then(v=>{if(live){setVoices(matchingVoices(v,languageTag()));setError('');}}).catch(()=>{if(live)setError('Speech is unavailable in this browser.');});return()=>{live=false;};},[language.choice,language.language]);return <View style={[styles.card,{backgroundColor:p.card}]}><View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}><Text style={{color:p.text,fontWeight:'700',fontSize:18}}>Speech voice</Text><InfoButton title={t("Speech voice")}>Available voices depend on your device. Download enhanced or premium voices in iPhone Accessibility settings. Siri voices are only usable if iOS exposes them to apps.</InfoButton></View><Button title={t("Automatic · best available")} secondary={!!n.speechVoice} icon={!n.speechVoice?'checkmark-circle':'volume-high-outline'} onPress={()=>updateNavigationOptions({speechVoice:undefined})}/>{voices.map(v=><Button key={v.identifier} title={t(`${v.name} · ${v.quality}`)} secondary={n.speechVoice!==v.identifier} icon={n.speechVoice===v.identifier?'checkmark-circle':'volume-high-outline'} onPress={()=>updateNavigationOptions({speechVoice:v.identifier})}/>)}{!voices.length && <Text style={{color:p.muted}}>{error || 'No speech voices available for this language.'}</Text>}<Button title={t("Test voice")} icon="volume-high-outline" disabled={!!error} onPress={()=>void speakDirection('Turn right at the next street.',{...n,voice:true,volume:n.volume==='off'?'quiet':n.volume})}/></View>;}

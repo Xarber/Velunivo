@@ -1,3 +1,4 @@
+import {notifyShortRide} from './rideNotice';
 import {bluetoothBridge} from '../bluetooth/service';
 import {useBluetoothPreferences} from '../bluetooth/react';
 import {sampleBluetooth,automaticBatteryUsage} from '../bluetooth/tripTelemetry';
@@ -5,16 +6,18 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { MovementTracker } from '../core/movement';
 import { AppState } from 'react-native';
 import { Fix, Route, Vehicle } from '../core/types';
-import { appendSample, freshVector, RecordedRide, RideSample, VectorReading } from '../core/recordings';
+import { qualifiesRecordedRide, appendSample, freshVector, RecordedRide, RideSample, VectorReading } from '../core/recordings';
 import { liveRecording, persistRide } from './rideHistory';
-export function useRideRecorder(active: boolean, enabled: boolean, arrived: boolean, route: Pick<Route, 'id' | 'name' | 'startLabel' | 'endLabel'> | null, vehicle: Vehicle, motion: { accelerometer: VectorReading | null; gyroscope: VectorReading | null }, compass: { heading: number | null; timestamp: number }, askBatteryUsage = false) {
+export function useRideRecorder(active: boolean, enabled: boolean, arrived: boolean, route: Pick<Route, 'id' | 'name' | 'startLabel' | 'endLabel'> | null, vehicle: Vehicle, motion: { accelerometer: VectorReading | null; gyroscope: VectorReading | null }, compass: { heading: number | null; timestamp: number }, askBatteryUsage = false, minimumMeters = 100) {
   const [error, setError] = useState(''), [record, setRecord] = useState<RecordedRide | null>(null);
   const {preferences:bluetoothPreferences}=useBluetoothPreferences();
   const collect=useRef(bluetoothPreferences.collectTelemetry);useEffect(()=>{collect.current=bluetoothPreferences.collectTelemetry;},[bluetoothPreferences.collectTelemetry]);
   const sensors = useRef({ motion, compass }); useEffect(() => { sensors.current = { motion, compass }; }, [motion, compass]);
-  const session = useRef<{ ride: RecordedRide; buffer: RideSample[]; pending: Map<number, RideSample[]>; chunk: number; previous: Fix | null; movement: MovementTracker; lastTimestamp: number; dirty: boolean } | null>(null);
+  const session = useRef<{ ride: RecordedRide; buffer: RideSample[]; pending: Map<number, RideSample[]>; chunk: number; previous: Fix | null; movement: MovementTracker; lastTimestamp: number; dirty: boolean; minimumMeters:number; discarded?:boolean } | null>(null);
   const flush = useCallback((status?: RecordedRide['status']) => {
     const s = session.current; if (!s || (!s.dirty && !status)) return;
+    if(s.discarded)return Promise.resolve(true);
+    if(!qualifiesRecordedRide(s.ride.meters,s.minimumMeters)){if(status){s.discarded=true;s.ride={...s.ride,status,endedAt:Date.now(),batteryFeedback:undefined};notifyShortRide();}return Promise.resolve(true);}
     if (status) { const endedAt=Date.now(),snapshot=bluetoothBridge.getSnapshot(),used=snapshot.state==='connected' && snapshot.vehicleId===s.ride.vehicle.id && !snapshot.simulated?automaticBatteryUsage(s.ride.bluetooth,endedAt):null;s.ride = { ...s.ride, status, endedAt, ...(used!==null?{batteryUsagePercent:used,batteryUsageSource:'bluetooth' as const,batteryFeedback:'answered' as const}:{}) }; }
     const chunks = [...s.pending].map(([index, samples]) => ({ index, samples: [...samples] }));
     if (s.buffer.length) chunks.push({ index: s.chunk, samples: [...s.buffer] });
@@ -35,7 +38,7 @@ export function useRideRecorder(active: boolean, enabled: boolean, arrived: bool
   useEffect(() => {
     if (!active || !enabled || !route) return;
     const startedAt = Date.now();
-    session.current = { ride: { id: `${startedAt}-${Math.random().toString(36).slice(2, 9)}`, name: route.name, vehicle: { id: vehicle.id, name: vehicle.name, kind: vehicle.kind, maxSpeed: vehicle.maxSpeed, ridingLimit: vehicle.ridingLimit }, startLabel: route.startLabel || 'Ride start', endLabel: route.endLabel || 'Ride arrival', startedAt, batteryFeedback: askBatteryUsage ? 'pending' : undefined, status: 'recording', samples: 0, chunks: 0, meters: 0, preview: [] }, buffer: [], pending: new Map(), chunk: 0, previous: null, movement: new MovementTracker(), lastTimestamp: 0, dirty: true };
+    session.current = { ride: { id: `${startedAt}-${Math.random().toString(36).slice(2, 9)}`, name: route.name, vehicle: { id: vehicle.id, name: vehicle.name, kind: vehicle.kind, maxSpeed: vehicle.maxSpeed, ridingLimit: vehicle.ridingLimit }, startLabel: route.startLabel || 'Ride start', endLabel: route.endLabel || 'Ride arrival', startedAt, batteryFeedback: askBatteryUsage ? 'pending' : undefined, status: 'recording', samples: 0, chunks: 0, meters: 0, preview: [] }, buffer: [], pending: new Map(), chunk: 0, previous: null, movement: new MovementTracker(), lastTimestamp: 0, dirty: true,minimumMeters };
     setRecord(session.current.ride); liveRecording(session.current.ride.id, true); flush();
     const timer = setInterval(() => flush(), 5000);
     const app = AppState.addEventListener('change', state => { if (state !== 'active') flush(); });
@@ -44,5 +47,5 @@ export function useRideRecorder(active: boolean, enabled: boolean, arrived: bool
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, enabled, route?.id, flush]);
   useEffect(() => { if (arrived) flush('arrived'); }, [arrived, flush]);
-  return { accept, error, record, finish: () => flush('finished') };
+  return { accept, error, record, cancel:()=>{const s=session.current;if(s){s.discarded=true;liveRecording(s.ride.id,false);}}, finish: () => flush('finished') };
 }
