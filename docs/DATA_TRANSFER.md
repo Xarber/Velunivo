@@ -27,3 +27,7 @@ The JSON limit is 64 million characters (file selection also checks 64 MB). Vali
 Update the curated releaseHighlights entry in src/core/appIntroduction.ts for each release, with brief English/Italian feature descriptions. Existing installs see news once per version; fresh installs see the welcome tour once. General settings replays the tour and opens the changelog.
 
 Tests cover schema validation, ID-preserving merge, rollback, random code format, negotiation, initiating-action consent plus receiving-device approval, wrong-session rejection, chunk acknowledgements, bidirectional merge and native WebView script/channel lifecycle. Actual two-origin web transfer was tested with synthetic public fixtures and persisted through reload. Native file/photo import and WebRTC transfer still require an installed GitHub-built app; no local native compilation was performed.
+
+## 1.0 private configuration
+
+Device-to-device sync uses a separate validated envelope. Both devices exchange their signaling privacy state before an approved transfer. Only a private/private session may include real Bluetooth associations/credentials and the map API key. Public-server sessions exclude secrets and reject private incoming envelopes. File export/import remains the ordinary secret-free backup format. Secure configuration write failures restore prior app storage and associations. OS device grants and bonding are not transferable; platform-specific device IDs may need replacement/reselection.

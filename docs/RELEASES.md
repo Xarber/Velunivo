@@ -13,7 +13,7 @@ Optional Android signing secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_P
 
 ## Run a release
 
-Either push an unsigned lightweight tag `v0.1.0`, or dispatch **Build and release** with version `0.1.0`. The first successful run creates the matching binary release and updates the `1.0` feed release. Every build validates lint/types/tests first. APP_VERSION is injected from the validated version; BUILD_NUMBER is the Actions run number. The IPA's actual Info.plist is checked against the tag before its source entry is created.
+Either push an unsigned lightweight tag `v1.0.0`, or dispatch **Build and release** with version `1.0.0`. Never use `1.0` for a binary release; it is reserved for AltSource. The first successful run creates the matching binary release and updates the `1.0` feed release. Every build validates lint/types/tests first. APP_VERSION is injected from the validated version; BUILD_NUMBER is the Actions run number. The IPA's actual Info.plist is checked against the tag before its source entry is created.
 
 The workflow builds:
 
@@ -65,3 +65,5 @@ Every successful Build and release publishes source metadata inline, so it also 
 The web job generates the manifest and brand-derived PWA icons before export, then stamps the service worker with the exported shell hash. web.zip includes the installable app, manifest, worker, screenshots and metadata. Optional repository variable WEB_PUBLIC_ORIGIN fills absolute social/canonical URLs for a real deployment. Native task registration uses the custom index.js entry before Expo Router; release prebuild declares background GPS/foreground-service permissions. AltSource descriptions refresh automatically on publication from .github/source-metadata.json and current build/brand assets. Existing feed download errors fail publication instead of silently discarding version history.
 
 Sharing builds: repository variable SHARE_ORIGIN sets EXPO_PUBLIC_SHARE_ORIGIN for all three build jobs. Official native default is https://velunivo.xcenter.it; web without an override uses its current origin. Optional PEER_HOST/PORT/PATH/SECURE/ICE_SERVERS customize self-hosted signaling and ICE. Run the repository web+PeerServer process behind TLS/WSS; a static web.zip alone does not start signaling. No PeerJS Cloud fallback. Full host/deep-link instructions: docs/SHARING.md. New native dependency react-native-webview13.16.1 requires a fresh binary; native peer behavior still needs physical-device validation.
+
+1.0.0 injects `EXPO_PUBLIC_APP_VERSION` into every platform bundle and `APP_VERSION` into native config. Optional `OVERPASS_URL` configures road-network download service; it is a public URL, not a secret.

@@ -219,3 +219,7 @@ Responsive Library follow-up: isolated web UI verified at 390px and 1280px. Prev
 - No private ride data, BLE credentials or user's browser session used. No native compilation. iOS/Android transfer and image materialization still need installed-app validation.
 
 - Final web overwrite: code owner selects overwrite, both confirm, sender shows Data transferred and recipient Data imported. No new client receives an already consumed session.
+
+## 1.0.0
+
+212 JavaScript tests and 17 Python tooling tests pass; lint/typecheck and diff whitespace checks pass. Headless Chrome planner/Library/info-hover checks pass across desktop, phone and landscape tablet sizes. Actual downloaded Milan OSM data produces local bicycle/car-road graph routes; live height responses support optional elevation estimates. Full details, constraints and native/hardware testing boundaries are in [V1_IMPLEMENTATION.md](V1_IMPLEMENTATION.md). No local native compilation was performed.

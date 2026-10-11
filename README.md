@@ -33,11 +33,11 @@ Actual web screenshots on public Milan routes. Speed is labelled **Demo** becaus
 | Your vehicle, your ETA | Saved e-scooter/e-bike profiles with speed capability, a separate riding cap, range, icons and custom photos. Practical ETA, arrival clock, time and distance remaining. |
 | Clear guidance | Foreground GPS, spoken instructions, a forward-facing navigation arrow, optional 50° perspective and a temporary full-route overview. |
 | Phone to desktop | Apple MapKit on iPhone/iPad; key-free OpenFreeMap/MapLibre on Android/web. Expandable phone controls and floating tablet/desktop panels. |
-| Planning + GPX | Address search, map-picked endpoints, native date/time pickers, track import/export and new route comparison between imported track endpoints. |
-| Local route library | Save route snapshots locally. Native map downloads are available with an offline-licensed provider; tile downloads are disabled by default. |
+| Planning + GPX | Address and map selection, ordered intermediate stops, scheduling, optional automatic rerouting and GPX import/export. |
+| Offline roads + library | Save routes and rides. Download regional OSM road networks for local planning/rerouting, separately from native licensed map imagery. |
 | Global preferences | Km/miles, mph/km/h, compass and tilted-view settings shared across the app. |
 
-**Scheduled ETAs exclude traffic conditions and traffic simulation.** An optional current traffic overlay does not change the ETA. Battery use is a distance/range estimate, not a battery reading.
+**Scheduled ETAs exclude traffic conditions and traffic simulation.** An optional current traffic overlay does not change the ETA. Battery use is an estimate based on range, speed and available elevation; Bluetooth battery percentage is a separate actual reading.
 
 ## Get the app
 
@@ -74,7 +74,7 @@ For a production export and local preview on port 8082, run `npm run web:preview
 
 Velunivo is an MVP. A user reported a successful 8 km physical-device ride on an earlier build. Version 0.1.13 adds learned ETAs, reorganized Library screens, native audio-session cleanup and Live Activities; those native changes and offline pack downloads still need physical-device testing. Scooter access cannot be certified from bicycle/car access or incomplete OpenStreetMap data; inspect signs and local rules. Unknown street limits remain unknown. New vehicle profiles start at a generic 25 km/h capability; configure your actual capability and local riding cap.
 
-Automatic rerouting, offline route calculation and hill/weather energy models are not implemented. A saved route can be followed offline, but a new route needs an online routing provider. Imported geometry-only GPX tracks have no invented turn instructions. [Test evidence and remaining work](docs/VERIFICATION.md).
+Optional automatic rerouting, multi-stop planning and local offline route calculation inside downloaded OpenStreetMap regions are implemented. Energy estimates use configured/learned range, speed and available elevation; weather is not modeled. Map imagery downloads are separate from the road network. See [1.0 implementation and limitations](docs/V1_IMPLEMENTATION.md). Imported geometry-only GPX tracks have no invented turn instructions. [Test evidence and remaining work](docs/VERIFICATION.md).
 
 ## Development
 
@@ -103,7 +103,7 @@ Turn cards use readable metre/kilometre or feet/mile distances; swipe down on th
 
 ## Install on the web and navigate in the background
 
-The web release includes an installable PWA with Velunivo Home Screen icons, install screenshots, app shortcuts and sharing metadata. Open Settings → Install Velunivo. Safari uses Share → Add to Home Screen on iPhone/iPad, or File → Add to Dock on Mac. Serve the exported site over HTTPS at the domain root; see [setup](docs/SETUP.md#installable-web-app-pwa). Web GPS needs the page open; cached app assets and local Library do not provide offline routing or downloaded web maps.
+The web release includes an installable PWA with Velunivo Home Screen icons, install screenshots, app shortcuts and sharing metadata. Open Settings → Install Velunivo. Safari uses Share → Add to Home Screen on iPhone/iPad, or File → Add to Dock on Mac. Serve the exported site over HTTPS at the domain root; see [setup](docs/SETUP.md#installable-web-app-pwa). Web GPS needs the page open; cached app assets alone do not include roads or map tiles. Explicit road-network downloads provide local routing within their coverage; web map imagery remains online.
 
 Native active rides can continue GPS guidance, recording and registered iOS Live Activity updates with background location permission. The OS controls update delivery; force-quitting ends updates. Motion/compass samples may pause when locked. Saved Places can be renamed using the pencil button. These native changes require the 0.1.14 build and physical-device verification.
 
@@ -117,9 +117,9 @@ Developer tools are hidden: tap the Settings version three times in under three 
 
 ### Bluetooth vehicle telemetry (0.1.23)
 
-**Vehicles → select vehicle → Add Bluetooth Pairing** connects supported vehicles through a universal, read-only plugin bridge. The initial Xiaomi M365-family plugin implements compatible legacy UART and first-generation Pro 2 encrypted telemetry; FE95 Mi registration/login is also implemented. Fresh vehicle speed can replace GPS speed, and actual battery appears below the road-limit indicator. Recordings retain optional telemetry and use reliable automatic battery usage before the existing manual prompt. **Settings → Bluetooth** separates display preferences from trip collection.
+**Vehicles → select vehicle → Add Bluetooth Pairing** connects supported vehicles through a universal telemetry plugin bridge. Xiaomi lock/unlock is the sole explicit vehicle write operation in 1.0, with stationary checks and state verification. The initial Xiaomi M365-family plugin implements compatible legacy UART and first-generation Pro 2 encrypted telemetry; FE95 Mi registration/login is also implemented. Fresh vehicle speed can replace GPS speed, and actual battery appears below the road-limit indicator. Recordings retain optional telemetry and use reliable automatic battery usage before the existing manual prompt. **Settings → Bluetooth** separates display preferences from trip collection.
 
-Native Bluetooth needs a fresh iOS/Android build and is unavailable in Expo Go. Web Bluetooth uses the same read-only protocol in Bluefy on iPhone/iPad and supported Android/desktop browsers over HTTPS; Firefox, Safari and Safari-installed PWAs cannot connect. A clearly labelled developer simulator is included. **Read-only Pro 2 pairing and telemetry were verified in Chrome. This release’s UI/reconnection changes still need native device testing; Bluefy remains unverified.** See the [plugin contract, compatibility and test requirements](docs/BLUETOOTH.md).
+Native Bluetooth needs a fresh iOS/Android build and is unavailable in Expo Go. Web Bluetooth uses the same telemetry protocol in Bluefy on iPhone/iPad and supported Android/desktop browsers over HTTPS; Firefox, Safari and Safari-installed PWAs cannot connect. A clearly labelled developer simulator is included. **Read-only Pro 2 pairing and telemetry were verified in Chrome. This release’s UI/reconnection changes still need native device testing; Bluefy remains unverified.** See the [plugin contract, compatibility and test requirements](docs/BLUETOOTH.md).
 
 Live trip sharing and route links: during real navigation, expand Your ride → Share trip → confirm to generate a private 20-character session link. Recipients see the full route, rider location and ETA/remaining distance/time, with no speed, battery or vehicle telemetry. Route-link sharing opens the same endpoints in the recipient’s own planner. The repo includes a single-process web app + self-hosted PeerServer (`npm run serve:web`); official native builds use velunivo.xcenter.it and forks configure `SHARE_ORIGIN` in GitHub variables. See [hosting, deep links, privacy and native limitations](docs/SHARING.md).
 
@@ -133,6 +133,6 @@ Browser pairing keeps its verified connection without a second confirmation. Pai
 
 Library now previews up to three Saved Places, Saved Routes and Recorded Rides in a single horizontal row per category, with existing Go here/Open/Replay actions. Full-category buttons remain available. Downloaded Maps is unchanged; preview tiles expose no edit/delete controls.
 
-**Languages:** Settings → General → App language offers System (default), English and Italian. New routes request directions in that language. Settings → Navigation & audio offers installed speech voices and a test button; iOS automatically prefers exposed premium/enhanced voices. Siri voices depend on OS exposure. See [localization and speech requirements](docs/LOCALIZATION.md).
+**Languages:** Settings → General → App language offers System (default), English, Italian, Spanish, French, German and Portuguese. New routes request directions in that language. Settings → Navigation & audio offers installed speech voices and a test button; Automatic uses the system default unless an explicitly higher-quality installed voice is available. Siri voices depend on OS exposure. See [localization and speech requirements](docs/LOCALIZATION.md).
 
 Device backup and account-free transfers are available in Settings → General → Data transfer. See [portable data and transfer details](docs/DATA_TRANSFER.md) for consent, stable-ID merging, server configuration and device-testing limits. General also replays the welcome tour and opens the concise release changelog.

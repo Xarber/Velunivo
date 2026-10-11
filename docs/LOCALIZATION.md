@@ -1,6 +1,6 @@
 # Languages and speech
 
-Settings → General → App language offers **System** (default), **English** and **Italian**. System resolves Italian device/browser locales to Italian and all other languages to English. The choice is stored in `ui-language-v1`, independently of existing ride/vehicle/settings archives. Language changes apply immediately; foreground/browser language-change notifications refresh System resolution. iOS declares English/Italian bundle localizations.
+Settings → General → App language offers **System** (default), **English**, **Italian**, **Spanish**, **French**, **German** and **Portuguese**. System resolves these device/browser language prefixes; unsupported languages fall back to English. The choice is stored in `ui-language-v1`, independently of existing ride/vehicle/settings archives. Language changes apply immediately; foreground/browser language-change notifications refresh System resolution. iOS declares all six bundle localizations.
 
 `src/i18n/core.ts` is the small dependency-free message engine, with English source messages as keys and a handwritten Italian catalog in `src/i18n/it.ts`. `LocalizedText` translates UI text, and `t` handles button/input/accessibility labels. Named placeholders preserve inserted values; unknown text has an English/pass-through fallback. Do not translate stored addresses, vehicle identities, ride samples or names before saving. Use `translate={false}` for explicitly user-authored Text content. Brand/provider names, units and manufacturer extension fields retain their original spelling. Service/firmware errors outside the catalog may remain in their original language.
 
@@ -19,3 +19,5 @@ References: [Expo SDK 57 Speech](https://docs.expo.dev/versions/v57.0.0/sdk/spee
 Native System language is read synchronously through Expo SDK 57 `expo-localization.getLocales()`. The pure core checks every locale source, ignores incomplete React Native navigator shims, and safely falls back through Intl to English. Missing locale values cannot crash initial Layout rendering. The new module requires a fresh native build. [Expo Localization](https://docs.expo.dev/versions/v57.0.0/sdk/localization/)
 
 0.1.31 adds natural Italian strings for the welcome tour, release highlights, portable backups, symmetric device-transfer consent/status, voice-list expansion and inline tests. Dynamic voice names and XXXX-XXXX codes remain unchanged; counts use the existing parameterized translation convention.
+
+1.0.0 adds complete Spanish/French/German/Portuguese JSON catalogs. Initial translations were machine-assisted; all keys and placeholders are covered by tests, but native-speaker copy review remains desirable. No online translation service runs in the app.
