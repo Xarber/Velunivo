@@ -10,10 +10,10 @@ test('installed widget renders both Velunivo factories directly before touching 
  assert.ok(body.indexOf('name == "VelunivoNavigation" || name == "VelunivoNavigationTest"') < body.indexOf('let layout = WidgetsStorage'));
  assert.match(body,/return \["__velunivo_native": true\]/);
  const views=fs.readFileSync('native/VelunivoActivityViews.swift','utf8');
- assert.match(views,/JSONDecoder\(\).decode\(\[String: String\].self/);
+ assert.match(views,/JSONSerialization.jsonObject/);
  for(const key of ['turn','symbol','distance','arrival','minutes','remaining'])assert.ok(views.includes(`values["${key}"]`));
  const widget=fs.readFileSync('node_modules/expo-widgets/ios/Widgets/WidgetLiveActivity.swift','utf8');
- assert.match(widget,/VelunivoActivitySection\(props: context.state.props/);
+ assert.match(widget,/VelunivoActivitySection\(context: context/);
  assert.match(widget,/VelunivoActivityBanner\(context: context\)/);
  assert.match(widget,/else if #available\(iOS 18.0/,'normal Expo rendering remains for other factories');
  assert.match(widget,/banner.widgetURL\(url\)/,'deep links are preserved');
@@ -38,3 +38,5 @@ test('native patch is installed during clean CI install and cannot be replaced w
  assert.deepEqual(p.expo.autolinking.ios.buildFromSource,['^expo-widgets$']);
  assert.equal(JSON.parse(fs.readFileSync('app.json','utf8')).expo.ios.infoPlist.VelunivoNativeActivityRenderer,true);
 });
+
+test('native battery and viewer badges consume mixed JSON props and support OS-driven stale state',()=>{const views=fs.readFileSync('native/VelunivoActivityViews.swift','utf8');for(const key of ['batteryPercent','batteryUpdatedAt','batteryOld','viewerCount','oldLabel'])assert(views.includes(`values["${key}"]`));assert.match(views,/context.isStale/);assert.match(views,/Text\(date, style: .relative\)/);assert.match(views,/old \? .orange/);assert.match(views,/VelunivoActivityBadges\(data: data, stale: velunivoActivityIsStale\(context\)\)/);});

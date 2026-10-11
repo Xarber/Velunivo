@@ -10,11 +10,14 @@ import { NavigationActivity, rideActivity } from '../core/liveActivity';
 import { Route, Profile, NavigationOptions, Fix } from '../core/types';
 import { guidance } from '../core/navigation';
 let lastActivityError = '';
+let currentRideProps:NavigationActivity|undefined;
 export function inspectLiveActivity():ActivityReport { const checks=inspectActivityInstallation();let activeCount:number|null=null;try{activeCount=activity.getInstances().length+testActivity.getInstances().length;}catch{}return {checks,activeCount,lastError:lastActivityError}; }
 const NavigationLayout = (p: NavigationActivity, environment: LiveActivityEnvironment) => {
   'widget';
   const accent=environment.isLuminanceReduced ? '#FFFFFF' : '#28DAB0';
-  const badges=<HStack spacing={16}>{p.batteryPercent!==undefined && <HStack spacing={5}><Image systemName={p.batterySymbol || 'battery.100percent'} color={p.batteryColor || accent} /><Text modifiers={[foregroundStyle(p.batteryColor || accent)]}>{p.batteryPercent}%</Text></HStack>}{p.viewerCount!==undefined && <HStack spacing={5}><Image systemName="person.fill" color={accent} /><Text>{p.viewerCount}</Text></HStack>}</HStack>;
+  const old=environment.isStale || p.batteryOld;
+  const batteryTint=old?'#E49235':p.batteryColor || accent;
+  const badges=<HStack spacing={16}>{p.batteryPercent!==undefined && <HStack spacing={5}><Image systemName={p.batterySymbol || 'battery.100percent'} color={batteryTint} /><Text modifiers={[foregroundStyle(batteryTint)]}>{p.batteryPercent}%</Text>{old && <Text modifiers={[foregroundStyle(batteryTint)]}>{p.oldLabel}</Text>}{p.batteryUpdatedAt!==undefined && <Text date={new Date(p.batteryUpdatedAt)} dateStyle="relative" modifiers={[font({size:11}),foregroundStyle(batteryTint)]} />}</HStack>}{p.viewerCount!==undefined && <HStack spacing={5}><Image systemName="person.fill" color={accent} /><Text>{p.viewerCount}</Text>{environment.isStale && <Image systemName="clock" color="#E49235" />}</HStack>}</HStack>;
   return {
     banner: <VStack modifiers={[padding({all:12})]}><Text modifiers={[font({weight:'bold',size:20}),foregroundStyle(accent)]}>{p.distance} · {p.turn}</Text><Text>{p.arrival} arrival · {p.minutes} · {p.remaining}</Text>{badges}</VStack>,
     compactLeading: <Image systemName={p.symbol} color={accent} />,
@@ -48,7 +51,7 @@ export async function startTestLiveActivity() {
 
 export function useNavigationActivity(active: boolean, props: NavigationActivity) {
   const instance=useRef<LiveActivity<NavigationActivity> | null>(null), latest=useRef(props), last=useRef('');
-  const [status,setStatus]=useState(''); useEffect(()=>{latest.current=props;},[props]);
+  const [status,setStatus]=useState(''); useEffect(()=>{latest.current=props;currentRideProps=active?props:undefined;},[active,props]);
   useEffect(()=>{ try { for(const old of activity.getInstances()) void old.end('immediate').catch(()=>{}); } catch { /* Unsupported/sideloaded host. */ } },[]);
   useEffect(()=>{ if(!active)return;
     // The native ActivityKit factory synchronously reports availability.
@@ -64,7 +67,7 @@ export function useNavigationActivity(active: boolean, props: NavigationActivity
 export async function updateRideActivity(route:Route,profile:Profile & {id?:string},options:NavigationOptions,g:ReturnType<typeof guidance>,fix:Fix,simulation=false) {
  try { for(const live of activity.getInstances()) {
    if(g.arrived || !options.liveActivities)await live.end('immediate');
-   else await live.update({...rideActivity(route,profile,options,g,fix,simulation),...currentActivityExtras(profile.id ?? '')},new Date(Date.now()+30000));
+   else {currentRideProps={...rideActivity(route,profile,options,g,fix,simulation),...currentActivityExtras(profile.id ?? '')};await live.update(currentRideProps,new Date(Date.now()+30000));}
  } } catch (error) { lastActivityError=error instanceof Error ? error.message : String(error); }
 }
-export async function markActivityPaused() {try {for(const live of activity.getInstances())await live.update({turn:'Guidance paused · enable background location',symbol:'arrow.up',distance:'—',arrival:'—',minutes:'—',remaining:'—'},new Date());} catch { /* Unsupported extension. */ }}
+export async function markActivityPaused() {try {for(const live of activity.getInstances())await live.update({...currentRideProps,batteryOld:true,turn:'Guidance paused · enable background location',symbol:'arrow.up',distance:'—',arrival:'—',minutes:'—',remaining:'—'},new Date());} catch { /* Unsupported extension. */ }}

@@ -2,17 +2,35 @@
 // ActivityKit delivers these props directly; no App Group or JS layout is read.
 @available(iOS 16.1, *)
 private struct VelunivoActivityData {
-  let values: [String: String]
+  let values: [String: Any]
   init(_ props: String) {
-    values = props.data(using: .utf8).flatMap { try? JSONDecoder().decode([String: String].self, from: $0) } ?? [:]
+    values = props.data(using: .utf8).flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] } ?? [:]
   }
-  var turn: String { values["turn"] ?? "Open Velunivo for directions" }
-  var distance: String { values["distance"] ?? "—" }
-  var arrival: String { values["arrival"] ?? "—" }
-  var minutes: String { values["minutes"] ?? "—" }
-  var remaining: String { values["remaining"] ?? "—" }
+  var turn: String { values["turn"] as? String ?? "Open Velunivo for directions" }
+  var distance: String { values["distance"] as? String ?? "—" }
+  var arrival: String { values["arrival"] as? String ?? "—" }
+  var minutes: String { values["minutes"] as? String ?? "—" }
+  var remaining: String { values["remaining"] as? String ?? "—" }
+  var battery: Double? {
+    guard let value = values["batteryPercent"] as? Double, value.isFinite, (0...100).contains(value) else { return nil }
+    return value
+  }
+  var batteryOld: Bool { values["batteryOld"] as? Bool ?? false }
+  var batteryUpdatedAt: Date? {
+    guard let value = values["batteryUpdatedAt"] as? Double, value.isFinite, value >= 0 else { return nil }
+    return Date(timeIntervalSince1970: value / 1000)
+  }
+  var oldLabel: String { values["oldLabel"] as? String ?? "Old" }
+  var viewers: Int? {
+    guard let value = values["viewerCount"] as? Double, value.isFinite, (0...256).contains(value) else { return nil }
+    return Int(value)
+  }
+  var batterySymbol: String {
+    let value = values["batterySymbol"] as? String ?? "battery.100percent"
+    return ["battery.0percent", "battery.25percent", "battery.50percent", "battery.75percent", "battery.100percent", "battery.100percent.bolt"].contains(value) ? value : "battery.100percent"
+  }
   var symbol: String {
-    let value = values["symbol"] ?? "arrow.up"
+    let value = values["symbol"] as? String ?? "arrow.up"
     return ["flag.fill", "arrow.turn.up.left", "arrow.turn.up.right", "arrow.up"].contains(value) ? value : "arrow.up"
   }
 }
@@ -35,6 +53,7 @@ private struct VelunivoActivityBanner: View {
         Spacer(minLength: 8)
         Text("\(data.minutes) · \(data.remaining)")
       }.font(.caption)
+      VelunivoActivityBadges(data: data, stale: velunivoActivityIsStale(context))
       if #available(iOS 16.2, *) {
         if context.isStale { Text("Waiting for a navigation update").font(.caption).foregroundStyle(.secondary) }
       }
@@ -48,10 +67,10 @@ private struct VelunivoActivityBanner: View {
 
 @available(iOS 16.1, *)
 private struct VelunivoActivitySection: View {
-  let props: String
+  let context: ActivityViewContext<LiveActivityAttributes>
   let sectionName: String
   var body: some View {
-    let data = VelunivoActivityData(props)
+    let data = VelunivoActivityData(context.state.props)
     switch sectionName {
     case "expandedLeading", "compactLeading", "minimal":
       Image(systemName: data.symbol).foregroundStyle(Color.mint)
@@ -61,9 +80,43 @@ private struct VelunivoActivitySection: View {
       VStack(alignment: .leading, spacing: 6) {
         Text(data.turn).font(.headline).lineLimit(2)
         Text("\(data.arrival) arrival · \(data.minutes) · \(data.remaining)").font(.caption)
+        VelunivoActivityBadges(data: data, stale: velunivoActivityIsStale(context))
       }
     default:
       EmptyView()
     }
+  }
+}
+
+@available(iOS 16.1, *)
+private func velunivoActivityIsStale(_ context: ActivityViewContext<LiveActivityAttributes>) -> Bool {
+  if #available(iOS 16.2, *) { return context.isStale }
+  return false
+}
+
+@available(iOS 16.1, *)
+private struct VelunivoActivityBadges: View {
+  let data: VelunivoActivityData
+  let stale: Bool
+  var body: some View {
+    HStack(spacing: 16) {
+      if let battery = data.battery {
+        let old = stale || data.batteryOld
+        let tint: Color = old ? .orange : battery < 20 ? .red : battery < 40 ? .orange : .mint
+        HStack(spacing: 5) {
+          Image(systemName: old && data.batterySymbol == "battery.100percent.bolt" ? "battery.100percent" : data.batterySymbol)
+          Text("\(Int(battery.rounded()))%")
+          if old { Text(data.oldLabel) }
+          if let date = data.batteryUpdatedAt { Text(date, style: .relative).font(.caption2) }
+        }.foregroundStyle(tint)
+      }
+      if let viewers = data.viewers {
+        HStack(spacing: 5) {
+          Image(systemName: "person.fill")
+          Text("\(viewers)")
+          if stale { Image(systemName: "clock").foregroundStyle(Color.orange) }
+        }
+      }
+    }.font(.caption)
   }
 }

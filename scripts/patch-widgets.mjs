@@ -9,7 +9,7 @@ function once(source,needle,replacement) {
  return source.replace(needle,replacement);
 }
 export function patchSources(widget,utils,views) {
- widget=once(widget,'    if let node = nodes[sectionName] as? [String: Any] {','    if nodes["__velunivo_native"] as? Bool == true {\n      VelunivoActivitySection(props: context.state.props, sectionName: sectionName)\n    } else if let node = nodes[sectionName] as? [String: Any] {');
+ widget=once(widget,'    if let node = nodes[sectionName] as? [String: Any] {','    if nodes["__velunivo_native"] as? Bool == true {\n      VelunivoActivitySection(context: context, sectionName: sectionName)\n    } else if let node = nodes[sectionName] as? [String: Any] {');
  widget=once(widget,'    if #available(iOS 18.0, *) {','    if nodes["__velunivo_native"] as? Bool == true {\n      VelunivoActivityBanner(context: context)\n    } else if #available(iOS 18.0, *) {');
  utils=once(utils,'  let layout = WidgetsStorage.getString(forKey: "__expo_widgets_live_activity_\\(name)_layout") ?? ""',`${marker}\n  if name == "VelunivoNavigation" || name == "VelunivoNavigationTest" {\n    return ["__velunivo_native": true]\n  }\n  let layout = WidgetsStorage.getString(forKey: "__expo_widgets_live_activity_\\(name)_layout") ?? ""`);
  return {widget:widget+`\n${marker}\n`+views,utils};
@@ -23,6 +23,7 @@ export function applyPatch(directory=root) {
  let widget=fs.readFileSync(widgetPath,'utf8'),utils=fs.readFileSync(utilsPath,'utf8');
  if(widget.includes(marker)&&utils.includes(marker)) {
   // Refresh checked-in views on repeated installation without duplicating helpers.
+  widget=widget.replace("VelunivoActivitySection(props: context.state.props, sectionName: sectionName)","VelunivoActivitySection(context: context, sectionName: sectionName)");
   widget=widget.split(`\n${marker}\n`)[0]+`\n${marker}\n`+views;
   fs.writeFileSync(widgetPath,widget);return;
  }

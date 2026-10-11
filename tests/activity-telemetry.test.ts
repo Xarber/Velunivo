@@ -7,11 +7,11 @@ import {getHostPresence,setHostPresence,subscribeHostPresence} from '../src/shar
 const now=100000;
 const snapshot:BridgeSnapshot={state:'connected',vehicleId:'private-vehicle',message:'',extensions:{},fields:{batteryPercent:{value:76,source:'vehicle',timestamp:now,unit:'%'}}};
 const extras=(s=snapshot,p=defaultBluetoothPreferences,id='private-vehicle',at=now)=>activityExtras(s,p,id,{sharing:true,viewers:2},at);
-test('activity battery only uses the selected connected vehicle and fresh visible telemetry',()=>{
- assert.equal(extras().batteryPercent,76);assert.equal(extras({...snapshot,state:'disconnected'}).batteryPercent,undefined);
+test('activity battery uses the selected vehicle and marks disconnected or stale retained readings old',()=>{
+ assert.equal(extras().batteryPercent,76);assert.equal(extras({...snapshot,state:'disconnected'}).batteryOld,true);
  assert.equal(extras(snapshot,defaultBluetoothPreferences,'another').batteryPercent,undefined);
  assert.equal(extras(snapshot,defaultBluetoothPreferences,'sharing-scooter').batteryPercent,undefined);
- assert.equal(extras(snapshot,defaultBluetoothPreferences,'private-vehicle',now+30001).batteryPercent,undefined);
+ assert.equal(extras(snapshot,defaultBluetoothPreferences,'private-vehicle',now+30001).batteryOld,true);assert.equal(extras(snapshot,defaultBluetoothPreferences,'private-vehicle',now+30001).batteryColor,'#E49235');
  assert.equal(extras(snapshot,{...defaultBluetoothPreferences,visible:{batteryPercent:false}}).batteryPercent,undefined);
  for(const value of [NaN,-1,101,'unknown'])assert.equal(extras({...snapshot,fields:{batteryPercent:{...snapshot.fields.batteryPercent!,value}}}).batteryPercent,undefined);
  assert.equal(extras({...snapshot,fields:{}}).batteryPercent,undefined);

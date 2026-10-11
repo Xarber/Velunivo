@@ -1,3 +1,4 @@
+import {historicalHighlights} from './releaseHistory';
 export const welcomePages=[
  {icon:'navigate-outline',title:'Welcome to Velunivo',text:'Compare bicycle and road routes, with travel times tailored to your vehicle.'},
  {icon:'bicycle-outline',title:'Make it your ride',text:'Choose your vehicle and riding limit. Connect a supported personal vehicle for live battery and speed.'},
@@ -5,10 +6,11 @@ export const welcomePages=[
  {icon:'shield-checkmark-outline',title:'You stay in control',text:'Check road signs and local rules. Your records stay on your device until you export or share them.'},
 ] as const;
 export const releaseHighlights=[
- {version:'0.1.33',items:[{icon:'battery-half-outline',title:'More useful Live Activities',text:'See vehicle battery and trip viewers on your Lock Screen and expanded Dynamic Island.'},{icon:'people-outline',title:'Accurate viewer counts',text:'Reconnecting no longer counts the same viewer twice.'}]},
+ {version:'0.1.33',items:[{icon:'battery-half-outline',title:'More useful Live Activities',text:'See vehicle battery and trip viewers on your Lock Screen and expanded Dynamic Island.'},{icon:'people-outline',title:'Accurate viewer counts',text:'Reconnecting no longer counts the same viewer twice.'},{icon:'refresh-outline',title:'Sharing that recovers',text:'Return to your ride and sharing reconnects with the same link.'},{icon:'time-outline',title:'Every update in one place',text:'Browse the full update history in Settings.'}]},
  {version:'0.1.32',items:[{icon:'bluetooth-outline',title:'Clearer Bluetooth pairing',text:'Connection steps wait for the scooter and recover from stalled Bluetooth operations.'},{icon:'swap-horizontal-outline',title:'Simpler device transfers',text:'Choose once, confirm on the receiving device. Vehicles merge with stable identities.'},{icon:'people-outline',title:'More reliable sharing',text:'Connection waits are clearer, and sharing controls stay clean.'},{icon:'language-outline',title:'More natural Italian',text:'Dynamic ride estimates and status messages now translate correctly.'}]},
  {version:'0.1.31',items:[{icon:'sparkles-outline',title:'A friendly start',text:'A quick welcome tour and short update highlights.'},{icon:'swap-horizontal-outline',title:'Your data, on both devices',text:'Export a backup or transfer with a code. Merge or replace after both devices accept.'},{icon:'create-outline',title:'A clearer vehicle picker',text:'Your chosen vehicle is outlined, with a quick edit button.'}]},
  {version:'0.1.30',items:[{icon:'language-outline',title:'Reliable language detection',text:'System language now works safely at startup.'},{icon:'volume-high-outline',title:'Your default voice',text:'Automatic keeps the system voice unless a higher-quality voice is available.'},{icon:'grid-outline',title:'More compact previews',text:'Smaller Library cards and clearer help placement.'}]},
  {version:'0.1.29',items:[{icon:'play-outline',title:'Replay your rides',text:'See your recorded route and vehicle readings again.'},{icon:'language-outline',title:'English and Italian',text:'Use your device language or choose your own.'},{icon:'bluetooth-outline',title:'Connected vehicle readings',text:'Keep recent readings visible when updates pause.'}]},
+ ...historicalHighlights,
 ] as const;
 export function initialIntroduction(welcomed:boolean,existingData:boolean,seen:string[],version:string){return !welcomed&&!existingData?'welcome':!seen.includes(version)?'news':null;}

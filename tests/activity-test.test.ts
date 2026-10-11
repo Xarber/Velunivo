@@ -15,7 +15,7 @@ function harness() {
   return {getInstances:()=>f.instances,start:(...args:unknown[])=>{f.starts.push(args);const live={end:async(policy:string)=>{assert.equal(policy,'immediate');f.instances=f.instances.filter(i=>i!==live);}};f.instances.push(live);return live;}};}}};
  const context={exports:{},require:(name:string)=>{assert.ok(name in mocks,name);return mocks[name];},setTimeout:(fn:()=>void)=>{timeout=fn;return 1;},clearTimeout:()=>{timeout=undefined;},Date};
  vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/services/useNavigationActivity.ios.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.React}}).outputText,context);
- return {layouts,extras,api:context.exports as {updateRideActivity:(...args:any[])=>Promise<void>;startTestLiveActivity:()=>Promise<{activeCount:number}>;stopTestLiveActivity:()=>Promise<void>},factories,state,expire:()=>timeout?.()};
+ return {layouts,extras,api:context.exports as {markActivityPaused:()=>Promise<void>;updateRideActivity:(...args:any[])=>Promise<void>;startTestLiveActivity:()=>Promise<{activeCount:number}>;stopTestLiveActivity:()=>Promise<void>},factories,state,expire:()=>timeout?.()};
 }
 test('temporary activity uses a separate factory and never ends a real navigation activity',async()=>{
  const h=harness(),ride=h.factories.get('VelunivoNavigation')!,demo=h.factories.get('VelunivoNavigationTest')!;
@@ -46,3 +46,5 @@ test('background GPS activity update retains current local battery and spectator
  await h.api.updateRideActivity({}, {id:'vehicle'}, {liveActivities:true}, {arrived:false}, {timestamp:Date.now()});
  assert.equal(received.batteryPercent,56);assert.equal(received.viewerCount,2);assert.equal(received.turn,'turn');
 });
+
+test('paused guidance preserves last battery and spectators and marks the battery old',async()=>{const h=harness();let received:any;h.factories.get('VelunivoNavigation')!.instances.push({end:async()=>{},update:async(props:any)=>{received=props;}} as any);await h.api.updateRideActivity({}, {id:'vehicle'}, {liveActivities:true}, {arrived:false}, {timestamp:Date.now()});await h.api.markActivityPaused();assert.equal(received.batteryPercent,56);assert.equal(received.viewerCount,2);assert.equal(received.batteryOld,true);});

@@ -10,7 +10,7 @@ import type {Route} from '../src/core/types';
 const route:Route={id:'private',name:'Bicycle candidate',kind:'bike',source:'valhalla',coordinates:[[9.19,45.464],[9.179,45.47]],startLabel:'Duomo, Milan',endLabel:'Sforza Castle, Milan',steps:[],details:{max_speed:[[0,1,50]],battery:[[0,1,76]]},warnings:[]};
 const pin=pinFromBytes(new Uint8Array(20).fill(7));
 class Connection extends EventEmitter {open=false;sent:any[]=[];closed=false;send(m:unknown){this.sent.push(m);}close(){this.closed=true;this.emit('close');}}
-class FakePeer extends EventEmitter {destroyed=false;connection=new Connection();connect(){return this.connection;}destroy(){this.destroyed=true;}}
+class FakePeer extends EventEmitter {destroyed=false;disconnected=false;reconnects=0;connection=new Connection();connectOptions:any;connect(_id?:string,options?:unknown){this.connectOptions=options;return this.connection;}reconnect(){this.reconnects++;this.disconnected=false;}destroy(){this.destroyed=true;}}
 test('20-character random session codes and outbound privacy whitelist',()=>{
  assert(PIN_PATTERN.test(pin));assert.equal(pin.length,20);assert.throws(()=>pinFromBytes(new Uint8Array(19)));
  assert.deepEqual(Object.keys(sharedRoute(route)).sort(),['coordinates','endLabel','startLabel']);
@@ -104,3 +104,29 @@ test('native host deduplicates viewer retry identities and still distinguishes o
  for(let i=0;i<12;i++){const c=Object.assign(new Connection(),{metadata:{viewerId:id},peer:'retry-'+i});peer!.emit('connection',c);c.open=true;c.emit('open');if(previous)assert(previous.closed);previous=c;assert.equal(emitted.filter(e=>e.type==='viewers').at(-1).value,1);}
  const other=Object.assign(new Connection(),{metadata:{viewerId:clientPeerId('viewer',new Uint8Array(16).fill(4))},peer:'another'});peer!.emit('connection',other);other.open=true;other.emit('open');assert.equal(emitted.filter(e=>e.type==='viewers').at(-1).value,2);vm.runInContext('stop()',context);
 });
+
+test('host signaling recovery retains live channels and never sends a false trip-ended message',()=>{
+ const peer=new FakePeer();let recoveries=0;const session=new PeerSession(peer as any,'host',pin,{status:()=>{},recover:()=>recoveries++});peer.emit('open');const c=new Connection();peer.emit('connection',c);c.open=true;c.emit('open');peer.disconnected=true;peer.emit('disconnected');assert.equal(peer.reconnects,1);assert.equal(c.closed,false);peer.emit('open');session.publish({type:'progress',progress:sharedProgress(null,10,10,100000)});assert.equal(c.sent.at(-1).type,'progress');peer.emit('error');assert.equal(recoveries,1);assert(!c.sent.some(m=>m.type==='ended'));session.close();
+});
+test('spectators recover dropped and silently stalled data channels; a real ended message never retries',t=>{
+ t.mock.timers.enable({apis:['Date','setInterval','setTimeout'],now:100000});
+ const peer=new FakePeer();let retries=0;const session=new PeerSession(peer as any,'viewer',pin,{status:()=>{},recover:()=>retries++});peer.emit('open');peer.connection.open=true;peer.connection.emit('open');peer.connection.emit('data',{type:'progress',progress:sharedProgress(null,10,10,100000)});t.mock.timers.tick(30000);assert.equal(retries,1);assert(peer.destroyed);session.close();
+ const ended=new FakePeer();const s=new PeerSession(ended as any,'viewer',pin,{status:()=>{},recover:()=>retries++});ended.emit('open');ended.connection.open=true;ended.connection.emit('open');ended.connection.emit('data',{type:'ended'});assert.equal(retries,1);s.close();
+ const dropped=new FakePeer();const d=new PeerSession(dropped as any,'viewer',pin,{status:()=>{},recover:()=>retries++});dropped.emit('open');dropped.connection.open=true;dropped.connection.emit('open');dropped.connection.close();assert.equal(retries,2);d.close();
+});
+test('native transient page suspension preserves consent, resumes same code, and does not revoke the trip',()=>{
+ const emitted:any[]=[];const handlers:Record<string,()=>void>={};let peer:FakePeer|undefined;
+ const window:any={ReactNativeWebView:{postMessage:(s:string)=>emitted.push(JSON.parse(s))},addEventListener:(name:string,fn:()=>void)=>{handlers[name]=fn;}};
+ const context=vm.createContext({window,Peer:class extends FakePeer{constructor(){super();peer=this;}},setTimeout,clearTimeout,setInterval,clearInterval,Date,Map,JSON});vm.runInContext(nativePeerHtml('host',pin).split('<script>').at(-1)!.split('</script>')[0],context);peer!.emit('open');const c=new Connection();peer!.emit('connection',c);c.open=true;c.emit('open');handlers.pagehide();assert.equal(c.closed,false);assert(!c.sent.some(m=>m.type==='ended'));window.resume();assert(emitted.some(m=>m.type==='resumed'));peer!.emit('error');assert(emitted.some(m=>m.type==='recover'));assert(!c.sent.some(m=>m.type==='ended'));assert(nativePeerHtml('host',pin).includes(`pin=${JSON.stringify(pin)}`));
+});
+import {RecoveryScheduler} from '../src/sharing/recovery';
+test('automatic recovery backs off, resumes immediately and stops after consent is revoked',t=>{
+ t.mock.timers.enable({apis:['setTimeout']});let calls=0;const r=new RecoveryScheduler(()=>calls++);r.request();r.request();t.mock.timers.tick(1000);assert.equal(calls,1);r.request();t.mock.timers.tick(1999);assert.equal(calls,1);t.mock.timers.tick(1);assert.equal(calls,2);r.request();r.resume();assert.equal(calls,3);r.ready();r.request();t.mock.timers.tick(1000);assert.equal(calls,4);r.stop();r.request();r.resume();t.mock.timers.tick(60000);assert.equal(calls,4);
+});
+
+test('native and web viewer transports send the same stable session identity across fresh peers',()=>{
+ const viewerId=clientPeerId('viewer',new Uint8Array(16).fill(8));
+ const web=new FakePeer();const session=new PeerSession(web as any,'viewer',pin,{status:()=>{}},viewerId);web.emit('open');assert.equal(web.connectOptions.metadata.viewerId,viewerId);session.close();
+ const window:any={ReactNativeWebView:{postMessage:()=>{}},addEventListener:()=>{}};let peer:FakePeer|undefined;const context=vm.createContext({window,Peer:class extends FakePeer{constructor(){super();peer=this;}},crypto:{getRandomValues:(out:Uint8Array)=>out.fill(9)},setTimeout,clearTimeout,setInterval,clearInterval,Date,Map,JSON});vm.runInContext(nativePeerHtml('viewer',pin,viewerId).split('<script>').at(-1)!.split('</script>')[0],context);peer!.emit('open');assert.equal(peer!.connectOptions.metadata.viewerId,viewerId);window.stopSharing();
+});
+test('late data from a replaced or closed viewer cannot cancel recovery or update the screen',()=>{const peer=new FakePeer();let messages=0;const s=new PeerSession(peer as any,'viewer',pin,{status:()=>{},message:()=>messages++});peer.emit('open');peer.connection.open=true;peer.connection.emit('open');peer.connection.close();peer.connection.emit('data',{type:'progress',progress:sharedProgress(null,100,100,100000)});assert.equal(messages,0);s.close();});
