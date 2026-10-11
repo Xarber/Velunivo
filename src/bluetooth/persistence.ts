@@ -1,0 +1,6 @@
+import * as SecureStore from 'expo-secure-store';
+import { AssociationStorage } from './bridge';
+import { Association } from './types';
+// Per-vehicle entries avoid SecureStore's historical per-value size limits. Index and device IDs remain private.
+const index='velunivo-ble-associations-v1',key=(id:string)=>`velunivo-ble-${id.replace(/[^a-zA-Z0-9_.-]/g,'_')}`;
+export const associationStorage:AssociationStorage={async load(){const ids:string[]=JSON.parse(await SecureStore.getItemAsync(index)||'[]');const records=await Promise.all(ids.map(id=>SecureStore.getItemAsync(key(id))));return records.flatMap(raw=>{try{const a:Association=JSON.parse(raw||'null');if(!a || a.schema!==1 || typeof a.vehicleId!=='string' || typeof a.device?.id!=='string')return [];return [{...a,device:{...a.device,manufacturerData:a.device.manufacturerData?Uint8Array.from(Object.values(a.device.manufacturerData)):undefined}}];}catch{return [];}});},async save(records){const old:string[]=JSON.parse(await SecureStore.getItemAsync(index)||'[]');for(const a of records)await SecureStore.setItemAsync(key(a.vehicleId),JSON.stringify({...a,device:{...a.device,serviceData:undefined}}));await SecureStore.setItemAsync(index,JSON.stringify(records.map(a=>a.vehicleId)));for(const id of old)if(!records.some(a=>a.vehicleId===id))await SecureStore.deleteItemAsync(key(id));}};

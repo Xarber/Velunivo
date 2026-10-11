@@ -2,7 +2,7 @@
   "expo": {
     "name": "Velunivo",
     "slug": "velunivo",
-    "version": "0.1.22",
+    "version": "0.1.23",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -85,7 +85,19 @@
           "frequentUpdates": false
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "@sfourdrinier/react-native-ble-plx",
+        {
+          "modes": [
+            "central"
+          ],
+          "bluetoothAlwaysPermission": "Velunivo connects to supported vehicles for read-only speed and battery telemetry.",
+          "androidEnableForegroundService": true,
+          "isBackgroundEnabled": true,
+          "neverForLocation": false
+        }
+      ]
     ],
     "scheme": "velunivo",
     "description": "Your route. Your riding speed. Navigation and route planning for e-scooters and e-bikes.",

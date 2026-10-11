@@ -114,3 +114,9 @@ Open **Library → Recorded Rides → Record trip**, select your vehicle and sta
 Road limits are optional online OpenStreetMap lookups; your recording position is sent to Overpass at most once every 30 seconds. Missing/ambiguous data shows **Limit unknown** and never prevents recording. Your vehicle riding limit is displayed separately. Follow posted signs.
 
 Developer tools are hidden: tap the Settings version three times in under three seconds, enable Developer Mode, then open **Developer Options** for Live Activity installation checks.
+
+### Bluetooth vehicle telemetry (0.1.23)
+
+**Vehicles → select vehicle → Add Bluetooth Pairing** connects supported vehicles through a universal, read-only plugin bridge. The initial Xiaomi M365-family plugin implements compatible legacy UART and first-generation Pro 2 encrypted telemetry; newer Mi authentication is not supported. Fresh vehicle speed can replace GPS speed, and actual battery appears below the road-limit indicator. Recordings retain optional telemetry and use reliable automatic battery usage before the existing manual prompt. **Settings → Bluetooth** separates display preferences from trip collection.
+
+Bluetooth needs a fresh iOS/Android native build; it is unavailable in Expo Go or the web transport. A clearly labelled developer simulator is included. **Physical Pro 2 communication is not yet verified.** See the [plugin contract, compatibility and test requirements](docs/BLUETOOTH.md).

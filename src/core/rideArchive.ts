@@ -28,7 +28,7 @@ function persistRide(ride: RecordedRide, chunks: { index: number; samples: RideS
     if (chunks.length) await AsyncStorage.multiSet(chunks.map(c => [chunkKey(ride.id, c.index), JSON.stringify(c.samples)]));
     const raw = await AsyncStorage.getItem(summaryKey(ride.id)), existing: RecordedRide | null = raw ? JSON.parse(raw) : null;
     // Late recorder checkpoints must not erase a battery answer already saved.
-    const summary = existing?.batteryFeedback === 'answered' || existing?.batteryFeedback === 'skipped' ? { ...snapshot, batteryFeedback: existing.batteryFeedback, batteryUsagePercent: existing.batteryUsagePercent } : snapshot;
+    const summary = existing?.batteryFeedback === 'answered' || existing?.batteryFeedback === 'skipped' ? { ...snapshot, batteryFeedback: existing.batteryFeedback, batteryUsagePercent: existing.batteryUsagePercent, batteryUsageSource:existing.batteryUsageSource } : snapshot;
     await AsyncStorage.setItem(summaryKey(ride.id), JSON.stringify(summary));
     const ids = await readIds(); if (!ids.includes(ride.id)) await AsyncStorage.setItem(indexKey, JSON.stringify([ride.id, ...ids]));
     notify();
@@ -40,7 +40,7 @@ function saveBatteryUsage(id: string, percent: number | null) { return queue(asy
   let ride: RecordedRide = JSON.parse(raw);
   if (ride.status === 'recording' && !liveSessions.has(id)) ride = { ...ride, status: 'interrupted', endedAt: ride.lastFixAt || ride.startedAt };
   if (!['finished', 'arrived', 'interrupted'].includes(ride.status)) throw new Error('Finish the ride before adding battery usage.');
-  await AsyncStorage.setItem(summaryKey(id), JSON.stringify({ ...ride, batteryFeedback: percent === null ? 'skipped' : 'answered', batteryUsagePercent: percent ?? undefined }));
+  await AsyncStorage.setItem(summaryKey(id), JSON.stringify({ ...ride, batteryFeedback: percent === null ? 'skipped' : 'answered', batteryUsagePercent: percent ?? undefined, batteryUsageSource:percent===null?undefined:'manual' }));
   notify();
 }); }
 async function rideSamples(ride: RecordedRide): Promise<RideSample[]> {

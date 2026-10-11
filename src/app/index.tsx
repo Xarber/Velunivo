@@ -28,6 +28,7 @@ import Brand from '../components/Brand';
 import RideDashboard from '../components/RideDashboard';
 import { useHeading } from '../services/useHeading';
 import VehicleSelector from '../components/VehicleSelector';
+import {useBluetoothLease} from '../bluetooth/react';
 import { batteryLabel } from '../core/vehicles';
 import ScheduleControl from '../components/ScheduleControl';
 import { scheduleSummary } from '../core/schedule';
@@ -88,6 +89,7 @@ export default function Explore() {
   const compactHeight = active ? 180 : 176, visiblePanelHeight = panelOpen ? panelHeight : compactHeight;
   const compass = useHeading((navigationOptions.compass || (navigationOptions.recordRides && ride.mode === 'gps')) && !!mapPosition);
   const direction = forwardHeading(selected, g?.index, freshFix(mapFix, now) ? mapFix : null);
+  useBluetoothLease(profile.id,ride.mode==='gps');
   const recorder = useRideRecorder(ride.mode === 'gps', navigationOptions.recordRides, g?.arrived === true, selected, profile, motion, compass, navigationOptions.askBatteryUsage); useEffect(() => { recordingAccept.current = recorder.accept; }, [recorder.accept]);
   const offlineMap = useDownloadedMaps(navigationOptions.downloadedMaps, mapPosition, selected);
   const compassFresh = navigationOptions.compass && compass.heading !== null;
