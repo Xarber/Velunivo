@@ -16,7 +16,7 @@ export interface WebBluetooth {
 }
 export function browserBluetooth():WebBluetooth|undefined {return typeof navigator==='undefined'?undefined:(navigator as Navigator & {bluetooth?:WebBluetooth}).bluetooth;}
 export function webBluetoothAvailable(){return !!browserBluetooth() && typeof window!=='undefined' && window.isSecureContext;}
-function bounded<T>(operation:Promise<T>,message:string,late?:()=>void):Promise<T>{let expired=false;return new Promise<T>((resolve,reject)=>{const timer=setTimeout(()=>{expired=true;reject(new Error(message));},12000);operation.then(value=>{clearTimeout(timer);if(expired)late?.();else resolve(value);},error=>{clearTimeout(timer);if(!expired)reject(error);});});}
+function bounded<T>(operation:Promise<T>,message:string,late?:()=>void,timeoutMs=12000):Promise<T>{let expired=false;return new Promise<T>((resolve,reject)=>{const timer=setTimeout(()=>{expired=true;late?.();reject(new Error(message));},timeoutMs);operation.then(value=>{clearTimeout(timer);if(expired)late?.();else resolve(value);},error=>{clearTimeout(timer);if(!expired)reject(error);});});}
 const errorMessage=(e:unknown)=>e instanceof Error?e:new Error(String(e));
 export class WebBLETransport implements BLETransport {
  private devices=new Map<string,WebDevice>();
@@ -34,9 +34,9 @@ export class WebBLETransport implements BLETransport {
   await this.ready(false);let device=this.devices.get(info.id);
   if(!device && this.api()?.getDevices){device=(await this.api()!.getDevices!()).find(d=>d.id===info.id);if(device)this.devices.set(device.id,device);}
   if(!device?.gatt)throw new Error('Browser device permission is unavailable. Choose Replace device to select your vehicle again.');
-  const selected=device,gatt=device.gatt;await bounded(gatt.connect(),'Bluetooth connection timed out. Move closer and retry.',()=>gatt.disconnect());
+  const selected=device,gatt=device.gatt;await bounded(gatt.connect(),'Bluetooth connection timed out. Move closer and retry.',()=>gatt.disconnect(),45000);
   const characteristics=new Map<string,Promise<WebCharacteristic>>(),cleanups=new Set<()=>void>(),listeners=new Set<(error?:Error)=>void>();let ended=false;
-  const characteristic=(service:string,id:string)=>{const key=`${service}/${id}`;let found=characteristics.get(key);if(!found){found=bounded(gatt.getPrimaryService(service).then(s=>s.getCharacteristic(id)),'Bluetooth service discovery timed out.');characteristics.set(key,found);}return found;};
+  const characteristic=(service:string,id:string)=>{const key=`${service}/${id}`;let found=characteristics.get(key);if(!found){found=bounded(gatt.getPrimaryService(service).then(s=>s.getCharacteristic(id)),'Bluetooth service discovery timed out.',undefined,30000);characteristics.set(key,found);}return found;};
   const disconnected=()=>{if(ended)return;ended=true;for(const stop of cleanups)stop();selected.removeEventListener('gattserverdisconnected',disconnected);for(const listener of listeners)listener();listeners.clear();};
   selected.addEventListener('gattserverdisconnected',disconnected);
   let notificationReady:Promise<void>=Promise.resolve(),writes:Promise<void>=Promise.resolve();

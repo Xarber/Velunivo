@@ -38,3 +38,7 @@ test('Xiaomi chooser carries observed Pro 2 manufacturer filters without accepti
 test('service discovery distinguishes missing characteristics from radio or permission failures',async()=>{
  for(const kind of ['NotFoundError','NetworkError','SecurityError']){const f=fixture();f.device.gatt!.getPrimaryService=async()=>{const error=new Error('Service discovery failed');error.name=kind;throw error;};const link=await f.transport.connect(await f.transport.chooseDevice([NUS]));if(kind==='NotFoundError')assert.equal(await link.hasCharacteristic(NUS,TX),false);else await assert.rejects(link.hasCharacteristic(NUS,TX),/Service discovery failed/);await link.disconnect();}
 });
+
+test('connection timeout immediately disconnects the pending radio operation and cleans a late connection',async t=>{
+ t.mock.timers.enable({apis:['setTimeout']});const f=fixture();let finish!:()=>void,disconnects=0;f.device.gatt!.connect=()=>new Promise<void>(resolve=>{finish=()=>{f.device.gatt!.connected=true;resolve();};});f.device.gatt!.disconnect=()=>{disconnects++;f.device.gatt!.connected=false;};const pending=f.transport.connect(await f.transport.chooseDevice([NUS]));const failure=assert.rejects(pending,/connection timed out/);await Promise.resolve();await Promise.resolve();t.mock.timers.tick(45000);await failure;assert.equal(disconnects,1,'timeout must stop the radio operation immediately');finish();await Promise.resolve();await Promise.resolve();assert.equal(disconnects,2,'late success must not leave an orphan connection');assert.equal(f.device.gatt!.connected,false);
+});
