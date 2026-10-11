@@ -3,8 +3,16 @@ export type Language='en'|'it';
 export type LanguageChoice=Language|'system';
 let choice:LanguageChoice='system';
 const listeners=new Set<()=>void>();
-export function resolveLanguage(value:LanguageChoice,system:string):Language{return value==='system'?(system.toLowerCase().startsWith('it')?'it':'en'):value;}
-export function systemLanguage(){return typeof navigator!=='undefined'?navigator.language:Intl.DateTimeFormat().resolvedOptions().locale;}
+export function resolveLanguage(value:LanguageChoice,system?:string|null):Language{return value==='system'?(typeof system==='string' && system.trim().toLowerCase().startsWith('it')?'it':'en'):value;}
+let deviceLocaleReader:(()=>string|undefined)|undefined;
+/** The React entry installs the native locale source; pure core/server callers need no native module. */
+export function setDeviceLocaleReader(reader:typeof deviceLocaleReader){deviceLocaleReader=reader;}
+export function systemLanguage():string{
+ try{const locale=deviceLocaleReader?.();if(typeof locale==='string' && locale.trim())return locale;}catch{/* Continue through safe fallbacks when the native module is unavailable. */}
+ try{const locale=typeof navigator!=='undefined'?navigator.language:undefined;if(typeof locale==='string' && locale.trim())return locale;}catch{/* Some native runtimes expose an incomplete navigator shim. */}
+ try{const locale=Intl.DateTimeFormat().resolvedOptions().locale;if(typeof locale==='string' && locale.trim())return locale;}catch{/* Locale/Intl can be unavailable during startup. */}
+ return 'en';
+}
 export function getLanguageChoice(){return choice;}
 export function getLanguage(){return resolveLanguage(choice,systemLanguage());}
 export function languageTag(){return getLanguage()==='it'?'it-IT':'en-US';}

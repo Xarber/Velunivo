@@ -45,8 +45,10 @@ private final class NavigationSpeech: NSObject, AVSpeechSynthesizerDelegate {
       let family = language.components(separatedBy: "-").first ?? language
       let voices = AVSpeechSynthesisVoice.speechVoices().filter { $0.language.components(separatedBy: "-").first == family }
       let selected = voices.first { $0.identifier == identifier }
-      let best = voices.sorted { $0.quality.rawValue > $1.quality.rawValue }.first
-      utterance.voice = selected ?? best ?? AVSpeechSynthesisVoice(language: language)
+      // Only an explicitly higher-quality voice overrides the system language default.
+      let systemDefault = AVSpeechSynthesisVoice(language: language)
+      let best = voices.filter { ($0.quality == .enhanced || $0.quality == .premium) && $0.quality.rawValue > (systemDefault?.quality.rawValue ?? AVSpeechSynthesisVoiceQuality.default.rawValue) }.sorted { $0.quality.rawValue > $1.quality.rawValue }.first
+      utterance.voice = selected ?? best ?? systemDefault
       utterance.volume = Float(min(1, max(0, volume)))
       current = utterance
       synthesizer.speak(utterance)

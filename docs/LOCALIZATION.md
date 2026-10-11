@@ -8,10 +8,12 @@ New route requests send the selected language to Valhalla or GraphHopper, includ
 
 ## Speech voices
 
-Settings → Navigation & audio → Speech voice lists installed voices for the resolved app language. Automatic prefers premium/enhanced voices where exposed, then a regular installed voice. An explicitly selected voice wins only when it matches the language. Its identifier is an optional addition to existing persisted navigation preferences; older preferences migrate unchanged.
+Settings → Navigation & audio → Speech voice lists installed voices for the resolved app language. Automatic leaves voice selection to the system unless an installed matching voice is explicitly marked Premium or Enhanced. On iOS an automatic upgrade must also exceed the system default voice’s reported quality. It never selects the first regular/unknown-quality voice in the list. An explicitly selected voice wins only when it matches the language. Its identifier is an optional addition to existing persisted navigation preferences; older preferences migrate unchanged.
 
 The iOS native audio module now enumerates AVSpeechSynthesisVoice voices and picks by quality, preserving the existing per-utterance ducking-session cleanup. This requires a fresh native build. It does not download voices or bypass Apple APIs. Siri/Apple Intelligence speech is **not guaranteed available to third-party synthesis**: only voices actually exposed by the OS are selectable. Installed enhanced/premium voices can improve quality; users manage downloads through iPhone Accessibility speech settings. No physical audio/voice-quality verification was performed for this change.
 
 Android and web use Expo Speech and the platform/browser voice list. The Web Speech API supports synthesis, but voice availability, user activation and background playback depend on the browser. Test voice is a user-initiated control. Native hardware audio, background browser playback and all installed-language combinations still require device testing.
 
 References: [Expo SDK 57 Speech](https://docs.expo.dev/versions/v57.0.0/sdk/speech/), [Apple speech voices](https://developer.apple.com/documentation/avfaudio/avspeechsynthesisvoice), [Web SpeechSynthesis](https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis).
+
+Native System language is read synchronously through Expo SDK 57 `expo-localization.getLocales()`. The pure core checks every locale source, ignores incomplete React Native navigator shims, and safely falls back through Intl to English. Missing locale values cannot crash initial Layout rendering. The new module requires a fresh native build. [Expo Localization](https://docs.expo.dev/versions/v57.0.0/sdk/localization/)

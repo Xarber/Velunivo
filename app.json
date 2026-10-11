@@ -2,7 +2,7 @@
   "expo": {
     "name": "Velunivo",
     "slug": "velunivo",
-    "version": "0.1.29",
+    "version": "0.1.30",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -102,7 +102,8 @@
           "isBackgroundEnabled": true,
           "neverForLocation": false
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "scheme": "velunivo",
     "description": "Your route. Your riding speed. Navigation and route planning for e-scooters and e-bikes.",

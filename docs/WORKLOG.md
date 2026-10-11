@@ -436,3 +436,13 @@ Expanded the Italian catalog to cover long map-download, Bluetooth, privacy, rec
 Library preview tiles now use 140px maps and larger padding. At 744px of available row width, three equal flexible columns fill the row; narrower rows use 90% widths with a visible next-card hint and horizontal scrolling. The Library content can grow to 1100px on desktop. Downloaded Maps retains its existing behavior.
 
 Verified the actual isolated web UI at 390px and 1280px: mobile card width 275.4px for a 306px row (90%), desktop width 330.7px in a 1016px row with equal columns and 12px gaps. Verified translated map-key placeholder and expanded Italian privacy paragraphs. Synthetic public Milan fixtures were used; no private ride data or Bluetooth credentials were published. Type checking, lint and all 145 JavaScript tests passed. No local native compilation occurred.
+
+### 0.1.30 — native startup, compact previews, help placement and voice defaults
+
+Fixed the reported Layout crash: React Native defines navigator without guaranteeing navigator.language. Language resolution now validates all inputs, reads native preferences through SDK-compatible expo-localization, and safely falls back through browser/Intl to English. Added regression tests for the actual incomplete navigator shape, missing Intl, native lookup failure and explicit-language override. Installed the dependency through Expo; added its config plugin manually because the dynamic config prevented automatic editing. No prebuild or local compilation occurred.
+
+Narrow Library previews now occupy 80% of the row. Maps shrink from 140 to 112px and padding/gaps shrink modestly, preserving two-line titles and existing full-size buttons. Wide equal-column behavior remains. Verified the isolated 390px web layout: cards measure 244.8px in a 306px row, 236px high, with the next item visible.
+
+Explore keeps its short route guidance visible without an info button. Short settings descriptions remain visible; longer technical explanations stay in popovers. Every remaining info button is inline with a relevant heading/control: Bluetooth, PWA installation, map downloads, voice and vehicle onboarding. Privacy text remains expanded.
+
+Automatic speech now uses the system default unless a matching voice is explicitly identified as Enhanced/Premium; native iOS additionally compares it against the default voice quality. Manual selection remains available. Added default/unknown-quality voice regression coverage. All 148 JS tests, lint and type checking pass. Native startup/audio require the GitHub-built binary and physical confirmation; web/source tests do not substitute for that. Preparing an unsigned 0.1.30 release and cancelling the preceding active release run before dispatch.
