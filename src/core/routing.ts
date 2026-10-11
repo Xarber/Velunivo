@@ -1,5 +1,6 @@
+import {Language} from '../i18n/core';
 import { Coord, Profile, Route, RouteKind } from './types';
-export function routeRequest(start: Coord, end: Coord, kind: 'car' | 'bike', profile: Profile, language:'en'|'it'='en') {
+export function routeRequest(start: Coord, end: Coord, kind: 'car' | 'bike', profile: Profile, language:Language='en') {
   return {
     points: [start, end], profile: kind, points_encoded: false, instructions: true,
     locale: language, 'ch.disable': true,

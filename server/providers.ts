@@ -1,3 +1,4 @@
+import {Language} from '../src/i18n/core';
 import { photonResults } from '../src/core/addresses';
 import { fromValhalla, valhallaRequest, valhallaAttributesRequest } from '../src/core/valhalla';
 import { Coord, Profile } from '../src/core/types';
@@ -18,7 +19,7 @@ export async function addresses(query: string) {
   remember(id, results); return results;
 }
 function remember(id: string, data: unknown) { if (cache.size >= 100) cache.delete(cache.keys().next().value!); cache.set(id, { until: Date.now() + 300000, data }); }
-export async function publicRoute(start: Coord, end: Coord, kind: 'bike' | 'car', profile: Profile, language:'en'|'it'='en') {
+export async function publicRoute(start: Coord, end: Coord, kind: 'bike' | 'car', profile: Profile, language:Language='en') {
   const q = valhallaRequest(start, end, kind, profile,language), id = JSON.stringify(q), hit = cache.get(id); if (hit && hit.until > Date.now()) return hit.data;
   const data = await provider(`${valhalla}/route`, q), shape = data?.trip?.legs?.[0]?.shape;
   if (!shape) throw new Error('No route found');

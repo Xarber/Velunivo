@@ -1,3 +1,4 @@
+import {resolveLanguage} from '../src/i18n/core';
 import { createServer } from 'node:http';
 import { routeRequest } from '../src/core/routing';
 import { addresses, publicRoute } from './providers';
@@ -61,10 +62,10 @@ createServer(async (req, res) => {
     let body: any; try { body = JSON.parse(raw); } catch { send(400, { error: 'Invalid JSON' }); return; }
     const coord = (p: any) => Array.isArray(p) && p.length === 2 && p.every(Number.isFinite) && Math.abs(p[0]) <= 180 && Math.abs(p[1]) <= 85;
     if (!coord(body.start) || !coord(body.end) || !['bike', 'car'].includes(body.kind) || !Number.isFinite(body.maxSpeed) || body.maxSpeed < 1 || body.maxSpeed > 60 || !Number.isFinite(body.ridingLimit) || body.ridingLimit < 1 || body.ridingLimit > 60) { send(400, { error: 'Invalid route parameters' }); return; }
-    if (!key) { send(200, { route: await publicRoute(body.start, body.end, body.kind, { ...defaultProfile, maxSpeed: body.maxSpeed, ridingLimit: body.ridingLimit },body.language==='it'?'it':'en') }); return; }
+    if (!key) { send(200, { route: await publicRoute(body.start, body.end, body.kind, { ...defaultProfile, maxSpeed: body.maxSpeed, ridingLimit: body.ridingLimit },resolveLanguage('system',body.language)) }); return; }
     const upstream = await fetch(`https://graphhopper.com/api/1/route?key=${encodeURIComponent(key)}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(routeRequest(body.start, body.end, body.kind, { ...defaultProfile, maxSpeed: body.maxSpeed, ridingLimit: body.ridingLimit },body.language==='it'?'it':'en')), signal: AbortSignal.timeout(20000),
+      body: JSON.stringify(routeRequest(body.start, body.end, body.kind, { ...defaultProfile, maxSpeed: body.maxSpeed, ridingLimit: body.ridingLimit },resolveLanguage('system',body.language))), signal: AbortSignal.timeout(20000),
     });
     const data = await upstream.json();
     if (!upstream.ok) { send(upstream.status === 429 ? 429 : 502, { error: data.message || 'GraphHopper rejected this profile. Check custom-model support for your account.' }); return; }
