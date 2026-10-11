@@ -53,7 +53,7 @@ test('connection loss reconnects a live consumer without replacing its ride; man
  const f=fixture();await f.bridge.pair('scooter','electric_scooter',device,XiaomiM365Plugin.id);const release=f.bridge.acquire('scooter');f.lose();await new Promise(r=>setTimeout(r,1150));assert.equal(f.bridge.getSnapshot().state,'connected');assert.equal(f.connects,2);await f.bridge.disconnect();await new Promise(r=>setTimeout(r,1050));assert.equal(f.connects,2);release();
 });
 test('simulator exercises bridge without permissions, physical transport or persisted fake association',async()=>{
- const f=fixture();await f.bridge.simulate('bike','electric_bike');assert.equal(f.connects,0);assert.equal(f.records.length,0);assert.equal(f.bridge.getSnapshot().simulated,true);assert.equal(f.bridge.getSnapshot().fields.speed!.source,'simulator');assert.equal(sampleBluetooth(f.bridge.getSnapshot(),'bike',Date.now()),undefined);await f.bridge.disconnect();
+ const f=fixture();await f.bridge.simulate('bike','electric_bike');assert.equal(f.connects,0);assert.equal(f.records.length,0);assert.equal(f.bridge.getSnapshot().simulated,true);assert.equal(f.bridge.getSnapshot().fields.speed!.source,'simulator');assert.equal(sampleBluetooth(f.bridge.getSnapshot(),'bike',Date.now())?.simulated,true);await f.bridge.disconnect();
 });
 test('trip telemetry associates SI readings, detects charging/inconsistency/gaps and suppresses duplicate prompts',()=>{
  const start=100000;const snapshot:BridgeSnapshot={state:'connected',message:'',pluginId:'xiaomi-m365-v1',vehicleId:'scooter',fields:{batteryPercent:reading(80,start)},extensions:{}};
@@ -106,4 +106,25 @@ test('Bluetooth timelines and automatic battery feedback survive archive restart
 
 test('connection cancellation stops in-flight protocol initialization and removes notifications',async()=>{
  const abort=new AbortController();let listening=false,writes=0;const link:BLELink={device,hasCharacteristic:async()=>true,monitor:()=>{listening=true;return()=>{listening=false;};},write:async()=>{writes++;abort.abort();},onDisconnect:()=>()=>{},disconnect:async()=>{},readRSSI:async()=>null};await assert.rejects(XiaomiM365Plugin.open(link,{signal:abort.signal,emit:()=>{},phase:()=>{},random:n=>new Uint8Array(n)}),/cancelled/);assert.equal(listening,false);assert.equal(writes,1);
+});
+
+import {canPairVehicle,dashboardReading,globalTelemetryMetrics,removeVehicleAndPairing} from '../src/bluetooth/policy';
+test('public sharing vehicles reject real and simulated connections and old associations are removed',async()=>{
+ const f=fixture();assert.equal(canPairVehicle('sharing-scooter'),false);await assert.rejects(f.bridge.pair('sharing-scooter','electric_scooter',device,XiaomiM365Plugin.id),/Public sharing/);await assert.rejects(f.bridge.simulate('sharing-scooter','electric_scooter'),/Public sharing/);assert.equal(f.connects,0);
+ await f.bridge.pair('scooter','electric_scooter',device,XiaomiM365Plugin.id);f.records.push({...f.records[0],vehicleId:'sharing-scooter'});await f.bridge.initialize();assert.equal(f.bridge.association('sharing-scooter'),undefined);assert.equal(f.records.length,1);await f.bridge.forget('scooter');
+});
+test('vehicle deletion removes its persisted pairing, retains other vehicles and leaves history independent',async()=>{
+ const f=fixture();await f.bridge.pair('scooter','electric_scooter',device,XiaomiM365Plugin.id);const garage={vehicles:[createVehicle('escooter','scooter'),createVehicle('ebike','other')],activeId:'scooter'};
+ const next=await removeVehicleAndPairing(garage,'scooter',id=>f.bridge.forget(id));assert.equal(next.vehicles.length,1);assert.equal(next.activeId,'other');assert.equal(f.records.length,0);assert.equal(f.bridge.association('scooter'),undefined);assert.equal(f.bridge.getSnapshot().state,'disconnected');
+ let forgets=0;assert.equal(await removeVehicleAndPairing(next,'other',async()=>{forgets++;}),next);assert.equal(forgets,0);await assert.rejects(removeVehicleAndPairing(garage,'scooter',async()=>{throw new Error('storage unavailable');}),/storage/);assert.equal(garage.vehicles.length,2);
+ await f.bridge.pair('orphan','electric_scooter',device,XiaomiM365Plugin.id);await f.bridge.retainVehicles(['other','sharing-scooter']);assert.equal(f.records.length,0);assert.equal(f.bridge.association('orphan'),undefined);
+});
+test('simulator survives navigation/recording leases, populates dashboard readings and resumes the real connection when disabled',async()=>{
+ const f=fixture();await f.bridge.pair('scooter','electric_scooter',device,XiaomiM365Plugin.id);await f.bridge.simulate('scooter','electric_scooter');const release=f.bridge.acquire('scooter');await new Promise(r=>setTimeout(r,10));assert.equal(f.connects,1);assert.equal(f.bridge.getSnapshot().simulated,true);assert.equal(dashboardReading(f.bridge.getSnapshot(),'scooter','batteryPercent',Date.now())?.value,76);assert.equal(dashboardReading(f.bridge.getSnapshot(),'scooter','speed',Date.now())?.source,'simulator');assert.equal(dashboardReading({...f.bridge.getSnapshot(),vehicleId:'sharing-scooter'},'sharing-scooter','batteryPercent',Date.now()),undefined);
+ const sample=sampleBluetooth(f.bridge.getSnapshot(),'scooter',Date.now())!;assert.equal(sample.simulated,true);assert.equal(sample.fields.batteryPercent?.source,'simulator');const summary=updateTripBluetooth(undefined,sample,sample.timestamp);assert.equal(summary.simulated,true);assert.equal(automaticBatteryUsage({...summary,startBattery:80,endBattery:75,startAt:1,endAt:20001,chargedOrInconsistent:false},20001),null);
+ await f.bridge.stopSimulation();assert.equal(f.bridge.getSnapshot().simulated,undefined);assert.equal(f.bridge.getSnapshot().state,'connected');assert.equal(f.connects,2);release();await f.bridge.disconnect();
+});
+test('Bluetooth display and simulation preferences are global and old preferences migrate safely',()=>{
+ const fields=globalTelemetryMetrics(registry());assert.ok(fields.includes('batteryPercent'));assert.ok(fields.includes('speed'));assert.equal(fields.includes('charging'),false);assert.ok(globalTelemetryMetrics(registry(),true).includes('charging'));
+ assert.equal(restoreBluetoothPreferences('{"schema":1,"autoReconnect":false}').simulateTelemetry,false);const preferences=restoreBluetoothPreferences(JSON.stringify({...restoreBluetoothPreferences(null),simulateTelemetry:true,visible:{batteryPercent:false}}));assert.equal(preferences.simulateTelemetry,true);assert.equal(metricVisible(preferences,'batteryPercent'),false);
 });

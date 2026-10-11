@@ -8,8 +8,8 @@ import { Route, Coord } from '../core/types';
 import { routeBounds } from '../core/geo';
 import { serverUrl } from '../services/api';
 import { mapStyle } from './mapConfig';
-interface MapProps { transit?: boolean; trace?: Coord[][]; completedMeters?: number; overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; offlineMap?: string; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
-export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit }: MapProps) {
+interface MapProps { transit?: boolean; trace?: Coord[][]; completedMeters?: number; overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; positionLabel?:string; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; offlineMap?: string; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
+export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit, positionLabel }: MapProps) {
   const div = useRef<HTMLDivElement>(null), map = useRef<maplibregl.Map | null>(null);
   const [loaded, setLoaded] = useState(false), [error, setError] = useState(false);
   const user = useRef<maplibregl.Marker | null>(null);
@@ -60,11 +60,11 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
     const m = map.current; if (!m || !loaded) return;
     if (!position) { user.current?.remove(); user.current = null; return; }
     if (!user.current) { const element = document.createElement('div'); element.style.cssText = 'width:42px;height:42px;z-index:20;filter:drop-shadow(0 2px 4px #0005);pointer-events:none'; user.current = new maplibregl.Marker({ element, rotationAlignment: 'map', pitchAlignment: 'viewport' }).setLngLat(position).addTo(m); }
-    const element = user.current.getElement(); element.setAttribute('aria-label', navigating ? 'Navigation position arrow' : 'Current position');
+    const element = user.current.getElement(); element.setAttribute('aria-label', positionLabel || (navigating ? 'Navigation position arrow' : 'Current position'));
     element.innerHTML = navigating ? '<svg viewBox="0 0 40 40" width="42" height="42"><path d="M20 3L34 35L20 28L6 35Z" fill="#287CF5" stroke="white" stroke-width="3" stroke-linejoin="round"/></svg>' : '<svg viewBox="0 0 40 40" width="42" height="42"><circle cx="20" cy="20" r="9" fill="#287CF5" stroke="white" stroke-width="3"/></svg>';
     user.current.setLngLat(position).setRotation(navigating ? heading : 0);
 
-  }, [position, follow, loaded, heading, tilted, fitPadding, followPadding, navigating]);
+  }, [position, follow, loaded, heading, tilted, fitPadding, followPadding, navigating, positionLabel]);
   useEffect(() => {
     const m = map.current; if (!m || !loaded || !follow || !cameraTarget) return;
     m.easeTo({ center: cameraTarget.position, zoom: navigating ? 16.5 : 15, bearing: cameraTarget.heading, pitch: tilted ? 50 : 0, padding: followPadding || fitPadding, duration: cameraTarget.duration });

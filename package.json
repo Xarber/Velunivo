@@ -1,6 +1,6 @@
 {
   "name": "velunivo",
-  "version": "0.1.23",
+  "version": "0.1.24",
   "main": "index.js",
   "dependencies": {
     "@expo/ui": "~57.0.22",
@@ -40,8 +40,11 @@
     "expo-symbols": "~57.0.3",
     "expo-task-manager": "~57.0.21",
     "expo-widgets": "57.0.23",
+    "express": "^5.3.0",
     "fast-xml-parser": "^5.11.2",
     "maplibre-gl": "^6.13.0",
+    "peer": "^1.0.2",
+    "peerjs": "^1.5.5",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
@@ -50,6 +53,7 @@
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-web": "^0.21.2",
+    "react-native-webview": "13.16.1",
     "react-native-worklets": "0.10.1"
   },
   "devDependencies": {
@@ -68,10 +72,12 @@
     "test": "tsx --test tests/*.test.ts tests/*.test.mjs",
     "server": "tsx server/index.ts",
     "lint": "expo lint",
-    "postinstall": "node scripts/patch-widgets.mjs && node scripts/copy-map-worker.mjs",
+    "postinstall": "node scripts/patch-widgets.mjs && node scripts/copy-map-worker.mjs && node scripts/generate-peer-runtime.mjs",
     "web:preview": "node scripts/generate-pwa.mjs && expo export --platform web --output-dir dist && node scripts/build-pwa.mjs dist && python3 scripts/serve-web.py",
     "brand:generate": "node scripts/generate-brand.mjs",
-    "pwa:generate": "node scripts/generate-pwa.mjs"
+    "pwa:generate": "node scripts/generate-pwa.mjs",
+    "server:peer": "tsx server/peer.ts",
+    "serve:web": "tsx server/start-web.ts"
   },
   "private": true,
   "expo": {
@@ -81,6 +87,11 @@
           "^expo-widgets$"
         ]
       }
+    }
+  },
+  "overrides": {
+    "peer": {
+      "ws": "^8.22.0"
     }
   }
 }

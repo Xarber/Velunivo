@@ -61,6 +61,12 @@ jobs:
       EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
       EXPO_PUBLIC_MAP_STYLE_URL: ${{ vars.MAP_STYLE_URL }}
       EXPO_PUBLIC_ALLOW_OFFLINE_DOWNLOADS: ${{ vars.ALLOW_OFFLINE_DOWNLOADS }}
+      EXPO_PUBLIC_SHARE_ORIGIN: ${{ vars.SHARE_ORIGIN }}
+      EXPO_PUBLIC_PEER_HOST: ${{ vars.PEER_HOST }}
+      EXPO_PUBLIC_PEER_PORT: ${{ vars.PEER_PORT }}
+      EXPO_PUBLIC_PEER_PATH: ${{ vars.PEER_PATH }}
+      EXPO_PUBLIC_PEER_SECURE: ${{ vars.PEER_SECURE }}
+      EXPO_PUBLIC_PEER_ICE_SERVERS: ${{ vars.PEER_ICE_SERVERS }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -85,6 +91,12 @@ jobs:
       EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
       EXPO_PUBLIC_MAP_STYLE_URL: ${{ vars.MAP_STYLE_URL }}
       EXPO_PUBLIC_ALLOW_OFFLINE_DOWNLOADS: ${{ vars.ALLOW_OFFLINE_DOWNLOADS }}
+      EXPO_PUBLIC_SHARE_ORIGIN: ${{ vars.SHARE_ORIGIN }}
+      EXPO_PUBLIC_PEER_HOST: ${{ vars.PEER_HOST }}
+      EXPO_PUBLIC_PEER_PORT: ${{ vars.PEER_PORT }}
+      EXPO_PUBLIC_PEER_PATH: ${{ vars.PEER_PATH }}
+      EXPO_PUBLIC_PEER_SECURE: ${{ vars.PEER_SECURE }}
+      EXPO_PUBLIC_PEER_ICE_SERVERS: ${{ vars.PEER_ICE_SERVERS }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -166,6 +178,12 @@ jobs:
       EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
       EXPO_PUBLIC_MAP_STYLE_URL: ${{ vars.MAP_STYLE_URL }}
       EXPO_PUBLIC_ALLOW_OFFLINE_DOWNLOADS: ${{ vars.ALLOW_OFFLINE_DOWNLOADS }}
+      EXPO_PUBLIC_SHARE_ORIGIN: ${{ vars.SHARE_ORIGIN }}
+      EXPO_PUBLIC_PEER_HOST: ${{ vars.PEER_HOST }}
+      EXPO_PUBLIC_PEER_PORT: ${{ vars.PEER_PORT }}
+      EXPO_PUBLIC_PEER_PATH: ${{ vars.PEER_PATH }}
+      EXPO_PUBLIC_PEER_SECURE: ${{ vars.PEER_SECURE }}
+      EXPO_PUBLIC_PEER_ICE_SERVERS: ${{ vars.PEER_ICE_SERVERS }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -1,0 +1,45 @@
+# Route and live trip sharing (0.1.24)
+
+## Using it
+
+Explore → select a route → share icon → **Share route link** shares only the start/end coordinates and labels. Opening `/share/route?...` on web or `velunivo://share/route?...` shows the endpoints, then **Plan on this device** requests bicycle/car-road alternatives using the recipient’s own vehicle. It does not start navigation. It is an endpoint planning link, not a promise to reproduce an identical road geometry under different vehicle settings or provider data.
+
+During **real GPS navigation**, expand Your ride → **Share trip** → read the explanation → **Confirm trip sharing**. Only that confirmation creates a PeerJS connection and a cryptographically random 20-character code (120 bits). Copy/share the resulting `/share/trip?pin=...` link. Controls can collapse without disconnecting. Stop sharing, ending/arriving at the ride, closing/unmounting Explore, or the 12-hour timeout revokes the session. No persistent session database or account is created. Destination-free Record trip and simulated navigation do not expose this action.
+
+Recipients see the full-route map and, after **View shared trip**, rider location, arrival clock time, minutes left and distance left in their chosen units. No local GPS permission is needed. Updates older than 20 seconds are labelled paused; ETA/remaining values are hidden instead of presented as live. Last known location remains labelled by the update timestamp. Retry reconnects to a still-active rider. Once a sharing session ends, its code cannot resume it.
+
+The wire contract explicitly whitelists route coordinates/labels and position/ETA/remaining fields. Vehicle identity, speed, speed limits, road detail registers, compass, battery, Bluetooth readings, sensor records and telemetry are never included. Incoming data is reconstructed, validated and bounded; viewers cannot control navigation. Audio/video calls are rejected. Maximum eight concurrent viewers; progress broadcasts are throttled to one per five seconds and unchanged geometry is sent only on the first connection or route change. A newly connected viewer receives the cached route/latest progress.
+
+## One process for web and PeerServer
+
+The repo includes `server/web.ts` and `server/start-web.ts`. **`npm run serve:web`** serves the exported app and the PeerServer under `/peer` in the same process. It fails clearly if `dist/index.html` is missing. `/health` reports both components, deep web paths fall back to index.html, `.mjs` receives JavaScript MIME type, PeerServer discovery is disabled, and responses use `Referrer-Policy: no-referrer`. The public HTML has the same referrer policy for static-only hosts. The optional standalone `npm run server:peer` is for development/separate signaling deployments.
+
+For a small production install, copy the **server/** directory and install just its dependencies with `npm ci --prefix server`. Its independent package/lock pins express, peer, tsx and a ws8 override: peer1.0.2 declares ws7 but its implementation calls the ws8 WebSocketServer export. The override avoids a genuine startup failure verified during testing. Server-only dependency audit returned zero advisories. Set `WEB_DIR` to a downloaded/unpacked workflow `web.zip` and run `npm start --prefix server`. Native compilation is unnecessary on the host.
+
+Node22.13+ is required (Node24 is recommended). Typical environment:
+
+```sh
+HOST=127.0.0.1 PORT=8790 WEB_DIR=/srv/velunivo/dist BEHIND_PROXY=1 SHARE_ORIGIN=https://velunivo.example npm start --prefix server
+```
+
+Use TLS/WSS at the reverse proxy. `deploy/nginx-sharing.conf` and `deploy/velunivo-web.service` are templates; adapt paths/Node PATH on your host. Preserve your existing TLS configuration and a rollback copy. The single Node process should start at boot. Keep previous web releases and atomically change the WEB_DIR symlink; changing the web files does not require restarting a running signaling server unless server code changes. No access log should record full PIN URLs. PeerServer retains signaling metadata only, not ride/location payloads.
+
+## Forks and build hostname
+
+**Official native builds default to https://velunivo.xcenter.it**. Web defaults to its current origin so another hosted fork works on its own hostname. No app path silently falls back to PeerJS Cloud.
+
+Set GitHub repository **Settings → Secrets and variables → Actions → Variables → SHARE_ORIGIN** to your HTTPS origin (e.g. `https://rides.example`). The release workflow passes it as `EXPO_PUBLIC_SHARE_ORIGIN` in web, Android and iOS jobs. For local development, set the same EXPO_PUBLIC variable. Native builds embed the hostname, so rebuild after changing it. The web app uses that explicit origin if provided, otherwise its own. Only origins are accepted (no credentials/path/query); HTTP is accepted only for loopback development.
+
+PeerJS automatically uses that origin’s hostname/port with `/peer` and matching TLS. Optional repository variables `PEER_HOST`, `PEER_PORT`, `PEER_PATH`, `PEER_SECURE`, `PEER_ICE_SERVERS` allow a separate signaling server, custom port/path or ICE configuration. All are public build configuration. Do not put long-lived/private TURN passwords in a public build; use suitably restricted or short-lived credentials. Example `PEER_ICE_SERVERS`: `[{"urls":"stun:stun.l.google.com:19302"},{"urls":"turn:turn.example:3478","username":"short-lived","credential":"short-lived"}]`. A TURN service is needed for reliable connectivity across restrictive cellular/Wi-Fi NATs; PeerServer signaling alone cannot guarantee all peer connections. There is no paid TURN dependency bundled or automatic cloud fallback.
+
+Custom-scheme deep links work through Expo Router and +native-intent; web screens provide **Open in Velunivo app**. Automatic HTTPS Universal Links additionally require a real Apple team, signed associated-domain entitlements and AASA registration; they are not claimed for unsigned/TrollStore binaries. The web server can return AASA at `/.well-known/apple-app-site-association` when APPLE_TEAM_ID (and optionally APP_IDENTIFIER) is configured; configure your fork’s native associatedDomains separately. Without it, the web link and explicit app-open button still work.
+
+## Native transport, privacy and limits
+
+PeerJS runs natively in an invisible WKWebView/Android WebView using the installed MIT PeerJS bundle, generated by postinstall. No external CDN code or camera/microphone permission is requested. A new native GitHub build is needed for react-native-webview13.16.1. The browser uses PeerJS directly. Both transports cache late-viewer state and stop their peer/data channels when removed. PeerJS and PeerServer are MIT; see their upstream repository licenses and installed package licenses.
+
+Anyone possessing the code/link can view location/route while sharing is active; treat it as a secret. Signaling servers see IP addresses, connection metadata and session identifiers; peers and any configured STUN/TURN service may also see network addresses. WebRTC encrypts data channels, but this feature has no separate authenticated identity/account and cannot stop a recipient saving or forwarding what they see. Route links expose endpoints/labels in the URL and are not live location sessions. Nothing uploads full local ride archives.
+
+Background GPS may continue normally, but iOS can suspend WKWebView/WebRTC, and mobile browsers can suspend background tabs. **Continuous locked-screen/background peer sharing is not guaranteed**. Viewers mark stale data, not an invented ETA. Native iOS/Android peer transport and cross-network cellular/TURN reliability require physical-device testing. Web RTC communication was verified locally using public Milan landmark QA data with self-hosted signaling; no private location was used. Protocol/session tests and native HTML runtime contract tests do not constitute physical iPhone proof.
+
+References: [PeerJS data API](https://peerjs.com/client/getting-started), [PeerServer/Express integration](https://github.com/peers/peerjs-server), [Expo57 WebView](https://docs.expo.dev/versions/v57.0.0/sdk/webview/), [Expo build environment variables](https://docs.expo.dev/guides/environment-variables/), [Expo Router native intents](https://docs.expo.dev/router/advanced/native-intent/).

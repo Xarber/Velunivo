@@ -1,0 +1,26 @@
+[Unit]
+Description=Velunivo web app and PeerServer
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/srv/velunivo/server
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+Environment=HOST=127.0.0.1
+Environment=PORT=8790
+Environment=BEHIND_PROXY=1
+Environment=WEB_DIR=/srv/velunivo/dist
+EnvironmentFile=-/etc/velunivo-web.env
+ExecStart=/usr/bin/env npm start
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

@@ -13,7 +13,7 @@ export default function RideMap(props: MapProps & { offlineMap?: string }) {
   if (props.offlineMap || Platform.OS === 'android') return <OfflineRideMap {...props} offlineStyle={props.offlineMap} />;
   return <DeviceMap {...props} />;
 }
-function DeviceMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit }: MapProps) {
+function DeviceMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit,positionLabel }: MapProps) {
   const map = useRef<MapView>(null);
   const [ready, setReady] = useState(false);
   const hasPosition = !!position;
@@ -31,7 +31,7 @@ function DeviceMap({ routes, selected, position, follow, onPick, traffic, startP
     {routeLayers(routes, selected, completedMeters, trace).flatMap(r => [<Polyline key={`${r.id}-outline`} coordinates={r.coordinates.map(point)} strokeColor={r.outline} strokeWidth={ROUTE_WIDTH + 3} />, <Polyline key={r.id} coordinates={r.coordinates.map(point)} strokeColor={r.color} strokeWidth={ROUTE_WIDTH} />])}
     {(startPoint || selected?.coordinates[0]) && <Marker coordinate={point(startPoint || selected!.coordinates[0])} title="Start" pinColor="#007F6D" />}
     {(endPoint || selected?.coordinates.at(-1)) && <Marker coordinate={point(endPoint || selected!.coordinates.at(-1)!)} title="Destination" />}
-    {position && <Marker coordinate={point(position)} title="Your position" zIndex={1000} flat rotation={heading} anchor={{ x: .5, y: .5 }}><PositionArrow navigating={navigating} /></Marker>}
+    {position && <Marker coordinate={point(position)} title={positionLabel || "Your position"} zIndex={1000} flat rotation={heading} anchor={{ x: .5, y: .5 }}><PositionArrow navigating={navigating} /></Marker>}
     {traffic && serverUrl && <UrlTile urlTemplate={`${serverUrl}/traffic/{z}/{x}/{y}.png`} tileSize={256} zIndex={1} />}
   </MapView>;
 }

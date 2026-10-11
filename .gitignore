@@ -53,3 +53,6 @@ public/maplibre-gl-worker.mjs
 release-notes.md
 __pycache__/
 *.pyc
+
+# Installed PeerJS runtime generated during postinstall
+src/sharing/peerRuntime.generated.ts
