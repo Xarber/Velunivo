@@ -15,3 +15,5 @@ export class NativeBLETransport implements BLETransport {
  }catch(e){await manager.cancelDeviceConnection(d.id).catch(()=>{});throw e;}}
 }
 export const transport:BLETransport=new NativeBLETransport();
+
+export const bluetoothAvailable=()=>true;

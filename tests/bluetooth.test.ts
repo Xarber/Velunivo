@@ -128,3 +128,16 @@ test('Bluetooth display and simulation preferences are global and old preference
  const fields=globalTelemetryMetrics(registry());assert.ok(fields.includes('batteryPercent'));assert.ok(fields.includes('speed'));assert.equal(fields.includes('charging'),false);assert.ok(globalTelemetryMetrics(registry(),true).includes('charging'));
  assert.equal(restoreBluetoothPreferences('{"schema":1,"autoReconnect":false}').simulateTelemetry,false);const preferences=restoreBluetoothPreferences(JSON.stringify({...restoreBluetoothPreferences(null),simulateTelemetry:true,visible:{batteryPercent:false}}));assert.equal(preferences.simulateTelemetry,true);assert.equal(metricVisible(preferences,'batteryPercent'),false);
 });
+
+test('browser discovery verifies actual protocol before listing, retains user activation and enforces vehicle type',async()=>{
+ const f=fixture();let chooserCalled=false;const candidate={...device,manufacturerData:undefined};f.transport.chooseDevice=async()=>{chooserCalled=true;return candidate;};const found:BLEDeviceInfo[]=[];
+ const discovery=f.bridge.discover('electric_scooter',d=>{found.push(d);});assert.equal(chooserCalled,true);assert.equal(found.length,0);await discovery;
+ assert.equal(found[0]?.verifiedProtocol,XiaomiM365Plugin.id);assert.equal(f.records.length,0);assert.equal(f.bridge.getSnapshot().state,'idle');assert.ok(f.disconnects>0);
+ await f.bridge.pair('s','electric_scooter',found[0],XiaomiM365Plugin.id);assert.equal(f.bridge.getSnapshot().fields.batteryPercent?.value,60);await f.bridge.disconnect();
+ chooserCalled=false;await assert.rejects(f.bridge.discover('electric_bike',()=>{}),/No supported/);assert.equal(chooserCalled,false);
+ const bad=fixture();bad.transport.chooseDevice=async()=>candidate;bad.link.hasCharacteristic=async()=>false;let listed=false;await assert.rejects(bad.bridge.discover('electric_scooter',()=>{listed=true;}),/service/);assert.equal(listed,false);assert.equal(bad.records.length,0);
+});
+test('leaving browser discovery cancels verification and does not list a late chooser result',async()=>{
+ const f=fixture();let resolve!:(device:BLEDeviceInfo)=>void;f.transport.chooseDevice=()=>new Promise(r=>{resolve=r;});let listed=false;
+ const discovery=f.bridge.discover('electric_scooter',()=>{listed=true;});await new Promise(r=>setTimeout(r,0));f.bridge.endScan();resolve({...device,manufacturerData:undefined});await discovery;assert.equal(listed,false);assert.equal(f.connects,0);
+});
