@@ -30,16 +30,22 @@ type Context=Parameters<VehicleProtocolPlugin['open']>[1];
 type Keys={app:Uint8Array;device:Uint8Array;appIV:Uint8Array;deviceIV:Uint8Array};
 /** Notifications are queued before writes, including immediate responses and back-to-back parcels. */
 class Channel {
- private queue:Uint8Array[]=[];private waiter?:{resolve:(b:Uint8Array)=>void;reject:(e:Error)=>void;timer:ReturnType<typeof setTimeout>};private stops:(()=>void)[]=[];private closed=false;
- constructor(private link:BLELink,private signal?:AbortSignal){for(const c of [CONTROL,DATA])this.stops.push(link.monitor(MI,c,b=>{if(this.closed)return;if(this.waiter){const w=this.waiter;this.waiter=undefined;clearTimeout(w.timer);w.resolve(b);}else this.queue.push(b);},e=>this.fail(e)));signal?.addEventListener('abort',this.cancel,{once:true});}
+ private queue:Uint8Array[]=[];private waiter?:{resolve:(b:Uint8Array)=>void;reject:(e:Error)=>void;timer:ReturnType<typeof setTimeout>};private stops:(()=>void)[]=[];private closed=false;private failure?:Error;private deadline:ReturnType<typeof setTimeout>;
+ constructor(private link:BLELink,private signal?:AbortSignal){this.deadline=setTimeout(()=>this.fail(new Error('Xiaomi authentication timed out. Try connecting again.')),30000);for(const c of [CONTROL,DATA])this.stops.push(link.monitor(MI,c,b=>{if(this.closed)return;if(this.waiter){const w=this.waiter;this.waiter=undefined;clearTimeout(w.timer);w.resolve(b);}else this.queue.push(b);},e=>this.fail(e)));signal?.addEventListener('abort',this.cancel,{once:true});}
  private cancel=()=>this.fail(new Error('Connection cancelled'));
- private fail(e:Error){if(this.waiter){clearTimeout(this.waiter.timer);this.waiter.reject(e);this.waiter=undefined;}}
- next(){if(this.closed || this.signal?.aborted)return Promise.reject(new Error('Connection cancelled'));const b=this.queue.shift();if(b)return Promise.resolve(b);return new Promise<Uint8Array>((resolve,reject)=>{const timer=setTimeout(()=>{this.waiter=undefined;reject(new Error('Mi authentication response timed out'));},4000);this.waiter={resolve,reject,timer};});}
- write(c:string,b:Uint8Array){return this.link.write(MI,c,b);}
+ private fail(e:Error){this.failure=e;if(this.waiter){clearTimeout(this.waiter.timer);this.waiter.reject(e);this.waiter=undefined;}}
+ next(){if(this.failure)return Promise.reject(this.failure);if(this.closed || this.signal?.aborted)return Promise.reject(new Error('Connection cancelled'));const b=this.queue.shift();if(b)return Promise.resolve(b);return new Promise<Uint8Array>((resolve,reject)=>{const timer=setTimeout(()=>{this.waiter=undefined;reject(new Error('Mi authentication response timed out'));},4000);this.waiter={resolve,reject,timer};});}
+ async write(c:string,b:Uint8Array){
+  if(this.failure)throw this.failure;if(this.closed || this.signal?.aborted)throw new Error('Connection cancelled');
+  let timer:ReturnType<typeof setTimeout>|undefined;let abort:()=>void=()=>{};
+  try{await Promise.race([this.link.write(MI,c,b),new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(new Error('Bluetooth write timed out.')),6000);abort=()=>reject(new Error('Connection cancelled'));this.signal?.addEventListener('abort',abort,{once:true});if(this.signal?.aborted)abort();})]);}
+  finally{clearTimeout(timer);this.signal?.removeEventListener('abort',abort);}
+  if(this.failure)throw this.failure;
+ }
  async expect(bytes:Uint8Array){if(!equalBytes(await this.next(),bytes))throw new Error('Unexpected Mi authentication response');}
  async receive(){const header=await this.next();if(header.length!==6 || header[0]!==0 || header[1]!==0)throw new Error('Invalid Mi parcel header');const count=header[4]+256*header[5];if(count<1 || count>32)throw new Error('Unsupported Mi parcel size');await this.write(DATA,ready);const chunks:Uint8Array[]=[];for(let i=1;i<=count;i++){const b=await this.next();if(b.length<3 || b.length>20 || b[0]+256*b[1]!==i)throw new Error('Invalid Mi parcel sequence');chunks.push(b.slice(2));}await this.write(DATA,ack);return concatBytes(...chunks);}
  async send(kind:number,bytes:Uint8Array){await this.write(DATA,Uint8Array.of(0,0,0,kind,Math.ceil(bytes.length/18),0));await this.expect(ready);for(let i=0;i<bytes.length;i+=18)await this.write(DATA,concatBytes(Uint8Array.of(1+i/18,0),bytes.slice(i,i+18)));await this.expect(ack);}
- close(){this.closed=true;this.signal?.removeEventListener('abort',this.cancel);for(const stop of this.stops)stop();this.fail(new Error('Mi authentication closed'));this.queue=[];}
+ close(){this.closed=true;clearTimeout(this.deadline);this.signal?.removeEventListener('abort',this.cancel);for(const stop of this.stops)stop();this.fail(new Error('Mi authentication closed'));this.queue=[];}
 }
 export async function authenticateMi(link:BLELink,ctx:Context):Promise<MiUART>{
  const channel=new Channel(link,ctx.signal);let token:Uint8Array|undefined;
@@ -47,13 +53,13 @@ export async function authenticateMi(link:BLELink,ctx:Context):Promise<MiUART>{
   const saved=ctx.credentials?.miToken;if(saved && /^[0-9a-f]{24}$/i.test(saved))token=hexToBytes(saved);
   if(!token){
    ctx.phase('Registering with Xiaomi Bluetooth…');await channel.write(CONTROL,Uint8Array.of(0xa2,0,0,0));const info=await channel.receive();if(info.length!==24)throw new Error('Unsupported Xiaomi device identity');
-   let privateKey:Uint8Array;do{privateKey=ctx.random(32);}while(!p256.utils.isValidSecretKey(privateKey));
+   let privateKey=ctx.random(32);let attempts=1;while(!p256.utils.isValidSecretKey(privateKey)){if(attempts++>=8)throw new Error('Secure randomness unavailable.');privateKey=ctx.random(32);}
    const publicKey=p256.getPublicKey(privateKey,false).slice(1);await channel.write(CONTROL,Uint8Array.of(0x15,0,0,0));
-   try{await channel.send(3,publicKey);}catch(e){if(ctx.signal?.aborted)throw e;throw new VehicleApprovalRequiredError('Toggle the headlight once while disconnected. Velunivo will reconnect automatically.');}
-   const remote=await channel.receive();if(remote.length!==64)throw new Error('Invalid Xiaomi public key');const secret=p256.getSharedSecret(privateKey,concatBytes(Uint8Array.of(4),remote),false).slice(1,33);privateKey.fill(0);
+   try{await channel.send(3,publicKey);}catch(e){if(ctx.signal?.aborted || !(e instanceof Error) || !['Mi authentication response timed out','Unexpected Mi authentication response'].includes(e.message))throw e;throw new VehicleApprovalRequiredError('Toggle the headlight once while disconnected. Velunivo will reconnect automatically.');}
+   ctx.phase('Verifying Xiaomi registration…');const remote=await channel.receive();if(remote.length!==64)throw new Error('Invalid Xiaomi public key');const secret=p256.getSharedSecret(privateKey,concatBytes(Uint8Array.of(4),remote),false).slice(1,33);privateKey.fill(0);
    const derived=hkdf(sha256,secret,undefined,text('mible-setup-info'),64);token=derived.slice(0,12);
    const did=ccmEncrypt(derived.slice(28,44),Uint8Array.from({length:12},(_,i)=>16+i),info.slice(4),text('devID'));await channel.send(0,did);await channel.write(CONTROL,Uint8Array.of(0x13,0,0,0));
-   const response=await channel.next();if(!equalBytes(response,Uint8Array.of(0x11,0,0,0)))throw new VehicleApprovalRequiredError('Toggle the headlight once while disconnected. Velunivo will reconnect automatically.');
+   ctx.phase('Waiting for Xiaomi registration confirmation…');const response=await channel.next();if(!equalBytes(response,Uint8Array.of(0x11,0,0,0)))throw new VehicleApprovalRequiredError('Toggle the headlight once while disconnected. Velunivo will reconnect automatically.');
    if(ctx.credentials)ctx.credentials.miToken=bytesToHex(token);
   }
   ctx.phase('Authenticating with saved Xiaomi pairing…');const random=ctx.random(16);await channel.write(CONTROL,Uint8Array.of(0x24,0,0,0));await channel.send(0x0b,random);const remote=await channel.receive(),proof=await channel.receive();if(remote.length!==16 || proof.length!==32)throw new Error('Invalid Xiaomi login response');
