@@ -6,7 +6,8 @@ export function learnedBatteryRange(rides: RecordedRide[], vehicle: Pick<Vehicle
   const reports = rides.filter(r => r.vehicle.id === vehicle.id && ['finished','arrived'].includes(r.status) && r.batteryFeedback === 'answered' && validBatteryUsage(r.batteryUsagePercent!) && r.batteryUsagePercent! >= 1 && Number.isFinite(r.meters) && r.meters >= 500).slice(0,20);
   if (reports.length < 3) return null;
   const meters = reports.reduce((n,r) => n+r.meters,0), percent = reports.reduce((n,r) => n+r.batteryUsagePercent!,0);
-  return { rangeKm: meters / 1000 / percent * 100, count: reports.length };
+  const referenceSpeedKmh=reports.reduce((sum,r)=>sum+r.meters*Math.min(r.vehicle.maxSpeed,r.vehicle.ridingLimit)*(r.vehicle.cruiseFactor??.78),0)/meters;
+  return { rangeKm: meters / 1000 / percent * 100, count: reports.length,referenceSpeedKmh };
 }
 export function pendingBatteryRide(rides: RecordedRide[]) {
   return rides.find(r => ['finished','arrived','interrupted'].includes(r.status) && r.batteryFeedback === 'pending' && r.samples >= 2);

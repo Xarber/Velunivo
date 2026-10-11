@@ -1,3 +1,3 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createRideArchive } from '../core/rideArchive';
-export const { liveRecording, recordedRides, persistRide, rideSamples, deleteRecordedRide, saveBatteryUsage, subscribeRides } = createRideArchive(AsyncStorage);
+export const { liveRecording, recordedRides, persistRide, rideSamples, deleteRecordedRide, saveBatteryUsage, subscribeRides, updateRideLabels } = createRideArchive(AsyncStorage);

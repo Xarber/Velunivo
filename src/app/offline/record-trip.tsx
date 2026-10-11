@@ -1,3 +1,4 @@
+import {useRideHeading} from '../../services/useRideHeading';
 import {publicError} from '../../core/publicErrors';
 import {t} from '../../i18n/core';
 import Text from '../../components/LocalizedText';
@@ -55,7 +56,7 @@ export default function RecordTrip(){
   const meters=recorder.record?.meters || 0,startedAt=recorder.record?.startedAt || now,unit=n.unit==='mi'?'mph':'km/h';
   const trail=recorder.record?.trace;
   const trailHeading=useMemo(()=>{const segment=trail?.at(-1);return segment && segment.length>1?bearing(segment[segment.length-2],segment.at(-1)!):null;},[trail]);
-  const heading=n.compass && compass.heading!==null && now-compass.timestamp<3000 ? compass.heading : (fix?.heading!==undefined && (fix.speed ?? 0)>=1?forwardHeading(null,undefined,fix).heading:trailHeading ?? 0);
+  const heading=useRideHeading(fix,compass,n.compass,fix?.heading!==undefined&&valid?forwardHeading(null,undefined,fix):{heading:trailHeading??0,source:'Travel direction'},now,`${metadata.id}-${active}`).heading;
   useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer);},[]);
   useEffect(()=>{if(active){lockVehicle(true);return()=>lockVehicle(false);}},[active,lockVehicle]);
   // Returning to another tab leaves the dashboard mounted; going back ends and checkpoints the recording.

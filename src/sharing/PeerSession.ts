@@ -52,8 +52,8 @@ export class PeerSession {
   resume(){if(this.peer.destroyed && !this.closed){this.failed();return;}if(this.closed){this.events.recover?.();return;}if(this.peer.disconnected)this.reconnectSignaling();if(this.role==='viewer' && (!this.connections.size || Date.now()-this.lastReceived>=30000))this.failed();}
   close(revoke=true){if(this.closed)return;this.closed=true;clearTimeout(this.timer);if(this.healthTimer)clearInterval(this.healthTimer);if(this.presenceTimer)clearInterval(this.presenceTimer);this.presence.clear();this.reportViewers();for(const c of this.connections){if(revoke && this.role==='host'&&c.open)c.send({type:'ended'});c.close();}this.connections.clear();this.peer.destroy();}
 }
-export async function createSession(role:'host'|'viewer',pin:string,events:SessionEvents,viewerId?:string){
+export async function createSession(role:'host'|'viewer',pin:string,events:SessionEvents,viewerId?:string,options:typeof peerOptions|{debug:0}=peerOptions){
   if(!PIN_PATTERN.test(pin))throw new Error('Invalid sharing code');
 
-  return new PeerSession(role==='host'?new Peer(`velunivo-${pin}`,peerOptions):new Peer(clientPeerId('viewer',crypto.getRandomValues(new Uint8Array(16))),peerOptions),role,pin,events,viewerId);
+  return new PeerSession(role==='host'?new Peer(`velunivo-${pin}`,options):new Peer(clientPeerId('viewer',crypto.getRandomValues(new Uint8Array(16))),options),role,pin,events,viewerId);
 }

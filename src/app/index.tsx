@@ -1,3 +1,4 @@
+import {useRideHeading} from '../services/useRideHeading';
 import {activityExtras} from '../core/activityTelemetry';
 import {getHostPresence,subscribeHostPresence} from '../sharing/hostPresence';
 import {publicError} from '../core/publicErrors';
@@ -18,7 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
 import { useKeepAwake } from 'expo-keep-awake';
-import { motionProps, useReducedMotion } from '../components/WebMotion';
+import { motionProps } from '../components/WebMotion';
 import TurnDirection from '../components/TurnDirection';
 import ActionMenu, { MenuAction } from '../components/ActionMenu';
 import { Journey, swapEndpoints } from '../core/places';
@@ -39,24 +40,25 @@ import RideDashboard from '../components/RideDashboard';
 import { useHeading } from '../services/useHeading';
 import VehicleSelector from '../components/VehicleSelector';
 import {useBluetoothLease,useBluetoothPreferences,useBluetoothVehicle} from '../bluetooth/react';
-import { batteryLabel } from '../core/vehicles';
+import {routeEnergyLabel} from '../core/energy';
 import ScheduleControl from '../components/ScheduleControl';
 import { scheduleSummary } from '../core/schedule';
 import EndpointPicker from '../components/EndpointPicker';
 import { Button, IconButton, styles, usePalette, PaletteProvider } from '../components/ui';
 import { useStore } from '../services/store';
-import { serverUrl, fetchRoute } from '../services/api';
+import { serverUrl, fetchItinerary, enrichElevation } from '../services/api';
 import { shareTrack } from '../services/files';
 import { useRideRecorder } from '../services/useRideRecorder';
 import { useDownloadedMaps } from '../services/useDownloadedMaps';
 import { useRide } from '../services/useRide';
 import { useMotion } from '../services/useSensors';
 import { estimate, minutes } from '../core/eta';
+import {remainingStops,RouteStop} from '../core/itinerary';
 import { Coord, Fix, Route } from '../core/types';
 function Awake() { useKeepAwake(); return null; }
 export default function Explore() {
   const p = usePalette(), { height, width } = useWindowDimensions();
-  const reducedMotion = useReducedMotion();
+
   const wide = width >= 700, insets = useSafeAreaInsets();
   const [panelOpen, setPanelOpen] = useState(false);
   const [externalJourney, setExternalJourney] = useState<ExternalNavigation | null>(null);
@@ -78,6 +80,10 @@ export default function Explore() {
   const [notice, setNotice] = useState('');
   const [focusedEndpoint, setFocusedEndpoint] = useState<'start' | 'end' | null>(null);
   const [planner, setPlanner] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState('');
+  const [stops,setStops]=useState<RouteStop[]>([]),[stopPick,setStopPick]=useState<number|null>(null);
+  const selectedRef=useRef(selected);useEffect(()=>{selectedRef.current=selected;},[selected]);
+  const activeRef=useRef(false);
+  const reroutePending=useRef<Route|null>(null);
   const [start, setStart] = useState('Current location'), [end, setEnd] = useState('');
   const [startPoint, setStartPoint] = useState<Coord | undefined>(), [endPoint, setEndPoint] = useState<Coord | undefined>();
   const [gpsStart, setGpsStart] = useState(true), [locating, setLocating] = useState(false), [optionsOpen, setOptionsOpen] = useState(false);
@@ -89,9 +95,9 @@ export default function Explore() {
   const cancelRecording=useRef<()=>void>(()=>{});
   const recordingAccept = useRef<(fix: Fix, arrived?: boolean) => void | Promise<void>>(() => {});
   const [picking, setPicking] = useState<'start' | 'end' | null>(null), [follow, setFollow] = useState(true);
-  const ride = useRide(selected, profile, navigationOptions, (fix,arrived) => recordingAccept.current(fix,arrived),()=>cancelRecording.current()), motion = useMotion((navigationOptions.motion && ride.mode !== 'idle') || (navigationOptions.recordRides && ride.mode === 'gps'));
+  const ride = useRide(selected, profile, navigationOptions, (fix,arrived) => recordingAccept.current(fix,arrived),()=>cancelRecording.current(),reroute), motion = useMotion((navigationOptions.motion && ride.mode !== 'idle') || (navigationOptions.recordRides && ride.mode === 'gps'));
   const active = ride.mode !== 'idle', g = ride.progress;
-  const expandedPanel = panelOpen || (wide && !active);
+  const expandedPanel = planner || panelOpen || (wide && !active);
   const panelP = expandedPanel ? { ...p, dark: true, bg: '#071118', card: '#15222C', text: '#F6FAFC', muted: '#ADBCC6', line: '#30434B', accent: '#64DCC5' } : p;
   const live = useLocation(ride.mode === 'idle');
   const mapFix = active ? ride.fix : live.fix;
@@ -105,9 +111,10 @@ export default function Explore() {
   useBluetoothLease(profile.id,ride.mode==='gps' || (ride.mode==='simulation' && navigationOptions.developerMode && bluetoothPreferences.simulateTelemetry));
   const recorder = useRideRecorder(ride.mode === 'gps', navigationOptions.recordRides, g?.arrived === true, selected, profile, motion, compass, navigationOptions.askBatteryUsage,minimumRideDistance(selected)); useEffect(() => { recordingAccept.current = recorder.accept;cancelRecording.current=recorder.cancel; }, [recorder.accept,recorder.cancel]);
   const offlineMap = useDownloadedMaps(navigationOptions.downloadedMaps, mapPosition, selected);
+  activeRef.current=ride.mode==='gps';
   const compassFresh = navigationOptions.compass && compass.heading !== null;
-  const heading = compassFresh ? compass.heading! : direction.heading;
-  const headingSource = compassFresh ? compass.status : ride.mode === 'simulation' ? 'Demo travel direction' : direction.source;
+  const resolvedHeading=useRideHeading(mapFix,compass,navigationOptions.compass,direction,now,`${selected?.id||'map'}-${ride.mode}`);
+  const heading=resolvedHeading.heading,headingSource=ride.mode==='simulation'?'Demo travel direction':resolvedHeading.source;
   const precise = freshFix(ride.fix, now);
   useEffect(() => { const clock = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(clock); }, []);
   useEffect(() => () => { if (overviewTimer.current) clearTimeout(overviewTimer.current); }, []);
@@ -127,16 +134,17 @@ export default function Explore() {
   async function plan(journey?: Journey) {
     const request = ++planRequest.current; setError(''); setExternalJourney(null); setBusy(true);
     try {
+      if(stops.some(s=>s.coordinate.some(n=>!Number.isFinite(n))))throw new Error('Choose a location for every stop.');
       let a: Coord, b: Coord;
       if (journey) a = journey.startCurrent ? await resolveCurrentLocation() : journey.start;
       else if (gpsStart) a = await resolveCurrentLocation();
       else { try { a = startPoint || parseCoordinate(start); } catch { throw new Error('Search your start address and choose a result, or pick your start on the map.'); } }
       try { b = journey?.end || (end === 'Current location' ? await currentArrival() : endPoint || parseCoordinate(end)); } catch { throw new Error('Search your destination and choose a result, or pick it on the map.'); }
-      const results = await Promise.allSettled([fetchRoute(a, b, 'bike', profile), fetchRoute(a, b, 'car', profile)]);
+      const results = await Promise.allSettled([fetchItinerary(a, b, journey?.stops || stops, 'bike', profile), fetchItinerary(a, b, journey?.stops || stops, 'car', profile)]);
       if (request !== planRequest.current) return;
       const good: Route[] = [], failures: string[] = [];
       results.forEach((r, i) => r.status === 'fulfilled' ? good.push({ ...r.value, startLabel: journey?.startLabel || start, endLabel: journey?.endLabel || end }) : failures.push(`${i === 0 ? 'Bicycle' : 'Car-road'}: ${r.reason.message}`));
-      if (good.length) { setPreviewPin(undefined); setRoutes(good); select(good[0]); setPlanner(false); }
+      if (good.length) { void Promise.all(good.map(enrichElevation)).then(enriched=>{if(request===planRequest.current){setRoutes(enriched);select(enriched.find(r=>r.id===selectedRef.current?.id)||enriched[0]);}}); setPreviewPin(undefined); setRoutes(good); select(good[0]); setPlanner(false); }
       else { setExternalJourney({ start: a, end: b, errors: failures }); setPlanner(false); }
       setError(failures.join('\n'));
     } catch (e) { if (request === planRequest.current) setError(e instanceof Error ? e.message : String(e)); }
@@ -163,12 +171,12 @@ export default function Explore() {
     const coordinate: Coord = [pos.coords.longitude, pos.coords.latitude]; setStart('Current location'); setStartPoint(coordinate); setGpsStart(true); return coordinate;
   }
   async function currentArrival() { const old={start,startPoint,gpsStart}; const c=await resolveCurrentLocation(); setStart(old.start);setStartPoint(old.startPoint);setGpsStart(old.gpsStart);return c; }
-  function picked(c: Coord) { if (!picking) return; const label = `${c[1].toFixed(6)}, ${c[0].toFixed(6)}`; if (picking === 'start') { manualStart(); setStart(label); setStartPoint(c); } else { setEnd(label); setEndPoint(c); } setPicking(null); setPlanner(true); }
+  function picked(c: Coord) { if (!picking) return;if(stopPick!==null){setStops(v=>v.map((s,i)=>i===stopPick?{coordinate:c,label:`${c[1].toFixed(6)}, ${c[0].toFixed(6)}`}:s));setStopPick(null);setPicking(null);setPlanner(true);return;} const label = `${c[1].toFixed(6)}, ${c[0].toFixed(6)}`; if (picking === 'start') { manualStart(); setStart(label); setStartPoint(c); } else { setEnd(label); setEndPoint(c); } setPicking(null); setPlanner(true); }
   function cancelPendingLocation() { locationRequest.current++; setLocating(false); }
   function manualStart() { cancelPendingLocation(); setGpsStart(false); }
   function beginRide(simulate = false, confirmed = false) { if (vehicleLocked && !active) {setNotice('Finish your trip recording in Library before starting navigation.');return;} if (!confirmed && selected?.safetyWarnings?.length) { warningSimulation.current = simulate; setWarningRoute(selected); return; } setNow(Date.now()); setPanelOpen(false); resumeFollowing(); ride.start(simulate); }
   function openPlanner() {
-    setPreviewPin(undefined); setPlanner(true);
+    setPreviewPin(undefined); setPlanner(true); setPanelOpen(true);
     if (gpsStart && !locating) { setLocating(true); const pending = resolveCurrentLocation(), request = locationRequest.current; void pending.catch(e => { if (request === locationRequest.current) setError(e.message); }).finally(() => { if (request === locationRequest.current) setLocating(false); }); }
   }
   function showOverview() {
@@ -178,8 +186,33 @@ export default function Explore() {
   }
   function resumeFollowing() { if (overviewTimer.current) clearTimeout(overviewTimer.current); overviewTimer.current = null; setOverview(false); setFollow(true); }
   function clearRide() {
-    setPreviewPin(undefined); setTurnList(false); setExternalJourney(null); setWarningRoute(null); planRequest.current++; setBusy(false); locationRequest.current++; setLocating(false); ride.stop(); setRoutes([]); select(null); setStart('Current location'); setStartPoint(undefined); setGpsStart(true); setEnd(''); setEndPoint(undefined); setDeparture(''); setScheduleMode('depart'); setOptionsOpen(false);  setPicking(null); setPlanner(false); setPanelOpen(false); setError(''); resumeFollowing();
+    setPreviewPin(undefined); setTurnList(false); setExternalJourney(null); setWarningRoute(null); planRequest.current++; setBusy(false); locationRequest.current++; setLocating(false); ride.stop(); setRoutes([]); select(null); setStart('Current location'); setStartPoint(undefined); setGpsStart(true); setEnd(''); setEndPoint(undefined); setStops([]); setDeparture(''); setScheduleMode('depart'); setOptionsOpen(false);  setPicking(null); setPlanner(false); setPanelOpen(false); setError(''); resumeFollowing();
   }
+  async function reroute(fix:Fix,index:number){
+    const original=selected;if(!original||original.kind==='track')return;
+    const request=++planRequest.current;
+    const replacement=await fetchItinerary(fix.coordinate,original.coordinates.at(-1)!,remainingStops(original,index),original.kind,profile);
+    if(request!==planRequest.current||!activeRef.current)return;
+    const next={...replacement,id:original.id,startLabel:'Current location',endLabel:original.endLabel};
+    setStart('Current location');setStartPoint(fix.coordinate);setGpsStart(true);
+    if(next.safetyWarnings?.length){reroutePending.current=next;setWarningRoute(next);return;}
+    setRoutes([next]);select(next);setNotice('Route updated from your current position.');
+  }
+  const plannerContent=<View style={{gap:14}}>
+
+      <Text style={[styles.subtitle, { color: panelP.muted }]}>Search an address or choose a point on the map. Compare bicycle and car-road routes at your riding speed.</Text>
+      <EndpointPicker disabled={busy} label={t("Start")} onFocus={() => setFocusedEndpoint('start')} showLocation={focusedEndpoint === 'start'} value={start} onChange={v => { manualStart(); setStart(v); setStartPoint(undefined); }} onSelect={(label, c) => { manualStart(); setStart(label); setStartPoint(c); }} onLocation={() => void run(resolveCurrentLocation)} onMap={() => { cancelPendingLocation(); setPicking('start'); setPlanner(false); }} />
+      <View style={{ alignSelf: 'center' }}><IconButton label={t("Swap start and destination")} icon="swap-vertical" disabled={busy || locating} onPress={() => { const swapped=swapEndpoints({label:start,point:startPoint,current:gpsStart},{label:end,point:endPoint,current:end === 'Current location'}); cancelPendingLocation(); setStart(swapped.start.label); setStartPoint(swapped.start.point); setGpsStart(!!swapped.start.current); setEnd(swapped.end.label); setEndPoint(swapped.end.point); }} /></View>
+      {stops.map((stop,i)=><View key={i} style={{gap:4}}><EndpointPicker disabled={busy} label={t(`Stop ${i+1}`)} value={stop.label} onChange={label=>setStops(v=>v.map((s,j)=>j===i?{...s,label,coordinate:[NaN,NaN]}:s))} onSelect={(label,coordinate)=>setStops(v=>v.map((s,j)=>j===i?{label,coordinate}:s))} onMap={()=>{setStopPick(i);setPicking('end');setPlanner(false);}}/><View style={{flexDirection:'row',justifyContent:'flex-end',gap:4}}><IconButton label={t('Move stop up')} icon="arrow-up" disabled={i===0||busy} onPress={()=>setStops(v=>{const x=[...v];[x[i-1],x[i]]=[x[i],x[i-1]];return x;})}/><IconButton label={t('Move stop down')} icon="arrow-down" disabled={i===stops.length-1||busy} onPress={()=>setStops(v=>{const x=[...v];[x[i+1],x[i]]=[x[i],x[i+1]];return x;})}/><IconButton label={t('Remove stop')} icon="close" disabled={busy} onPress={()=>setStops(v=>v.filter((_,j)=>j!==i))}/></View></View>)}
+      <EndpointPicker disabled={busy} label={t("Destination")} onFocus={() => setFocusedEndpoint('end')} showLocation={focusedEndpoint === 'end'} value={end} onChange={v => { setEnd(v); setEndPoint(undefined); }} onSelect={(label, c) => { setEnd(label); setEndPoint(c); }} onLocation={() => void run(async () => { const a = gpsStart, label = start, point = startPoint; const c = await resolveCurrentLocation(); setEnd('Current location'); setEndPoint(c); setStart(label); setStartPoint(point); setGpsStart(a); })} onMap={() => { setPicking('end'); setPlanner(false); }} />
+      <Button title={t('Add stop')} icon="add-circle-outline" secondary disabled={busy||stops.length>=12} onPress={()=>setStops(v=>[...v,{label:'',coordinate:[NaN,NaN]}])}/>
+      {(startPoint || endPoint) && <View style={{flexDirection:'row',gap:10}}><View style={{flex:1}}><Button title={t("Show selected place on map")} icon="map-outline" secondary onPress={()=>{setPreviewPin(focusedEndpoint === 'start' ? startPoint || endPoint : endPoint || startPoint);setFollow(false);setPlanner(false);}} /></View><IconButton label={t("Save selected place")} icon="bookmark-outline" onPress={()=>{const c=focusedEndpoint === 'start' ? startPoint : endPoint;const label=focusedEndpoint === 'start' ? start : end;if(c){addPlace({name:label.split(',')[0],address:label,coordinate:c});setNotice('Saved place added.');}}} /></View>}
+      <View style={[styles.card, { backgroundColor: panelP.card }]}><VehicleSelector outlined disabled={busy} /></View>
+      <View style={[styles.card, { backgroundColor: panelP.card }]}><Button title={t(departure ? scheduleSummary(departure, eta?.seconds, scheduleMode) : 'Depart now')} secondary icon="calendar-outline" onPress={() => setOptionsOpen(v => !v)} />{optionsOpen && <><View style={{ flexDirection: 'row', gap: 8 }}><View style={{ flex: 1 }}><Button title={t("Depart at")} icon="time-outline" secondary={scheduleMode !== 'depart'} onPress={() => setScheduleMode('depart')} /></View><View style={{ flex: 1 }}><Button title={t("Arrive by")} icon="flag-outline" secondary={scheduleMode !== 'arrive'} onPress={() => setScheduleMode('arrive')} /></View></View><ScheduleControl value={departure} onChange={setDeparture} /><Text accessibilityRole="alert" style={{ color: '#C75A36', fontSize: 12 }}>Scheduled trips do not use traffic conditions or traffic simulation. Allow extra time for delays.</Text><Button title={t(navigationOptions.traffic ? 'Hide live traffic' : 'Show live traffic')} icon="car-outline" secondary disabled={!trafficAvailable} onPress={() => updateNavigationOptions({traffic:!navigationOptions.traffic})} />{!trafficAvailable && <Text style={{ color: panelP.muted, fontSize: 12 }}>Live traffic needs a configured TomTom server key. It is never included in ETA.</Text>}</>}</View>
+      {locating && <Text style={{ color: panelP.muted }}>Finding your current GPS location…</Text>}
+      {busy && <ActivityIndicator color={panelP.accent} />}{!!error && <Text style={{ color: '#C75A36' }}>{publicError(error,navigationOptions.developerMode)}</Text>}
+      <Button title={t(busy ? 'Finding routes…' : 'Compare routes')} disabled={busy || locating} onPress={() => void plan()} />
+  </View>;
   return <TripSharing active={ride.mode==='gps' && !g?.arrived} route={selected} position={mapPosition} seconds={eta?.seconds||0} meters={eta?.meters||0} now={now}>{shareControls=><SafeAreaView edges={[]} onLayout={e => setMapHeight(e.nativeEvent.layout.height)} style={{ flex: 1, backgroundColor: p.bg }}>
     {active && <Awake />}
 
@@ -196,14 +229,14 @@ export default function Explore() {
       {previewPin && <View style={{position:'absolute',bottom:195,left:12}}><Button title={t("Back to Where to")} icon="search" onPress={openPlanner} /></View>}
       {picking && <View style={{ position: 'absolute', bottom: 12, left: 12 }}><Button title={t("Cancel map selection")} secondary onPress={() => { setPicking(null); setPlanner(true); }} /></View>}
     {!picking && <GlassSurface expanded={expandedPanel} {...motionProps('sheet')} style={[s.floatingPanel, { backgroundColor: panelP.bg, left: 12 + webLeft, right: wide ? undefined : 12 + webRight, width: wide ? 390 : undefined, top: wide && !active && Platform.OS !== 'web' ? insets.top + 88 : undefined, bottom: wide && !active && Platform.OS !== 'web' ? undefined : 12, height: visiblePanelHeight }]}>
-      <PaletteProvider value={panelP}><SwipeArea onSwipe={setPanelOpen} style={{ paddingTop: 8 }} onLayout={e=>setPanelHeaderHeight(e.nativeEvent.layout.height)}>
+      {planner?<PaletteProvider value={panelP}><View onLayout={e=>setPanelHeaderHeight(e.nativeEvent.layout.height)} style={{paddingHorizontal:16,paddingTop:20,paddingBottom:12}}><View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><Text style={[styles.title, { color: panelP.text }]}>Where to?</Text><Pressable accessibilityRole="button" accessibilityLabel={t("Close planner")} onPress={() => setPlanner(false)}><Ionicons name="close-circle" size={30} color={panelP.muted} /></Pressable></View></View><ScrollView onContentSizeChange={(_,h)=>setPanelContentHeight(h)} keyboardShouldPersistTaps="handled" style={{flex:1}} contentContainerStyle={{paddingHorizontal:16,paddingBottom:20}}>{plannerContent}</ScrollView></PaletteProvider>:<PaletteProvider value={panelP}><SwipeArea onSwipe={setPanelOpen} style={{ paddingTop: 8 }} onLayout={e=>setPanelHeaderHeight(e.nativeEvent.layout.height)}>
       <View style={{ alignItems: 'center', paddingBottom: 6 }}><View style={{ height: 4, width: 38, borderRadius: 2, backgroundColor: panelP.muted, opacity: .4 }} /></View>
       <View style={{ paddingHorizontal: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><Text style={{ color: panelP.text, fontWeight: '800', fontSize: 20 }}>{active ? 'Trip' : 'Your ride'}</Text>{(!wide || active) && <Pressable accessibilityRole="button" accessibilityLabel={t(panelOpen ? 'Collapse ride controls' : 'Expand ride controls')} onPress={() => setPanelOpen(v => !v)} style={{ padding: 8 }}><Ionicons name={panelOpen ? 'chevron-down' : 'chevron-up'} color={panelP.accent} size={22} /></Pressable>}</View>
       </SwipeArea>
       {(!wide || active) && !panelOpen ? <SwipeArea onSwipe={setPanelOpen}><MotionView {...motionProps('content')} style={{ paddingHorizontal: 16, paddingBottom:16, gap: 10 }}>{active ? <RideDashboard etaOnly compact simulation={ride.mode === 'simulation'} profile={profile} route={selected} fix={ride.fix} index={g?.index} offRoute={g?.offRoute} seconds={eta?.seconds} meters={eta?.meters} now={now} unit={navigationOptions.unit} /> : <Text numberOfLines={1} style={{ color: panelP.muted }}>{selected && eta ? `${selected.name} · ${distanceLeft(eta.meters, navigationOptions.unit)} · ${minutes(eta.seconds)}` : 'Plan your next ride'}</Text>}<View style={{flexDirection:'row',alignItems:'stretch',gap:10}}><View style={{flex:1}}><Button title={t(active ? 'Ride controls' : selected ? 'Start ride' : 'Plan a ride')} icon={active || selected ? 'navigate' : 'search'} onPress={() => active ? setPanelOpen(true) : selected ? beginRide() : openPlanner()} /></View>{!active && !selected && !endPoint && !end.trim() && <IconButton label={t("Record trip")} icon="recording-outline" muted disabled={vehicleLocked} onPress={()=>router.push('/offline/record-trip')} />}</View></MotionView></SwipeArea> : <ScrollView onContentSizeChange={(_,h)=>setPanelContentHeight(h)} {...motionProps('content')} keyboardShouldPersistTaps="handled" style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 14, paddingBottom: 16 }}>
       {active ? <View style={[styles.card, { backgroundColor: panelP.card }]}>
         <RideDashboard etaOnly simulation={ride.mode === 'simulation'} profile={profile} route={selected} fix={ride.fix} index={g?.index} offRoute={g?.offRoute} seconds={eta?.seconds} meters={eta?.meters} now={now} unit={navigationOptions.unit} />
-        <Text style={{ color: panelP.muted, fontSize: 12 }}>{profile.name} · Cap {displaySpeed(Math.min(profile.maxSpeed, profile.ridingLimit), navigationOptions.unit).toFixed(0)} {navigationOptions.unit === 'mi' ? 'mph' : 'km/h'} · {eta ? batteryLabel(eta.meters, profile) : 'Range unknown'}</Text>
+        <Text style={{ color: panelP.muted, fontSize: 12 }}>{profile.name} · Cap {displaySpeed(Math.min(profile.maxSpeed, profile.ridingLimit), navigationOptions.unit).toFixed(0)} {navigationOptions.unit === 'mi' ? 'mph' : 'km/h'} · {eta ? routeEnergyLabel(selected!, profile,active&&g&&!g.offRoute?g.along:0) : 'Range unknown'}</Text>
         <Text style={{ color: panelP.muted, fontSize: 11 }}>{headingSource}{active && navigationOptions.compass && !compassFresh ? ` · ${compass.status}` : ''}{!precise ? ' · Waiting for a precise GPS fix' : ''}</Text>
 
         <VehicleTelemetryPanel vehicleId={profile.id} />
@@ -212,11 +245,11 @@ export default function Explore() {
         {g?.offRoute && <Button title={t("End ride & replan")} secondary onPress={() => { ride.stop(); setGpsStart(true); setStart('Current location'); setStartPoint(undefined); setPlanner(true); }} />}
         <Text style={{ color: panelP.muted, fontSize: 12 }}>DIRECTION VOLUME</Text><View style={{ flexDirection: 'row', gap: 6 }}>{(['loud', 'quiet', 'off'] as const).map(volume => <View key={volume} style={{ flex: 1 }}><Button title={t(volume === 'loud' ? 'Loud' : volume === 'quiet' ? 'Quiet' : 'Off')} icon={volume === 'off' ? 'volume-mute-outline' : volume === 'quiet' ? 'volume-low-outline' : 'volume-high-outline'} secondary={navigationOptions.volume !== volume} onPress={() => updateNavigationOptions({ volume })} /></View>)}</View>{!navigationOptions.voice && <Text style={{ color: panelP.muted }}>Spoken directions are off in Settings.</Text>}{!!recorder.error && <Text accessibilityRole="alert" style={{ color: '#D75451' }}>{publicError(recorder.error,navigationOptions.developerMode)}</Text>}<Text style={{ color: panelP.muted, fontSize: 11 }}>{navigationOptions.recordRides ? 'Ride recording on · saved locally to Library' : 'Ride recording off'}</Text>{!!activity.status && Platform.OS==='ios' && <Text style={{color:panelP.muted,fontSize:12}}>{publicError(activity.status,navigationOptions.developerMode)}</Text>}<Button title={t("End ride")} icon="stop-circle-outline" onPress={ride.stop} />
       </View> : <>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}><Text style={{ color: panelP.muted, fontSize: 12 }}>{profile.name}</Text><Text style={{ color: panelP.accent, fontSize: 12, fontWeight: '700' }}>{displaySpeed(Math.min(profile.maxSpeed, profile.ridingLimit), navigationOptions.unit).toFixed(0)} {navigationOptions.unit === 'mi' ? 'MPH' : 'KM/H'} CAP</Text></View>
+        <VehicleSelector outlined />
         {routes.length === 0 && <View style={[styles.card, { backgroundColor: panelP.card }]}><Text style={{ color: panelP.text, fontSize: 18, fontWeight: '700' }}>Where will you ride?</Text><Text style={{color:panelP.muted,lineHeight:22}}>Choose a destination to compare routes, or record a trip without one.</Text></View>}
         {routes.map(r => { const e = estimate(r, profile), chosen = r.id === selected?.id; return <Pressable {...motionProps('route')} accessibilityRole="button" accessibilityLabel={t(`${r.name}, ${minutes(e.seconds)}`)} accessibilityState={{ selected: chosen }} key={r.id} onPress={() => { select(r); void Haptics.selectionAsync(); }} style={[styles.card, { backgroundColor: panelP.card, borderWidth: 2, borderColor: chosen ? panelP.accent : 'transparent' }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><View style={[s.round, { backgroundColor: panelP.bg }]}><Ionicons name={r.kind === 'bike' ? 'bicycle' : r.kind === 'car' ? 'car-outline' : 'trail-sign-outline'} size={24} color={panelP.accent} /></View><View style={{ flex: 1 }}><Text style={{ color: panelP.text, fontSize: 17, fontWeight: '700' }}>{r.name}</Text><Text style={{ color: panelP.muted, marginTop: 3 }}>{distanceLeft(e.meters, navigationOptions.unit)} · {r.source === 'gpx' ? 'Track only' : 'Access unverified'}</Text></View><View style={{ alignItems: 'flex-end' }}><Text style={{ color: panelP.text, fontSize: 25, fontWeight: '800' }}>{minutes(e.seconds)}</Text><Text style={{ color: panelP.muted, fontSize: 11 }}>minimum {minutes(e.minimumSeconds)}</Text></View></View>
-          <Text style={{ color: panelP.muted, fontSize: 12 }}>{batteryLabel(e.meters, profile)}</Text>
+          <Text style={{ color: panelP.muted, fontSize: 12 }}>{routeEnergyLabel(r, profile)}</Text>
           {r.source !== 'gpx' && r.plannedCap !== Math.min(profile.maxSpeed, profile.ridingLimit) && <Text style={{ color: '#C75A36', fontSize: 12 }}>Speed settings changed. Replan to update road speeds, alternatives and ETA.</Text>}
         </Pressable>; })}
         {selected?.warnings.map(w => <Text key={w} style={{ color: panelP.muted, fontSize: 12, lineHeight: 18 }}>{w}</Text>)}
@@ -235,25 +268,13 @@ export default function Explore() {
 
       {selected && selected.steps.length > 0 && !active && <View style={[styles.card, { backgroundColor: panelP.card }]}><Text style={{ fontWeight: '700', color: panelP.text }}>Turn-by-turn directions</Text>{selected.steps.map((step,i)=><TurnDirection key={`${i}-${step.index}`} text={step.text} sign={step.sign} meters={step.distance} unit={navigationOptions.unit} />)}</View>}
     </ScrollView>}
-    </PaletteProvider></GlassSurface>}
+    </PaletteProvider>}</GlassSurface>}
     </NativeTabSafeOverlay>
     <ActionMenu title={t("Share route")} actions={actions} onClose={()=>setActions(null)} />
     <Modal visible={turnList && active} transparent animationType="slide" onRequestClose={()=>setTurnList(false)}><View style={{flex:1,padding:12,paddingTop:insets.top+12,backgroundColor:'#00000050'}}><Pressable accessibilityLabel={t("Dismiss upcoming directions")} onPress={()=>setTurnList(false)} style={StyleSheet.absoluteFill} /><View style={{maxHeight:'80%',width:'100%',maxWidth:560,alignSelf:wide?'flex-start':'center',backgroundColor:p.bg,borderRadius:24,overflow:'hidden'}}><SwipeArea onSwipe={open=>{if(open)setTurnList(false);}}><View style={{padding:16,flexDirection:'row',alignItems:'center',gap:12}}><Text style={{flex:1,color:p.text,fontSize:22,fontWeight:'800'}}>Upcoming directions</Text><IconButton label={t("Close directions")} icon="close" onPress={()=>setTurnList(false)} /></View></SwipeArea><ScrollView contentContainerStyle={{padding:10,gap:8}}>{selected?.steps.filter(step=>!g?.next || step.index >= g.next.index).map((step,i)=><View key={`${i}-${step.index}`} style={{backgroundColor:p.card,borderRadius:20}}><TurnDirection unit={navigationOptions.unit} sign={step.sign} text={step.text} meters={Math.max(0,(cumulative(selected.coordinates)[step.index] || 0)-(g?.along || 0))} /></View>)}</ScrollView></View></View></Modal>
     {externalJourney && <ExternalMapsWarning journey={externalJourney} onCancel={() => { setExternalJourney(null); setPlanner(true); }} />}
-    <RouteWarning key={warningRoute?.id ?? 'closed'} route={warningRoute} onCancel={() => setWarningRoute(null)} onConfirm={route => { if (route.id === selected?.id) { setWarningRoute(null); beginRide(warningSimulation.current, true); } }} />
-    <Modal visible={planner} animationType={reducedMotion ? 'none' : 'fade'} transparent presentationStyle="overFullScreen" onRequestClose={() => setPlanner(false)}><View style={{ flex: 1, justifyContent: 'center', padding: wide ? 24 : 12, backgroundColor: '#00000025' }}><Pressable accessibilityLabel={t("Dismiss route planner")} onPress={() => setPlanner(false)} style={StyleSheet.absoluteFill} /><SafeAreaView {...motionProps('planner', planner ? 'open' : 'closed')} edges={['top', 'bottom']} style={{ width: '100%', maxWidth: 560, maxHeight: '92%', alignSelf: wide ? 'flex-start' : 'center', backgroundColor: p.bg, borderRadius: 28, overflow: 'hidden', boxShadow: '0 12px 36px #00000030' }}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 24, gap: 18, width: '100%', maxWidth: 780, alignSelf: 'center' }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><Text style={[styles.title, { color: p.text }]}>Where to?</Text><Pressable accessibilityLabel={t("Close planner")} onPress={() => setPlanner(false)}><Ionicons name="close-circle" size={30} color={p.muted} /></Pressable></View>
-      <Text style={[styles.subtitle, { color: p.muted }]}>Search an address or choose a point on the map. Compare bicycle and car-road routes at your riding speed.</Text>
-      <EndpointPicker disabled={busy} label={t("Start")} onFocus={() => setFocusedEndpoint('start')} showLocation={focusedEndpoint === 'start'} value={start} onChange={v => { manualStart(); setStart(v); setStartPoint(undefined); }} onSelect={(label, c) => { manualStart(); setStart(label); setStartPoint(c); }} onLocation={() => void run(resolveCurrentLocation)} onMap={() => { cancelPendingLocation(); setPicking('start'); setPlanner(false); }} />
-      <View style={{ alignSelf: 'center' }}><IconButton label={t("Swap start and destination")} icon="swap-vertical" disabled={busy || locating} onPress={() => { const swapped=swapEndpoints({label:start,point:startPoint,current:gpsStart},{label:end,point:endPoint,current:end === 'Current location'}); cancelPendingLocation(); setStart(swapped.start.label); setStartPoint(swapped.start.point); setGpsStart(!!swapped.start.current); setEnd(swapped.end.label); setEndPoint(swapped.end.point); }} /></View>
-      <EndpointPicker disabled={busy} label={t("Destination")} onFocus={() => setFocusedEndpoint('end')} showLocation={focusedEndpoint === 'end'} value={end} onChange={v => { setEnd(v); setEndPoint(undefined); }} onSelect={(label, c) => { setEnd(label); setEndPoint(c); }} onLocation={() => void run(async () => { const a = gpsStart, label = start, point = startPoint; const c = await resolveCurrentLocation(); setEnd('Current location'); setEndPoint(c); setStart(label); setStartPoint(point); setGpsStart(a); })} onMap={() => { setPicking('end'); setPlanner(false); }} />
-      {(startPoint || endPoint) && <View style={{flexDirection:'row',gap:10}}><View style={{flex:1}}><Button title={t("Show selected place on map")} icon="map-outline" secondary onPress={()=>{setPreviewPin(focusedEndpoint === 'start' ? startPoint || endPoint : endPoint || startPoint);setFollow(false);setPlanner(false);}} /></View><IconButton label={t("Save selected place")} icon="bookmark-outline" onPress={()=>{const c=focusedEndpoint === 'start' ? startPoint : endPoint;const label=focusedEndpoint === 'start' ? start : end;if(c){addPlace({name:label.split(',')[0],address:label,coordinate:c});setNotice('Saved place added.');}}} /></View>}
-      <View style={[styles.card, { backgroundColor: p.card }]}><VehicleSelector disabled={busy} /></View>
-      <View style={[styles.card, { backgroundColor: p.card }]}><Button title={t(departure ? scheduleSummary(departure, eta?.seconds, scheduleMode) : 'Depart now')} secondary icon="calendar-outline" onPress={() => setOptionsOpen(v => !v)} />{optionsOpen && <><View style={{ flexDirection: 'row', gap: 8 }}><View style={{ flex: 1 }}><Button title={t("Depart at")} icon="time-outline" secondary={scheduleMode !== 'depart'} onPress={() => setScheduleMode('depart')} /></View><View style={{ flex: 1 }}><Button title={t("Arrive by")} icon="flag-outline" secondary={scheduleMode !== 'arrive'} onPress={() => setScheduleMode('arrive')} /></View></View><ScheduleControl value={departure} onChange={setDeparture} /><Text accessibilityRole="alert" style={{ color: '#C75A36', fontSize: 12 }}>Scheduled trips do not use traffic conditions or traffic simulation. Allow extra time for delays.</Text><Button title={t(navigationOptions.traffic ? 'Hide live traffic' : 'Show live traffic')} icon="car-outline" secondary disabled={!trafficAvailable} onPress={() => updateNavigationOptions({traffic:!navigationOptions.traffic})} />{!trafficAvailable && <Text style={{ color: p.muted, fontSize: 12 }}>Live traffic needs a configured TomTom server key. It is never included in ETA.</Text>}</>}</View>
-      {locating && <Text style={{ color: p.muted }}>Finding your current GPS location…</Text>}
-      {busy && <ActivityIndicator color={p.accent} />}{!!error && <Text style={{ color: '#C75A36' }}>{publicError(error,navigationOptions.developerMode)}</Text>}
-      <Button title={t(busy ? 'Finding routes…' : 'Compare routes')} disabled={busy || locating} onPress={() => void plan()} />
-    </ScrollView></SafeAreaView></View></Modal>
+    <RouteWarning key={warningRoute?.id ?? 'closed'} route={warningRoute} onCancel={() => {reroutePending.current=null;setWarningRoute(null);}} onConfirm={route => {if(reroutePending.current===route){if(!activeRef.current){reroutePending.current=null;setWarningRoute(null);return;}setRoutes([route]);select(route);reroutePending.current=null;setWarningRoute(null);return;} if (route.id === selected?.id) { setWarningRoute(null); beginRide(warningSimulation.current, true); } }} />
+
   </SafeAreaView>}</TripSharing>;
 }
 const s = StyleSheet.create({ header: { position: 'absolute', flexDirection: 'row', alignItems: 'center', gap: 12, justifyContent: 'space-between' }, brandCard: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 18, boxShadow: '0 3px 16px #00000020' }, floatingPanel: { position: 'absolute', borderRadius: 26, overflow: 'hidden', boxShadow: '0 8px 32px #00000030' }, brand: { fontSize: 26, letterSpacing: -1.3, fontWeight: '800' }, round: { height: 46, width: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }, mapBadge: { position: 'absolute', right: 16, top: 16, padding: 10, borderRadius: 12, flexDirection: 'row', gap: 8, alignItems: 'center' }, recenter: { position: 'absolute', right: 12, top: 70, borderRadius: 14, padding: 12 }, metrics: { flexDirection: 'row', paddingVertical: 10 } });

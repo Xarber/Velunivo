@@ -1,3 +1,4 @@
+import {RerouteGate} from '../core/rerouting';
 import {notifyRideNotice} from './rideNotice';
 import { MovementTracker, usableMovementFix } from '../core/movement';
 import { useEffect, useRef, useState } from 'react';
@@ -10,7 +11,8 @@ import { updateRideActivity, markActivityPaused } from './useNavigationActivity'
 import { maneuverDistance, bearing } from '../core/rideView';
 import { guidance } from '../core/navigation';
 import { cumulative, pointAt } from '../core/geo';
-export function useRide(route: Route | null, profile: Profile, preferences: NavigationOptions, onFix?: (fix: Fix, arrived?: boolean) => void | Promise<void>, onPermissionDenied?:()=>void) {
+export function useRide(route: Route | null, profile: Profile, preferences: NavigationOptions, onFix?: (fix: Fix, arrived?: boolean) => void | Promise<void>, onPermissionDenied?:()=>void,onReroute?:(fix:Fix,index:number)=>Promise<void>) {
+  const routeRef=useRef(route),rerouteRef=useRef(onReroute);useEffect(()=>{rerouteRef.current=onReroute;},[onReroute]);
   const [gpsAttempt,retryGPS]=useState(0);
   const [completedMeters, setCompletedMeters] = useState(0);
   const [mode, setMode] = useState<'idle' | 'gps' | 'simulation'>('idle');
@@ -23,14 +25,15 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
   useEffect(() => { unitRef.current = preferences.unit; preferencesRef.current = preferences; if (!preferences.voice || preferences.volume === 'off') void stopDirections(); }, [preferences]);
   const profileRef = useRef(profile);
   useEffect(() => { profileRef.current = profile; }, [profile]);
+  useEffect(()=>{routeRef.current=route;along.current=undefined;spoken.current='';},[route]);
   useEffect(() => {
     along.current = undefined; spoken.current = '';
     // Session resets mirror the external GPS subscription lifecycle.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setProgress(null); setFix(null); setCompletedMeters(0);
-    if (mode === 'idle' || !route) return;
+    const sessionRoute=routeRef.current;if (mode === 'idle' || !sessionRoute) return;
     let cancelled = false, paused = mode === 'gps' && AppState.currentState === 'background', background = false, halted = false, lastAccepted = 0, stopBackground: (()=>Promise<void>) | undefined, subscription: Location.LocationSubscription | undefined, timer: ReturnType<typeof setInterval> | undefined;
-    const movement = new MovementTracker();
+    const movement = new MovementTracker(),rerouting=new RerouteGate();
     async function accept(raw: Fix) {
       if (cancelled || paused || halted || raw.timestamp <= lastAccepted) return;
       const tracked = mode === 'gps' ? movement.next(raw) : null;
@@ -38,10 +41,12 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
       if (mode === 'gps' && !usableMovementFix(raw)) { setStatus('Waiting for a precise GPS fix'); setProgress(v => v ? { ...v, valid: false } : null); await onFixRef.current?.(raw); return; }
       const next = mode === 'simulation' ? raw : tracked?.fix ?? raw;
       setFix(next);
-      const g = guidance(route!, next, along.current);
+      const currentRoute=routeRef.current;if(!currentRoute)return;
+      const g = guidance(currentRoute, next, along.current);
       if (!g.valid) { setStatus('Waiting for a precise GPS fix'); setProgress(v => v ? { ...v, valid: false } : null); if(mode==='gps')await onFixRef.current?.(raw); return; }
       setProgress(g); if (!g.offRoute) setCompletedMeters(v => Math.max(v, g.along));
-      if (g.offRoute) setStatus('Off route · stop safely to replan');
+      if(mode==='gps'&&rerouting.ready(next,g.offRoute,preferencesRef.current.automaticRerouting)&&rerouteRef.current){setStatus('Finding a new route…');void rerouteRef.current(next,g.index).catch(()=>setStatus('Rerouting failed. Guidance continues on the previous route.')).finally(()=>rerouting.finish());}
+      if (g.offRoute) {if(!rerouting.busy)setStatus('Off route · stop safely to replan');}
       else { along.current = g.along; setStatus(g.arrived ? 'You have arrived' : mode === 'simulation' ? 'Simulation · no live GPS' : background ? 'GPS guidance · background enabled' : Platform.OS === 'web' ? 'GPS guidance · keep this page open' : 'GPS guidance · foreground only'); }
       if(mode==='gps')await onFixRef.current?.(raw,g.arrived);
       if(cancelled || lastAccepted!==next.timestamp)return;
@@ -49,14 +54,14 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
       if (preferencesRef.current.voice && preferencesRef.current.volume !== 'off' && !g.offRoute && g.next && (g.maneuverMeters ?? 999) < 150 && cue !== spoken.current) {
         spoken.current = cue; await speakDirection(`${maneuverDistance(g.maneuverMeters ?? 0, unitRef.current)}. ${g.next.text}`, preferencesRef.current);
       }
-      await updateRideActivity(route!,profileRef.current,preferencesRef.current,g,next,mode === 'simulation');
+      await updateRideActivity(currentRoute,profileRef.current,preferencesRef.current,g,next,mode === 'simulation');
       if (g.arrived) { halted=true; if (timer) clearInterval(timer); subscription?.remove(); await stopBackground?.(); await stopDirections(); }
     }
     const app = AppState.addEventListener('change', s => { paused = mode === 'gps' && s !== 'active' && !background; if (paused) { setStatus('Background location unavailable · keep the app open'); void stopDirections(); void markActivityPaused(); } });
     if (mode === 'simulation') {
-      let meters = 0, previousTick = Date.now(); const total = cumulative(route.coordinates).at(-1)!;
-      void accept({ coordinate: route.coordinates[0], accuracy: 3, speed: 0, timestamp: Date.now() });
-      timer = setInterval(() => { if (paused) return; const speed = Math.min(profileRef.current.maxSpeed, profileRef.current.ridingLimit) * profileRef.current.cruiseFactor / 3.6; const tick = Date.now(), elapsed = Math.max(0, tick - previousTick) / 1000; previousTick = tick; const before = pointAt(route.coordinates, meters); meters = Math.min(total, meters + speed * elapsed); const coordinate = pointAt(route.coordinates, meters); void accept({ coordinate, accuracy: 3, speed: meters < total ? speed : 0, heading: bearing(before, coordinate) ?? undefined, timestamp: Date.now() }); }, 500);
+      let meters = 0, previousTick = Date.now(); const total = cumulative(sessionRoute.coordinates).at(-1)!;
+      void accept({ coordinate: sessionRoute.coordinates[0], accuracy: 3, speed: 0, timestamp: Date.now() });
+      timer = setInterval(() => { if (paused) return; const speed = Math.min(profileRef.current.maxSpeed, profileRef.current.ridingLimit) * profileRef.current.cruiseFactor / 3.6; const tick = Date.now(), elapsed = Math.max(0, tick - previousTick) / 1000; previousTick = tick; const before = pointAt(sessionRoute.coordinates, meters); meters = Math.min(total, meters + speed * elapsed); const coordinate = pointAt(sessionRoute.coordinates, meters); void accept({ coordinate, accuracy: 3, speed: meters < total ? speed : 0, heading: bearing(before, coordinate) ?? undefined, timestamp: Date.now() }); }, 500);
     } else {
       setStatus('Requesting GPS permission');
       (async () => {
@@ -76,6 +81,6 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
       })();
     }
     return () => { cancelled = true; subscription?.remove(); void stopBackground?.().catch(console.warn); if (timer) clearInterval(timer); app.remove(); void stopDirections(); };
-  }, [mode, route,gpsAttempt]);
+  }, [mode, route?.id,gpsAttempt]);
   return { retryGPS:()=>retryGPS(v=>v+1), completedMeters, mode, fix, progress, status, start: (simulate = false) => setMode(simulate ? 'simulation' : 'gps'), stop: () => { setMode('idle'); setStatus('Ride ended'); } };
 }

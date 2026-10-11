@@ -5,9 +5,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'App version, e.g. 0.1.0 (the 1.0 tag is reserved for the source feed)'
+        description: 'App version, e.g. 1.0.0 (the 1.0 tag is reserved for the source feed)'
         required: true
-        default: '0.1.11'
+        default: '1.0.0'
 permissions:
   contents: read
 concurrency:
@@ -57,6 +57,8 @@ jobs:
     env:
       WEB_PUBLIC_ORIGIN: ${{ vars.WEB_PUBLIC_ORIGIN }}
       APP_VERSION: ${{ needs.prepare.outputs.version }}
+      EXPO_PUBLIC_OVERPASS_URL: ${{ vars.OVERPASS_URL }}
+      EXPO_PUBLIC_APP_VERSION: ${{ needs.prepare.outputs.version }}
       BUILD_NUMBER: ${{ github.run_number }}
       EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
       EXPO_PUBLIC_MAP_STYLE_URL: ${{ vars.MAP_STYLE_URL }}
@@ -87,6 +89,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       APP_VERSION: ${{ needs.prepare.outputs.version }}
+      EXPO_PUBLIC_OVERPASS_URL: ${{ vars.OVERPASS_URL }}
+      EXPO_PUBLIC_APP_VERSION: ${{ needs.prepare.outputs.version }}
       BUILD_NUMBER: ${{ github.run_number }}
       EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
       EXPO_PUBLIC_MAP_STYLE_URL: ${{ vars.MAP_STYLE_URL }}
@@ -174,6 +178,8 @@ jobs:
       CCACHE_COMPILERCHECK: content
       CCACHE_BASEDIR: ${{ github.workspace }}
       APP_VERSION: ${{ needs.prepare.outputs.version }}
+      EXPO_PUBLIC_OVERPASS_URL: ${{ vars.OVERPASS_URL }}
+      EXPO_PUBLIC_APP_VERSION: ${{ needs.prepare.outputs.version }}
       BUILD_NUMBER: ${{ github.run_number }}
       EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
       EXPO_PUBLIC_MAP_STYLE_URL: ${{ vars.MAP_STYLE_URL }}

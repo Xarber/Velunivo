@@ -2,7 +2,7 @@
   "expo": {
     "name": "Velunivo",
     "slug": "velunivo",
-    "version": "0.1.33",
+    "version": "1.0.0",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",

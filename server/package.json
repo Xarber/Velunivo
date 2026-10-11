@@ -1,7 +1,7 @@
 {
   "name": "velunivo-web-host",
   "private": true,
-  "version": "0.1.29",
+  "version": "1.0.0",
   "type": "module",
   "engines": {
     "node": ">=22.13.0"

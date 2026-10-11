@@ -1,9 +1,9 @@
 import { VehicleApprovalRequiredError } from '../approvalRetry';
 import { BLEDeviceInfo, VehicleProtocolPlugin, ProtocolSession, Capabilities } from '../types';
-import { NUS, TX, RX, PacketStream, validPlain, readPacket, reads, decodeRead } from './m365Packets';
+import { NUS, TX, RX, PacketStream, validPlain, readPacket, lockPacket, reads, decodeRead } from './m365Packets';
 import {authenticateMi,MI,CONTROL,DATA,MiUART} from './miAuth';
 import { LegacyCrypto } from './legacyCrypto';
-const capabilities:Capabilities={fields:['speed','batteryPercent','voltage','current','power','batteryTemperature','odometer','tripDistance','signal'],commands:['readTelemetry'],authentication:'Mi FE95 registration and saved-token login, legacy UART or 5AA5 approval',limitations:['Mi FE95 communication requires physical hardware validation.','Pro 2 BLE129/compatible first-generation crypto requires hardware validation.','Charging, mode, cycles and motor/controller temperature are not declared: register semantics are not verified.','Current is positive discharge, negative return current; regeneration is not charging.']};
+const capabilities:Capabilities={fields:['speed','batteryPercent','voltage','current','power','batteryTemperature','odometer','tripDistance','signal','ridingMode'],commands:['readTelemetry','lock','unlock'],authentication:'Mi FE95 registration and saved-token login, legacy UART or 5AA5 approval',limitations:['Mi FE95 communication requires physical hardware validation.','Pro 2 BLE129/compatible first-generation crypto requires hardware validation.','Charging, SHFW profile, cycles and motor/controller temperature are not declared: register semantics are not verified.','Current is positive discharge, negative return current; regeneration is not charging.']};
 export const XiaomiM365Plugin:VehicleProtocolPlugin={id:'xiaomi-m365-v1',manufacturer:'Xiaomi',vehicleTypes:['electric_scooter'],models:['M365 family','Mi Electric Scooter Pro 2 (compatible BLE firmware)'],services:[NUS,MI],manufacturerFilters:[0x20,0x22,0x25,0x28,0x29,0x2b].flatMap(model=>[{companyIdentifier:0x424e,dataPrefix:[model]},{companyIdentifier:0x434e,dataPrefix:[0,model]}]),capabilities,
  detect(device:BLEDeviceInfo){
   const hasUART=device.services.some(x=>x.toLowerCase()===NUS),m=device.manufacturerData;
@@ -21,7 +21,16 @@ export const XiaomiM365Plugin:VehicleProtocolPlugin={id:'xiaomi-m365-v1',manufac
  const stream=new PacketStream();let pending:{match:(body:Uint8Array)=>boolean;resolve:(body:Uint8Array)=>void;reject:(e:Error)=>void;timer:ReturnType<typeof setTimeout>}|undefined;
  const stop=link.monitor(NUS,RX,data=>{for(const packet of stream.feed(data)){try{const body=packet[1]===0xab?mi?.decrypt(packet):packet[0]===0x55?(validPlain(packet)?packet.slice(3,-2):undefined):crypto?.decrypt(packet);if(body?.[0]===0x21 && body[1]===0x3e && body[2]===0x5c && body[3]===1)powerApproved=true;if(body && pending?.match(body)){const waiter=pending;pending=undefined;clearTimeout(waiter.timer);waiter.resolve(body);}}catch{/* Bad checksums/replays are ignored; request timeout handles missing valid data. */}}},error=>{if(pending){clearTimeout(pending.timer);pending.reject(error);pending=undefined;}void link.disconnect().catch(()=>{});});
  const exchange=(wire:Uint8Array,match:(b:Uint8Array)=>boolean,timeout=1800)=>new Promise<Uint8Array>((resolve,reject)=>{if(closed){reject(new Error('Bluetooth session closed'));return;}const timer=setTimeout(()=>{pending=undefined;reject(new Error('Vehicle did not respond'));},timeout);pending={match,resolve,reject,timer};void link.write(NUS,TX,wire).catch(e=>{clearTimeout(timer);pending=undefined;reject(e);});});
- const read=async(target:number,reg:number,size:number)=>{const wire=mi?mi.encrypt(Uint8Array.from([target,1,reg,size])):encrypted?crypto!.encrypt(Uint8Array.from([0x3e,target,1,reg,size])):readPacket(target,reg,size);const body=await exchange(wire,b=>encrypted?b.length===size+4 && b[0]===(target===0x20?0x20:0x22) && b[1]===0x3e && b[2]===1 && b[3]===reg:b.length===size+3 && b[0]===(target===0x20?0x23:0x25) && b[1]===1 && b[2]===reg);return body.slice(encrypted?4:3);};
+ const readDirect=async(target:number,reg:number,size:number)=>{const wire=mi?mi.encrypt(Uint8Array.from([target,1,reg,size])):encrypted?crypto!.encrypt(Uint8Array.from([0x3e,target,1,reg,size])):readPacket(target,reg,size);const body=await exchange(wire,b=>encrypted?b.length===size+4 && b[0]===(target===0x20?0x20:0x22) && b[1]===0x3e && b[2]===1 && b[3]===reg:b.length===size+3 && b[0]===(target===0x20?0x23:0x25) && b[1]===1 && b[2]===reg);return body.slice(encrypted?4:3);};
+ let queue:Promise<unknown>=Promise.resolve();const serialized=<T,>(task:()=>Promise<T>):Promise<T>=>{const run=queue.then(task,task);queue=run.catch(()=>{});return run;};
+ const read=(target:number,reg:number,size:number)=>serialized(()=>readDirect(target,reg,size));
+ const setLocked=(locked:boolean)=>serialized(async()=>{
+  const speed=decodeRead(0x23,0xb4,await readDirect(0x20,0xb4,16)).fields.speed?.value;if(typeof speed!=='number'||speed<0||speed>.15)throw new Error('Stop the vehicle and wait for a fresh speed reading before locking or unlocking.');
+  const command=locked?0x70:0x71,wire=mi?mi.encrypt(Uint8Array.from([0x20,3,command,1,0])):encrypted?crypto!.encrypt(Uint8Array.from([0x3e,0x20,3,command,1,0])):lockPacket(locked);
+  // Some firmware omits write acknowledgements: always verify the actual ESC status afterwards.
+  try{await exchange(wire,b=>encrypted?b[0]===0x20&&b[1]===0x3e&&b[2]===3&&b[3]===command:b[0]===0x23&&b[1]===3&&b[2]===command);}catch{/* Read-back decides success, never assume a write succeeded. */}
+  const status=await readDirect(0x20,0xb2,2),update=decodeRead(0x23,0xb2,status);ctx.emit(update);if(update.extensions?.locked?.value!==locked)throw new Error('Vehicle lock state could not be verified.');
+ });
  const cancel=()=>{void close();};
  const close=async()=>{if(closed)return;closed=true;ctx.signal?.removeEventListener('abort',cancel);if(poll)clearTimeout(poll);stop();if(pending){clearTimeout(pending.timer);pending.reject(new Error('Bluetooth session closed'));pending=undefined;}};
  ctx.signal?.addEventListener('abort',cancel,{once:true});
@@ -43,6 +52,6 @@ export const XiaomiM365Plugin:VehicleProtocolPlugin={id:'xiaomi-m365-v1',manufac
  const unavailable=new Map<number,number>();let tick=0;
  async function cycle(){if(closed)return;try{const request=reads[tick++%reads.length];if(Date.now()-(unavailable.get(request.reg) ?? 0)>=60000){try{const data=await read(request.target,request.reg,request.size);ctx.emit(decodeRead(request.target===0x20?0x23:0x25,request.reg,data));if(request.reg===0xb4)failures=0;}catch{if(request.reg!==0xb4)unavailable.set(request.reg,Date.now());else if(++failures>=3){await link.disconnect();return;}}}if(tick%10===0){const signal=await link.readRSSI();if(signal!==null)ctx.emit({fields:{signal:{value:signal,timestamp:Date.now(),source:'vehicle',unit:'dBm'}}});}}catch{/* disconnection is owned by bridge */}if(!closed)poll=setTimeout(()=>void cycle(),350);}
  poll=setTimeout(()=>void cycle(),350);
- return {identity:{serial:serialText,firmware,model:'Xiaomi M365 family'},capabilities,close} satisfies ProtocolSession;
+ return {identity:{serial:serialText,firmware,model:'Xiaomi M365 family'},capabilities,close,setLocked} satisfies ProtocolSession;
  }catch(e){await close();throw e;}
  }};

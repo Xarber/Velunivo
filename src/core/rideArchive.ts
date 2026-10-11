@@ -43,6 +43,7 @@ function saveBatteryUsage(id: string, percent: number | null) { return queue(asy
   await AsyncStorage.setItem(summaryKey(id), JSON.stringify({ ...ride, batteryFeedback: percent === null ? 'skipped' : 'answered', batteryUsagePercent: percent ?? undefined, batteryUsageSource:percent===null?undefined:'manual' }));
   notify();
 }); }
+function updateRideLabels(id:string,labels:{name?:string;startLabel?:string;endLabel?:string}){return queue(async()=>{const raw=await AsyncStorage.getItem(summaryKey(id));if(!raw)return;const ride:RecordedRide=JSON.parse(raw);if(ride.status==='recording')return;const fields=Object.fromEntries(Object.entries(labels).filter(([,v])=>typeof v==='string'&&v.trim()));await AsyncStorage.setItem(summaryKey(id),JSON.stringify({...ride,...fields}));notify();});}
 async function rideSamples(ride: RecordedRide): Promise<RideSample[]> {
   await pending; const samples: RideSample[] = [];
   for (let offset = 0; offset < ride.chunks; offset += 25) {
@@ -57,5 +58,5 @@ function deleteRecordedRide(ride: RecordedRide) { return queue(async () => {
   notify();
 }); }
 
-return { liveRecording, recordedRides, persistRide, rideSamples, deleteRecordedRide, saveBatteryUsage, subscribeRides };
+return { liveRecording, recordedRides, persistRide, rideSamples, deleteRecordedRide, saveBatteryUsage, subscribeRides, updateRideLabels };
 }

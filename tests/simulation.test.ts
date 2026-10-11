@@ -1,3 +1,4 @@
+import * as rerouting from '../src/core/rerouting';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -25,7 +26,7 @@ test('simulated fixes drive voice and activity while recording and real GPS stay
     './backgroundLocation':{beginBackgroundLocation:async()=>{gpsRequests++;throw new Error('Simulation must not acquire background GPS');}},
     './directionsVoice':{speakDirection:async()=>{spoken++;},stopDirections:async()=>{}},
     './useNavigationActivity':{updateRideActivity:async(...args:unknown[])=>{updates.push(args);},markActivityPaused:async()=>{pausedActivities++;}},
-    '../core/movement':movement,'../core/rideView':rideView,'../core/navigation':navigation,'../core/geo':geo,
+    '../core/rerouting':rerouting,'../core/movement':movement,'../core/rideView':rideView,'../core/navigation':navigation,'../core/geo':geo,
   };
   class Clock extends Date {static now(){return now;}}
   const context={exports:{},require:(name:string)=>{if(!(name in mocks))throw new Error(name);return mocks[name];},Date:Clock,setInterval:(fn:()=>void)=>{tick=fn;return 1;},clearInterval:()=>{stopped=true;},console};
@@ -64,7 +65,7 @@ test('real GPS subscription keeps stationary progress still while delivering ori
   'react-native':{Platform:{OS:'web'},AppState:{currentState:'active',addEventListener:()=>({remove(){}})}},
   'expo-location':{Accuracy:{BestForNavigation:6},requestForegroundPermissionsAsync:async()=>({status:'granted'}),watchPositionAsync:async(_options:unknown,cb:(p:unknown)=>void)=>{locationCallback=cb;return{remove(){}};}},
   './backgroundLocation':{},'./directionsVoice':{stopDirections:async()=>{}},'./useNavigationActivity':{updateRideActivity:async()=>{},markActivityPaused:async()=>{}},
-  '../core/movement':movement,'../core/rideView':rideView,'../core/navigation':navigation,'../core/geo':geo,
+  '../core/rerouting':rerouting,'../core/movement':movement,'../core/rideView':rideView,'../core/navigation':navigation,'../core/geo':geo,
  };
  const context={exports:{},require:(name:string)=>{if(!(name in mocks))throw new Error(name);return mocks[name];},Date,setInterval,clearInterval,console};
  vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/services/useRide.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,context);
@@ -92,7 +93,7 @@ test('denied GPS warns first, cancels recording and closes navigation on acknowl
   'react-native':{Platform:{OS:'web'},AppState:{currentState:'active',addEventListener:()=>({remove(){}})}},
   'expo-location':{requestForegroundPermissionsAsync:async()=>({status:'denied'}),watchPositionAsync:async()=>{watched++;}},
   './backgroundLocation':{},'./directionsVoice':{stopDirections:async()=>{}},'./useNavigationActivity':{},
-  '../core/movement':movement,'../core/rideView':rideView,'../core/navigation':navigation,'../core/geo':geo,
+  '../core/rerouting':rerouting,'../core/movement':movement,'../core/rideView':rideView,'../core/navigation':navigation,'../core/geo':geo,
  };
  const context={exports:{},require:(name:string)=>mocks[name],Date,setInterval,clearInterval,console};
  vm.runInNewContext(ts.transpileModule(fs.readFileSync('src/services/useRide.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,context);

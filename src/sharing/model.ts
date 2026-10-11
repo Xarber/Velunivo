@@ -32,11 +32,13 @@ export function routeLink(r:Route) {
   const a=r.coordinates[0], b=r.coordinates.at(-1);
   if (!validCoordinate(a)||!validCoordinate(b)) throw new Error('Route endpoints unavailable');
   const params = new URLSearchParams({start:a.join(','),end:b.join(','),from:r.startLabel || 'Ride start',to:r.endLabel || 'Destination'});
+  if(r.waypoints?.length)params.set('stops',JSON.stringify(r.waypoints.map(s=>({coordinate:s.coordinate,label:s.label.slice(0,200)}))));
   return `${SHARE_ORIGIN}/share/route?${params}`;
 }
 export function readRouteLink(p:Record<string,unknown>) {
   const read=(s:unknown) => typeof s==='string' && s.length<=60 ? s.split(',').map(Number) : null;
   const a=read(p.start),b=read(p.end);
   if(!validCoordinate(a)||!validCoordinate(b))return null;
-  return {start:a,end:b,startLabel:typeof p.from==='string'?p.from.slice(0,200):'Ride start',endLabel:typeof p.to==='string'?p.to.slice(0,200):'Destination',requestedAt:0};
+  let stops:import('../core/itinerary').RouteStop[]|undefined;if(p.stops!==undefined){try{if(typeof p.stops!=='string'||p.stops.length>5000)return null;const parsed=JSON.parse(p.stops);if(!Array.isArray(parsed)||parsed.length>12||parsed.some(s=>!validCoordinate(s.coordinate)||typeof s.label!=='string'||s.label.length>200))return null;stops=parsed.map(s=>({coordinate:s.coordinate,label:s.label}));}catch{return null;}}
+  return {...(stops?{stops}:{}),start:a,end:b,startLabel:typeof p.from==='string'?p.from.slice(0,200):'Ride start',endLabel:typeof p.to==='string'?p.to.slice(0,200):'Destination',requestedAt:0};
 }
