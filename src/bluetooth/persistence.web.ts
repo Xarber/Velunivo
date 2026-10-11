@@ -1,2 +1,4 @@
-import { AssociationStorage } from './bridge';
-export const associationStorage:AssociationStorage={load:async()=>[],save:async()=>{throw new Error('Physical Bluetooth associations are available in native builds only.');}};
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {createBrowserAssociationStorage} from './browserAssociations';
+// Browser-local association, separate from the native SecureStore and public sharing data.
+export const associationStorage=createBrowserAssociationStorage(AsyncStorage);

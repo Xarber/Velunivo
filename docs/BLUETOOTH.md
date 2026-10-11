@@ -80,7 +80,7 @@ Settings → Bluetooth is entirely global: automatic reconnection, telemetry col
 
 Simulated samples may now be retained in GPS ride timelines/exports, explicitly marked simulated. They never supply automatic battery usage or real range calibration. Existing records remain compatible through optional flags; route simulation remains excluded from ride recording. Actual valid battery readings still integrate into the existing manual-prompt suppression path. Production Xiaomi capabilities and physical verification limits above remain unchanged.
 
-## 0.1.26 — Web Bluetooth / Bluefy
+## 0.1.27 — Web Bluetooth / Bluefy
 
 Open **https://velunivo.xcenter.it** in [Bluefy](https://bluefy.app/guide.html) on iPhone/iPad, or a Web Bluetooth-capable browser on Android/desktop. In Vehicles, open a personal scooter → Bluetooth → Continue. The browser chooser opens from that tap, before asynchronous work can lose user activation. Keep the browser open while navigating/recording. Safari, iOS browsers without a BLE bridge and Safari-installed home-screen PWAs remain unsupported; feature detection shows an explanation without requesting permissions. No native build or new package is needed for the web transport.
 
