@@ -21,12 +21,12 @@ const errorMessage=(e:unknown)=>e instanceof Error?e:new Error(String(e));
 export class WebBLETransport implements BLETransport {
  private devices=new Map<string,WebDevice>();
  constructor(private api:()=>WebBluetooth|undefined=browserBluetooth,private secure:()=>boolean=()=>typeof window!=='undefined' && window.isSecureContext){}
- async ready(_requestPermission:boolean){if(!this.secure())throw new Error('Web Bluetooth needs HTTPS (or localhost).');if(!this.api())throw new Error('Open Velunivo in Bluefy on iPhone/iPad, or a browser with Web Bluetooth on Android/desktop. Safari and its installed PWA do not expose Bluetooth.');}
+ async ready(_requestPermission:boolean){if(!this.secure())throw new Error('Web Bluetooth needs HTTPS (or localhost).');if(!this.api())throw new Error('Open Velunivo in Bluefy on iPhone/iPad, or a browser with Web Bluetooth on Android/desktop. Firefox, Safari and Safari-installed PWAs do not expose Bluetooth.');}
  observeState(listener:(state:AdapterState)=>void){listener(this.api() && this.secure()?'Unknown':'Unsupported');return()=>{};}
  // Called directly from a button, before any await, to preserve browser user activation.
  chooseDevice(services:string[]):Promise<BLEDeviceInfo>{
   if(!this.secure() || !this.api())return this.ready(true).then(()=>{throw new Error('Bluetooth unavailable');});
-  return this.api()!.requestDevice({filters:services.map(service=>({services:[service]})),optionalServices:services}).then(device=>{this.devices.set(device.id,device);return {id:device.id,name:device.name ?? null,rssi:null,services,connectable:true};}).catch(e=>{if(e?.name==='NotFoundError')throw new Error('Device selection cancelled or no compatible service was found.');throw errorMessage(e);});
+  return this.api()!.requestDevice({filters:services.map(service=>({services:[service]})),optionalServices:services}).then(device=>{this.devices.set(device.id,device);return {id:device.id,name:device.name ?? null,rssi:null,services,connectable:true,discoverySource:'web-gatt' as const};}).catch(e=>{if(e?.name==='NotFoundError')throw new Error('The browser chooser closed without a device. Use Chrome/Edge on desktop or Android, or Bluefy on iOS. Check Bluetooth, switch on the vehicle and close other scooter apps, then retry.');throw errorMessage(e);});
  }
  async scan(_services:string[],_listener:(device:BLEDeviceInfo)=>void,_error:(e:Error)=>void):Promise<()=>void>{throw new Error('Use the browser device chooser to connect.');}
  async connect(info:BLEDeviceInfo):Promise<BLELink>{

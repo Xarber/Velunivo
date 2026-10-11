@@ -1,7 +1,7 @@
 export type VehicleType = 'electric_scooter' | 'electric_bike' | 'bicycle' | 'other';
 export type ConnectionState = 'idle' | 'scanning' | 'connecting' | 'authenticating' | 'connected' | 'reconnecting' | 'disconnected' | 'error';
 export type AdapterState = 'PoweredOn' | 'PoweredOff' | 'Unauthorized' | 'Unsupported' | 'Unknown' | 'Resetting';
-export interface BLEDeviceInfo { id:string; name:string|null; rssi:number|null; services:string[]; manufacturerData?:Uint8Array; serviceData?:Record<string,Uint8Array>; connectable?:boolean; verifiedProtocol?:string; }
+export interface BLEDeviceInfo { id:string; name:string|null; rssi:number|null; services:string[]; manufacturerData?:Uint8Array; serviceData?:Record<string,Uint8Array>; connectable?:boolean; verifiedProtocol?:string; discoverySource?:'web-gatt'; }
 export type Metric = 'speed' | 'batteryPercent' | 'voltage' | 'current' | 'charging' | 'batteryTemperature' | 'controllerTemperature' | 'motorTemperature' | 'power' | 'odometer' | 'tripDistance' | 'chargeCycles' | 'ridingMode' | 'remainingRange' | 'signal';
 export interface Reading { value:number|boolean|string; timestamp:number; source:'vehicle'|'calculated'|'gps'|'simulator'; unit:'m/s'|'%'|'V'|'A'|'W'|'°C'|'m'|'count'|'dBm'|'boolean'|'text'; }
 export type Telemetry = Partial<Record<Metric,Reading>>;

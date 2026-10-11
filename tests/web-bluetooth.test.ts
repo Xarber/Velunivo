@@ -4,7 +4,7 @@ import {WebBLETransport,WebDevice,WebCharacteristic,WebBluetooth} from '../src/b
 import {NUS,TX,RX} from '../src/bluetooth/plugins/m365Packets';
 function fixture(){
  const callbacks=new Map<string,()=>void>(),writes:Uint8Array[]=[];let notification=false,choosers=0;const char:WebCharacteristic={startNotifications:async()=>{notification=true;},stopNotifications:async()=>{notification=false;},writeValueWithoutResponse:async bytes=>{assert.equal(notification,true);writes.push(bytes);},addEventListener:(e,fn)=>{callbacks.set(e,fn);},removeEventListener:e=>{callbacks.delete(e);}};
- const device:WebDevice={id:'granted',name:'MIScooter123',gatt:{connected:false,connect:async()=>{device.gatt!.connected=true;},disconnect:()=>{device.gatt!.connected=false;callbacks.get('gattserverdisconnected')?.();},getPrimaryService:async service=>{assert.equal(service,NUS);return {getCharacteristic:async id=>{assert.ok([RX,TX].includes(id));return char;}};}},addEventListener:(e,fn)=>{callbacks.set(e,fn);},removeEventListener:e=>{callbacks.delete(e);}};
+ const device:WebDevice={id:'granted',name:'Renamed Pro 2',gatt:{connected:false,connect:async()=>{device.gatt!.connected=true;},disconnect:()=>{device.gatt!.connected=false;callbacks.get('gattserverdisconnected')?.();},getPrimaryService:async service=>{assert.equal(service,NUS);return {getCharacteristic:async id=>{assert.ok([RX,TX].includes(id));return char;}};}},addEventListener:(e,fn)=>{callbacks.set(e,fn);},removeEventListener:e=>{callbacks.delete(e);}};
  const api:WebBluetooth={requestDevice:async options=>{choosers++;assert.deepEqual(options,{filters:[{services:[NUS]}],optionalServices:[NUS]});return device;},getDevices:async()=>[device]};const transport=new WebBLETransport(()=>api,()=>true);
  return {transport,api,device,char,writes,callbacks,get choosers(){return choosers;}};
 }
@@ -17,7 +17,7 @@ import {createBrowserAssociationStorage} from '../src/bluetooth/browserAssociati
 import {Association} from '../src/bluetooth/types';
 test('browser associations persist across reload, forget removes them and malformed data is ignored',async()=>{
  const values=new Map<string,string>(),storage={getItem:async(k:string)=>values.get(k) ?? null,setItem:async(k:string,v:string)=>{values.set(k,v);}};
- const association:Association={schema:1,vehicleId:'personal',vehicleType:'electric_scooter',pluginId:'xiaomi-m365-v1',identity:{model:'M365',serial:'fixture'},associatedAt:1000,device:{id:'granted',name:'MIScooter123',services:[NUS],rssi:null,verifiedProtocol:'xiaomi-m365-v1'}};
+ const association:Association={schema:1,vehicleId:'personal',vehicleType:'electric_scooter',pluginId:'xiaomi-m365-v1',identity:{model:'M365',serial:'fixture'},associatedAt:1000,device:{id:'granted',name:'Renamed Pro 2',services:[NUS],rssi:null,verifiedProtocol:'xiaomi-m365-v1'}};
  await createBrowserAssociationStorage(storage).save([association]);assert.deepEqual(JSON.parse(JSON.stringify(await createBrowserAssociationStorage(storage).load())),[association]);await createBrowserAssociationStorage(storage).save([]);assert.deepEqual(await createBrowserAssociationStorage(storage).load(),[]);
  assert.deepEqual(await createBrowserAssociationStorage({...storage,getItem:async()=>'{bad'}).load(),[]);assert.deepEqual(await createBrowserAssociationStorage({...storage,getItem:async()=>'[{"schema":1,"device":{}},null]'}).load(),[]);
  await assert.rejects(createBrowserAssociationStorage({...storage,setItem:async()=>{throw new Error('storage denied');}}).save([association]),/storage denied/);

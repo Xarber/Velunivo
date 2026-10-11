@@ -16,7 +16,7 @@ const reading=(value:number,timestamp=1000):Reading=>({value,timestamp,unit:'%',
 test('registry strictly filters vehicle type, uncertain identities and developer simulations',()=>{
  const r=new PluginRegistry().register(XiaomiM365Plugin).register(SimulatorPlugin);assert.throws(()=>r.register(XiaomiM365Plugin));assert.equal(r.forType('electric_bike').length,0);assert.equal(r.forType('electric_bike',true).length,1);
  assert.equal(r.identify(device,'electric_scooter')?.plugin.id,XiaomiM365Plugin.id);assert.equal(r.identify(device,'electric_bike'),null);
- assert.equal(r.identify({...device,services:[]},'electric_scooter'),null);assert.equal(r.identify({...device,manufacturerData:undefined},'electric_scooter'),null);assert.equal(r.identify({...device,name:'My headphones'},'electric_scooter'),null);assert.equal(r.identify({...device,manufacturerData:Uint8Array.from([1,2,3])},'electric_scooter'),null);
+ assert.equal(r.identify({...device,services:[]},'electric_scooter'),null);assert.equal(r.identify({...device,manufacturerData:undefined},'electric_scooter'),null);assert.equal(r.identify({...device,name:'Renamed scooter'},'electric_scooter')?.plugin.id,XiaomiM365Plugin.id);assert.equal(r.identify({...device,manufacturerData:Uint8Array.from([1,2,3])},'electric_scooter'),null);
  assert.equal(r.identify(simulatorDevice,'electric_scooter'),null);assert.equal(r.identify(simulatorDevice,'electric_scooter',true)?.plugin.simulator,true);
 });
 test('normalization keeps partial timestamps, rejects unsupported/invalid data, and expires actual telemetry',()=>{
@@ -74,8 +74,8 @@ const aes=(key:Uint8Array,b:Uint8Array)=>{const cipher=createCipheriv('aes-128-e
 function referenceCrypt(data:Uint8Array,key:Uint8Array,nonce:Uint8Array,count:number){const out=Buffer.alloc(data.length);for(let offset=0;offset<data.length;offset+=16){const iv=Buffer.alloc(16);if(count){iv[0]=1;iv.writeUInt32BE(count,1);Buffer.from(nonce).copy(iv,5,0,8);iv[15]=1+offset/16;}else seed.copy(iv);const mask=aes(key,iv);for(let i=0;i<Math.min(16,data.length-offset);i++)out[offset+i]=data[offset+i]^mask[i];}return out;}
 function referenceFrame(body:Uint8Array,key:Uint8Array,nonce:Uint8Array,count:number){const header=Buffer.from([0x5a,0xa5,body.length-4]),frame=Buffer.concat([header,body]);let tag:Buffer;if(!count){const crc=body.reduce((sum,n)=>sum+n,0)^65535;tag=Buffer.from([0,0,crc&255,crc>>>8&255]);}else{const iv=Buffer.alloc(16);iv[0]=0x59;iv.writeUInt32BE(count,1);Buffer.from(nonce).copy(iv,5,0,8);iv[15]=body.length;let block=aes(key,iv);const chunks=[header];for(let i=0;i<body.length;i+=16)chunks.push(Buffer.from(body.slice(i,i+16)));for(const chunk of chunks){const input=Buffer.alloc(16);chunk.copy(input);for(let i=0;i<16;i++)input[i]^=block[i];block=aes(key,input);}iv[0]=1;iv[15]=0;const mask=aes(key,iv);tag=Buffer.from(block.map((n,i)=>n^mask[i])).subarray(0,4);}return Buffer.concat([header,referenceCrypt(body,key,nonce,count),tag,Buffer.from([count>>>8&255,count&255])]);}
 test('encrypted power-button handshake and real register reads match independent OpenSSL fixtures',async()=>{
- const name=Buffer.alloc(16);Buffer.from(device.name!).copy(name);let key=derive(name,seed);const nonce=Buffer.from('00112233445566778899aabbccddeeff','hex'),serial=Buffer.from('12345/12345678');let receiver:((p:Uint8Array)=>void)|undefined,app:Uint8Array|undefined;const commands:number[]=[];
- const link:BLELink={device,hasCharacteristic:async()=>true,monitor:(_s,_c,fn)=>{receiver=fn;return()=>{receiver=undefined;};},onDisconnect:()=>()=>{},disconnect:async()=>{},readRSSI:async()=>-45,write:async(_s,_c,wire)=>{
+ const renamedDevice={...device,name:'CustomPro2'};const name=Buffer.alloc(16);Buffer.from(renamedDevice.name).copy(name);let key=derive(name,seed);const nonce=Buffer.from('00112233445566778899aabbccddeeff','hex'),serial=Buffer.from('12345/12345678');let receiver:((p:Uint8Array)=>void)|undefined,app:Uint8Array|undefined;const commands:number[]=[];
+ const link:BLELink={device:renamedDevice,hasCharacteristic:async()=>true,monitor:(_s,_c,fn)=>{receiver=fn;return()=>{receiver=undefined;};},onDisconnect:()=>()=>{},disconnect:async()=>{},readRSSI:async()=>-45,write:async(_s,_c,wire)=>{
   if(wire[0]===0x55)return;const count=wire.at(-2)!*256+wire.at(-1)!,body=referenceCrypt(wire.slice(3,-6),key,nonce,count);assert.deepEqual(Buffer.from(wire),referenceFrame(body,key,nonce,count),'app request MAC matches independent encoder');commands.push(body[2]);let response:Uint8Array;
   if(body[2]===0x5b){response=Uint8Array.from([0x21,0x3e,0x5b,0,...nonce,...serial]);receiver?.(referenceFrame(response,key,nonce,0));key=derive(name,nonce);return;}
   if(body[2]===0x5c){app=body.slice(4);response=Uint8Array.from([0x21,0x3e,0x5c,1]);receiver?.(referenceFrame(response,key,nonce,count+1));key=derive(app,nonce);return;}
@@ -130,7 +130,7 @@ test('Bluetooth display and simulation preferences are global and old preference
 });
 
 test('browser discovery verifies actual protocol before listing, retains user activation and enforces vehicle type',async()=>{
- const f=fixture();let chooserCalled=false;const candidate={...device,manufacturerData:undefined};f.transport.chooseDevice=async()=>{chooserCalled=true;return candidate;};const found:BLEDeviceInfo[]=[];
+ const f=fixture();let chooserCalled=false;const candidate:BLEDeviceInfo={...device,name:'Renamed scooter',manufacturerData:undefined,discoverySource:'web-gatt'};f.transport.chooseDevice=async()=>{chooserCalled=true;return candidate;};const found:BLEDeviceInfo[]=[];
  const discovery=f.bridge.discover('electric_scooter',d=>{found.push(d);});assert.equal(chooserCalled,true);assert.equal(found.length,0);await discovery;
  assert.equal(found[0]?.verifiedProtocol,XiaomiM365Plugin.id);assert.equal(f.records.length,0);assert.equal(f.bridge.getSnapshot().state,'idle');assert.ok(f.disconnects>0);
  await f.bridge.pair('s','electric_scooter',found[0],XiaomiM365Plugin.id);assert.equal(f.bridge.getSnapshot().fields.batteryPercent?.value,60);await f.bridge.disconnect();
@@ -139,5 +139,5 @@ test('browser discovery verifies actual protocol before listing, retains user ac
 });
 test('leaving browser discovery cancels verification and does not list a late chooser result',async()=>{
  const f=fixture();let resolve!:(device:BLEDeviceInfo)=>void;f.transport.chooseDevice=()=>new Promise(r=>{resolve=r;});let listed=false;
- const discovery=f.bridge.discover('electric_scooter',()=>{listed=true;});await new Promise(r=>setTimeout(r,0));f.bridge.endScan();resolve({...device,manufacturerData:undefined});await discovery;assert.equal(listed,false);assert.equal(f.connects,0);
+ const discovery=f.bridge.discover('electric_scooter',()=>{listed=true;});await new Promise(r=>setTimeout(r,0));f.bridge.endScan();resolve({...device,manufacturerData:undefined,discoverySource:'web-gatt'});await discovery;assert.equal(listed,false);assert.equal(f.connects,0);
 });
