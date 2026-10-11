@@ -22,3 +22,13 @@ test('browser associations persist across reload, forget removes them and malfor
  assert.deepEqual(await createBrowserAssociationStorage({...storage,getItem:async()=>'{bad'}).load(),[]);assert.deepEqual(await createBrowserAssociationStorage({...storage,getItem:async()=>'[{"schema":1,"device":{}},null]'}).load(),[]);
  await assert.rejects(createBrowserAssociationStorage({...storage,setItem:async()=>{throw new Error('storage denied');}}).save([association]),/storage denied/);
 });
+import {BluetoothVehicleBridge} from '../src/bluetooth/bridge';
+import {PluginRegistry} from '../src/bluetooth/registry';
+import {XiaomiM365Plugin} from '../src/bluetooth/plugins/XiaomiM365Plugin';
+test('browser GATT, real protocol and browser persistence integrate through discovery, pairing and reload reconnect',async()=>{
+ const f=fixture(),values=new Map<string,string>(),storage=createBrowserAssociationStorage({getItem:async k=>values.get(k) ?? null,setItem:async(k,v)=>{values.set(k,v);}});
+ f.char.writeValueWithoutResponse=async packet=>{assert.equal(packet[4],1,'read-only protocol');const reg=packet[5],data=new Uint8Array(packet[6]);if(reg===0x10)data.set(Buffer.from('12345/12345678'));if(reg===0xb4){const v=new DataView(data.buffer);v.setUint16(0,65,true);v.setInt16(2,18000,true);}const body=[data.length+2,0x23,1,reg,...data],crc=body.reduce((sum,n)=>sum+n,0)^0xffff,wire=Uint8Array.from([0x55,0xaa,...body,crc&255,crc>>>8&255]);f.char.value=new DataView(wire.buffer);f.callbacks.get('characteristicvaluechanged')?.();};
+ const registry=new PluginRegistry().register(XiaomiM365Plugin),bridge=new BluetoothVehicleBridge(registry,f.transport,storage,n=>new Uint8Array(n));const candidates:Parameters<typeof bridge.pair>[2][]=[];
+ await bridge.discover('electric_scooter',d=>candidates.push(d));assert.equal(candidates.length,1);await bridge.pair('personal','electric_scooter',candidates[0],XiaomiM365Plugin.id);assert.equal(bridge.getSnapshot().fields.batteryPercent?.value,65);assert.equal(bridge.getSnapshot().fields.speed?.value,5);assert.equal(bridge.getSnapshot().fields.speed?.source,'vehicle');assert.equal(bridge.getSnapshot().fields.signal,undefined);await bridge.disconnect();
+ const reboot=new BluetoothVehicleBridge(registry,new WebBLETransport(()=>f.api,()=>true),storage,n=>new Uint8Array(n));await reboot.initialize();assert.equal(reboot.association('personal')?.identity.serial,'12345/12345678');await reboot.reconnect('personal');assert.equal(f.choosers,1,'reconnect does not open another chooser');assert.equal(reboot.getSnapshot().fields.batteryPercent?.value,65);await reboot.forget('personal');assert.deepEqual(await storage.load(),[]);
+});
