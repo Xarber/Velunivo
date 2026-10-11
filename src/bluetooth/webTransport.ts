@@ -1,4 +1,4 @@
-import {AdapterState,BLEDeviceInfo,BLELink,BLETransport,ManufacturerDiscoveryFilter} from './types';
+import {AdapterState,BLEDeviceInfo,BLELink,BLETransport,ManufacturerDiscoveryFilter,MissingBLEGrantError} from './types';
 // Narrow structural Web Bluetooth types keep this module testable without browser globals.
 export interface WebCharacteristic {
  value?:DataView; startNotifications():Promise<unknown>; stopNotifications():Promise<unknown>;
@@ -33,21 +33,21 @@ export class WebBLETransport implements BLETransport {
  async connect(info:BLEDeviceInfo):Promise<BLELink>{
   await this.ready(false);let device=this.devices.get(info.id);
   if(!device && this.api()?.getDevices){device=(await this.api()!.getDevices!()).find(d=>d.id===info.id);if(device)this.devices.set(device.id,device);}
-  if(!device?.gatt)throw new Error('Browser device permission is unavailable. Choose Replace device to select your vehicle again.');
+  if(!device?.gatt)throw new MissingBLEGrantError('This browser did not retain device permission. Tap Reconnect to allow this browser connection; your scooter pairing is still saved.');
   const selected=device,gatt=device.gatt;await bounded(gatt.connect(),'Bluetooth connection timed out. Move closer and retry.',()=>gatt.disconnect(),45000);
-  const characteristics=new Map<string,Promise<WebCharacteristic>>(),cleanups=new Set<()=>void>(),listeners=new Set<(error?:Error)=>void>();let ended=false;
+  const characteristics=new Map<string,Promise<WebCharacteristic>>(),cleanups=new Set<()=>void>(),listeners=new Set<(error?:Error)=>void>();let ended=false;let resolveDisconnected!:()=>void;const disconnectedEvent=new Promise<void>(resolve=>{resolveDisconnected=resolve;});
   const characteristic=(service:string,id:string)=>{const key=`${service}/${id}`;let found=characteristics.get(key);if(!found){found=bounded(gatt.getPrimaryService(service).then(s=>s.getCharacteristic(id)),'Bluetooth service discovery timed out.',undefined,30000);characteristics.set(key,found);}return found;};
-  const disconnected=()=>{if(ended)return;ended=true;for(const stop of cleanups)stop();selected.removeEventListener('gattserverdisconnected',disconnected);for(const listener of listeners)listener();listeners.clear();};
+  const disconnected=()=>{resolveDisconnected();if(ended)return;ended=true;for(const stop of cleanups)stop();selected.removeEventListener('gattserverdisconnected',disconnected);for(const listener of listeners)listener();listeners.clear();};
   selected.addEventListener('gattserverdisconnected',disconnected);
   let notificationReady:Promise<void>=Promise.resolve(),writes:Promise<void>=Promise.resolve();
   return {device:info,hasCharacteristic:async(s,c)=>{try{await characteristic(s,c);return true;}catch(error){if(error instanceof Error && error.name==='NotFoundError')return false;throw errorMessage(error);}},
    monitor(s,c,receive,onError){let stopped=false,char:WebCharacteristic|undefined;const changed=()=>{if(stopped || !char?.value)return;const value=char.value;receive(new Uint8Array(value.buffer,value.byteOffset,value.byteLength).slice());};
     const stop=()=>{stopped=true;if(char){char.removeEventListener('characteristicvaluechanged',changed);if(gatt.connected)void char.stopNotifications().catch(()=>{});}cleanups.delete(stop);};cleanups.add(stop);
-    notificationReady=characteristic(s,c).then(async value=>{char=value;if(stopped)return;char.addEventListener('characteristicvaluechanged',changed);await bounded(char.startNotifications(),'Bluetooth notifications could not start.',()=>{void value.stopNotifications().catch(()=>{});});if(stopped){char.removeEventListener('characteristicvaluechanged',changed);if(gatt.connected)await char.stopNotifications();}});
+    notificationReady=Promise.all([notificationReady,characteristic(s,c).then(async value=>{char=value;if(stopped)return;char.addEventListener('characteristicvaluechanged',changed);await bounded(char.startNotifications(),'Bluetooth notifications could not start.',()=>{void value.stopNotifications().catch(()=>{});});if(stopped){char.removeEventListener('characteristicvaluechanged',changed);if(gatt.connected)await char.stopNotifications();}})]).then(()=>{});
     void notificationReady.catch(e=>{if(!stopped)onError(errorMessage(e));});return stop;
    },
    write(s,c,data){const bytes=data.slice();const operation=writes.then(async()=>{await notificationReady;if(ended || !gatt.connected)throw new Error('Bluetooth device disconnected');const char=await characteristic(s,c);for(let offset=0;offset<bytes.length;offset+=20){const chunk=bytes.slice(offset,offset+20);if(char.writeValueWithoutResponse)await bounded(char.writeValueWithoutResponse(chunk),'Bluetooth write timed out.');else if(char.writeValue)await bounded(char.writeValue(chunk),'Bluetooth write timed out.');else throw new Error('This browser cannot write to the vehicle data service.');}});writes=operation.catch(()=>{});return operation;},
    onDisconnect(listener){listeners.add(listener);return()=>{listeners.delete(listener);};},
-   async disconnect(){for(const stop of [...cleanups])stop();gatt.disconnect();disconnected();},readRSSI:async()=>null};
+   async disconnect(){if(ended)return;ended=true;gatt.disconnect();for(const stop of [...cleanups])stop();await Promise.race([disconnectedEvent,new Promise<void>(resolve=>setTimeout(resolve,1500))]);selected.removeEventListener('gattserverdisconnected',disconnected);for(const listener of listeners)listener();listeners.clear();},readRSSI:async()=>null};
  }
 }

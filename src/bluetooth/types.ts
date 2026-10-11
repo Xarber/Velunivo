@@ -23,8 +23,14 @@ export interface ProtocolSession { identity:{serial?:string; firmware?:string; m
 export interface VehicleProtocolPlugin {
  id:string; manufacturer:string; vehicleTypes:readonly VehicleType[]; models:readonly string[]; services:readonly string[]; capabilities:Capabilities; simulator?:boolean; manufacturerFilters?:readonly ManufacturerDiscoveryFilter[];
  detect(device:BLEDeviceInfo):Detection;
- open(link:BLELink,context:{signal?:AbortSignal;approvalDeadline?:number;emit(update:TelemetryUpdate):void; phase(message:string):void; random(length:number):Uint8Array}):Promise<ProtocolSession>;
+ open(link:BLELink,context:{signal?:AbortSignal;approvalDeadline?:number;credentials?:Record<string,string>;emit(update:TelemetryUpdate):void; phase(message:string):void; random(length:number):Uint8Array}):Promise<ProtocolSession>;
 }
-export interface Association { schema:1; vehicleId:string; vehicleType:VehicleType; device:BLEDeviceInfo; pluginId:string; identity:ProtocolSession['identity']; associatedAt:number; simulated?:boolean; }
+export interface Association { schema:1; vehicleId:string; vehicleType:VehicleType; device:BLEDeviceInfo; pluginId:string; identity:ProtocolSession['identity']; associatedAt:number; credentials?:Record<string,string>; simulated?:boolean; }
 export interface BridgeSnapshot { state:ConnectionState; message:string; vehicleId?:string; device?:BLEDeviceInfo; pluginId?:string; simulated?:boolean; fields:Telemetry; extensions:Record<string,Reading>; capabilities?:Capabilities; connectedAt?:number; }
 export const vehicleType = (kind:'escooter'|'ebike'):VehicleType => kind==='ebike'?'electric_bike':'electric_scooter';
+
+/** The OS/browser grant is separate from protocol registration; do not retry it silently. */
+export class MissingBLEGrantError extends Error {}
+
+/** A saved credential was refused; retain it and stop automatic authentication loops. */
+export class SavedPairingRejectedError extends Error {}

@@ -75,7 +75,7 @@ function referenceCrypt(data:Uint8Array,key:Uint8Array,nonce:Uint8Array,count:nu
 function referenceFrame(body:Uint8Array,key:Uint8Array,nonce:Uint8Array,count:number){const header=Buffer.from([0x5a,0xa5,body.length-4]),frame=Buffer.concat([header,body]);let tag:Buffer;if(!count){const crc=body.reduce((sum,n)=>sum+n,0)^65535;tag=Buffer.from([0,0,crc&255,crc>>>8&255]);}else{const iv=Buffer.alloc(16);iv[0]=0x59;iv.writeUInt32BE(count,1);Buffer.from(nonce).copy(iv,5,0,8);iv[15]=body.length;let block=aes(key,iv);const chunks=[header];for(let i=0;i<body.length;i+=16)chunks.push(Buffer.from(body.slice(i,i+16)));for(const chunk of chunks){const input=Buffer.alloc(16);chunk.copy(input);for(let i=0;i<16;i++)input[i]^=block[i];block=aes(key,input);}iv[0]=1;iv[15]=0;const mask=aes(key,iv);tag=Buffer.from(block.map((n,i)=>n^mask[i])).subarray(0,4);}return Buffer.concat([header,referenceCrypt(body,key,nonce,count),tag,Buffer.from([count>>>8&255,count&255])]);}
 test('encrypted power-button handshake and real register reads match independent OpenSSL fixtures',async()=>{
  const renamedDevice={...device,name:'CustomPro2'};const name=Buffer.alloc(16);Buffer.from(renamedDevice.name).copy(name);let key=derive(name,seed);const nonce=Buffer.from('00112233445566778899aabbccddeeff','hex'),serial=Buffer.from('12345/12345678');let receiver:((p:Uint8Array)=>void)|undefined,app:Uint8Array|undefined;const commands:number[]=[];
- const link:BLELink={device:renamedDevice,hasCharacteristic:async()=>true,monitor:(_s,_c,fn)=>{receiver=fn;return()=>{receiver=undefined;};},onDisconnect:()=>()=>{},disconnect:async()=>{},readRSSI:async()=>-45,write:async(_s,_c,wire)=>{
+ const link:BLELink={device:renamedDevice,hasCharacteristic:async(s:string)=>s===NUS,monitor:(_s,_c,fn)=>{receiver=fn;return()=>{receiver=undefined;};},onDisconnect:()=>()=>{},disconnect:async()=>{},readRSSI:async()=>-45,write:async(_s,_c,wire)=>{
   if(wire[0]===0x55)return;const count=wire.at(-2)!*256+wire.at(-1)!,body=referenceCrypt(wire.slice(3,-6),key,nonce,count);assert.deepEqual(Buffer.from(wire),referenceFrame(body,key,nonce,count),'app request MAC matches independent encoder');commands.push(body[2]);let response:Uint8Array;
   if(body[2]===0x5b){response=Uint8Array.from([0x21,0x3e,0x5b,0,...nonce,...serial]);receiver?.(referenceFrame(response,key,nonce,0));key=derive(name,nonce);return;}
   if(body[2]===0x5c){app=body.slice(4);response=Uint8Array.from([0x21,0x3e,0x5c,1]);receiver?.(referenceFrame(response,key,nonce,count+1));key=derive(app,nonce);return;}
@@ -105,7 +105,7 @@ test('Bluetooth timelines and automatic battery feedback survive archive restart
 });
 
 test('connection cancellation stops in-flight protocol initialization and removes notifications',async()=>{
- const abort=new AbortController();let listening=false,writes=0;const link:BLELink={device,hasCharacteristic:async()=>true,monitor:()=>{listening=true;return()=>{listening=false;};},write:async()=>{writes++;abort.abort();},onDisconnect:()=>()=>{},disconnect:async()=>{},readRSSI:async()=>null};await assert.rejects(XiaomiM365Plugin.open(link,{signal:abort.signal,emit:()=>{},phase:()=>{},random:n=>new Uint8Array(n)}),/cancelled/);assert.equal(listening,false);assert.equal(writes,1);
+ const abort=new AbortController();let listening=false,writes=0;const link:BLELink={device,hasCharacteristic:async(s:string)=>s===NUS,monitor:()=>{listening=true;return()=>{listening=false;};},write:async()=>{writes++;abort.abort();},onDisconnect:()=>()=>{},disconnect:async()=>{},readRSSI:async()=>null};await assert.rejects(XiaomiM365Plugin.open(link,{signal:abort.signal,emit:()=>{},phase:()=>{},random:n=>new Uint8Array(n)}),/cancelled/);assert.equal(listening,false);assert.equal(writes,1);
 });
 
 import {canPairVehicle,dashboardReading,globalTelemetryMetrics,removeVehicleAndPairing} from '../src/bluetooth/policy';
@@ -155,4 +155,17 @@ test('headlight retry stops after thirty seconds, does not retry unrelated error
  await assert.rejects(openWithApprovalRetry(plugin,f.link,f.transport,ctx,()=>{},{now:()=>now,sleep:async ms=>{now+=ms;},windowMs:30000,intervalMs:5000}),/within 30 seconds/);assert.equal(opens,6);assert.equal(now,30000);
  const bad={...plugin,open:async()=>{throw new Error('Unsupported firmware');}};const connects=f.connects;await assert.rejects(openWithApprovalRetry(bad,f.link,f.transport,ctx,()=>{}),/Unsupported firmware/);assert.equal(f.connects,connects);
  const abort=new AbortController();await assert.rejects(openWithApprovalRetry(plugin,f.link,f.transport,{...ctx,signal:abort.signal},()=>{},{now:()=>0,sleep:async()=>{abort.abort();},windowMs:30000,intervalMs:5000}),/cancelled/);assert.equal(f.connects,connects);
+});
+
+test('rediscovering an associated vehicle reuses its live connection without registration or disconnect',async()=>{
+ const f=fixture();await f.bridge.pair('scooter','electric_scooter',device,XiaomiM365Plugin.id);
+ const association=f.bridge.association('scooter')!;association.credentials={miToken:'fixture-saved-token'};
+ const before=f.disconnects;f.transport.chooseDevice=async()=>device;
+ let discovered=0;await f.bridge.discover('electric_scooter',()=>{discovered++;});
+ assert.equal(discovered,1);assert.equal(f.bridge.getSnapshot().state,'connected');assert.equal(f.connects,1);assert.equal(f.disconnects,before);assert.equal(f.bridge.association('scooter'),association);assert.equal(association.credentials.miToken,'fixture-saved-token');await f.bridge.disconnect();
+});
+test('opening a connected vehicle repeatedly does not disturb its session or saved pairing',async()=>{
+ const f=fixture();await f.bridge.pair('scooter','electric_scooter',device,XiaomiM365Plugin.id);const before=f.disconnects;
+ await Promise.all([f.bridge.reconnect('scooter'),f.bridge.reconnect('scooter')]);
+ assert.equal(f.connects,1);assert.equal(f.disconnects,before);assert.equal(f.records.length,1);await f.bridge.disconnect();
 });

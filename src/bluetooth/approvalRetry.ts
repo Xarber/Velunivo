@@ -19,10 +19,10 @@ export async function openWithApprovalRetry(plugin:VehicleProtocolPlugin,initial
   catch(error){
    if(!(error instanceof VehicleApprovalRequiredError) || ctx.signal?.aborted)throw error;
    await link.disconnect().catch(()=>{});
-   if(timing.now()>=deadline)throw new VehicleApprovalRequiredError('Headlight approval was not confirmed within 30 seconds. Turn on the headlight, then try again.');
-   ctx.phase('Turn on the headlight. Reconnecting automatically every 5 seconds for up to 30 seconds…');
-   await timing.sleep(Math.max(0,started+timing.intervalMs-timing.now()),ctx.signal);
-   if(timing.now()>=deadline)throw new VehicleApprovalRequiredError('Headlight approval was not confirmed within 30 seconds. Turn on the headlight, then try again.');
+   if(timing.now()>=deadline)throw new VehicleApprovalRequiredError('Headlight approval was not confirmed within 30 seconds. Toggle the headlight, then try again.');
+   if(link===initial)ctx.phase('Toggle the headlight once while disconnected. Reconnecting automatically for up to 30 seconds…');
+   await timing.sleep(timing.intervalMs,ctx.signal);
+   if(timing.now()>=deadline)throw new VehicleApprovalRequiredError('Headlight approval was not confirmed within 30 seconds. Toggle the headlight, then try again.');
    if(ctx.signal?.aborted)throw new Error('Connection cancelled');
    link=await transport.connect(initial.device);onLink(link);
   }

@@ -189,3 +189,11 @@ Physical Chrome discovery finds the nearby renamed Pro 2 without a name filter. 
 A later SHU comparison also timed out before loading data, despite its earlier successful connection. User is restarting Chrome and the scooter; radio attempts are paused during that reset. Web connection/service discovery timeout budgets changed to 45/30 seconds; write timeout stays 12 seconds. This is bounded tolerance for slow browser radio operations, not proof of a completed connection.
 
 Regression test with a controlled timer confirms that a browser connection timeout immediately calls GATT disconnect and that a subsequent late successful connection is also disconnected. Previously the timeout cleanup ran only after eventual resolution, leaving a pending radio operation running after the UI reported failure. Fixed that cleanup; physical testing after the user’s radio/browser reset is still pending.
+
+### Mi FE95 and paired-vehicle lifecycle — 2026-10-11
+
+Physical Chrome test: Velunivo successfully registered and connected to the nearby Pro 2 after one headlight toggle, then logged in using its saved token. Observed genuine speed, battery, odometer, voltage/current and temperature; the most recent non-mutating browser check shows an active connection and 79% battery. This establishes real FE95 communication, not native-platform or restart reliability.
+
+Automated coverage adds independently encoded/OpenSSL-checked CCM, registration, saved-token proofs, encrypted UART/replay rejection, real browser disconnect-event ordering, permission restoration without deleting associations, rediscovery without disconnecting an associated vehicle, and idempotent reconnect while connected. Full reload hardware testing is pending: Chrome previously had zero retained grants and an intermediate saved-proof rejection. Rejected credentials are retained and automatic authentication loops paused. No firmware/configuration writes, local native builds, unpairing or manual disconnect were performed during the latest reconnect changes.
+
+Final validation: all 131 tests pass; TypeScript, Expo lint and git diff whitespace checks pass. No browser reload was forced while the user’s scooter remained connected.
