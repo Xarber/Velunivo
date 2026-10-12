@@ -1,0 +1,9 @@
+# Map downloads: retained menus, names and progress
+
+Downloaded Maps now reloads road-pack metadata on focus and subscribes to committed create/delete events. Native map packs also notify retained menus when created/deleted; existing native listeners supply resource progress. The downloaded list no longer relies on leaving and re-entering the submenu.
+
+Area naming resolves the actual selected square before saving even when Download is tapped before the debounce finishes. Photon place responses that contain a town/suburb name but no `city` field are handled explicitly; shops and street numbers are not misused as neighborhood names. User-edited names win. If geocoding fails, a coordinate-qualified fallback distinguishes regions. Legacy blank/generic names upgrade lazily through cached free Photon lookup without blocking the menu; unavailable providers never erase a saved pack.
+
+Busy download buttons contain a clipped background fill, retaining their original layout. Road responses stream progress only when a meaningful Content-Length is supplied; unknown/compressed totals use an indeterminate fill and spinner rather than a fabricated percentage. Saving returns to indeterminate work. Native imagery uses MapLibre's real resource percentage and waits for pack completion instead of treating `createPack` as a finished download. Reduced-motion preferences stop the moving indeterminate fill. Area downloads can be cancelled; native packs pause on cancellation.
+
+Validation: isolated headless Chrome with actual map projection and fixture Overpass/Photon responses verifies delayed-name resolution, in-button progress, chunked saving and an immediately updated retained menu. Core tests cover naming, byte bounds, UTF-8 streaming and change subscriptions. Native imagery completion/rendering still needs the new native build and a configured licensed provider; no native build was compiled locally.

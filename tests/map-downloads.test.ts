@@ -1,0 +1,10 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';
+import {downloadFraction,readDownload} from '../src/core/downloadProgress';
+import {mapAreaName,mapAreaFallback} from '../src/core/mapAreaName';
+import {subscribeMapDownloads,notifyMapDownloads} from '../src/services/mapDownloads';
+const bounds:[number,number,number,number]=[12.5,41.8,12.55,41.85];
+const photon=(properties:Record<string,unknown>)=>({features:[{properties}]});
+test('area names prefer neighborhood and city and handle named settlements without city fields',()=>{assert.equal(mapAreaName(photon({district:'Appio Latino',city:'Rome',country:'Italy'}),bounds),'Appio Latino, Rome, Italy');assert.equal(mapAreaName(photon({osm_key:'place',osm_value:'town',name:'San Cesareo',country:'Italy'}),bounds),'San Cesareo, Italy');assert.equal(mapAreaName(photon({osm_key:'shop',name:'Shop',city:'Rome'}),bounds),'Rome');assert.equal(mapAreaName({},bounds),undefined);assert.match(mapAreaFallback(bounds,'Map region'),/41\.825, 12\.525/);});
+test('retained menus receive committed changes, and unsubscribed menus are not updated',()=>{let calls=0;const stop=subscribeMapDownloads(()=>calls++);notifyMapDownloads();assert.equal(calls,1);stop();notifyMapDownloads();assert.equal(calls,1);});
+test('download fractions are clamped and never invented without known length',()=>{assert.equal(downloadFraction(5,10),.5);assert.equal(downloadFraction(20,10),1);assert.equal(downloadFraction(-1,10),0);assert.equal(downloadFraction(5),undefined);});
+test('stream downloads preserve split UTF8, report real progress and reject oversized bodies',async()=>{const bytes=new TextEncoder().encode('Roma · città');const response=new Response(new ReadableStream({start(c){c.enqueue(bytes.slice(0,8));c.enqueue(bytes.slice(8));c.close();}}),{headers:{'Content-Length':String(bytes.length)}});const progress:number[]=[];assert.equal(await readDownload(response,p=>{if(p.fraction!==undefined)progress.push(p.fraction);}), 'Roma · città');assert.equal(progress[0],0);assert.equal(progress.at(-1),1);await assert.rejects(()=>readDownload(new Response('too large'),undefined,2),/too large/);});

@@ -9,3 +9,5 @@ export const unlisten = (_id: string) => {};
 export const resumePack = async (_id: string) => { throw new Error('Offline tile downloads require a native build.'); };
 
 export const downloadArea = async (_bounds:import('../core/mapArea').AreaBounds,_name:string,_progress:(...args:any[])=>void,_error:(msg:string)=>void):Promise<any>=>{throw new Error('Offline tile downloads require a native build.');};
+
+export const waitForMapDownload=async (_pack:unknown,_progress:(percentage:number)=>void,_signal?:AbortSignal)=>{};

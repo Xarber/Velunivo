@@ -1,3 +1,4 @@
+import {subscribeMapDownloads} from '../services/mapDownloads';
 import { goBack } from '../services/navigation';
 import {coordinateLabel} from '../services/coordinateLabels';
 import OfflineRoutingControls from './OfflineRoutingControls';
@@ -18,7 +19,7 @@ import { recordedRides, rideSamples, deleteRecordedRide } from '../services/ride
 import { Route , Coord } from '../core/types';
 import { Button, Field, IconButton, styles, usePalette } from '../components/ui';
 import { useStore } from '../services/store';
-import { packs, download, deletePack, resumePack, listen, unlisten, PackView } from '../services/offline';
+import { packs, download, waitForMapDownload, deletePack, resumePack, listen, unlisten, PackView } from '../services/offline';
 import { downloadStyle } from '../services/mapSettings';
 import { distanceLeft } from '../core/rideView';
 import { batteryLabel } from '../core/vehicles';
@@ -31,7 +32,7 @@ export default function Library({ section }: { section: string }) {
   const {preferences:bluetoothPreferences}=useBluetoothPreferences();
   const offlineEnabled=!!downloadStyle();
   const p = usePalette(), { saved, save, ready, vehicleLocked, selected, select, setRoutes, remove, profile, navigationOptions, places, addPlace, deletePlace, renamePlace, requestJourney } = useStore();
-  const [regions, setRegions] = useState<PackView[]>([]), [error, setError] = useState(''), [busy, setBusy] = useState(false);
+  const [regions, setRegions] = useState<PackView[]>([]), [error, setError] = useState(''), [busy, setBusy] = useState(false),[downloadProgress,setDownloadProgress]=useState<number|null>(null);
   const placeNaming=useRef(0);
   const [placeMap,setPlaceMap]=useState(false), [rename,setRename]=useState<{id:string;name:string}|null>(null);
   const [actions, setActions] = useState<MenuAction[] | null>(null), [placeName, setPlaceName] = useState(''), [address, setAddress] = useState(''), [placePoint, setPlacePoint] = useState<Coord | null>(null);
@@ -43,7 +44,7 @@ export default function Library({ section }: { section: string }) {
     const all = await packs(); if (!mounted.current) return; setRegions(all);
     for (const r of all) if (!attached.current.includes(r.id)) { attached.current.push(r.id); await listen(r.id, (_, status) => { if (mounted.current) setRegions(v => v.map(x => x.id === status.id ? { ...x, percentage: status.percentage, bytes: status.completedResourceSize, state: status.state } : x)); }, msg => { if (mounted.current) setError(msg); }); }
   }, []);
-  useFocusEffect(useCallback(() => { void refresh().catch(e => setError(e.message)); }, [refresh]));
+  useFocusEffect(useCallback(() => { const update=()=>void refresh().catch(e => setError(e.message));update();return subscribeMapDownloads(update); }, [refresh]));
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; attached.current.forEach(unlisten); }; }, []);
   async function run(fn: () => Promise<unknown>) { setError(''); try { await fn(); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } }
   function deleteRegion(id: string) {
@@ -60,7 +61,7 @@ export default function Library({ section }: { section: string }) {
     </View>} ListFooterComponent={<View style={{ gap: 18 }}>{section === 'maps' && <><Button title={t('Download a map area')} icon="scan-outline" secondary disabled={vehicleLocked} onPress={()=>router.push('/offline/download-area')}/>
     <OfflineRoutingControls />
     <View style={{flexDirection:'row',alignItems:'center',gap:12}}><Text style={{ color: p.text, fontSize: 20, fontWeight: '800',flex:1 }}>Downloaded maps</Text><InfoButton title={t("Ride information")}>Android uses OpenFreeMap with MapLibre. Enable Use downloadable maps in Settings to automatically use a completed region covering your current location or the whole route; otherwise iOS uses Apple Maps. Apple Maps does not expose app-managed region downloads. Download a separate road network here for local planning and rerouting inside its coverage. Saved-route guidance works offline too.</InfoButton></View>
-    <View style={[styles.card, { backgroundColor: p.card }]}><Text style={{ color: p.text, fontWeight: '700' }}>Map region for your selected route</Text><Text style={{ color: p.muted, lineHeight: 20 }}>{Platform.OS === 'web' ? 'Downloads are available in the native app.' : !offlineEnabled ? 'Set up Stadia Maps in Settings to enable downloads.' : 'Downloads the route bounding box plus a small margin, zooms 10–14. Download on Wi-Fi; size depends on the region.'}</Text><Button title={t("Set up download maps")} icon="settings-outline" secondary onPress={()=>router.navigate('/settings')} /><Button title={t(busy ? 'Creating download…' : 'Download selected region')} disabled={busy || !selected || !offlineEnabled || Platform.OS === 'web'} icon="download-outline" onPress={() => void run(async () => { setBusy(true); try { await download(selected!, () => { void refresh().catch(e => setError(e.message)); }, setError); await refresh(); } finally { setBusy(false); } })} /></View>
+    <View style={[styles.card, { backgroundColor: p.card }]}><Text style={{ color: p.text, fontWeight: '700' }}>Map region for your selected route</Text><Text style={{ color: p.muted, lineHeight: 20 }}>{Platform.OS === 'web' ? 'Downloads are available in the native app.' : !offlineEnabled ? 'Set up Stadia Maps in Settings to enable downloads.' : 'Downloads the route bounding box plus a small margin, zooms 10–14. Download on Wi-Fi; size depends on the region.'}</Text><Button title={t("Set up download maps")} icon="settings-outline" secondary onPress={()=>router.navigate('/settings')} /><Button title={t(busy ? 'Creating download…' : 'Download selected region')} loading={busy} progress={downloadProgress} disabled={!selected || !offlineEnabled || Platform.OS === 'web'} icon="download-outline" onPress={() => void run(async () => { setBusy(true); try {setDownloadProgress(null);const pack=await download(selected!, (_,status) => {setDownloadProgress(status.percentage/100);}, setError); await refresh();if(pack)await waitForMapDownload(pack,percentage=>{if(mounted.current)setDownloadProgress(percentage/100);}); await refresh(); } finally { setBusy(false); } })} /></View>
     {regions.map(r => <View key={r.id} style={[styles.card, { backgroundColor: p.card }]}><Text style={{ color: p.text, fontWeight: '700' }} numberOfLines={1}>{r.name}</Text><Text style={{ color: p.muted }}>{r.state} · {r.percentage.toFixed(0)}% · {(r.bytes / 1e6).toFixed(1)} MB downloaded</Text><View style={{ height: 5, backgroundColor: p.line, borderRadius: 5 }}><View style={{ height: 5, width: `${Math.min(100, r.percentage)}%`, backgroundColor: p.accent, borderRadius: 5 }} /></View><View style={{ flexDirection: 'row', gap: 10 }}>{r.state !== 'complete' && <Button title={t(r.state === 'active' ? 'Pause' : 'Resume')} secondary onPress={() => void run(async () => { if (r.state === 'active') await r.pack.pause(); else await resumePack(r.id); await refresh(); })} />}<IconButton label={t("Delete downloaded map")} icon="trash-outline" onPress={() => deleteRegion(r.id)} /></View></View>)}
 
 
