@@ -25,3 +25,9 @@ No local native compilation, SDK downloads, new app signing identity, or F-Droid
 Final pre-push checks: **247 JavaScript/TypeScript tests, 29 Python tests, clean lint/typecheck and successful web export**. Native Android module autolinking resolves. Canonical-digest regression and native single-link payload regression pass. The 1.0.5 two-browser settings/reconnect scenario passed all three stages after correcting digest ordering. The road-pack read bound now matches the existing 20 MB / 500 KB chunk download allowance.
 
 Hosted deployment follow-up: staging caught an app-link helper import outside the standalone `server/` package. Production was not switched. The association helper now lives inside `server/`, with a regression that copies and boots only that package, checks health and validates both association endpoints. This server-only follow-up does not change native app code or require replacing the already-pinned 1.0.5 binary tag.
+
+## Final 1.0.6 follow-up
+
+Android background GPS delivery now includes the same verified vehicle battery/viewer extras used by iOS and foreground navigation; old Bluetooth battery readings get their own localized age label even with fresh GPS. Spectator payloads still exclude those private fields. Final native input cache keys exclude version/build-number-only changes while retaining dependency/native configuration/module content; Android ccache also has a compiler-validated toolchain/architecture fallback. iOS already had a broader compatible fallback, so no claim is made that its prior caches could not be reused at all. Actual cache-hit/time improvements require runner measurements.
+
+These native-app fixes require a fresh immutable 1.0.6 tag. The 1.0.5 workflow is stopped when starting its replacement; 1.0.5 web features remain documented and live until the newer web deployment. No release tag is moved.

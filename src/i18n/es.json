@@ -1216,5 +1216,7 @@
   "Android Live Updates": "Actualizaciones en vivo en Android",
   "Follow your ride on supported Android Lock Screens.": "Sigue tu viaje en la pantalla de bloqueo de Android compatible.",
   "Cleaner sharing links": "Enlaces más limpios",
-  "Native sharing uses one link and keeps connection consent when you return.": "Comparte un único enlace y conserva la conexión al volver a la app."
+  "Native sharing uses one link and keeps connection consent when you return.": "Comparte un único enlace y conserva la conexión al volver a la app.",
+  "Clear battery age": "Datos de batería claros",
+  "Android Live Updates keep vehicle battery and mark older readings.": "Las actualizaciones en vivo de Android conservan la batería del vehículo e indican si los datos son antiguos."
 }

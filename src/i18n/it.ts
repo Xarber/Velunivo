@@ -724,3 +724,8 @@ Object.assign(italian,{
   "Cleaner sharing links": "Link di condivisione più puliti",
   "Native sharing uses one link and keeps connection consent when you return.": "Condividi un solo link e ritrova la connessione quando torni nell’app."
 });
+
+Object.assign(italian,{
+  "Clear battery age": "Batteria con dati chiari",
+  "Android Live Updates keep vehicle battery and mark older readings.": "Gli aggiornamenti in tempo reale di Android mantengono la batteria del veicolo e segnalano i dati non recenti."
+});

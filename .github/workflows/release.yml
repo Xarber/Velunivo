@@ -33,6 +33,8 @@ jobs:
           [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Use major.minor.patch'; exit 1; }
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "tag=v$version" >> "$GITHUB_OUTPUT"
+      - name: Compute version-independent native dependency cache key
+        run: python3 scripts/native-cache-key.py >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -71,6 +73,8 @@ jobs:
       EXPO_PUBLIC_PEER_ICE_SERVERS: ${{ vars.PEER_ICE_SERVERS }}
     steps:
       - uses: actions/checkout@v4
+      - name: Compute version-independent native dependency cache key
+        run: python3 scripts/native-cache-key.py >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -107,6 +111,8 @@ jobs:
       EXPO_PUBLIC_PEER_ICE_SERVERS: ${{ vars.PEER_ICE_SERVERS }}
     steps:
       - uses: actions/checkout@v4
+      - name: Compute version-independent native dependency cache key
+        run: python3 scripts/native-cache-key.py >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -138,8 +144,10 @@ jobs:
         continue-on-error: true
         with:
           path: ${{ env.CCACHE_DIR }}
-          key: android-native-${{ runner.arch }}-${{ env.ANDROID_COMPILE_SDK }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
-          restore-keys: android-native-${{ runner.arch }}-${{ env.ANDROID_COMPILE_SDK }}-${{ hashFiles('package-lock.json') }}-
+          key: android-native-${{ runner.arch }}-${{ env.ANDROID_COMPILE_SDK }}-${{ env.NATIVE_DEPENDENCY_KEY }}-${{ github.sha }}
+          restore-keys: |
+            android-native-${{ runner.arch }}-${{ env.ANDROID_COMPILE_SDK }}-${{ env.NATIVE_DEPENDENCY_KEY }}-
+            android-native-${{ runner.arch }}-${{ env.ANDROID_COMPILE_SDK }}-
       - name: Enable native CMake compiler cache
         run: |
           if ! command -v ccache >/dev/null; then
@@ -217,6 +225,8 @@ jobs:
       EXPO_PUBLIC_PEER_ICE_SERVERS: ${{ vars.PEER_ICE_SERVERS }}
     steps:
       - uses: actions/checkout@v4
+      - name: Compute version-independent native dependency cache key
+        run: python3 scripts/native-cache-key.py >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -237,9 +247,9 @@ jobs:
         continue-on-error: true
         with:
           path: .derived-ios
-          key: ios-derived-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-${{ hashFiles('package-lock.json', 'app.json', 'modules/**') }}-${{ github.sha }}
+          key: ios-derived-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-${{ env.NATIVE_DEPENDENCY_KEY }}-${{ github.sha }}
           restore-keys: |
-            ios-derived-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-${{ hashFiles('package-lock.json', 'app.json', 'modules/**') }}-
+            ios-derived-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-${{ env.NATIVE_DEPENDENCY_KEY }}-
             ios-derived-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-
       - name: Restore iOS C++ compiler cache
         uses: actions/cache@v4
@@ -319,6 +329,8 @@ jobs:
       EXPO_PUBLIC_PEER_ICE_SERVERS: ${{ vars.PEER_ICE_SERVERS }}
     steps:
       - uses: actions/checkout@v4
+      - name: Compute version-independent native dependency cache key
+        run: python3 scripts/native-cache-key.py >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -339,9 +351,9 @@ jobs:
         continue-on-error: true
         with:
           path: work/simulator
-          key: sim-derived-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-${{ hashFiles('package-lock.json', 'app.json', 'modules/**') }}-${{ github.sha }}
+          key: sim-derived-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-${{ env.NATIVE_DEPENDENCY_KEY }}-${{ github.sha }}
           restore-keys: |
-            sim-derived-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-${{ hashFiles('package-lock.json', 'app.json', 'modules/**') }}-
+            sim-derived-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-${{ env.NATIVE_DEPENDENCY_KEY }}-
             sim-derived-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-
       - name: Restore iOS C++ compiler cache
         uses: actions/cache@v4
