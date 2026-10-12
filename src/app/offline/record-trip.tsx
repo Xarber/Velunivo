@@ -1,3 +1,4 @@
+import {consumeRecordingStart} from '../../services/recordingStartRequest';
 import {useRideHeading} from '../../services/useRideHeading';
 import {publicError} from '../../core/publicErrors';
 import {t} from '../../i18n/core';
@@ -33,6 +34,7 @@ import {tripDuration,tripAverage} from '../../core/tripDashboard';
 import {batteryLabel} from '../../core/vehicles';
 function KeepAwake(){useKeepAwake('velunivo-record-trip');return null;}
 export default function RecordTrip(){
+  const [startRequested]=useState(consumeRecordingStart),autoStarted=useRef(false);
   const p=usePalette(),insets=useSafeAreaInsets(),{width,height}=useWindowDimensions(),navigation=useNavigation();
   const {profile,navigationOptions:n,lockVehicle,vehicleLocked,updateNavigationOptions}=useStore();
   const [panelOpen,setPanelOpen]=useState(true);
@@ -62,6 +64,7 @@ export default function RecordTrip(){
   // Returning to another tab leaves the dashboard mounted; going back ends and checkpoints the recording.
   useEffect(()=>navigation.addListener('beforeRemove',event=>{if(active && !leaving.current){event.preventDefault();void finish();}}),[navigation,active]); // eslint-disable-line react-hooks/exhaustive-deps
   async function finish(){if(savingRef.current)return;savingRef.current=true;setSaving(true);const saved=await recorder.finish();savingRef.current=false;setSaving(false);if(saved!==false){leaving.current=true;setActive(false);router.replace('/offline/rides');}}
+  useEffect(()=>{if(startRequested&&!autoStarted.current&&!vehicleLocked){autoStarted.current=true;setActive(true);}},[startRequested,vehicleLocked]);
   const panelP=panelOpen?{...p,dark:true,bg:'#071118',card:'#15222C',text:'#F6FAFC',muted:'#ADBCC6',line:'#30434B',accent:'#64DCC5'}:p;
   const metric=(label:string,value:string)=><View key={label} style={{minWidth:130,flex:1,gap:4}}><Text style={{color:panelP.muted,fontSize:12}}>{label}</Text><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{color:panelP.text,fontSize:22,fontWeight:'800',fontVariant:['tabular-nums']}}>{value}</Text></View>;
   return <View style={{flex:1,backgroundColor:p.bg}}>{active && <KeepAwake />}<RideMap trace={active?trail:undefined} routes={[]} selected={null} position={position} follow={follow} onPan={()=>setFollow(false)} heading={heading} navigating={active} tilted={n.tilted} offlineMap={offlineMap} transit={n.transit} traffic={n.traffic} followPadding={{top:insets.top+75+Math.max(0,(height-bottomObstruction-245)*.42),bottom:bottomObstruction+170,left:20,right:20}} />

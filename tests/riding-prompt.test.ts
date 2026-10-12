@@ -1,0 +1,4 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {RidingPromptDetector} from '../src/core/ridingPrompt';
+const fix=(i:number,speed=3,accuracy=5)=>({coordinate:[9+i*.00008,45] as [number,number],timestamp:1000+i*2000,speed,accuracy});
+test('riding prompt requires sustained accurate riding-speed movement',()=>{const detector=new RidingPromptDetector();for(let i=0;i<4;i++)assert.equal(detector.accept(fix(i),fix(i).timestamp),false);assert.equal(detector.accept(fix(4),fix(4).timestamp),true);});
+test('walking, stale GPS, bad accuracy and stationary drift do not prompt',()=>{for(const [speed,accuracy] of [[1.2,5],[3,100],[0,10]]){const detector=new RidingPromptDetector();for(let i=0;i<12;i++)assert.equal(detector.accept(fix(i,speed,accuracy),fix(i).timestamp),false);}const detector=new RidingPromptDetector();assert.equal(detector.accept(fix(0),100000),false);});

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { learnedBatteryRange, pendingBatteryRide, validBatteryUsage } from '../src/core/batteryLearning';
+import { canAskBatteryUsage, learnedBatteryRange, pendingBatteryRide, validBatteryUsage } from '../src/core/batteryLearning';
 import { createRideArchive } from '../src/core/rideArchive';
 import { RecordedRide } from '../src/core/recordings';
 import { batteryEstimate, createVehicle } from '../src/core/vehicles';
@@ -34,4 +34,15 @@ test('saving feedback preserves sensor chunks, survives checkpoints/restart, and
  await archive.persistRide({...pending,id:'crashed',status:'recording',endedAt:undefined,lastFixAt:5000},[]);await archive.saveBatteryUsage('crashed',5);assert.equal((await archive.recordedRides()).find(r=>r.id==='crashed')?.status,'interrupted');
  await archive.saveBatteryUsage(pending.id,null);assert.equal((await archive.recordedRides()).find(r=>r.id===pending.id)?.batteryFeedback,'skipped');stop();
  await archive.deleteRecordedRide(saved);await assert.rejects(archive.saveBatteryUsage(saved.id,20));
+});
+
+test('Sharing E-Scooter never asks for battery usage, including old pending records',()=>{
+ const shared={...vehicle,id:'sharing-scooter'};
+ assert.equal(canAskBatteryUsage(shared,true),false);
+ assert.equal(canAskBatteryUsage(vehicle,true),true);
+ assert.equal(canAskBatteryUsage(vehicle,false),false);
+ const pending={...ride('private'),batteryFeedback:'pending' as const};
+ const oldShared={...pending,id:'public',vehicle:shared};
+ assert.equal(pendingBatteryRide([oldShared]),undefined);
+ assert.equal(pendingBatteryRide([oldShared,pending])?.id,'private');
 });

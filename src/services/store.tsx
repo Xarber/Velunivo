@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import {setRideLock} from './rideLock';
+import { sortVehicles } from '../core/vehicleUsage';
+import React, { createContext, useContext, useEffect, useMemo,useCallback, useState } from 'react';
 import {bluetoothBridge} from '../bluetooth/service';
 import {removeVehicleAndPairing} from '../bluetooth/policy';
 import { loadMapSettings } from './mapSettings';
@@ -20,7 +22,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [navigationOptions, setNavigationOptions] = useState(defaultNavigationOptions);
   const [places, setPlaces] = useState<SavedPlace[]>([]), [pendingJourney, requestJourney] = useState<Journey | null>(null), [paces, setPaces] = useState<RidePace[]>([]);
   const [batteryRides, setBatteryRides] = useState<RecordedRide[]>([]);
-  const [vehicleLocked, lockVehicle] = useState(false);
+  const [vehicleLocked, setVehicleLocked] = useState(false);
+  const lockVehicle=useCallback((value:boolean)=>{setRideLock(value);setVehicleLocked(value);},[]);
   const [selected, select] = useState<Route | null>(null), [saved, setSaved] = useState<Route[]>([]), [ready, setReady] = useState(false);
   useEffect(() => { (async () => {
     try {
@@ -43,9 +46,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
   async function save(route: Route) { setSaved(await saveRoute(route)); }
   async function remove(id: string) { setSaved(await removeRoute(id)); }
+  useEffect(()=>{setRideLock(vehicleLocked);return()=>setRideLock(false);},[vehicleLocked]);
   const baseProfile = garage.vehicles.find(v => v.id === garage.activeId) || garage.vehicles[0];
   const learned = useMemo(() => navigationOptions.learnedEta ? learnedPace(paces, baseProfile) : null, [paces, baseProfile, navigationOptions.learnedEta]);
-  const battery = useMemo(() => learnedBatteryRange(batteryRides, baseProfile), [batteryRides, baseProfile]);
+  const battery = useMemo(() => baseProfile.id==='sharing-scooter'?null:learnedBatteryRange(batteryRides, baseProfile), [batteryRides, baseProfile]);
   const profile = { ...baseProfile, learnedRangeKm: battery?.rangeKm,energyReferenceSpeedKmh:battery?.referenceSpeedKmh||baseProfile.energyReferenceSpeedKmh, learnedBatteryRideCount: battery?.count, learnedSpeedKmh: learned?.speedKmh, learnedRideCount: learned?.count };
-  return <Context.Provider value={{ places, addPlace: p => setPlaces(v => [...v, {...p, id: `${Date.now()}-${Math.random().toString(36).slice(2,8)}`}]), deletePlace: id => setPlaces(v => v.filter(p => p.id !== id)), renamePlace: (id,name) => setPlaces(v=>renameSavedPlace(v,id,name)), pendingJourney, requestJourney, navigationOptions, updateNavigationOptions: p => { if (p.showSharingVehicle === false && garage.activeId === 'sharing-scooter') { if (vehicleLocked) return; setGarage(g => ({...g, activeId:g.vehicles.find(v => v.id !== 'sharing-scooter')?.id || g.activeId})); } setNavigationOptions(v => ({ ...v, ...p })); }, profile, vehicles: garage.vehicles.filter(v => navigationOptions.showSharingVehicle || v.id !== 'sharing-scooter'), vehicleLocked, lockVehicle, chooseVehicle: id => !vehicleLocked && setGarage(g => g.vehicles.some(v => v.id === id) ? { ...g, activeId: id } : g), addVehicle: kind => { if (vehicleLocked) return; const v = createVehicle(kind); setGarage(g => ({ ...g, vehicles: [...g.vehicles, v] })); return v.id; }, deleteVehicle: async id => { if(vehicleLocked)return;const next=await removeVehicleAndPairing(garage,id,key=>bluetoothBridge.forget(key));if(next!==garage)setGarage(g=>removeVehicle(g,id)); }, updateProfile: (p, id) => !vehicleLocked && setGarage(g => ({ ...g, vehicles: g.vehicles.map(v => v.id === (id || g.activeId) ? { ...v, ...p, id: v.id, ...(v.id === 'sharing-scooter' ? {maxSpeed:25,ridingLimit:20} : {}) } : v) })), routes, setRoutes, selected, select, saved, save, remove, ready }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ places, addPlace: p => setPlaces(v => [...v, {...p, id: `${Date.now()}-${Math.random().toString(36).slice(2,8)}`}]), deletePlace: id => setPlaces(v => v.filter(p => p.id !== id)), renamePlace: (id,name) => setPlaces(v=>renameSavedPlace(v,id,name)), pendingJourney, requestJourney, navigationOptions, updateNavigationOptions: p => { if (p.showSharingVehicle === false && garage.activeId === 'sharing-scooter') { if (vehicleLocked) return; setGarage(g => ({...g, activeId:g.vehicles.find(v => v.id !== 'sharing-scooter')?.id || g.activeId})); } setNavigationOptions(v => ({ ...v, ...p })); }, profile, vehicles: sortVehicles(garage.vehicles.filter(v => navigationOptions.showSharingVehicle || v.id !== 'sharing-scooter'), batteryRides), vehicleLocked, lockVehicle, chooseVehicle: id => !vehicleLocked && setGarage(g => g.vehicles.some(v => v.id === id) ? { ...g, activeId: id } : g), addVehicle: kind => { if (vehicleLocked) return; const v = createVehicle(kind); setGarage(g => ({ ...g, vehicles: [...g.vehicles, v] })); return v.id; }, deleteVehicle: async id => { if(vehicleLocked)return;const next=await removeVehicleAndPairing(garage,id,key=>bluetoothBridge.forget(key));if(next!==garage)setGarage(g=>removeVehicle(g,id)); }, updateProfile: (p, id) => !vehicleLocked && setGarage(g => ({ ...g, vehicles: g.vehicles.map(v => v.id === (id || g.activeId) ? { ...v, ...p, id: v.id, ...(v.id === 'sharing-scooter' ? {name:'Sharing E-Scooter',photo:null,photos:[],icon:'sharing-scooter',rangeKm:null,batteryWh:undefined} : {}) } : v) })), routes, setRoutes, selected, select, saved, save, remove, ready }}>{children}</Context.Provider>;
 }

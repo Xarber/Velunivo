@@ -1,3 +1,4 @@
+import {canAskBatteryUsage} from '../core/batteryLearning';
 import {nameRecordedTrip} from './tripNames';
 import {notifyShortRide} from './rideNotice';
 import {bluetoothBridge} from '../bluetooth/service';
@@ -39,7 +40,7 @@ export function useRideRecorder(active: boolean, enabled: boolean, arrived: bool
   useEffect(() => {
     if (!active || !enabled || !route) return;
     const startedAt = Date.now();
-    session.current = { ride: { id: `${startedAt}-${Math.random().toString(36).slice(2, 9)}`, name: route.name, vehicle: { id: vehicle.id, name: vehicle.name, kind: vehicle.kind, maxSpeed: vehicle.maxSpeed, ridingLimit: vehicle.ridingLimit,cruiseFactor:vehicle.cruiseFactor }, startLabel: route.startLabel || 'Ride start', endLabel: route.endLabel || 'Ride arrival', startedAt, batteryFeedback: askBatteryUsage ? 'pending' : undefined, status: 'recording', samples: 0, chunks: 0, meters: 0, preview: [] }, buffer: [], pending: new Map(), chunk: 0, previous: null, movement: new MovementTracker(), lastTimestamp: 0, dirty: true,minimumMeters };
+    session.current = { ride: { id: `${startedAt}-${Math.random().toString(36).slice(2, 9)}`, name: route.name, vehicle: { id: vehicle.id, name: vehicle.name, kind: vehicle.kind, maxSpeed: vehicle.maxSpeed, ridingLimit: vehicle.ridingLimit,cruiseFactor:vehicle.cruiseFactor }, startLabel: route.startLabel || 'Ride start', endLabel: route.endLabel || 'Ride arrival', startedAt, batteryFeedback: canAskBatteryUsage(vehicle,askBatteryUsage) ? 'pending' : undefined, status: 'recording', samples: 0, chunks: 0, meters: 0, preview: [] }, buffer: [], pending: new Map(), chunk: 0, previous: null, movement: new MovementTracker(), lastTimestamp: 0, dirty: true,minimumMeters };
     setRecord(session.current.ride); liveRecording(session.current.ride.id, true); flush();
     const timer = setInterval(() => flush(), 5000);
     const app = AppState.addEventListener('change', state => { if (state !== 'active') flush(); });
