@@ -124,11 +124,27 @@ class SimulatorVerificationTests(unittest.TestCase):
 
     def test_install_has_short_bounded_timeouts_and_opens_ui_before_readiness(self):
         calls = []
-        with patch.object(sim, 'run', side_effect=lambda *args, **kw: calls.append((args, kw))), patch.object(sim, 'open_simulator', side_effect=lambda udid: calls.append(('UI', udid))):
+        with patch.object(sim, 'run', side_effect=lambda *args, **kw: calls.append((args, kw))), patch.object(sim, 'open_simulator', side_effect=lambda udid: calls.append(('UI', udid))), patch.object(sim, 'simulator_app', return_value=None):
             sim.boot_and_install('owned-device', 'ipad')
         self.assertEqual(calls[1], ('UI', 'owned-device'))
         self.assertEqual(calls[2][1]['timeout'], 150)
         self.assertEqual(calls[3][1]['timeout'], 90)
+
+    def test_shutdown_template_is_cloned_without_touching_template(self):
+        devices = self.devices()
+        template = devices['com.apple.CoreSimulator.SimRuntime.iOS-27-2'][1]
+        template['state'] = 'Shutdown'
+        calls = []
+        def command(*args, **kwargs):
+            calls.append(args)
+            if args[2] == 'clone': return 'owned-clone'
+            if args[2] == 'launch': return 'app.velunivo.mobile: 1234'
+            return ''
+        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'run', side_effect=command), patch.object(sim, 'boot_and_install'), patch.object(sim, 'diagnostics'), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill'):
+            sim.capture_once(devices, 'iphone')
+        self.assertTrue(any(c[2] == 'clone' and c[3] == 'existing-phone' for c in calls))
+        self.assertFalse(any(c[2] == 'create' for c in calls))
+        self.assertEqual(calls[-2:], [('xcrun', 'simctl', 'shutdown', 'owned-clone'), ('xcrun', 'simctl', 'delete', 'owned-clone')])
 
     def test_process_exit_blocks_screenshot_and_cleans_only_fresh_device(self):
         calls = []
@@ -137,7 +153,7 @@ class SimulatorVerificationTests(unittest.TestCase):
             if args[2] == 'create': return 'owned-device'
             if args[2] == 'launch': return 'app.velunivo.mobile: 1234'
             return ''
-        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'open_simulator'), patch.object(sim, 'run', side_effect=command), patch.object(sim, 'diagnostics'), patch.object(sim, 'landscape'), patch.object(sim, 'verify_landscape'), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill', side_effect=ProcessLookupError):
+        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'open_simulator'), patch.object(sim, 'simulator_app', return_value=None), patch.object(sim, 'run', side_effect=command), patch.object(sim, 'diagnostics'), patch.object(sim, 'landscape'), patch.object(sim, 'verify_landscape'), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill', side_effect=ProcessLookupError):
             with self.assertRaises(ProcessLookupError):
                 sim.capture_once(self.devices(), 'ipad')
         self.assertNotIn('io', [c[2] for c in calls])
@@ -148,7 +164,7 @@ class SimulatorVerificationTests(unittest.TestCase):
             if args[2] == 'create': return 'owned-device'
             if args[2] == 'launch': return 'app.velunivo.mobile: 1234'
             return ''
-        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'open_simulator'), patch.object(sim, 'run', side_effect=command) as commands, patch.object(sim, 'diagnostics'), patch.object(sim, 'landscape'), patch.object(sim, 'verify_landscape'), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill') as survival:
+        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'open_simulator'), patch.object(sim, 'simulator_app', return_value=None), patch.object(sim, 'run', side_effect=command) as commands, patch.object(sim, 'diagnostics'), patch.object(sim, 'landscape'), patch.object(sim, 'verify_landscape'), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill') as survival:
             sim.capture_once(self.devices(), 'iphone')
             self.assertEqual(survival.call_args_list, [unittest.mock.call(1234, 0), unittest.mock.call(1234, 0)])
             self.assertTrue(any(c.args[2] == 'io' for c in commands.call_args_list))

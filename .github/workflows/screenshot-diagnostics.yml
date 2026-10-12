@@ -14,21 +14,26 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: screenshot-stable-comparison
+  group: screenshot-headless-clone
   cancel-in-progress: true
 jobs:
   inspect:
-    runs-on: macos-26
+    runs-on: xcode-27
+    strategy:
+      fail-fast: false
+      matrix:
+        family: [iphone, ipad]
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
-      - name: Use installed stable tools for comparison
+      - name: Select installed Xcode beta
         run: |
           python3 - <<'PYCODE' >> "$GITHUB_ENV"
           from pathlib import Path
           import re
-          import subprocess
-          print('DEVELOPER_DIR=' + subprocess.check_output(['xcode-select', '-p'], text=True).strip())
+          candidates=[p for p in Path('/Applications').glob('Xcode*.app') if 'beta' in p.name.lower() and not p.is_symlink()]
+          chosen=max(candidates,key=lambda p:tuple(map(int,re.findall(r'\d+',p.name))))
+          print(f'DEVELOPER_DIR={chosen}/Contents/Developer')
           PYCODE
       - name: Inspect installed Simulator tools and host capacity
         run: |
@@ -49,15 +54,15 @@ jobs:
           github-token: ${{ github.token }}
           run-id: ${{ inputs.source_run }}
       - run: ditto -x -k artifacts/Velunivo-simulator.app.zip artifacts
-      - name: Capture iPad without rebuilding
+      - name: Capture device without rebuilding
         timeout-minutes: 8
-        run: python3 scripts/simulator-screenshots.py --family ipad
+        run: python3 scripts/simulator-screenshots.py --family "${{ matrix.family }}"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: screenshot-diagnostics
+          name: screenshot-diagnostics-${{ matrix.family }}
           path: |
-            artifacts/ipad.png
+            artifacts/*.png
             artifacts/*-screenshot.json
             artifacts/*-simulator.log
             artifacts/*-launch.log

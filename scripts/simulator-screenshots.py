@@ -75,7 +75,13 @@ def best_effort(*args, timeout=30):
 def boot_and_install(udid, family):
     # Retry the whole capture on a fresh device, not a stalled installd instance.
     run('xcrun', 'simctl', 'boot', udid, timeout=30)
-    open_simulator(udid)
+    app = simulator_app()
+    if app is None or app.name == 'Simulator.app':
+        open_simulator(udid)
+    else:
+        # Modern devicectl rotates headlessly; avoid spending the runner's
+        # small memory budget on Device Hub's SwiftUI interface at startup.
+        print('Using headless Device Hub capture.', flush=True)
     run('xcrun', 'simctl', 'bootstatus', udid, '-b', timeout=150)
     run('xcrun', 'simctl', 'install', udid, 'artifacts/Velunivo-simulator.app', timeout=90)
 
@@ -172,7 +178,14 @@ def capture_once(devices, family):
         device_type = next((d['identifier'] for d in types if d['name'] == template['name']), None)
     if not device_type:
         raise RuntimeError(f'Cannot resolve installed device type for {template["name"]}')
-    udid = run('xcrun', 'simctl', 'create', f'Velunivo-QA-{family}-{uuid.uuid4().hex[:8]}', device_type, runtime)
+    name = f'Velunivo-QA-{family}-{uuid.uuid4().hex[:8]}'
+    udid = None
+    # Hosted templates may already contain initialized OS data. Clone only
+    # shutdown templates; cleanup always targets the new owned identifier.
+    if template.get('state') == 'Shutdown' and template.get('udid'):
+        udid = best_effort('xcrun', 'simctl', 'clone', template['udid'], name, timeout=60)
+    if not udid:
+        udid = run('xcrun', 'simctl', 'create', name, device_type, runtime)
     append_log(family, f'Owned fresh Simulator {udid}; type {device_type}; runtime {runtime}')
     try:
         boot_and_install(udid, family)

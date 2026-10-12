@@ -29,3 +29,5 @@ Sources: [Apple Device Hub interaction controls](https://developer.apple.com/doc
 - Application lint and TypeScript checks passed. Workflow YAML parses successfully.
 - GitHub inventory run 38212643644 confirmed DeviceHub.app at Contents/Applications on Xcode 27.2 beta 2 and a 3-CPU / 7-GB runner.
 - Real capture run 38212784963 consumes the already-built 1.0.2 Simulator app; its result is still pending. No native compilation occurred locally.
+
+Further isolation: Device Hub ignores the old -CurrentDeviceUDID argument. Its registered devices URL targets a particular device window on the GUI fallback. Modern capture now stays headless at boot, uses a smaller standard iPad, and clones a shutdown preconfigured runner template when available. Failed clone creation falls back to a fresh device; cleanup never changes the original template. Updated Python suite: 21 tests passed. Expanded AltSource-only galleries remain gated on a fresh baseline screenshot on both families, as requested.
