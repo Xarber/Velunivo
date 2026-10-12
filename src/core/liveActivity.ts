@@ -4,9 +4,9 @@ import { Route, Profile, NavigationOptions, Fix } from './types';
 import { guidance } from './navigation';
 import { estimate, minutes } from './eta';
 import { arrivalTime, maneuverDistance, distanceLeft } from './rideView';
-export interface NavigationActivity extends ActivityExtras { turn: string; symbol: 'flag.fill' | 'arrow.turn.up.left' | 'arrow.turn.up.right' | 'arrow.up'; distance: string; arrival: string; minutes: string; remaining: string; }
+export interface NavigationActivity extends ActivityExtras { updatedAt?:number; turn: string; symbol: 'flag.fill' | 'arrow.turn.up.left' | 'arrow.turn.up.right' | 'arrow.up'; distance: string; arrival: string; minutes: string; remaining: string; }
 
 export function rideActivity(route:Route,profile:Profile,options:NavigationOptions,g:ReturnType<typeof guidance>,fix?:Fix,simulation=false):NavigationActivity {
  const eta=estimate(route,profile,g.offRoute ? 0 : g.along);
- return {turn:(simulation ? t('Simulation')+' · ' : '') + t(!g.valid ? 'Waiting for a precise GPS fix' : g.arrived ? 'You have arrived' : g.offRoute ? 'Off route · stop safely to replan' : g.next?.text || 'Follow the route'),symbol:g.arrived || g.next?.sign===4 || g.next?.sign===5 ? 'flag.fill' : g.next?.sign && g.next.sign<0 ? 'arrow.turn.up.left' : g.next?.sign && g.next.sign>0 ? 'arrow.turn.up.right' : 'arrow.up',distance:g.maneuverMeters===undefined ? '—' : maneuverDistance(g.maneuverMeters,options.unit),arrival:arrivalTime(eta.seconds,fix?.timestamp),minutes:minutes(eta.seconds),remaining:distanceLeft(eta.meters,options.unit)};
+ return {updatedAt:simulation?Date.now():fix?.timestamp,turn:(simulation ? t('Simulation')+' · ' : '') + t(!g.valid ? 'Waiting for a precise GPS fix' : g.arrived ? 'You have arrived' : g.offRoute ? 'Off route · stop safely to replan' : g.next?.text || 'Follow the route'),symbol:g.arrived || g.next?.sign===4 || g.next?.sign===5 ? 'flag.fill' : g.next?.sign && g.next.sign<0 ? 'arrow.turn.up.left' : g.next?.sign && g.next.sign>0 ? 'arrow.turn.up.right' : 'arrow.up',distance:g.maneuverMeters===undefined ? '—' : maneuverDistance(g.maneuverMeters,options.unit),arrival:arrivalTime(eta.seconds,fix?.timestamp),minutes:minutes(eta.seconds),remaining:distanceLeft(eta.meters,options.unit)};
 }

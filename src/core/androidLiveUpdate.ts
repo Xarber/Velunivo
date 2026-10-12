@@ -1,0 +1,8 @@
+import {NavigationActivity} from './liveActivity';
+export type AndroidActivityId='velunivo-navigation'|'velunivo-spectator'|'velunivo-test';
+export interface AndroidLiveContent {body:string;chip:string;url:string;updatedAt:number;oldLabel:string;}
+/** Public viewer displays intentionally omit all private vehicle metrics even if supplied accidentally. */
+export function androidLiveContent(id:AndroidActivityId,p:NavigationActivity,url:string,oldLabel:string,viewerLabel:string,now=Date.now()):AndroidLiveContent{
+ const extras=id==='velunivo-spectator'?'':`${p.batteryPercent!==undefined?` · ${p.batteryPercent}%`:''}${p.viewerCount!==undefined?` · ${p.viewerCount} ${viewerLabel}`:''}`;
+ return {body:`${p.turn} · ${p.distance}\n${p.arrival} · ${p.minutes} · ${p.remaining}${extras}`,chip:p.minutes.trim().slice(0,7),url,updatedAt:p.updatedAt??now,oldLabel};
+}

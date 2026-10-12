@@ -29,7 +29,7 @@ export default function SettingsScreen({section}:{section?:string}) {
   const [clearConfirm,setClearConfirm]=useState(false),[clearing,setClearing]=useState(false);
   const language=useLanguage();
   const group=settingsGroups.find(g=>g.id===section),developer=section==='developer' && n.developerMode;
-  const options=[...settingOptions,{key:'askBatteryUsage',title:'Ask for battery usage',icon:'battery-half-outline',detail:'After a saved GPS ride, ask how many percentage points of vehicle battery were used. Optional; skip if you charged en route. Three reports of at least 500 m and 1% used refine that vehicle’s future estimates.'}] as const;
+  const options=[...settingOptions.map(option=>option.key==='liveActivities'&&Platform.OS==='android'?{...option,title:'Live Updates'}:option),{key:'askBatteryUsage',title:'Ask for battery usage',icon:'battery-half-outline',detail:'After a saved GPS ride, ask how many percentage points of vehicle battery were used. Optional; skip if you charged en route. Three reports of at least 500 m and 1% used refine that vehicle’s future estimates.'}] as const;
   const card=(children:React.ReactNode)=><View style={[styles.card,{backgroundColor:p.card}]}>{children}</View>;
   return <SafeAreaView style={{flex:1,backgroundColor:p.bg}}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{padding:24,gap:20,width:'100%',maxWidth:700,alignSelf:'center',paddingBottom:36}}>
     <View style={{flexDirection:'row',alignItems:'center',gap:14}}>{section && <IconButton label={t("Back to Settings")} icon="chevron-back" onPress={()=>goBack('/settings')} />}<Text style={[styles.title,{color:p.text,flex:1}]}>{group?.title || (developer?'Developer Options':section?'Settings options':'Settings')}</Text></View>
