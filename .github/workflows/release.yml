@@ -390,7 +390,7 @@ jobs:
           - family: iphone
             runner: xcode-27
           - family: ipad
-            runner: xcode-27
+            runner: macos-26
     env:
       GH_TOKEN: ${{ github.token }}
     steps:

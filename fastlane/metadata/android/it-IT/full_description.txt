@@ -1,0 +1,11 @@
+Pianifica e registra i viaggi con il veicolo che usi davvero.
+
+• Confronta percorsi ciclabili e stradali con tempi stimati per il tuo veicolo.
+• Indicazioni vocali, mappa orientata in avanti, velocità e limiti stradali mappati.
+• Luoghi, percorsi e viaggi salvati, con esportazione GPX e riproduzione.
+• Telemetria Bluetooth facoltativa per protocolli supportati, con soli comandi espliciti di blocco e sblocco quando disponibili.
+• Scarica piccole reti stradali per calcolare percorsi offline; le immagini delle mappe richiedono un fornitore compatibile.
+• Condividi l’arrivo senza mostrare la telemetria, oppure sincronizza due dispositivi in privato, senza account.
+• Italiano, inglese, spagnolo, francese, tedesco e portoghese; segue la lingua del dispositivo.
+
+I percorsi possono includere strade non adatte o vietate al tuo veicolo. Leggi gli avvisi e rispetta segnali e regole locali. I tempi stimati non prevedono il traffico. Aggiornamenti in tempo reale e dati in background dipendono da Android, autorizzazioni e limiti del sistema. La comunicazione Bluetooth deve essere verificata su ogni modello di veicolo.

@@ -1,0 +1,11 @@
+Plan and record rides with the vehicle you actually use.
+
+• Compare bicycle and car-road routes with vehicle-specific travel estimates.
+• Spoken directions, a forward-facing map, speed and mapped road limits.
+• Saved places, routes and recorded rides, with GPX export and replay.
+• Optional read-only vehicle telemetry for supported Bluetooth protocols, plus explicit lock/unlock commands where supported.
+• Download small road networks for offline route calculation; map imagery requires a supported provider account.
+• Share live arrivals without exposing vehicle telemetry, or privately synchronize two devices without an account.
+• English, Italian, Spanish, French, German and Portuguese; follows device language.
+
+Routes may contain roads unsuitable or prohibited for your vehicle. Review warnings and follow local signs and rules. Travel estimates exclude traffic predictions. Live Updates and background delivery depend on Android support, permissions and system limits. Compatible scooter communication still requires device-specific hardware validation.

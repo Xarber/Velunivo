@@ -1,0 +1,25 @@
+# Preparation only. Do not submit as a working F-Droid build recipe.
+Categories:
+  - Navigation
+License: MIT
+AuthorName: Xarber
+WebSite: https://velunivo.xcenter.it
+SourceCode: https://github.com/Xarber/Velunivo
+IssueTracker: https://github.com/Xarber/Velunivo/issues
+Changelog: https://github.com/Xarber/Velunivo/releases
+RepoType: git
+Repo: https://github.com/Xarber/Velunivo.git
+Disabled: Requires a GMS-free location and Android maps build plus a verified source recipe
+MaintainerNotes: |
+  Expo SDK 57, React Native CNG. expo-location currently imports proprietary
+  play-services-location; react-native-maps is used for Apple Maps on iOS but
+  its Android library pulls proprietary Google Maps/Location dependencies.
+  Neither may be hidden with scanner exclusions. Remove/exclude from a FOSS
+  Android flavor and replace location with a validated Android LocationManager
+  implementation including background tracking before submission.
+  npm/native binary dependencies, Hermes/React Native source build handling,
+  all licenses and reproducibility require full fdroidserver review.
+  Release versionCode currently comes from GitHub run_number; a fixed source
+  version code and reviewed pinned build recipe are required for F-Droid.
+AutoUpdateMode: None
+UpdateCheckMode: None

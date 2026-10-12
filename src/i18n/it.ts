@@ -689,3 +689,38 @@ Object.assign(italian, {
   "Reconnect to the private server used for pairing.": "Ricollegati al server privato usato per l’associazione.",
   "Private server unavailable · automatic sync is paused.": "Server privato non disponibile · sincronizzazione automatica in pausa."
 });
+
+Object.assign(italian,{
+  "Download progress": "Avanzamento del download",
+  "Downloading…": "Download in corso…",
+  "Sync now": "Sincronizza ora",
+  "Transfer progress": "Avanzamento del trasferimento",
+  "Invalid synchronized settings.": "Impostazioni sincronizzate non valide.",
+  "Device clocks differ. Check automatic date and time.": "Gli orologi dei dispositivi non coincidono. Controlla data e ora automatiche.",
+  "Android Live Updates require the latest native build.": "Gli aggiornamenti in tempo reale di Android richiedono l’ultima versione dell’app nativa.",
+  "Live Activity test · Turn right": "Test attività · Gira a destra",
+  "Live Update check": "Test aggiornamenti in tempo reale",
+  "Test Live Update": "Avvia test aggiornamento",
+  "Check Live Update": "Controlla aggiornamento",
+  "Test requested. Lock your device to check the Live Update.": "Test avviato. Blocca il dispositivo per controllare l’aggiornamento in tempo reale.",
+  "Android Live Update promotion is allowed. Device appearance still needs checking.": "Android consente gli aggiornamenti in evidenza. Verifica come compaiono sul dispositivo.",
+  "Android Live Updates are unavailable or disabled. Standard ride notifications are used.": "Gli aggiornamenti in tempo reale non sono disponibili o sono disattivati. Verranno usate le normali notifiche del viaggio.",
+  "Keep your rides, places, vehicles and settings together. Create a backup file, or connect two devices for private synchronization without an account.": "Porta con te viaggi, luoghi, veicoli e impostazioni. Crea un backup oppure collega due dispositivi per sincronizzarli in privato, senza un account.",
+  "New items will be added. Existing items stay; the latest configured settings win.": "Verranno aggiunti i nuovi elementi. Quelli esistenti rimangono; per le impostazioni valgono le modifiche più recenti.",
+  "Automatic merge runs when both devices are online, at startup and periodically. Only two devices can be paired. Both must be connected to unpair. Deletions are kept local. Each configured setting uses its latest edit across devices.": "La sincronizzazione automatica avviene all’avvio e periodicamente quando entrambi i dispositivi sono online. Puoi collegare due dispositivi: per scollegarli devono essere connessi entrambi. Le eliminazioni restano locali. Ogni impostazione usa la modifica più recente.",
+  "Transfers vehicles and pictures, saved places and routes, ride recordings and preferences. Private device sync also transfers Bluetooth credentials and map API keys. File backups and public-server sync exclude credentials and API keys. Bluetooth permissions and downloaded maps stay on each device. Backups contain ride locations: share them only with a device you trust. Merge keeps local items when IDs match; the latest configured settings win. Replace overwrites the receiving device’s app data. No account or server storage is used. Both devices must stay open and online; a session expires after ten minutes.": "Trasferisce veicoli e foto, luoghi, percorsi, viaggi registrati e impostazioni. La sincronizzazione privata trasferisce anche credenziali Bluetooth e chiavi delle mappe; backup su file e server pubblici le escludono. Autorizzazioni Bluetooth e mappe scaricate rimangono sul dispositivo. I backup contengono le posizioni dei viaggi: condividili solo con dispositivi fidati. La fusione mantiene gli elementi locali con lo stesso ID e usa le impostazioni più recenti. La sostituzione sovrascrive i dati del destinatario. Non servono account e i dati non vengono salvati sul server. Mantieni entrambi i dispositivi aperti e online; la sessione scade dopo dieci minuti."
+});
+
+Object.assign(italian,{'Live Updates':'Aggiornamenti in tempo reale','Data sync timed out. Try reconnecting.':'La sincronizzazione ha impiegato troppo tempo. Prova a riconnetterti.'});
+
+Object.assign(italian,{
+  "Download paused. Resume it from Downloaded Maps.": "Download in pausa. Riprendilo da Mappe scaricate.",
+  "Downloads you can follow": "Download sotto controllo",
+  "See map download progress and find new regions immediately.": "Segui il download delle mappe e trova subito le nuove aree.",
+  "Sync with a fresh start": "Sincronizzazione più semplice",
+  "Reconnect paired devices and keep your latest settings together.": "Ricollega i dispositivi e sincronizza le impostazioni più recenti.",
+  "Android Live Updates": "Aggiornamenti in tempo reale su Android",
+  "Follow your ride on supported Android Lock Screens.": "Segui il viaggio dalla schermata di blocco sui dispositivi Android compatibili.",
+  "Cleaner sharing links": "Link di condivisione più puliti",
+  "Native sharing uses one link and keeps connection consent when you return.": "Condividi un solo link e ritrova la connessione quando torni nell’app."
+});

@@ -14,7 +14,7 @@
 
 An iOS-first navigator and route planner for e-scooters and e-bikes. Compare bicycle and car-road candidates, estimate travel time for the vehicle you actually ride, and plan on a fullscreen map with floating controls. Built with Expo and React Native for iPhone, iPad, Android and web.
 
-[Download releases](https://github.com/Xarber/Velunivo/releases) · [Setup guide](docs/SETUP.md) · [Build and signing guide](docs/RELEASES.md) · [Verification](docs/VERIFICATION.md) · [Brand assets](docs/BRANDING.md)
+[Download releases](https://github.com/Xarber/Velunivo/releases) · [Add to Obtainium](https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22app.velunivo.mobile%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2FXarber%2FVelunivo%22%2C%22author%22%3A%22Xarber%22%2C%22name%22%3A%22Velunivo%22%7D) · [Setup guide](docs/SETUP.md) · [Build and signing guide](docs/RELEASES.md) · [Verification](docs/VERIFICATION.md) · [Brand assets](docs/BRANDING.md)
 
 ## Built around your ride
 
