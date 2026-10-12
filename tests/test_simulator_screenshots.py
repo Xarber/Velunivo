@@ -92,6 +92,13 @@ class SimulatorVerificationTests(unittest.TestCase):
         self.assertTrue(runtime.endswith('iOS-27-2'))
         self.assertEqual(device['deviceTypeIdentifier'], 'air-type')
 
+    def test_avoids_large_ipad_on_memory_limited_runner(self):
+        devices = {'com.apple.CoreSimulator.SimRuntime.iOS-27-0': [
+            {'name': 'iPad Air 13-inch', 'isAvailable': True},
+            {'name': 'iPad (A16)', 'isAvailable': True},
+            {'name': 'iPad Air 11-inch', 'isAvailable': True}]}
+        self.assertEqual(sim.select_device(devices, 'ipad')[1]['name'], 'iPad (A16)')
+
     def test_full_capture_retries_once_and_removes_failed_frame(self):
         calls = []
         with tempfile.TemporaryDirectory() as folder:

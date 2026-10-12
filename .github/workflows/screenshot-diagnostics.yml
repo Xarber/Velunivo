@@ -14,7 +14,7 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: screenshot-inventory
+  group: screenshot-device-hub
   cancel-in-progress: true
 jobs:
   inspect:

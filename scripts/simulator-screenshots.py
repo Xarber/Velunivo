@@ -53,7 +53,9 @@ def select_device(devices, family):
         runtime, device = item
         name = device['name'].lower()
         return (tuple(map(int, re.findall(r'\d+', runtime))),
-                1 if family == 'ipad' and 'pro' not in name else 0)
+                1 if family == 'ipad' and 'pro' not in name else 0,
+                1 if family == 'ipad' and '13-inch' not in name else 0,
+                1 if family == 'ipad' and name.startswith('ipad (') else 0)
     return max(candidates, key=rank)
 
 
@@ -112,7 +114,12 @@ def open_simulator(udid):
     if app is None:
         print('::warning::No installed Device Hub or Simulator UI found; using headless capture.', flush=True)
         return False
-    run('open', '-a', str(app), '--args', '-CurrentDeviceUDID', udid, timeout=30)
+    if app.name == 'Simulator.app':
+        run('open', '-a', str(app), '--args', '-CurrentDeviceUDID', udid, timeout=30)
+    else:
+        # Device Hub ignores the legacy launch argument. Target the owned
+        # simulated device window using its registered devices URL scheme.
+        run('open', '-a', str(app), f'devices://device/open?id={udid}', timeout=30)
     return True
 
 
