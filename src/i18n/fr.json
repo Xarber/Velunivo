@@ -1091,5 +1091,10 @@
   "Search that finishes": "Des recherches sans attente infinie",
   "Enter keeps results visible and searches time out safely.": "Entrée garde les résultats visibles et les recherches ont un délai limite.",
   "iPad controls within reach": "Des commandes à portée de main sur iPad",
-  "Ride controls stay at the bottom left of the map.": "Les commandes du trajet restent en bas à gauche de la carte."
+  "Ride controls stay at the bottom left of the map.": "Les commandes du trajet restent en bas à gauche de la carte.",
+  "Choose from files": "Choisir dans les fichiers",
+  "Take a picture": "Prendre une photo",
+  "Camera access is required to take a vehicle picture.": "Autorisez l’accès à l’appareil photo pour photographier le véhicule.",
+  "Choose an image smaller than 20 MB.": "Choisissez une image de moins de 20 Mo.",
+  "Could not read image dimensions.": "Impossible de lire les dimensions de l’image."
 }

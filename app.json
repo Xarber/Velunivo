@@ -79,7 +79,7 @@
         "expo-image-picker",
         {
           "photosPermission": "Choose a vehicle picture from your photo library. Pictures stay on your device.",
-          "cameraPermission": false,
+          "cameraPermission": "Take a picture for your vehicle. Pictures stay on your device.",
           "microphonePermission": false
         }
       ],

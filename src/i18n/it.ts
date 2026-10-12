@@ -584,3 +584,11 @@ Object.assign(italian,{
 "iPad controls within reach":"Controlli più comodi su iPad",
 "Ride controls stay at the bottom left of the map.":"I controlli del viaggio restano in basso a sinistra sulla mappa.",
 });
+
+Object.assign(italian, {
+  "Choose from files": "Scegli da File",
+  "Take a picture": "Scatta una foto",
+  "Camera access is required to take a vehicle picture.": "Consenti l’accesso alla fotocamera per fotografare il veicolo.",
+  "Choose an image smaller than 20 MB.": "Scegli un’immagine inferiore a 20 MB.",
+  "Could not read image dimensions.": "Non riesco a leggere le dimensioni dell’immagine."
+});

@@ -5,12 +5,13 @@ import {Image, Pressable, View} from 'react-native';
 import { useStore } from '../services/store';
 import { usePalette } from './ui';
 import { Vehicle } from '../core/types';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { photoUri } from '../services/vehiclePhotos';
 import { motionProps } from './WebMotion';
 export function VehicleIcon({ vehicle, size = 38 }: { vehicle: Vehicle; size?: number }) {
+  const p = usePalette();
   const [failed, setFailed] = useState<string | null>(null);
-  return vehicle.photo && failed !== vehicle.photo ? <Image accessibilityLabel={t(`${vehicle.name} photo`)} source={{ uri: photoUri(vehicle.photo) }} onError={() => setFailed(vehicle.photo)} style={{ width: size, height: size, borderRadius: 10 }} resizeMode="cover" /> : <Text accessibilityLabel={t(vehicle.kind === 'ebike' ? 'E-bike icon' : 'E-scooter icon')} style={{ fontSize: size * .7 }}>{vehicle.icon}</Text>;
+  return vehicle.photo && failed !== vehicle.photo ? <Image accessibilityLabel={t(`${vehicle.name} photo`)} source={{ uri: photoUri(vehicle.photo) }} onError={() => setFailed(vehicle.photo)} style={{ width: size, height: size, borderRadius: 10 }} resizeMode="cover" /> : vehicle.id === 'sharing-scooter' && (!vehicle.icon || vehicle.icon === '🛴' || vehicle.icon === 'sharing-scooter') ? <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center', borderRadius: 10, backgroundColor: p.card }}><MaterialCommunityIcons name="scooter-electric" size={size * .75} color={p.accent} accessibilityLabel={t('Sharing E-Scooter')} /></View> : <Text accessibilityLabel={t(vehicle.kind === 'ebike' ? 'E-bike icon' : 'E-scooter icon')} style={{ fontSize: size * .7 }}>{vehicle.icon}</Text>;
 }
 export default function VehicleSelector({ disabled = false,outlined = false }: { disabled?: boolean;outlined?:boolean }) {
   const [expanded, setExpanded] = useState(false);
