@@ -1072,5 +1072,12 @@
   "Turn left onto {road}": "Links auf {road} abbiegen",
   "Turn right onto {road}": "Rechts auf {road} abbiegen",
   "Continue onto {road}": "Weiter auf {road}",
-  "the road": "der Straße"
+  "the road": "der Straße",
+  "Reorder {label}": "{label} neu anordnen",
+  "Stops, in the right order": "Stopps in der richtigen Reihenfolge",
+  "Drag any location to rearrange your route.": "Ziehe einen Ort, um deine Route neu anzuordnen.",
+  "Every stop is visible": "Jeder Stopp ist sichtbar",
+  "Numbered map pins and directions keep your stops clear.": "Nummerierte Kartenmarkierungen und Hinweise zeigen alle Stopps.",
+  "Search as you type": "Beim Tippen suchen",
+  "Find addresses automatically and choose your saved places.": "Finde Adressen automatisch und wähle deine gespeicherten Orte."
 }

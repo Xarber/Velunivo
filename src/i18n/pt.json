@@ -1072,5 +1072,12 @@
   "Turn left onto {road}": "Vire à esquerda na {road}",
   "Turn right onto {road}": "Vire à direita na {road}",
   "Continue onto {road}": "Continue na {road}",
-  "the road": "a via"
+  "the road": "a via",
+  "Reorder {label}": "Reordenar {label}",
+  "Stops, in the right order": "Paradas, na ordem certa",
+  "Drag any location to rearrange your route.": "Arraste qualquer local para reorganizar a rota.",
+  "Every stop is visible": "Todas as paradas ficam visíveis",
+  "Numbered map pins and directions keep your stops clear.": "Marcadores numerados e instruções mostram todas as paradas.",
+  "Search as you type": "Busque enquanto digita",
+  "Find addresses automatically and choose your saved places.": "Encontre endereços automaticamente e escolha seus lugares salvos."
 }

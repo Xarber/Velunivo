@@ -1,3 +1,4 @@
+import {t} from '../i18n/core';
 import Text from './LocalizedText';
 import { routeLayers, ROUTE_WIDTH } from '../core/routeLayers';
 import { useCameraTarget } from '../services/useCameraTarget';
@@ -9,8 +10,8 @@ import { Route, Coord } from '../core/types';
 import { routeBounds } from '../core/geo';
 import { serverUrl } from '../services/api';
 import { mapStyle } from './mapConfig';
-interface MapProps { transit?: boolean; trace?: Coord[][]; completedMeters?: number; overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; positionLabel?:string; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; offlineMap?: string; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
-export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit, positionLabel }: MapProps) {
+interface MapProps { transit?: boolean; trace?: Coord[][]; completedMeters?: number; overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; positionLabel?:string; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; planningStops?:import('../core/itinerary').RouteStop[]; offlineMap?: string; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
+export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit, positionLabel, planningStops }: MapProps) {
   const div = useRef<HTMLDivElement>(null), map = useRef<maplibregl.Map | null>(null);
   const [loaded, setLoaded] = useState(false), [error, setError] = useState(false);
   const user = useRef<maplibregl.Marker | null>(null);
@@ -57,6 +58,7 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
     const m = map.current; if (!m || !loaded) return;
     if (selected && !follow && (!navigating || overview)) { const [w, s, e, n] = routeBounds(selected.coordinates); m.jumpTo({ padding: { top: 0, bottom: 0, left: 0, right: 0 } }); m.fitBounds([[w, s], [e, n]], { padding: fitPadding || 24, duration: 400, maxZoom: 17, bearing: 0, pitch: tilted ? 50 : 0 }); }
   }, [routes, selected, loaded, follow, fitPadding, overviewRequest, overview, navigating, tilted]);
+  useEffect(()=>{const m=map.current;if(!m||!loaded)return;const markers=(planningStops??selected?.waypoints??[]).filter(s=>s.coordinate.every(Number.isFinite)).map((stop,i)=>{const el=document.createElement('div');el.textContent=String(i+1);el.title=`${t(`Stop ${i+1}`)} · ${stop.label}`;el.setAttribute('aria-label',el.title);el.style.cssText='width:28px;height:28px;display:flex;align-items:center;justify-content:center;background:#007F6D;border:3px solid white;border-radius:50%;color:white;font:700 14px system-ui;box-shadow:0 2px 6px #0006';return new maplibregl.Marker({element:el}).setLngLat(stop.coordinate).addTo(m);});return()=>markers.forEach(marker=>marker.remove());},[loaded,selected,planningStops]);
   useEffect(() => {
     const m = map.current; if (!m || !loaded) return;
     if (!position) { user.current?.remove(); user.current = null; return; }

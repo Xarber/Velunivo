@@ -563,5 +563,12 @@ Object.assign(italian,{
   "Turn left onto {road}": "Svolta a sinistra su {road}",
   "Turn right onto {road}": "Svolta a destra su {road}",
   "Continue onto {road}": "Prosegui su {road}",
-  "the road": "la strada"
+  "the road": "la strada",
+  "Reorder {label}": "Riordina {label}",
+"Stops, in the right order":"Tappe, nell’ordine giusto",
+"Drag any location to rearrange your route.":"Trascina qualsiasi luogo per riordinare il percorso.",
+"Every stop is visible":"Ogni tappa è visibile",
+"Numbered map pins and directions keep your stops clear.":"Segnaposti numerati e indicazioni mostrano tutte le tappe.",
+"Search as you type":"Cerca mentre scrivi",
+"Find addresses automatically and choose your saved places.":"Trova automaticamente gli indirizzi e scegli i tuoi luoghi salvati.",
 });
