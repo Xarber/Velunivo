@@ -88,6 +88,10 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     env:
+      CCACHE_DIR: ${{ github.workspace }}/.android-ccache
+      CCACHE_MAXSIZE: 2G
+      CCACHE_COMPILERCHECK: content
+      CCACHE_BASEDIR: ${{ github.workspace }}
       APP_VERSION: ${{ needs.prepare.outputs.version }}
       EXPO_PUBLIC_OVERPASS_URL: ${{ vars.OVERPASS_URL }}
       EXPO_PUBLIC_APP_VERSION: ${{ needs.prepare.outputs.version }}
@@ -129,6 +133,24 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-provider: basic
+      - name: Restore Android native compiler cache
+        uses: actions/cache@v4
+        continue-on-error: true
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: android-native-${{ runner.arch }}-${{ env.ANDROID_COMPILE_SDK }}-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+          restore-keys: android-native-${{ runner.arch }}-${{ env.ANDROID_COMPILE_SDK }}-${{ hashFiles('package-lock.json') }}-
+      - name: Enable native CMake compiler cache
+        run: |
+          if ! command -v ccache >/dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y ccache || true
+          fi
+          if command -v ccache >/dev/null; then
+            echo 'CMAKE_C_COMPILER_LAUNCHER=ccache' >> "$GITHUB_ENV"
+            echo 'CMAKE_CXX_COMPILER_LAUNCHER=ccache' >> "$GITHUB_ENV"
+          else
+            echo '::warning::ccache unavailable; continuing with normal Android compilation.'
+          fi
       - name: Optional stable Android signing key
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -160,6 +182,9 @@ jobs:
         run: |
           cd android
           ./gradlew assembleRelease --build-cache --no-daemon --max-workers="$(nproc)"
+      - name: Report Android compiler cache statistics
+        if: always()
+        run: if command -v ccache >/dev/null; then ccache --show-stats; fi
       - run: |
           mkdir -p artifacts
           cp android/app/build/outputs/apk/release/app-release.apk artifacts/Velunivo.apk
