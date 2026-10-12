@@ -1079,5 +1079,15 @@
   "Every stop is visible": "Jeder Stopp ist sichtbar",
   "Numbered map pins and directions keep your stops clear.": "Nummerierte Kartenmarkierungen und Hinweise zeigen alle Stopps.",
   "Search as you type": "Beim Tippen suchen",
-  "Find addresses automatically and choose your saved places.": "Finde Adressen automatisch und wähle deine gespeicherten Orte."
+  "Find addresses automatically and choose your saved places.": "Finde Adressen automatisch und wähle deine gespeicherten Orte.",
+  "Ride simulation": "Fahrtsimulation",
+  "Recorded ride diagnostics": "Diagnose aufgezeichneter Fahrten",
+  "No recorded rides.": "Keine aufgezeichneten Fahrten.",
+  "Address search timed out. Try again.": "Die Adresssuche hat zu lange gedauert. Versuche es erneut.",
+  "Developer tools, together": "Entwicklerwerkzeuge an einem Ort",
+  "Telemetry simulation, Live Activity checks and diagnostics in one menu.": "Telemetriesimulation, Live-Aktivitätsprüfungen und Diagnose in einem Menü.",
+  "Readable locations": "Erkennbare Orte",
+  "Map points show saved names or addresses.": "Kartenpunkte zeigen gespeicherte Namen oder Adressen.",
+  "Search that finishes": "Suche ohne endloses Warten",
+  "Enter keeps results visible and searches time out safely.": "Enter hält Ergebnisse sichtbar, mit einem Zeitlimit für die Suche."
 }

@@ -1,0 +1,3 @@
+import {Coord} from '../core/types';import {SavedPlace} from '../core/places';import {resolveCoordinateLabel} from '../core/coordinateLabels';import {reverseAddress} from './api';import {nearestSavedPlace} from '../core/tripNames';
+const pending=new Map<string,Promise<string>>();
+export function coordinateLabel(c:Coord,places:SavedPlace[]):Promise<string>{const saved=nearestSavedPlace(c,places);if(saved)return Promise.resolve(saved.name);const key=c.map(v=>v.toFixed(5)).join(',');const existing=pending.get(key);if(existing)return existing;const promise=resolveCoordinateLabel(c,[],reverseAddress).finally(()=>pending.delete(key));pending.set(key,promise);return promise;}

@@ -1,3 +1,5 @@
+import {coordinateLabel} from '../services/coordinateLabels';
+import {subscribeRideSimulation,takeRideSimulation} from '../services/developerRide';
 import ReorderRows from '../components/ReorderRows';
 import {nearestSavedPlace} from '../core/tripNames';
 import {useRideHeading} from '../services/useRideHeading';
@@ -64,6 +66,9 @@ export default function Explore() {
   const wide = width >= 700, insets = useSafeAreaInsets();
   const [panelOpen, setPanelOpen] = useState(false);
   const [plannerDragging,setPlannerDragging]=useState(false);
+  const labelRequests=useRef(new Map<string,number>());
+  function cancelLabel(key:string){labelRequests.current.set(key,(labelRequests.current.get(key)||0)+1);}
+  function cancelLabels(){for(const key of labelRequests.current.keys())cancelLabel(key);}
   const [externalJourney, setExternalJourney] = useState<ExternalNavigation | null>(null);
   const warningSimulation = useRef(false);
   const [warningRoute, setWarningRoute] = useState<Route | null>(null);
@@ -142,10 +147,13 @@ export default function Explore() {
       else if (gpsStart) a = await resolveCurrentLocation();
       else { try { a = startPoint || parseCoordinate(start); } catch { throw new Error('Search your start address and choose a result, or pick your start on the map.'); } }
       try { b = journey?.end || (end === 'Current location' ? await currentArrival() : endPoint || parseCoordinate(end)); } catch { throw new Error('Search your destination and choose a result, or pick it on the map.'); }
-      const results = await Promise.allSettled([fetchItinerary(a, b, journey?.stops || stops, 'bike', profile), fetchItinerary(a, b, journey?.stops || stops, 'car', profile)]);
+      const readable=(label:string,c:Coord)=>{try{parseCoordinate(label);return coordinateLabel(c,places);}catch{return Promise.resolve(label);}};
+      const [firstLabel,lastLabel,itinerary]=await Promise.all([readable(journey?.startLabel||start,a),readable(journey?.endLabel||end,b),Promise.all((journey?.stops||stops).map(async s=>({...s,label:await readable(s.label,s.coordinate)})))]);
+      if(request!==planRequest.current)return;
+      const results = await Promise.allSettled([fetchItinerary(a, b, itinerary, 'bike', profile), fetchItinerary(a, b, itinerary, 'car', profile)]);
       if (request !== planRequest.current) return;
       const good: Route[] = [], failures: string[] = [];
-      results.forEach((r, i) => r.status === 'fulfilled' ? good.push({ ...r.value, startLabel: journey?.startLabel || start, endLabel: journey?.endLabel || end }) : failures.push(`${i === 0 ? 'Bicycle' : 'Car-road'}: ${r.reason.message}`));
+      results.forEach((r, i) => r.status === 'fulfilled' ? good.push({ ...r.value, startLabel:firstLabel,endLabel:lastLabel }) : failures.push(`${i === 0 ? 'Bicycle' : 'Car-road'}: ${r.reason.message}`));
       if (good.length) { void Promise.all(good.map(enrichElevation)).then(enriched=>{if(request===planRequest.current){setRoutes(enriched);select(enriched.find(r=>r.id===selectedRef.current?.id)||enriched[0]);}}); setPreviewPin(undefined); setRoutes(good); select(good[0]); setPlanner(false); }
       else { setExternalJourney({ start: a, end: b, errors: failures }); setPlanner(false); }
       setError(failures.join('\n'));
@@ -173,10 +181,16 @@ export default function Explore() {
     const coordinate: Coord = [pos.coords.longitude, pos.coords.latitude]; setStart('Current location'); setStartPoint(coordinate); setGpsStart(true); return coordinate;
   }
   async function currentArrival() { const old={start,startPoint,gpsStart}; const c=await resolveCurrentLocation(); setStart(old.start);setStartPoint(old.startPoint);setGpsStart(old.gpsStart);return c; }
-  function picked(c: Coord) { if (!picking) return;if(stopPick!==null){setStops(v=>v.map((s,i)=>i===stopPick?{coordinate:c,label:nearestSavedPlace(c,places)?.name||`${c[1].toFixed(6)}, ${c[0].toFixed(6)}`}:s));setStopPick(null);setPicking(null);setPlanner(true);return;} const label = nearestSavedPlace(c,places)?.name||`${c[1].toFixed(6)}, ${c[0].toFixed(6)}`; if (picking === 'start') { manualStart(); setStart(label); setStartPoint(c); } else { setEnd(label); setEndPoint(c); } setPicking(null); setPlanner(true); }
+  function picked(c:Coord){if(!picking)return;const target=picking,index=stopPick,key=index!==null?`stop-${index}`:target;
+    const initial=nearestSavedPlace(c,places)?.name||`${c[1].toFixed(6)}, ${c[0].toFixed(6)}`;
+    if(index!==null)setStops(v=>v.map((s,i)=>i===index?{coordinate:c,label:initial}:s));else if(target==='start'){manualStart();setStart(initial);setStartPoint(c);}else{setEnd(initial);setEndPoint(c);}
+    cancelLabel(key);const request=labelRequests.current.get(key);setStopPick(null);setPicking(null);setPlanner(true);
+    void coordinateLabel(c,places).then(label=>{if(labelRequests.current.get(key)!==request)return;if(index!==null)setStops(v=>v.map((s,i)=>i===index?{...s,label}:s));else if(target==='start')setStart(label);else setEnd(label);});
+  }
   function cancelPendingLocation() { locationRequest.current++; setLocating(false); }
-  function manualStart() { cancelPendingLocation();setError(''); setGpsStart(false); }
+  function manualStart() {cancelLabel('start'); cancelPendingLocation();setError(''); setGpsStart(false); }
   function beginRide(simulate = false, confirmed = false) { if (vehicleLocked && !active) {setNotice('Finish your trip recording in Library before starting navigation.');return;} if (!confirmed && selected?.safetyWarnings?.length) { warningSimulation.current = simulate; setWarningRoute(selected); return; } setNow(Date.now()); setPanelOpen(false); resumeFollowing(); ride.start(simulate); }
+  useEffect(()=>subscribeRideSimulation(()=>{if(takeRideSimulation()&&navigationOptions.developerMode&&selected&&!active)beginRide(true);}),[navigationOptions.developerMode,selected,active]); // eslint-disable-line react-hooks/exhaustive-deps
   function openPlanner() {
     setPreviewPin(undefined); setPlanner(true); setPanelOpen(true);
     if (gpsStart && !locating) { setLocating(true); const pending = resolveCurrentLocation(), request = locationRequest.current; void pending.catch(e => { if (request === locationRequest.current) setError(e.message); }).finally(() => { if (request === locationRequest.current) setLocating(false); }); }
@@ -187,7 +201,7 @@ export default function Explore() {
     overviewTimer.current = setTimeout(() => { setOverview(false); overviewTimer.current = null; }, 15000);
   }
   function resumeFollowing() { if (overviewTimer.current) clearTimeout(overviewTimer.current); overviewTimer.current = null; setOverview(false); setFollow(true); }
-  function clearRide() {
+  function clearRide() {cancelLabels();
     setPreviewPin(undefined); setTurnList(false); setExternalJourney(null); setWarningRoute(null); planRequest.current++; setBusy(false); locationRequest.current++; setLocating(false); ride.stop(); setRoutes([]); select(null); setStart('Current location'); setStartPoint(undefined); setGpsStart(true); setEnd(''); setEndPoint(undefined); setStops([]); setDeparture(''); setScheduleMode('depart'); setOptionsOpen(false);  setPicking(null); setPlanner(false); setPanelOpen(false); setError(''); resumeFollowing();
   }
   async function reroute(fix:Fix,index:number){
@@ -202,16 +216,16 @@ export default function Explore() {
   }
   const plannerPoints=[{label:start,coordinate:startPoint,current:gpsStart},...stops.map(s=>({...s,current:s.label==='Current location'})),{label:end,coordinate:endPoint,current:end==='Current location'}];
   const pointLabel=(i:number)=>t(i===0?'Start':i===plannerPoints.length-1?'Destination':`Stop ${i}`);
-  function reorderPlanner(from:number,to:number){const points=reorderPoints(plannerPoints,from,to),first=points[0],last=points.at(-1)!;cancelPendingLocation();setStart(first.label);setStartPoint(first.coordinate);setGpsStart(first.current);setError('');setEnd(last.label);setEndPoint(last.coordinate);setStops(points.slice(1,-1).map(s=>({label:s.label,coordinate:s.coordinate||(s.current?live.fix?.coordinate:undefined)||[NaN,NaN]})));}
-  function changePlannerPoint(i:number,label:string){if(i===0){manualStart();setStart(label);setStartPoint(undefined);}else if(i===plannerPoints.length-1){setEnd(label);setEndPoint(undefined);}else setStops(v=>v.map((s,j)=>j===i-1?{...s,label,coordinate:[NaN,NaN]}:s));}
-  function choosePlannerPoint(i:number,label:string,coordinate:Coord){if(i===0){manualStart();setStart(label);setStartPoint(coordinate);}else if(i===plannerPoints.length-1){setEnd(label);setEndPoint(coordinate);}else setStops(v=>v.map((s,j)=>j===i-1?{label,coordinate}:s));}
+  function reorderPlanner(from:number,to:number){cancelLabels();const points=reorderPoints(plannerPoints,from,to),first=points[0],last=points.at(-1)!;cancelPendingLocation();setStart(first.label);setStartPoint(first.coordinate);setGpsStart(first.current);setError('');setEnd(last.label);setEndPoint(last.coordinate);setStops(points.slice(1,-1).map(s=>({label:s.label,coordinate:s.coordinate||(s.current?live.fix?.coordinate:undefined)||[NaN,NaN]})));}
+  function changePlannerPoint(i:number,label:string){cancelLabel(i===0?'start':i===plannerPoints.length-1?'end':`stop-${i-1}`);if(i===0){manualStart();setStart(label);setStartPoint(undefined);}else if(i===plannerPoints.length-1){setEnd(label);setEndPoint(undefined);}else setStops(v=>v.map((s,j)=>j===i-1?{...s,label,coordinate:[NaN,NaN]}:s));}
+  function choosePlannerPoint(i:number,label:string,coordinate:Coord){cancelLabel(i===0?'start':i===plannerPoints.length-1?'end':`stop-${i-1}`);if(i===0){manualStart();setStart(label);setStartPoint(coordinate);}else if(i===plannerPoints.length-1){setEnd(label);setEndPoint(coordinate);}else setStops(v=>v.map((s,j)=>j===i-1?{label,coordinate}:s));}
   // Restore complete saved itineraries when the selected route changes.
   // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(()=>{if(!selected||active)return;setStops(selected.waypoints||[]);setStart(selected.startLabel||'Current location');setEnd(selected.endLabel||'');setStartPoint(selected.coordinates[0]);setEndPoint(selected.coordinates.at(-1));setGpsStart(selected.startLabel==='Current location');},[selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(()=>{if(!selected||active)return;cancelLabels();setStops(selected.waypoints||[]);setStart(selected.startLabel||'Current location');setEnd(selected.endLabel||'');setStartPoint(selected.coordinates[0]);setEndPoint(selected.coordinates.at(-1));setGpsStart(selected.startLabel==='Current location');},[selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   const plannerContent=<View style={{gap:14}}>
 
       <Text style={[styles.subtitle, { color: panelP.muted }]}>Search an address or choose a point on the map. Compare bicycle and car-road routes at your riding speed.</Text>
-      <View style={[styles.card,{backgroundColor:panelP.card,padding:10,gap:0}]}><ReorderRows onDraggingChange={setPlannerDragging} items={plannerPoints} disabled={busy||locating} label={(_,i)=>pointLabel(i)} onReorder={reorderPlanner} render={(point,i)=><View style={{flexDirection:'row',alignItems:'flex-start',gap:4}}><View style={{width:24,minHeight:48,alignItems:'center',justifyContent:'center'}}>{i===0||i===plannerPoints.length-1?<Ionicons name={i===0?'radio-button-on-outline':'flag'} color={panelP.accent} size={19}/>:<Text style={{color:panelP.accent,fontWeight:'800'}}>{i}</Text>}</View><View style={{flex:1,minWidth:0}}><EndpointPicker compact disabled={busy} label={pointLabel(i)} value={point.label} onChange={value=>changePlannerPoint(i,value)} onSelect={(label,coordinate)=>choosePlannerPoint(i,label,coordinate)} onLocation={()=>void run(async()=>{const coordinate=await currentArrival();choosePlannerPoint(i,'Current location',coordinate);if(i===0)setGpsStart(true);})} onMap={()=>{cancelPendingLocation();setStopPick(i>0&&i<plannerPoints.length-1?i-1:null);setPicking(i===0?'start':'end');setPlanner(false);}}/></View>{i>0&&i<plannerPoints.length-1&&<Pressable accessibilityRole="button" accessibilityLabel={t('Remove stop')} disabled={busy} onPress={()=>setStops(v=>v.filter((_,j)=>j!==i-1))} style={{width:28,minHeight:48,alignItems:'center',justifyContent:'center'}}><Ionicons name="remove-circle-outline" color={panelP.muted} size={20}/></Pressable>}</View>}/><Button title={t('Add stop')} icon="add-circle-outline" secondary disabled={busy||stops.length>=12} onPress={()=>setStops(v=>[...v,{label:'',coordinate:[NaN,NaN]}])}/></View>
+      <View style={[styles.card,{backgroundColor:panelP.card,padding:10,gap:0}]}><ReorderRows onDraggingChange={setPlannerDragging} items={plannerPoints} disabled={busy||locating} label={(_,i)=>pointLabel(i)} onReorder={reorderPlanner} render={(point,i)=><View style={{flexDirection:'row',alignItems:'flex-start',gap:4}}><View style={{width:24,minHeight:48,alignItems:'center',justifyContent:'center'}}>{i===0||i===plannerPoints.length-1?<Ionicons name={i===0?'radio-button-on-outline':'flag'} color={panelP.accent} size={19}/>:<Text style={{color:panelP.accent,fontWeight:'800'}}>{i}</Text>}</View><View style={{flex:1,minWidth:0}}><EndpointPicker compact disabled={busy} label={pointLabel(i)} value={point.label} onChange={value=>changePlannerPoint(i,value)} onSelect={(label,coordinate)=>choosePlannerPoint(i,label,coordinate)} onLocation={()=>void run(async()=>{const coordinate=await currentArrival();choosePlannerPoint(i,'Current location',coordinate);if(i===0)setGpsStart(true);})} onMap={()=>{cancelPendingLocation();setStopPick(i>0&&i<plannerPoints.length-1?i-1:null);setPicking(i===0?'start':'end');setPlanner(false);}}/></View>{i>0&&i<plannerPoints.length-1&&<Pressable accessibilityRole="button" accessibilityLabel={t('Remove stop')} disabled={busy} onPress={()=>{cancelLabels();setStops(v=>v.filter((_,j)=>j!==i-1));}} style={{width:28,minHeight:48,alignItems:'center',justifyContent:'center'}}><Ionicons name="remove-circle-outline" color={panelP.muted} size={20}/></Pressable>}</View>}/><Button title={t('Add stop')} icon="add-circle-outline" secondary disabled={busy||stops.length>=12} onPress={()=>setStops(v=>[...v,{label:'',coordinate:[NaN,NaN]}])}/></View>
       <View style={[styles.card, { backgroundColor: panelP.card }]}><VehicleSelector outlined disabled={busy} /></View>
       <View style={[styles.card, { backgroundColor: panelP.card }]}><Button title={t(departure ? scheduleSummary(departure, eta?.seconds, scheduleMode) : 'Depart now')} secondary icon="calendar-outline" onPress={() => setOptionsOpen(v => !v)} />{optionsOpen && <><View style={{ flexDirection: 'row', gap: 8 }}><View style={{ flex: 1 }}><Button title={t("Depart at")} icon="time-outline" secondary={scheduleMode !== 'depart'} onPress={() => setScheduleMode('depart')} /></View><View style={{ flex: 1 }}><Button title={t("Arrive by")} icon="flag-outline" secondary={scheduleMode !== 'arrive'} onPress={() => setScheduleMode('arrive')} /></View></View><ScheduleControl value={departure} onChange={setDeparture} /><Text accessibilityRole="alert" style={{ color: '#C75A36', fontSize: 12 }}>Scheduled trips do not use traffic conditions or traffic simulation. Allow extra time for delays.</Text><Button title={t(navigationOptions.traffic ? 'Hide live traffic' : 'Show live traffic')} icon="car-outline" secondary disabled={!trafficAvailable} onPress={() => updateNavigationOptions({traffic:!navigationOptions.traffic})} />{!trafficAvailable && <Text style={{ color: panelP.muted, fontSize: 12 }}>Live traffic needs a configured TomTom server key. It is never included in ETA.</Text>}</>}</View>
       {locating && <Text style={{ color: panelP.muted }}>Finding your current GPS location…</Text>}
@@ -262,7 +276,7 @@ export default function Explore() {
         <Text style={{ color: panelP.muted, fontSize: 12 }}>{departure ? scheduleSummary(departure, eta?.seconds, scheduleMode) : 'Depart now'} · ETA excludes traffic.{profile.learnedSpeedKmh ? ` Learned from ${profile.learnedRideCount} rides · ${displaySpeed(profile.learnedSpeedKmh, navigationOptions.unit).toFixed(1)} ${navigationOptions.unit === 'mi' ? 'mph' : 'km/h'} overall pace.` : ''}</Text>
         {!selected && <Button title={t("Plan bicycle & car routes")} icon="search" onPress={openPlanner} />}
         {!selected && !endPoint && !end.trim() && <Button title={t("Record trip")} secondary icon="recording-outline" disabled={vehicleLocked} onPress={()=>router.push('/offline/record-trip')} />}
-        {selected && <View style={{ flexDirection: 'row', gap: 10 }}><View style={{ flex: 1 }}><Button title={t("Start ride")} icon="navigate" disabled={!ready} onPress={() => beginRide()} /></View>{navigationOptions.developerMode && <IconButton label={t("Simulate ride")} icon="play-outline" onPress={()=>beginRide(true)} />}<IconButton label={t("Share route")} icon="share-outline" onPress={shareRoute} /></View>}
+        {selected && <View style={{ flexDirection: 'row', gap: 10 }}><View style={{ flex: 1 }}><Button title={t("Start ride")} icon="navigate" disabled={!ready} onPress={() => beginRide()} /></View><IconButton label={t("Share route")} icon="share-outline" onPress={shareRoute} /></View>}
 
       </>}
       {!!notice && <Text style={{ color: panelP.accent }}>{publicError(notice,navigationOptions.developerMode)}</Text>}
