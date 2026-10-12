@@ -1,4 +1,4 @@
-import {androidAssetLinks,appleSiteAssociation} from '../src/core/appLinks';
+import {androidAssetLinks,appleSiteAssociation} from './appLinks';
 import {createServer} from 'node:http';
 import express from 'express';
 import {ExpressPeerServer} from 'peer';

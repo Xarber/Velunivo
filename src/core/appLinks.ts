@@ -1,4 +1,2 @@
 /** Only HTTPS origins can be verified by iOS/Android. Local development keeps custom links. */
 export {verifiedLinkHost} from '../../config/link-host.cjs';
-export function androidAssetLinks(fingerprints:string,identifier='app.velunivo.mobile') {const values=[...new Set(fingerprints.split(',').map(value=>value.trim().toUpperCase()).filter(value=>/^(?:[A-F0-9]{2}:){31}[A-F0-9]{2}$/.test(value)))];return values.length?[{relation:['delegate_permission/common.handle_all_urls'],target:{namespace:'android_app',package_name:identifier,sha256_cert_fingerprints:values}}]:undefined;}
-export function appleSiteAssociation(team:string,identifier='app.velunivo.mobile'){return /^[A-Z0-9]{10}$/.test(team)?{applinks:{apps:[],details:[{appID:`${team}.${identifier}`,paths:['/share/*']}]}}:undefined;}
