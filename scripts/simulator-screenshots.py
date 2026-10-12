@@ -82,7 +82,10 @@ def boot_and_install(udid, family):
         # Modern devicectl rotates headlessly; avoid spending the runner's
         # small memory budget on Device Hub's SwiftUI interface at startup.
         print('Using headless Device Hub capture.', flush=True)
-    run('xcrun', 'simctl', 'bootstatus', udid, '-b', timeout=150)
+    # bootstatus waits for *all* system apps, which can stall on small hosts.
+    # A timeout here does not prove the app is unusable: install, launch, PID
+    # survival and framebuffer capture provide the required verification.
+    best_effort('xcrun', 'simctl', 'bootstatus', udid, '-b', timeout=90)
     run('xcrun', 'simctl', 'install', udid, 'artifacts/Velunivo-simulator.app', timeout=90)
 
 

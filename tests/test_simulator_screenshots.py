@@ -127,8 +127,16 @@ class SimulatorVerificationTests(unittest.TestCase):
         with patch.object(sim, 'run', side_effect=lambda *args, **kw: calls.append((args, kw))), patch.object(sim, 'open_simulator', side_effect=lambda udid: calls.append(('UI', udid))), patch.object(sim, 'simulator_app', return_value=None):
             sim.boot_and_install('owned-device', 'ipad')
         self.assertEqual(calls[1], ('UI', 'owned-device'))
-        self.assertEqual(calls[2][1]['timeout'], 150)
+        self.assertEqual(calls[2][1]['timeout'], 90)
         self.assertEqual(calls[3][1]['timeout'], 90)
+
+    def test_system_boot_readiness_timeout_still_tests_actual_install(self):
+        def command(*args, **kwargs):
+            if args[2] == 'bootstatus': raise subprocess.TimeoutExpired(args, 90)
+            return ''
+        with patch.object(sim, 'run', side_effect=command) as commands, patch.object(sim, 'simulator_app', return_value=None), patch.object(sim, 'open_simulator'):
+            sim.boot_and_install('owned-device', 'ipad')
+            self.assertEqual(commands.call_args_list[-1].args[2], 'install')
 
     def test_shutdown_template_is_cloned_without_touching_template(self):
         devices = self.devices()
