@@ -21,7 +21,8 @@ jobs:
       - name: Inspect installed Simulator tools and host capacity
         run: |
           ls -la /Applications
-          find /Applications /Library/Developer -name Simulator.app -maxdepth 7 2>/dev/null || true
+          find /Applications /Library/Developer -maxdepth 10 \( -name '*Device*.app' -o -name Simulator.app \) 2>/dev/null || true
+          xcrun devicectl help || true
           xcode-select -p
           xcrun simctl help
           xcrun simctl io help || true
@@ -37,6 +38,7 @@ jobs:
           run-id: ${{ inputs.source_run }}
       - run: ditto -x -k artifacts/Velunivo-simulator.app.zip artifacts
       - name: Capture iPad without rebuilding
+        if: false # Inventory first; enable after identifying the new Device Hub controls.
         timeout-minutes: 8
         run: python3 scripts/simulator-screenshots.py --family ipad
       - uses: actions/upload-artifact@v4
