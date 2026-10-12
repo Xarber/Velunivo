@@ -11,8 +11,8 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: false
+  group: velunivo-release
+  cancel-in-progress: true
 jobs:
   prepare:
     permissions:
