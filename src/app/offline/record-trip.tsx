@@ -16,7 +16,7 @@ import React, {useEffect,useMemo,useState,useRef} from 'react';
 import {router,useNavigation} from 'expo-router';
 import {View, ScrollView, Pressable, useWindowDimensions, Platform} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useKeepAwake} from 'expo-keep-awake';
+import {useScreenWake} from '../../services/useScreenWake';
 import NativeTabSafeOverlay, {usesLiquidGlassTabs} from '../../components/NativeTabSafeOverlay';
 import RideMap from '../../components/RideMap';
 import VehicleSelector from '../../components/VehicleSelector';
@@ -32,7 +32,7 @@ import {useDownloadedMaps} from '../../services/useDownloadedMaps';
 import {bearing,displaySpeed,distanceLeft,freshFix,forwardHeading} from '../../core/rideView';
 import {tripDuration,tripAverage} from '../../core/tripDashboard';
 import {batteryLabel} from '../../core/vehicles';
-function KeepAwake(){useKeepAwake('velunivo-record-trip');return null;}
+function KeepAwake(){useScreenWake();return null;}
 export default function RecordTrip(){
   const [startRequested]=useState(consumeRecordingStart),autoStarted=useRef(false);
   const p=usePalette(),insets=useSafeAreaInsets(),{width,height}=useWindowDimensions(),navigation=useNavigation();

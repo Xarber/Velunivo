@@ -30,7 +30,7 @@ test('saving feedback preserves sensor chunks, survives checkpoints/restart, and
  const sample={fix:{coordinate:[0,0] as [number,number],accuracy:5,speed:0,timestamp:1},compass:null,accelerometer:null,gyroscope:null};
  await archive.persistRide(pending,[{index:0,samples:[sample]}]);await assert.rejects(archive.saveBatteryUsage(pending.id,101));
  await archive.saveBatteryUsage(pending.id,12.5);await archive.persistRide(pending,[]);
- const reboot=createRideArchive(storage),saved=(await reboot.recordedRides())[0];assert.equal(saved.batteryUsagePercent,12.5);assert.equal(saved.batteryFeedback,'answered');assert.deepEqual(await reboot.rideSamples(saved),[sample]);assert.equal(updates,3);
+ const reboot=createRideArchive(storage),saved=(await reboot.recordedRides())[0];assert.equal(saved.batteryUsagePercent,12.5);assert.equal(saved.batteryFeedback,'answered');assert.deepEqual((await reboot.rideSamples(saved)).map(({pathFix,breakBefore,displayCoordinate,...raw})=>raw),[sample]);assert.equal(updates,3);
  await archive.persistRide({...pending,id:'crashed',status:'recording',endedAt:undefined,lastFixAt:5000},[]);await archive.saveBatteryUsage('crashed',5);assert.equal((await archive.recordedRides()).find(r=>r.id==='crashed')?.status,'interrupted');
  await archive.saveBatteryUsage(pending.id,null);assert.equal((await archive.recordedRides()).find(r=>r.id===pending.id)?.batteryFeedback,'skipped');stop();
  await archive.deleteRecordedRide(saved);await assert.rejects(archive.saveBatteryUsage(saved.id,20));

@@ -1218,5 +1218,13 @@
   "Cleaner sharing links": "Ligações mais simples",
   "Native sharing uses one link and keeps connection consent when you return.": "Partilha uma só ligação e mantém a autorização ao voltar à app.",
   "Clear battery age": "Dados claros da bateria",
-  "Android Live Updates keep vehicle battery and mark older readings.": "As atualizações em direto do Android mantêm a bateria do veículo e identificam leituras antigas."
+  "Android Live Updates keep vehicle battery and mark older readings.": "As atualizações em direto do Android mantêm a bateria do veículo e identificam leituras antigas.",
+  "Speed Limits": "Limites de velocidade",
+  "Navigation and recording have stopped.": "A navegação e a gravação terminaram.",
+  "Arrive and relax": "Chega e relaxa",
+  "Navigation and recording stop at your destination.": "A navegação e a gravação param no destino.",
+  "Range learned from real rides": "Autonomia aprendida com as viagens",
+  "Bluetooth battery data improves past rides and updates range after ten consistent rides.": "Os dados de bateria Bluetooth melhoram viagens anteriores e atualizam a autonomia após dez viagens com consumos consistentes.",
+  "Locations in progress": "Locais em atualização",
+  "See when coordinates are becoming an address.": "Vê quando as coordenadas estão a tornar-se um endereço."
 }

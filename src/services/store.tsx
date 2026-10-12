@@ -1,7 +1,8 @@
+import {freshReading} from '../bluetooth/telemetry';
 import {recordSettingEdits} from './syncSettings';
 import {setRideLock} from './rideLock';
 import { sortVehicles } from '../core/vehicleUsage';
-import React, { createContext, useContext, useEffect, useMemo,useCallback, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo,useCallback, useState,useSyncExternalStore } from 'react';
 import {bluetoothBridge} from '../bluetooth/service';
 import {removeVehicleAndPairing} from '../bluetooth/policy';
 import { loadMapSettings } from './mapSettings';
@@ -12,7 +13,7 @@ import { Vehicle, Route, NavigationOptions, defaultNavigationOptions } from '../
 import { createVehicle, defaultGarage, removeVehicle, restoreGarage } from '../core/vehicles';
 import { SavedPlace, Journey, restorePlaces, renameSavedPlace } from '../core/places';
 import { learnedPace, measuredPace, RidePace } from '../core/learnedEta';
-import { learnedBatteryRange } from '../core/batteryLearning';
+import { confidentBluetoothRange, learnedBatteryRange } from '../core/batteryLearning';
 import { RecordedRide } from '../core/recordings';
 import { recordedRides, rideSamples, subscribeRides } from './rideHistory';
 interface Store { places: SavedPlace[]; addPlace: (p: Omit<SavedPlace, 'id'>) => void; deletePlace: (id: string) => void; renamePlace: (id: string, name: string) => void; pendingJourney: Journey | null; requestJourney: (j: Journey | null) => void;  navigationOptions: NavigationOptions; updateNavigationOptions: (p: Partial<NavigationOptions>) => void; profile: Vehicle; vehicles: Vehicle[]; chooseVehicle: (id: string) => void; addVehicle: (kind: Vehicle['kind']) => string | undefined; deleteVehicle: (id: string) => Promise<void>; updateProfile: (p: Partial<Vehicle>, id?: string) => void; vehicleLocked: boolean; lockVehicle: (locked: boolean) => void; routes: Route[]; setRoutes: (r: Route[]) => void; selected: Route | null; select: (r: Route | null) => void; saved: Route[]; save: (r: Route) => Promise<void>; remove: (id: string) => Promise<void>; ready: boolean; }
@@ -40,7 +41,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => { if (ready) AsyncStorage.setItem('places-v1', JSON.stringify(places)).catch(console.warn); }, [places, ready]);
   useEffect(() => {
     let cancelled = false, running = false; const cache = new Map<string, {samples: number; pace: RidePace | null}>();
-    const refresh = async () => { if (running) return; running = true; try { const rides = await recordedRides(); if (!cancelled) setBatteryRides(rides); const ids = new Set(rides.map(r => r.id)); for (const id of cache.keys()) if (!ids.has(id)) cache.delete(id);
+    const refresh = async () => { if (running) return; running = true; try { const rides = await recordedRides(); if (!cancelled) {setBatteryRides(rides);setGarage(g=>{let changed=false;const vehicles=g.vehicles.map(v=>{const estimate=confidentBluetoothRange(rides,v);if(!estimate)return v;const range=Math.round(estimate.rangeKm*10)/10;if(!Number.isFinite(range)||range<=0||range>10000||v.rangeKm===range)return v;changed=true;return {...v,rangeKm:range};});return changed?{...g,vehicles}:g;});} const ids = new Set(rides.map(r => r.id)); for (const id of cache.keys()) if (!ids.has(id)) cache.delete(id);
       for (const r of rides) if (['finished','arrived'].includes(r.status) && cache.get(r.id)?.samples !== r.samples) { const pace = measuredPace(r, await rideSamples(r)); if (cancelled) return; cache.set(r.id, {samples:r.samples,pace}); }
       if (!cancelled) setPaces(rides.map(r=>cache.get(r.id)?.pace).filter((r): r is RidePace => !!r));
     } catch { /* Keep modeled ETA when records cannot be read. */ } finally { running = false; } }; void refresh(); const unsubscribe = subscribeRides(()=>void refresh()); const timer = setInterval(()=>void refresh(),10000); return () => { cancelled = true; clearInterval(timer); unsubscribe(); };
@@ -48,9 +49,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   async function save(route: Route) { setSaved(await saveRoute(route)); }
   async function remove(id: string) { setSaved(await removeRoute(id)); }
   useEffect(()=>{setRideLock(vehicleLocked);return()=>setRideLock(false);},[vehicleLocked]);
+
   const baseProfile = garage.vehicles.find(v => v.id === garage.activeId) || garage.vehicles[0];
   const learned = useMemo(() => navigationOptions.learnedEta ? learnedPace(paces, baseProfile) : null, [paces, baseProfile, navigationOptions.learnedEta]);
-  const battery = useMemo(() => baseProfile.id==='sharing-scooter'?null:learnedBatteryRange(batteryRides, baseProfile), [batteryRides, baseProfile]);
+  const energyContext=useSyncExternalStore(bluetoothBridge.subscribe,()=>{const b=bluetoothBridge.getSnapshot();if(b.vehicleId!==baseProfile.id||b.simulated||b.state!=='connected')return '';const mode=freshReading(b.fields,'ridingMode'),voltage=freshReading(b.fields,'voltage');return JSON.stringify({mode:typeof mode?.value==='string'?mode.value:undefined,voltage:typeof voltage?.value==='number'?Math.round(voltage.value/2)*2:undefined});},()=> '');
+  const battery = useMemo(() => baseProfile.id==='sharing-scooter'?null:learnedBatteryRange(batteryRides, baseProfile,energyContext?JSON.parse(energyContext):undefined), [batteryRides, baseProfile,energyContext]);
   const profile = { ...baseProfile, learnedRangeKm: battery?.rangeKm,energyReferenceSpeedKmh:battery?.referenceSpeedKmh||baseProfile.energyReferenceSpeedKmh, learnedBatteryRideCount: battery?.count, learnedSpeedKmh: learned?.speedKmh, learnedRideCount: learned?.count };
   return <Context.Provider value={{ places, addPlace: p => setPlaces(v => [...v, {...p, id: `${Date.now()}-${Math.random().toString(36).slice(2,8)}`}]), deletePlace: id => setPlaces(v => v.filter(p => p.id !== id)), renamePlace: (id,name) => setPlaces(v=>renameSavedPlace(v,id,name)), pendingJourney, requestJourney, navigationOptions, updateNavigationOptions: p => {void recordSettingEdits(Object.fromEntries(Object.entries(p).map(([key,value])=>['navigation.'+key,value??null]))).catch(console.warn); if (p.showSharingVehicle === false && garage.activeId === 'sharing-scooter') { if (vehicleLocked) return; setGarage(g => ({...g, activeId:g.vehicles.find(v => v.id !== 'sharing-scooter')?.id || g.activeId})); } setNavigationOptions(v => ({ ...v, ...p })); }, profile, vehicles: sortVehicles(garage.vehicles.filter(v => navigationOptions.showSharingVehicle || v.id !== 'sharing-scooter'), batteryRides), vehicleLocked, lockVehicle, chooseVehicle: id => !vehicleLocked && setGarage(g => g.vehicles.some(v => v.id === id) ? { ...g, activeId: id } : g), addVehicle: kind => { if (vehicleLocked) return; const v = createVehicle(kind); setGarage(g => ({ ...g, vehicles: [...g.vehicles, v] })); return v.id; }, deleteVehicle: async id => { if(vehicleLocked)return;const next=await removeVehicleAndPairing(garage,id,key=>bluetoothBridge.forget(key));if(next!==garage)setGarage(g=>removeVehicle(g,id)); }, updateProfile: (p, id) => !vehicleLocked && setGarage(g => ({ ...g, vehicles: g.vehicles.map(v => v.id === (id || g.activeId) ? { ...v, ...p, id: v.id, ...(v.id === 'sharing-scooter' ? {name:'Sharing E-Scooter',photo:null,photos:[],icon:'sharing-scooter',rangeKm:null,batteryWh:undefined} : {}) } : v) })), routes, setRoutes, selected, select, saved, save, remove, ready }}>{children}</Context.Provider>;
 }

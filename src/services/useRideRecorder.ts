@@ -3,7 +3,7 @@ import {nameRecordedTrip} from './tripNames';
 import {notifyShortRide} from './rideNotice';
 import {bluetoothBridge} from '../bluetooth/service';
 import {useBluetoothPreferences} from '../bluetooth/react';
-import {sampleBluetooth,automaticBatteryUsage} from '../bluetooth/tripTelemetry';
+import {sampleBluetooth,automaticBatteryUsage,updateTripBluetooth} from '../bluetooth/tripTelemetry';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MovementTracker } from '../core/movement';
 import { AppState } from 'react-native';
@@ -20,10 +20,10 @@ export function useRideRecorder(active: boolean, enabled: boolean, arrived: bool
     const s = session.current; if (!s || (!s.dirty && !status)) return;
     if(s.discarded)return Promise.resolve(true);
     if(!qualifiesRecordedRide(s.ride.meters,s.minimumMeters)){if(status){s.discarded=true;s.ride={...s.ride,status,endedAt:Date.now(),batteryFeedback:undefined};notifyShortRide();}return Promise.resolve(true);}
-    if (status) { const endedAt=Date.now(),snapshot=bluetoothBridge.getSnapshot(),used=snapshot.state==='connected' && snapshot.vehicleId===s.ride.vehicle.id && !snapshot.simulated?automaticBatteryUsage(s.ride.bluetooth,endedAt):null;s.ride = { ...s.ride, status, endedAt, ...(used!==null?{batteryUsagePercent:used,batteryUsageSource:'bluetooth' as const,batteryFeedback:'answered' as const}:{}) }; }
+    if (status) { const endedAt=Date.now(),snapshot=bluetoothBridge.getSnapshot();if(snapshot.vehicleId===s.ride.vehicle.id&&snapshot.state==='connected'&&!snapshot.simulated)s.ride={...s.ride,bluetoothConnected:true};const last=collect.current?sampleBluetooth(snapshot,s.ride.vehicle.id,endedAt):undefined;if(last)s.ride={...s.ride,bluetooth:updateTripBluetooth(s.ride.bluetooth,last,s.ride.startedAt)};const used=automaticBatteryUsage(s.ride.bluetooth,endedAt);s.ride = { ...s.ride, status, endedAt, ...(used!==null?{batteryUsagePercent:used,batteryUsageSource:'bluetooth' as const,batteryFeedback:'answered' as const}:s.ride.bluetoothConnected||(s.ride.bluetooth?.connected&&!s.ride.bluetooth.simulated)?{batteryFeedback:'skipped' as const}:{}) }; }
     const chunks = [...s.pending].map(([index, samples]) => ({ index, samples: [...samples] }));
     if (s.buffer.length) chunks.push({ index: s.chunk, samples: [...s.buffer] });
-    s.ride = { ...s.ride, chunks: s.chunk + (s.buffer.length ? 1 : 0) }; s.dirty = false;
+    s.ride = { ...s.ride, chunks: s.chunk + (s.buffer.length ? 1 : 0) }; s.dirty = false;setRecord(s.ride);
     const completed=s.ride;const write = persistRide(s.ride, chunks).then(() => {if(status)void nameRecordedTrip(completed).catch(()=>{}); setError(''); for (const c of chunks) if (c.samples.length >= 100) s.pending.delete(c.index); return true; }).catch(e => { s.dirty = true; setError(`Ride could not be saved: ${e.message}. Check device storage.`); return false; });
     if (s.buffer.length >= 100) { s.pending.set(s.chunk, [...s.buffer]); s.chunk++; s.buffer = []; }
     return write;
@@ -32,7 +32,8 @@ export function useRideRecorder(active: boolean, enabled: boolean, arrived: bool
     const s = session.current; if (!s || s.ride.status !== 'recording' || fix.timestamp <= s.lastTimestamp) return;
     s.lastTimestamp=fix.timestamp;
     const tracked=s.movement.next(fix);
-    const now = Date.now(), sensor = sensors.current;
+    const now = Date.now(), sensor = sensors.current,snapshot=bluetoothBridge.getSnapshot();
+    if(snapshot.state==='connected'&&snapshot.vehicleId===s.ride.vehicle.id&&!snapshot.simulated)s.ride={...s.ride,bluetoothConnected:true};
     const sample: RideSample = { bluetooth:collect.current?sampleBluetooth(bluetoothBridge.getSnapshot(),s.ride.vehicle.id,now):undefined, fix, pathFix: tracked?.point ?? null, breakBefore: tracked?.breakBefore, compass: sensor.compass.heading !== null && now - sensor.compass.timestamp < 3000 ? { heading: sensor.compass.heading, timestamp: sensor.compass.timestamp } : null, accelerometer: freshVector(sensor.motion.accelerometer, now), gyroscope: freshVector(sensor.motion.gyroscope, now) };
     s.ride = appendSample(s.ride, sample, s.previous); if(tracked?.point)s.previous = tracked.point; setRecord(s.ride); s.buffer.push(sample); s.dirty = true;
     if (arrived || s.buffer.length >= 100 || AppState.currentState !== 'active') return flush(arrived ? 'arrived' : undefined)?.then(() => {});
@@ -40,7 +41,9 @@ export function useRideRecorder(active: boolean, enabled: boolean, arrived: bool
   useEffect(() => {
     if (!active || !enabled || !route) return;
     const startedAt = Date.now();
-    session.current = { ride: { id: `${startedAt}-${Math.random().toString(36).slice(2, 9)}`, name: route.name, vehicle: { id: vehicle.id, name: vehicle.name, kind: vehicle.kind, maxSpeed: vehicle.maxSpeed, ridingLimit: vehicle.ridingLimit,cruiseFactor:vehicle.cruiseFactor }, startLabel: route.startLabel || 'Ride start', endLabel: route.endLabel || 'Ride arrival', startedAt, batteryFeedback: canAskBatteryUsage(vehicle,askBatteryUsage) ? 'pending' : undefined, status: 'recording', samples: 0, chunks: 0, meters: 0, preview: [] }, buffer: [], pending: new Map(), chunk: 0, previous: null, movement: new MovementTracker(), lastTimestamp: 0, dirty: true,minimumMeters };
+    session.current = { ride: { id: `${startedAt}-${Math.random().toString(36).slice(2, 9)}`, name: route.name, vehicle: { id: vehicle.id, name: vehicle.name, kind: vehicle.kind, maxSpeed: vehicle.maxSpeed, ridingLimit: vehicle.ridingLimit,cruiseFactor:vehicle.cruiseFactor,batteryWh:vehicle.batteryWh,totalMassKg:vehicle.totalMassKg }, startLabel: route.startLabel || 'Ride start', endLabel: route.endLabel || 'Ride arrival', startedAt, batteryFeedback: canAskBatteryUsage(vehicle,askBatteryUsage) ? 'pending' : undefined, status: 'recording', samples: 0, chunks: 0, meters: 0, preview: [] }, buffer: [], pending: new Map(), chunk: 0, previous: null, movement: new MovementTracker(), lastTimestamp: 0, dirty: true,minimumMeters };
+    const snapshot=bluetoothBridge.getSnapshot(),first=collect.current?sampleBluetooth(snapshot,vehicle.id,startedAt):undefined;
+    if(first)session.current.ride={...session.current.ride,bluetooth:updateTripBluetooth(undefined,first,startedAt),bluetoothConnected:snapshot.state==='connected'&&!snapshot.simulated};
     setRecord(session.current.ride); liveRecording(session.current.ride.id, true); flush();
     const timer = setInterval(() => flush(), 5000);
     const app = AppState.addEventListener('change', state => { if (state !== 'active') flush(); });

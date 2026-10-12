@@ -6,7 +6,7 @@ const TASK = 'velunivo-active-navigation-v1';
 type Listener = { token: symbol; accept: (fix: Fix) => Promise<void>; error: (message: string) => void };
 let listener: Listener | null = null, pending: Promise<unknown> = Promise.resolve();
 function serial<T>(fn: () => Promise<T>) { const next=pending.then(fn,fn);pending=next.catch(()=>{});return next; }
-export function locationFix(p: Location.LocationObject): Fix { return {coordinate:[p.coords.longitude,p.coords.latitude],accuracy:p.coords.accuracy ?? 999,speed:p.coords.speed !== null && p.coords.speed >= 0 && Number.isFinite(p.coords.speed) ? p.coords.speed : null,heading:p.coords.heading !== null && p.coords.heading >= 0 ? p.coords.heading : undefined,timestamp:p.timestamp}; }
+export function locationFix(p: Location.LocationObject): Fix { return {coordinate:[p.coords.longitude,p.coords.latitude],altitude:p.coords.altitude ?? undefined,altitudeAccuracy:p.coords.altitudeAccuracy ?? undefined,accuracy:p.coords.accuracy ?? 999,speed:p.coords.speed !== null && p.coords.speed >= 0 && Number.isFinite(p.coords.speed) ? p.coords.speed : null,heading:p.coords.heading !== null && p.coords.heading >= 0 ? p.coords.heading : undefined,timestamp:p.timestamp}; }
 if (!TaskManager.isTaskDefined(TASK)) TaskManager.defineTask<{locations:Location.LocationObject[]}>(TASK, async ({data,error}) => {
   const current=listener;
   // Force-quit/restarted sessions never silently resurrect a ride or its recording.

@@ -1,4 +1,5 @@
-import { smoothRecordedSamples, recordedTrace } from './recordedPath';
+import { analyzeRideEnergy } from './rideEnergy';
+import {repairRecordedRide} from './repairRide';
 import { validBatteryUsage } from './batteryLearning';
 import { RecordedRide, RideSample } from './recordings';
 export interface ArchiveStorage { getItem(key: string): Promise<string | null>; setItem(key: string, value: string): Promise<unknown>; multiGet(keys: string[]): Promise<readonly (readonly [string, string | null])[]>; multiSet(entries: [string, string][]): Promise<unknown>; multiRemove(keys: string[]): Promise<unknown>; }
@@ -14,15 +15,26 @@ function liveRecording(id: string, active: boolean) { if (active) liveSessions.a
 let pending: Promise<unknown> = Promise.resolve();
 function queue<T>(task: () => Promise<T>): Promise<T> { const next = pending.then(task, task); pending = next.catch(() => {}); return next; }
 async function readIds(): Promise<string[]> { const raw = await AsyncStorage.getItem(indexKey); return raw ? JSON.parse(raw) : []; }
-async function recordedRides(): Promise<RecordedRide[]> {
-  await pending; const ids = await readIds(), all: RecordedRide[] = [];
-  // Separate summaries and 100-fix chunks avoid Android's per-entry size limit.
+function recordedRides(): Promise<RecordedRide[]> { return queue(async () => {
+  const ids = await readIds(), all: RecordedRide[] = [];
   for (let offset = 0; offset < ids.length; offset += 50) {
     const values = await AsyncStorage.multiGet(ids.slice(offset, offset + 50).map(summaryKey));
-    for (const [, value] of values) if (value) { const r: RecordedRide = JSON.parse(value); all.push(r.status === 'recording' && !liveSessions.has(r.id) ? { ...r, status: 'interrupted', endedAt: r.lastFixAt || r.startedAt } : r); }
+    for (const [, value] of values) if (value) {
+      let r: RecordedRide = JSON.parse(value);
+      if(r.status === 'recording' && !liveSessions.has(r.id))r={...r,status:'interrupted',endedAt:r.lastFixAt||r.startedAt};
+      if(r.status!=='recording' && (r.energyAnalysisVersion!==1||r.pathCleanupVersion!==2)){
+        const raw=await AsyncStorage.multiGet(Array.from({length:r.chunks},(_,i)=>chunkKey(r.id,i)));
+        const repaired=repairRecordedRide(r,raw.flatMap(([,v])=>v?JSON.parse(v):[]));
+        r=analyzeRideEnergy(repaired.summary,repaired.samples);
+        await AsyncStorage.multiSet(Array.from({length:r.chunks},(_,i)=>[chunkKey(r.id,i),JSON.stringify(repaired.samples.slice(i*100,(i+1)*100))]));
+        await AsyncStorage.setItem(summaryKey(r.id),JSON.stringify(r));
+      }
+      all.push(r);
+    }
   }
   return all;
-}
+}); }
+
 function persistRide(ride: RecordedRide, chunks: { index: number; samples: RideSample[] }[]) {
   const snapshot = { ...ride, preview: [...ride.preview] };
   return queue(async () => {
@@ -30,13 +42,11 @@ function persistRide(ride: RecordedRide, chunks: { index: number; samples: RideS
     const raw = await AsyncStorage.getItem(summaryKey(ride.id)), existing: RecordedRide | null = raw ? JSON.parse(raw) : null;
     // Late recorder checkpoints must not erase a battery answer already saved.
     let summary = existing?.batteryFeedback === 'answered' || existing?.batteryFeedback === 'skipped' ? { ...snapshot, batteryFeedback: existing.batteryFeedback, batteryUsagePercent: existing.batteryUsagePercent, batteryUsageSource:existing.batteryUsageSource } : snapshot;
-    if (summary.status !== 'recording' && !summary.pathCleanupVersion) {
-      const raw = await AsyncStorage.multiGet(Array.from({length:summary.chunks},(_,i)=>chunkKey(ride.id,i)));
-      const samples:RideSample[]=raw.flatMap(([,value])=>value?JSON.parse(value):[]);
-      const cleaned=smoothRecordedSamples(samples),trace=recordedTrace(cleaned);
-      const flat=trace.flat(),stride=Math.max(1,Math.ceil(flat.length/256));
-      summary={...summary,pathCleanupVersion:1,trace,preview:flat.filter((_,i)=>i%stride===0||i===flat.length-1)};
-      await AsyncStorage.multiSet(Array.from({length:summary.chunks},(_,i)=>[chunkKey(ride.id,i),JSON.stringify(cleaned.slice(i*100,(i+1)*100))]));
+    if(summary.status!=='recording'){
+      const raw=await AsyncStorage.multiGet(Array.from({length:summary.chunks},(_,i)=>chunkKey(ride.id,i)));
+      const repaired=repairRecordedRide(summary,raw.flatMap(([,v])=>v?JSON.parse(v):[]));
+      summary=analyzeRideEnergy(repaired.summary,repaired.samples);
+      await AsyncStorage.multiSet(Array.from({length:summary.chunks},(_,i)=>[chunkKey(ride.id,i),JSON.stringify(repaired.samples.slice(i*100,(i+1)*100))]));
     }
     await AsyncStorage.setItem(summaryKey(ride.id), JSON.stringify(summary));
     const ids = await readIds(); if (!ids.includes(ride.id)) await AsyncStorage.setItem(indexKey, JSON.stringify([ride.id, ...ids]));

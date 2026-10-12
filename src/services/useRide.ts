@@ -15,7 +15,7 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
   const routeRef=useRef(route),rerouteRef=useRef(onReroute);useEffect(()=>{rerouteRef.current=onReroute;},[onReroute]);
   const [gpsAttempt,retryGPS]=useState(0);
   const [completedMeters, setCompletedMeters] = useState(0);
-  const [mode, setMode] = useState<'idle' | 'gps' | 'simulation'>('idle');
+  const [mode, setMode] = useState<'idle' | 'gps' | 'simulation' | 'arrived'>('idle');
   const [fix, setFix] = useState<Fix | null>(null), [status, setStatus] = useState('Ready to ride');
   const [progress, setProgress] = useState<ReturnType<typeof guidance> | null>(null);
   const deniedRef=useRef(onPermissionDenied);useEffect(()=>{deniedRef.current=onPermissionDenied;},[onPermissionDenied]);
@@ -27,6 +27,7 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
   useEffect(() => { profileRef.current = profile; }, [profile]);
   useEffect(()=>{routeRef.current=route;along.current=undefined;spoken.current='';},[route]);
   useEffect(() => {
+    if(mode==='arrived')return;
     along.current = undefined; spoken.current = '';
     // Session resets mirror the external GPS subscription lifecycle.
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -44,18 +45,20 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
       const currentRoute=routeRef.current;if(!currentRoute)return;
       const g = guidance(currentRoute, next, along.current);
       if (!g.valid) { setStatus('Waiting for a precise GPS fix'); setProgress(v => v ? { ...v, valid: false } : null); if(mode==='gps')await onFixRef.current?.(raw); return; }
+      if(g.arrived){halted=true;if(timer)clearInterval(timer);subscription?.remove();}
       setProgress(g); if (!g.offRoute) setCompletedMeters(v => Math.max(v, g.along));
       if(mode==='gps'&&rerouting.ready(next,g.offRoute,preferencesRef.current.automaticRerouting)&&rerouteRef.current){setStatus('Finding a new route…');void rerouteRef.current(next,g.index).catch(()=>setStatus('Rerouting failed. Guidance continues on the previous route.')).finally(()=>rerouting.finish());}
       if (g.offRoute) {if(!rerouting.busy)setStatus('Off route · stop safely to replan');}
       else { along.current = g.along; setStatus(g.arrived ? 'You have arrived' : mode === 'simulation' ? 'Simulation · no live GPS' : background ? 'GPS guidance · background enabled' : Platform.OS === 'web' ? 'GPS guidance · keep this page open' : 'GPS guidance · foreground only'); }
       if(mode==='gps')await onFixRef.current?.(raw,g.arrived);
       if(cancelled || lastAccepted!==next.timestamp)return;
+      if(g.arrived){try{await stopBackground?.();}finally{void stopDirections().catch(console.warn);if(!cancelled)setMode('arrived');}return;}
       const cue = g.next ? `${g.next.index}-${(g.maneuverMeters ?? 0) < 40 ? 'near' : 'ahead'}` : '';
-      if (preferencesRef.current.voice && preferencesRef.current.volume !== 'off' && !g.offRoute && g.next && (g.maneuverMeters ?? 999) < 150 && cue !== spoken.current) {
+      if (preferencesRef.current.voice && preferencesRef.current.volume !== 'off' && !g.arrived && !g.offRoute && g.next && (g.maneuverMeters ?? 999) < 150 && cue !== spoken.current) {
         spoken.current = cue; await speakDirection(`${maneuverDistance(g.maneuverMeters ?? 0, unitRef.current)}. ${g.next.text}`, preferencesRef.current);
       }
       await updateRideActivity(currentRoute,profileRef.current,preferencesRef.current,g,next,mode === 'simulation');
-      if (g.arrived) { halted=true; if (timer) clearInterval(timer); subscription?.remove(); await stopBackground?.(); await stopDirections(); }
+
     }
     const app = AppState.addEventListener('change', s => { paused = mode === 'gps' && s !== 'active' && !background; if (paused) { setStatus('Background location unavailable · keep the app open'); void stopDirections(); void markActivityPaused(); } });
     if (mode === 'simulation') {
@@ -75,8 +78,8 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
             } catch(e) {if(!cancelled)setStatus(e instanceof Error ? e.message : 'Background location unavailable. Foreground navigation remains available.');}
           }
           if(cancelled)return;
-          const watch = await Location.watchPositionAsync({ accuracy: Location.Accuracy.BestForNavigation, timeInterval: 1000, distanceInterval: 0 }, p => {void accept({ coordinate: [p.coords.longitude, p.coords.latitude], accuracy: p.coords.accuracy ?? 999, speed: p.coords.speed !== null && Number.isFinite(p.coords.speed) && p.coords.speed >= 0 ? p.coords.speed : null, heading: p.coords.heading !== null && p.coords.heading >= 0 ? p.coords.heading : undefined, timestamp: p.timestamp }).catch(e=>{if(!cancelled)setStatus(e instanceof Error ? e.message : 'GPS update failed');});});
-          if (cancelled) watch.remove(); else subscription = watch;
+          const watch = await Location.watchPositionAsync({ accuracy: Location.Accuracy.BestForNavigation, timeInterval: 1000, distanceInterval: 0 }, p => {void accept({ coordinate: [p.coords.longitude, p.coords.latitude], altitude:p.coords.altitude ?? undefined, altitudeAccuracy:p.coords.altitudeAccuracy ?? undefined, accuracy: p.coords.accuracy ?? 999, speed: p.coords.speed !== null && Number.isFinite(p.coords.speed) && p.coords.speed >= 0 ? p.coords.speed : null, heading: p.coords.heading !== null && p.coords.heading >= 0 ? p.coords.heading : undefined, timestamp: p.timestamp }).catch(e=>{if(!cancelled)setStatus(e instanceof Error ? e.message : 'GPS update failed');});});
+          if (cancelled || halted) watch.remove(); else subscription = watch;
         } catch (e) { if (!cancelled) { setStatus(`GPS unavailable · ${e instanceof Error ? e.message : 'retry GPS'}`); } }
       })();
     }

@@ -1,3 +1,4 @@
+import ArrivalScreen from '../components/ArrivalScreen';
 import RidingPrompt from '../components/RidingPrompt';
 import {coordinateLabel} from '../services/coordinateLabels';
 import {subscribeRideSimulation,takeRideSimulation} from '../services/developerRide';
@@ -24,7 +25,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
-import { useKeepAwake } from 'expo-keep-awake';
+import {useScreenWake} from '../services/useScreenWake';
 import { motionProps } from '../components/WebMotion';
 import TurnDirection from '../components/TurnDirection';
 import ActionMenu, { MenuAction } from '../components/ActionMenu';
@@ -61,7 +62,7 @@ import { useMotion } from '../services/useSensors';
 import { estimate, minutes } from '../core/eta';
 import {remainingStops,RouteStop,reorderPoints} from '../core/itinerary';
 import { Coord, Fix, Route } from '../core/types';
-function Awake() { useKeepAwake(); return null; }
+function Awake() { useScreenWake(); return null; }
 export default function Explore() {
   const p = usePalette(), { height, width } = useWindowDimensions();
 
@@ -104,8 +105,8 @@ export default function Explore() {
   const cancelRecording=useRef<()=>void>(()=>{});
   const recordingAccept = useRef<(fix: Fix, arrived?: boolean) => void | Promise<void>>(() => {});
   const [picking, setPicking] = useState<'start' | 'end' | null>(null), [follow, setFollow] = useState(true);
-  const ride = useRide(selected, profile, navigationOptions, (fix,arrived) => recordingAccept.current(fix,arrived),()=>cancelRecording.current(),reroute), motion = useMotion((navigationOptions.motion && ride.mode !== 'idle') || (navigationOptions.recordRides && ride.mode === 'gps'));
-  const active = ride.mode !== 'idle', g = ride.progress;
+  const ride = useRide(selected, profile, navigationOptions, (fix,arrived) => recordingAccept.current(fix,arrived),()=>cancelRecording.current(),reroute), motion = useMotion((navigationOptions.motion && (ride.mode === 'gps'||ride.mode==='simulation')) || (navigationOptions.recordRides && ride.mode === 'gps'));
+  const active = ride.mode === 'gps'||ride.mode==='simulation', g = ride.progress;
   const { capture } = useLocalSearchParams<{capture?:string}>();
   const capturePrepared=useRef(false),captureStarted=useRef(false);
   useEffect(()=>{
@@ -218,6 +219,7 @@ export default function Explore() {
     overviewTimer.current = setTimeout(() => { setOverview(false); overviewTimer.current = null; }, 15000);
   }
   function resumeFollowing() { if (overviewTimer.current) clearTimeout(overviewTimer.current); overviewTimer.current = null; setOverview(false); setFollow(true); }
+  function endNavigation(){const returnHome=!!g&&g.valid&&g.total>0&&g.along/g.total>=.5;ride.stop();if(returnHome)clearRide();}
   function clearRide() {cancelLabels();
     setPreviewPin(undefined); setTurnList(false); setExternalJourney(null); setWarningRoute(null); planRequest.current++; setBusy(false); locationRequest.current++; setLocating(false); ride.stop(); setRoutes([]); select(null); setStart('Current location'); setStartPoint(undefined); setGpsStart(true); setEnd(''); setEndPoint(undefined); setStops([]); setDeparture(''); setScheduleMode('depart'); setOptionsOpen(false);  setPicking(null); setPlanner(false); setPanelOpen(false); setError(''); resumeFollowing();
   }
@@ -250,6 +252,7 @@ export default function Explore() {
       <Button title={t('Plan bicycle & car routes')} loading={busy} disabled={locating} onPress={() => void plan()} />
   </View>;
   return <TripSharing active={ride.mode==='gps' && !g?.arrived} route={selected} position={mapPosition} seconds={eta?.seconds||0} meters={eta?.meters||0} now={now}>{shareControls=><SafeAreaView edges={[]} onLayout={e => setMapHeight(e.nativeEvent.layout.height)} style={{ flex: 1, backgroundColor: p.bg }}>
+      <ArrivalScreen visible={ride.mode==='arrived'} destination={selected?.endLabel||end} meters={recorder.record?.meters??ride.completedMeters} startedAt={recorder.record?.startedAt} endedAt={recorder.record?.endedAt} unit={navigationOptions.unit} onDone={clearRide}/>
     {active && <Awake />}<RidingPrompt fix={live.fix} enabled={ready&&!active&&!planner&&!selected&&!vehicleLocked&&!picking} onPlan={openPlanner}/>
 
     <View style={StyleSheet.absoluteFill}>
@@ -279,7 +282,7 @@ export default function Explore() {
         {shareControls}{ride.mode==='gps' && !precise && <Button title={t("Retry GPS")} icon="locate-outline" secondary onPress={ride.retryGPS} />}
         {navigationOptions.developerMode && navigationOptions.motion && motion.status !== 'Off' && <Text style={{ color: panelP.muted, fontSize: 12 }}>Motion: {motion.status} · {motion.acceleration.toFixed(2)} g · {motion.rotation.toFixed(2)} rad/s</Text>}
         {g?.offRoute && <Button title={t("End ride & replan")} secondary onPress={() => { ride.stop(); setGpsStart(true); setStart('Current location'); setStartPoint(undefined); setPlanner(true); }} />}
-        <Text style={{ color: panelP.muted, fontSize: 12 }}>DIRECTION VOLUME</Text><View style={{ flexDirection: 'row', gap: 6 }}>{(['loud', 'quiet', 'off'] as const).map(volume => <View key={volume} style={{ flex: 1 }}><Button title={t(volume === 'loud' ? 'Loud' : volume === 'quiet' ? 'Quiet' : 'Off')} icon={volume === 'off' ? 'volume-mute-outline' : volume === 'quiet' ? 'volume-low-outline' : 'volume-high-outline'} secondary={navigationOptions.volume !== volume} onPress={() => updateNavigationOptions({ volume })} /></View>)}</View>{!navigationOptions.voice && <Text style={{ color: panelP.muted }}>Spoken directions are off in Settings.</Text>}{!!recorder.error && <Text accessibilityRole="alert" style={{ color: '#D75451' }}>{publicError(recorder.error,navigationOptions.developerMode)}</Text>}<Text style={{ color: panelP.muted, fontSize: 11 }}>{navigationOptions.recordRides ? 'Ride recording on · saved locally to Library' : 'Ride recording off'}</Text>{!!activity.status && Platform.OS==='ios' && <Text style={{color:panelP.muted,fontSize:12}}>{publicError(activity.status,navigationOptions.developerMode)}</Text>}<Button title={t("End ride")} icon="stop-circle-outline" onPress={ride.stop} />
+        <Text style={{ color: panelP.muted, fontSize: 12 }}>DIRECTION VOLUME</Text><View style={{ flexDirection: 'row', gap: 6 }}>{(['loud', 'quiet', 'off'] as const).map(volume => <View key={volume} style={{ flex: 1 }}><Button title={t(volume === 'loud' ? 'Loud' : volume === 'quiet' ? 'Quiet' : 'Off')} icon={volume === 'off' ? 'volume-mute-outline' : volume === 'quiet' ? 'volume-low-outline' : 'volume-high-outline'} secondary={navigationOptions.volume !== volume} onPress={() => updateNavigationOptions({ volume })} /></View>)}</View>{!navigationOptions.voice && <Text style={{ color: panelP.muted }}>Spoken directions are off in Settings.</Text>}{!!recorder.error && <Text accessibilityRole="alert" style={{ color: '#D75451' }}>{publicError(recorder.error,navigationOptions.developerMode)}</Text>}<Text style={{ color: panelP.muted, fontSize: 11 }}>{navigationOptions.recordRides ? 'Ride recording on · saved locally to Library' : 'Ride recording off'}</Text>{!!activity.status && Platform.OS==='ios' && <Text style={{color:panelP.muted,fontSize:12}}>{publicError(activity.status,navigationOptions.developerMode)}</Text>}<Button title={t("End ride")} icon="stop-circle-outline" onPress={endNavigation} />
       </View> : <>
         <VehicleSelector outlined />
         {routes.length === 0 && <View style={[styles.card, { backgroundColor: panelP.card }]}><Text style={{ color: panelP.text, fontSize: 18, fontWeight: '700' }}>Where will you ride?</Text><Text style={{color:panelP.muted,lineHeight:22}}>Choose a destination to compare routes, or record a trip without one.</Text></View>}

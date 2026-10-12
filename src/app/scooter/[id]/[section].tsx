@@ -20,7 +20,7 @@ export default function VehicleOptions() {
   const { id, section } = useLocalSearchParams<{ id: string; section: string }>(), p = usePalette(), { vehicles, updateProfile, vehicleLocked, navigationOptions } = useStore();
   const v = vehicles.find(v => v.id === id), [error, setError] = useState(''), [loading, setLoading] = useState(false), [pictureSources, setPictureSources] = useState(false);
   const unit = navigationOptions.unit, factor = unit === 'mi' ? 1.609344 : 1, speedUnit = unit === 'mi' ? 'MPH' : 'KM/H';
-  const title = ({ identity: 'Name & speed limits', range: 'Range & battery', appearance: 'Icon & pictures', tuning: 'ETA tuning' } as Record<string, string>)[section] || 'Vehicle options';
+  const title = ({ identity: id==='sharing-scooter'?'Speed Limits':'Name & speed limits', range: 'Range & battery', appearance: 'Icon & pictures', tuning: 'ETA tuning' } as Record<string, string>)[section] || 'Vehicle options';
   const update = (changes: Parameters<typeof updateProfile>[0]) => updateProfile(changes, id);
   if(section === 'bluetooth') return <VehicleBluetooth id={id} />;
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 24, gap: 18, width: '100%', maxWidth: 700, alignSelf: 'center', paddingBottom: 90 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}><IconButton label={t("Back to vehicle")} icon="chevron-back" onPress={() => goBack(`/scooter/${id}`)} /><Text style={{ color: p.text, fontSize: 25, fontWeight: '800', flex: 1 }}>{title}</Text></View>{v && <View pointerEvents={vehicleLocked ? 'none' : 'auto'} style={{ gap: 18, opacity: vehicleLocked ? .5 : 1 }}>
