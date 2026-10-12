@@ -29,7 +29,12 @@ jobs:
             exit 0
           fi
           mkdir -p artifacts work/source
-          gh release download "$TAG" --pattern ios-metadata.json --pattern iphone.png --pattern ipad.png --pattern release-notes.md --dir artifacts
+          if gh release view "$TAG" --json assets --jq '.assets[].name' | grep -qx build_info.json; then
+            gh release download "$TAG" --pattern build_info.json --dir artifacts
+            python3 -c 'import json,pathlib; p=pathlib.Path("artifacts"); info=json.loads((p/"build_info.json").read_text()); (p/"ios-metadata.json").write_text(json.dumps(info["ios"])); (p/"release-notes.md").write_text(info.get("details",{}).get("release-notes.md",""))'
+          else
+            gh release download "$TAG" --pattern ios-metadata.json --dir artifacts
+          fi
           gh release download 1.0 --pattern apps.json --dir work/source
           python3 scripts/update-source.py --repo "$GITHUB_REPOSITORY" --tag "$TAG" --existing work/source/apps.json --output work/source/apps.json
           python3 scripts/publish-source.py --repo "$GITHUB_REPOSITORY" --source work/source

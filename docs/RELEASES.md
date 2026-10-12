@@ -67,3 +67,11 @@ The web job generates the manifest and brand-derived PWA icons before export, th
 Sharing builds: repository variable SHARE_ORIGIN sets EXPO_PUBLIC_SHARE_ORIGIN for all three build jobs. Official native default is https://velunivo.xcenter.it; web without an override uses its current origin. Optional PEER_HOST/PORT/PATH/SECURE/ICE_SERVERS customize self-hosted signaling and ICE. Run the repository web+PeerServer process behind TLS/WSS; a static web.zip alone does not start signaling. No PeerJS Cloud fallback. Full host/deep-link instructions: docs/SHARING.md. New native dependency react-native-webview13.16.1 requires a fresh binary; native peer behavior still needs physical-device validation.
 
 1.0.0 injects `EXPO_PUBLIC_APP_VERSION` into every platform bundle and `APP_VERSION` into native config. Optional `OVERPASS_URL` configures road-network download service; it is a public URL, not a secret.
+
+## Compact public release assets (October 12, 2026)
+
+Binary releases contain exactly `Velunivo.ipa`, `Velunivo.apk`, `Velunivo-simulator.app.zip` and `build_info.json`. The JSON consolidates binary byte sizes and SHA-256 hashes, compiled iOS metadata, Xcode/Android toolchain records, conventional release notes and screenshot verification diagnostics. Web bundles remain GitHub Actions artifacts, linked through the JSON's workflow run. The hosted XCenter updater was inspected: it exports from Git source and does not depend on a release `web.zip`. AltSource refresh reads compiled metadata from the consolidated JSON, with legacy compatibility for older releases.
+
+Native screenshot galleries are published only to the mutable `1.0` AltSource release: iPhone screens first, then landscape iPad screens. README and normal binary releases contain no native screenshot assets. Failed captures preserve the previous gallery after two attempts rather than block binaries. The production IPA/APK/web do not enable Simulator screenshot fixtures.
+
+Validation: 28 Python tests including metadata/checksum consolidation, gallery ordering and capture fallbacks pass. Native compilation remains exclusively in GitHub Actions.

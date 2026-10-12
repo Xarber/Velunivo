@@ -442,14 +442,14 @@ jobs:
           merge-multiple: true
       - name: Publish binaries and conventional release notes
         run: |
-          (cd artifacts && sha256sum Velunivo.ipa Velunivo.apk Velunivo-simulator.app.zip web.zip > SHA256SUMS)
           python3 scripts/screenshot-notes.py --assets artifacts --notes artifacts/release-notes.md
+          python3 scripts/build-info.py --repo "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG"
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release edit "$RELEASE_TAG" --notes-file artifacts/release-notes.md
           else
             gh release create "$RELEASE_TAG" --verify-tag --title "Velunivo ${{ needs.prepare.outputs.version }}" --notes-file artifacts/release-notes.md
           fi
-          gh release upload "$RELEASE_TAG" artifacts/Velunivo.ipa artifacts/Velunivo.apk artifacts/Velunivo-simulator.app.zip artifacts/web.zip artifacts/SHA256SUMS artifacts/ios-metadata.json artifacts/ios-build.txt artifacts/android-build.txt --clobber
+          gh release upload "$RELEASE_TAG" artifacts/Velunivo.ipa artifacts/Velunivo.apk artifacts/Velunivo-simulator.app.zip artifacts/build_info.json --clobber
       - name: Update mutable AltSource release at fixed 1.0 URL
         run: |
           if ! gh release view 1.0 >/dev/null 2>&1; then

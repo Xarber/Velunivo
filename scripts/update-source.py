@@ -4,7 +4,7 @@ Never manufacture a downloadURL, size, OS floor or permissions before a build.
 import argparse, json, datetime, struct, hashlib
 from pathlib import Path
 p=argparse.ArgumentParser(); p.add_argument('--repo',required=True); p.add_argument('--tag',required=True); p.add_argument('--assets',default='artifacts'); p.add_argument('--existing',default='apps.json'); p.add_argument('--output',default='apps.json'); a=p.parse_args()
-folder=Path(a.assets); meta=json.loads((folder/'ios-metadata.json').read_text()); tag=a.tag
+folder=Path(a.assets); meta=json.loads((folder/'ios-metadata.json').read_text()) if (folder/'ios-metadata.json').exists() else json.loads((folder/'build_info.json').read_text())['ios']; tag=a.tag
 if tag != 'v'+meta['version']: raise SystemExit('Tag does not match the built IPA version')
 base=f'https://github.com/{a.repo}/releases/download/{tag}/'; stable=f'https://github.com/{a.repo}/releases/download/1.0/'
 source=json.loads(Path(a.existing).read_text()) if Path(a.existing).exists() else {'name':'Velunivo','subtitle':'Routes for small electric wheels','description':'The official Velunivo source for e-scooter and e-bike navigation. AltStore Classic / SideStore.','iconURL':stable+'icon.png','tintColor':'007F6D','website':f'https://github.com/{a.repo}','apps':[],'news':[]}

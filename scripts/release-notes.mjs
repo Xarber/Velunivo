@@ -21,5 +21,5 @@ for (const line of lines) {
 }
 let notes = `# ${current || 'Velunivo release'}\n\n`;
 for (const [name, entries] of groups) notes += `## ${name}\n\n${entries.join('\n')}\n\n`;
-notes += '## Installation\n\n- iPhone: unsigned IPA, intended for AltStore Classic or SideStore re-signing.\n- Simulator: .app.zip, not an IPA; requires an Apple Silicon Simulator.\n- Android: APK. Without configured signing secrets, the build uses Expo’s development signing key.\n- Web: web.zip; serve its contents with a static server.\n\nScheduled ETAs exclude traffic. Route eligibility is unverified. See README for provider setup and tested limitations.\n';
+notes += '## Installation\n\n- iPhone: unsigned IPA, intended for AltStore Classic or SideStore re-signing.\n- Simulator: .app.zip, not an IPA; requires an Apple Silicon Simulator.\n- Android: APK. Without configured signing secrets, the build uses Expo’s development signing key.\n- Web: download the web artifact from the linked GitHub Actions run; serve its contents with the bundled web/PeerServer service. Build information and binary checksums are consolidated in build_info.json.\n\nScheduled ETAs exclude traffic. Route eligibility is unverified. See README for provider setup and tested limitations.\n';
 writeFileSync('release-notes.md', notes);
