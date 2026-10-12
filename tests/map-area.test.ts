@@ -1,0 +1,3 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';
+import {areaBounds,validateArea,areaDimensions} from '../src/core/mapArea';
+test('download bounds use projected frame corners and enforce coverage limits',()=>{const bounds=areaBounds([12.5,41.8],[12.6,41.9]);assert.deepEqual(bounds,[12.5,41.8,12.6,41.9]);assert.deepEqual(areaBounds([12.6,41.9],[12.5,41.8]),bounds);assert.ok(areaDimensions(bounds).width>8000);assert.deepEqual(validateArea(bounds),bounds);assert.throws(()=>validateArea([12,41,13,42]));assert.throws(()=>areaBounds([NaN,45],[9,46]));assert.throws(()=>areaBounds([179,45],[-179,46])&&validateArea([-179,45,179,46]));});

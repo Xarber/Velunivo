@@ -1,3 +1,5 @@
+import {MapAreaSelection} from '../core/mapArea';
+import {useMapArea} from '../services/useMapArea';
 import {t} from '../i18n/core';
 import Text from './LocalizedText';
 import { routeLayers, ROUTE_WIDTH } from '../core/routeLayers';
@@ -10,10 +12,12 @@ import { Route, Coord } from '../core/types';
 import { routeBounds } from '../core/geo';
 import { serverUrl } from '../services/api';
 import { mapStyle } from './mapConfig';
-interface MapProps { transit?: boolean; trace?: Coord[][]; completedMeters?: number; overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; positionLabel?:string; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; planningStops?:import('../core/itinerary').RouteStop[]; offlineMap?: string; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
-export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit, positionLabel, planningStops }: MapProps) {
+interface MapProps { areaSelection?:MapAreaSelection; transit?: boolean; trace?: Coord[][]; completedMeters?: number; overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; positionLabel?:string; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; planningStops?:import('../core/itinerary').RouteStop[]; offlineMap?: string; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
+export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit, positionLabel, planningStops, areaSelection }: MapProps) {
   const div = useRef<HTMLDivElement>(null), map = useRef<maplibregl.Map | null>(null);
   const [loaded, setLoaded] = useState(false), [error, setError] = useState(false);
+  const reportArea=useMapArea(areaSelection,loaded,async(x,y)=>{if(!map.current)throw new Error('Map unavailable');const c=map.current.unproject([x,y]);return [c.lng,c.lat];});
+  useEffect(()=>{const m=map.current;if(!m||!loaded||!areaSelection)return;m.on('moveend',reportArea);reportArea();return()=>{m.off('moveend',reportArea);};},[areaSelection,loaded,reportArea]);
   const user = useRef<maplibregl.Marker | null>(null);
   const hasPosition = !!position;
   const cameraTarget = useCameraTarget(position, heading, !!follow && loaded, JSON.stringify([tilted, followPadding || fitPadding]));
@@ -35,7 +39,7 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
     } catch { queueMicrotask(() => setError(true)); }
   }, []);
   useEffect(() => { const m = map.current; if (m && loaded && !selected && (!follow || !hasPosition)) m.easeTo({ pitch: tilted ? 50 : 0, duration: 350 }); }, [loaded, tilted, selected, follow, hasPosition]);
-  useEffect(() => { const m = map.current; if (!m || !loaded) return; if (follow) { m.dragRotate.disable(); m.touchZoomRotate.disableRotation(); m.keyboard.disableRotation(); } else { m.dragRotate.enable(); m.touchZoomRotate.enableRotation(); m.keyboard.enableRotation(); } }, [follow, loaded]);
+  useEffect(() => { const m = map.current; if (!m || !loaded) return; if (follow || areaSelection) { m.dragRotate.disable(); m.touchZoomRotate.disableRotation(); m.keyboard.disableRotation(); if(areaSelection)m.touchPitch.disable();else m.touchPitch.enable(); } else { m.dragRotate.enable(); m.touchZoomRotate.enableRotation(); m.keyboard.enableRotation(); m.touchPitch.enable(); } }, [follow, loaded, areaSelection]);
   useEffect(() => {
     const m = map.current; if (!m || !loaded) return;
     const paths = routeLayers(routes, selected, completedMeters, trace);

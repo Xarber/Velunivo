@@ -10,7 +10,7 @@ export function replayFrames(ride:RecordedRide,samples:RideSample[]):ReplayFrame
  let fix:Fix|null=null,previous:Fix|null=null,meters=0,fields:Telemetry={},pluginId:string|undefined;
  for(const sample of [...samples].sort((a,b)=>a.fix.timestamp-b.fix.timestamp)){
   const tracked=sample.pathFix===undefined?movement.next(sample.fix):undefined;const point=sample.pathFix===undefined?tracked?.point:sample.pathFix;
-  if(point){if(previous && !(sample.breakBefore ?? tracked?.breakBefore))meters+=distance(previous.coordinate,point.coordinate);previous=point;fix={...sample.fix,coordinate:point.coordinate};}else if(fix)fix={...sample.fix,coordinate:fix.coordinate};
+  if(point){if(previous && !(sample.breakBefore ?? tracked?.breakBefore))meters+=distance(previous.coordinate,point.coordinate);previous=point;fix={...sample.fix,coordinate:sample.displayCoordinate||point.coordinate};}else if(fix)fix={...sample.fix,coordinate:fix.coordinate};
   if(sample.bluetooth){if(pluginId!==sample.bluetooth.pluginId)fields={};pluginId=sample.bluetooth.pluginId;fields={...fields,...sample.bluetooth.fields};}
   frames.push({at:Math.max(0,sample.fix.timestamp-ride.startedAt),fix,sample,meters,telemetry:{state:sample.bluetooth?.state || 'disconnected',message:'Recorded telemetry · replay',vehicleId:ride.vehicle.id,pluginId,simulated:sample.bluetooth?.simulated,fields,extensions:{},capabilities:{fields:metrics,commands:['readTelemetry'],authentication:'Recorded data',limitations:['Historical readings, not a live Bluetooth connection']}}});
  }

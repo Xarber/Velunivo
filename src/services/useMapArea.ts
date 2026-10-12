@@ -1,0 +1,4 @@
+import {useCallback,useEffect,useRef} from 'react';
+import {MapAreaSelection,areaBounds} from '../core/mapArea';
+import {Coord} from '../core/types';
+export function useMapArea(selection:MapAreaSelection|undefined,ready:boolean,unproject:(x:number,y:number)=>Promise<Coord>){const latest=useRef({selection,unproject}),generation=useRef(0);useEffect(()=>{latest.current={selection,unproject};});const read=useCallback(()=>{const current=latest.current,id=++generation.current;if(!current.selection)return;const {rect,onChange}=current.selection;void Promise.all([current.unproject(rect.x,rect.y+rect.height),current.unproject(rect.x+rect.width,rect.y)]).then(([a,b])=>{if(id===generation.current)onChange(areaBounds(a,b));}).catch(()=>{});},[]);const rect=selection?.rect;useEffect(()=>{const counter=generation;if(ready)read();return()=>{counter.current++;};},[ready,read,rect?.x,rect?.y,rect?.width,rect?.height]);return read;}

@@ -1,3 +1,4 @@
+import {AreaBounds,validateArea} from '../core/mapArea';
 import { OfflineManager, OfflinePack, OfflinePackStatus } from '@maplibre/maplibre-react-native';
 import { routeBounds } from '../core/geo';
 import { Route } from '../core/types';
@@ -8,12 +9,14 @@ export async function packs(): Promise<PackView[]> {
   return Promise.all(all.map(async p => { const s = await p.status(); return { id: p.id, styleURL: typeof p.metadata.styleURL === 'string' ? p.metadata.styleURL : undefined, bounds: p.bounds, name: String(p.metadata.name || 'Map region'), percentage: s.percentage, bytes: s.completedResourceSize, state: s.state, pack: p }; }));
 }
 export async function download(route: Route, onProgress: (p: OfflinePack, s: OfflinePackStatus) => void, onError: (msg: string) => void) {
+  const [w,s,e,n]=routeBounds(route.coordinates);return downloadArea([w-.005,s-.005,e+.005,n+.005],route.name,onProgress,onError);
+}
+export async function downloadArea(bounds:AreaBounds,name:string,onProgress:(p:OfflinePack,s:OfflinePackStatus)=>void,onError:(msg:string)=>void){
+  validateArea(bounds);
   const mapStyle = downloadStyle(); if (!mapStyle) throw new Error('Set up a downloadable map provider in Settings.');
   const regions = await packs(); const existingBytes=regions.reduce((s,p)=>s+p.bytes,0); if (existingBytes >= 80_000_000) throw new Error('Remove unused regions before downloading. Stadia caching is limited to 100 MB per device.');
   if (regions.some(p=>p.state === 'active' && p.percentage < 100)) throw new Error('Pause the current download before creating another region.');
-  const [w, s, e, n] = routeBounds(route.coordinates);
-  if (e - w > .3 || n - s > .3) throw new Error('This region is too large for the MVP. Choose a shorter route.');
-  return OfflineManager.createPack({ mapStyle, bounds: [w - .005, s - .005, e + .005, n + .005], minZoom: 10, maxZoom: 14, metadata: { styleURL: mapStyle, name: route.name, createdAt: Date.now() } }, (pack,status)=>{ onProgress(pack,status); if (existingBytes + status.completedResourceSize > 90_000_000) { void pack.pause().catch(()=>{}); onError('Download paused near the 100 MB cache limit. Remove unused regions before resuming.'); } }, (_, error) => onError(error.message));
+  return OfflineManager.createPack({ mapStyle, bounds, minZoom: 10, maxZoom: 14, metadata: { styleURL: mapStyle, name, createdAt: Date.now() } }, (pack,status)=>{ onProgress(pack,status); if (existingBytes + status.completedResourceSize > 90_000_000) { void pack.pause().catch(()=>{}); onError('Download paused near the 100 MB cache limit. Remove unused regions before resuming.'); } }, (_, error) => onError(error.message));
 }
 export const deletePack = (id: string) => OfflineManager.deletePack(id);
 let budgetCheck=0;

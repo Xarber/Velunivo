@@ -1,0 +1,6 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';
+import {smoothRecordedSamples,recordedTrace} from '../src/core/recordedPath';
+import {RideSample} from '../src/core/recordings';
+const samples=(offsets:number[])=>offsets.map((offset,i)=>{const fix={coordinate:[9+i*.0001,45+offset/111320] as [number,number],timestamp:1000+i*2000,accuracy:10,speed:4,heading:undefined};return {fix,pathFix:fix,compass:null,accelerometer:null,gyroscope:null} as RideSample;});
+test('cleanup straightens meter-scale jitter but preserves original GPS and telemetry',()=>{const input=samples([0,1,-1,2,0]),out=smoothRecordedSamples(input);assert.equal(out[2].displayCoordinate?.[1],45);assert.deepEqual(out[2].fix,input[2].fix);assert.equal(input[2].displayCoordinate,undefined);assert.equal(recordedTrace(out)[0].length,5);});
+test('cleanup retains deliberate park deviations, stops and trace interruptions',()=>{const input=samples([0,1,12,1,0]);assert.equal(smoothRecordedSamples(input)[2].displayCoordinate,undefined);input[2].pathFix={...input[2].fix,speed:0};assert.equal(smoothRecordedSamples(input)[2].displayCoordinate,undefined);input[3].breakBefore=true;assert.equal(recordedTrace(smoothRecordedSamples(input)).length,2);});

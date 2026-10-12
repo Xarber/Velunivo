@@ -2,7 +2,7 @@ import Text from './LocalizedText';
 import React, { createContext, useContext } from 'react';
 import PressMotion from './PressMotion';
 import { motionProps } from './WebMotion';
-import {StyleSheet, useColorScheme, View, TextInput, TextInputProps} from 'react-native';
+import {ActivityIndicator, StyleSheet, useColorScheme, View, TextInput, TextInputProps} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {t} from '../i18n/core';
 import {useLanguage} from '../i18n/react';
@@ -13,9 +13,9 @@ function useSystemPalette() {
   return { dark, bg: dark ? '#101B21' : '#F4F7F8', card: dark ? '#1A2930' : '#FFFFFF', text: dark ? '#F6FAFC' : '#162C35', muted: dark ? '#9BAEB6' : '#647B86', line: dark ? '#30434B' : '#E6ECEF', accent: dark ? '#64DCC5' : '#007F6D' };
 }
 export const usePalette = () => { useLanguage(); const inherited = useContext(PaletteContext); const system = useSystemPalette(); return inherited ?? system; };
-export function Button({ title, onPress, secondary = false, disabled = false, icon = 'chevron-forward' }: { title: string; onPress(): void; secondary?: boolean; disabled?: boolean; icon?: keyof typeof Ionicons.glyphMap }) {
+export function Button({ title, onPress, secondary = false, disabled = false, loading = false, icon = 'chevron-forward' }: { title: string; onPress(): void; secondary?: boolean; disabled?: boolean; loading?: boolean; icon?: keyof typeof Ionicons.glyphMap }) {
   const p = usePalette();useLanguage();
-  return <PressMotion {...motionProps('button')} accessibilityRole="button" accessibilityLabel={t(title)} disabled={disabled} onPress={onPress} style={({ pressed }) => [styles.button, { backgroundColor: secondary ? p.line : p.accent, opacity: disabled ? .4 : pressed ? .75 : 1 }]}>{icon && <Ionicons name={icon} size={19} color={secondary ? p.text : p.dark ? '#102A28' : '#fff'} />}<Text style={{ color: secondary ? p.text : p.dark ? '#102A28' : '#fff', fontSize: 16, fontWeight: '700' }}>{title}</Text></PressMotion>;
+  return <PressMotion {...motionProps('button')} accessibilityRole="button" accessibilityLabel={t(title)} accessibilityState={{disabled:disabled || loading,busy:loading}} aria-busy={loading} disabled={disabled || loading} onPress={onPress} style={({ pressed }) => [styles.button, { backgroundColor: secondary ? p.line : p.accent, opacity: disabled ? .4 : pressed ? .75 : 1 }]}>{loading ? <ActivityIndicator color={secondary ? p.text : p.dark ? '#102A28' : '#fff'} size="small" /> : icon && <Ionicons name={icon} size={19} color={secondary ? p.text : p.dark ? '#102A28' : '#fff'} />}<Text style={{ color: secondary ? p.text : p.dark ? '#102A28' : '#fff', fontSize: 16, fontWeight: '700' }}>{title}</Text></PressMotion>;
 }
 export function Field({ label, ...props }: TextInputProps & { label: string }) {
   const p = usePalette();useLanguage(); return <View style={{ gap: 6 }}><Text style={{ color: p.muted, fontSize: 12, fontWeight: '700', letterSpacing: .8 }}>{label}</Text><TextInput {...motionProps('field')} accessibilityLabel={t(label)} placeholderTextColor={p.muted} {...props} placeholder={props.placeholder?t(props.placeholder):undefined} style={[styles.field, { color: p.text, backgroundColor: p.bg, borderColor: p.line }, props.style]} /></View>;

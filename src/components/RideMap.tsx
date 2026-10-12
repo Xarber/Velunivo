@@ -1,3 +1,4 @@
+import {useMapArea} from '../services/useMapArea';
 import {t} from '../i18n/core';
 import { routeLayers, ROUTE_WIDTH } from '../core/routeLayers';
 import { useCameraTarget } from '../services/useCameraTarget';
@@ -15,9 +16,10 @@ export default function RideMap(props: MapProps & { offlineMap?: string }) {
   if (props.offlineMap || Platform.OS === 'android') return <OfflineRideMap {...props} offlineStyle={props.offlineMap} />;
   return <DeviceMap {...props} />;
 }
-function DeviceMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit,positionLabel,planningStops }: MapProps) {
+function DeviceMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit,positionLabel,planningStops,areaSelection }: MapProps) {
   const map = useRef<MapView>(null);
   const [ready, setReady] = useState(false),[cameraBearing,setCameraBearing]=useState(0);
+  const reportArea=useMapArea(areaSelection,ready,async(x,y)=>{if(!map.current)throw new Error('Map unavailable');const c=await map.current.coordinateForPoint({x,y});return [c.longitude,c.latitude];});
   const hasPosition = !!position;
   const cameraTarget = useCameraTarget(position, heading, !!follow && ready, JSON.stringify([tilted, followPadding || fitPadding]));
   const fit = () => { if (!selected && startPoint && !follow) { if (endPoint) map.current?.fitToCoordinates([startPoint, endPoint].map(point), { edgePadding: fitPadding || { top: 45, bottom: 45, left: 45, right: 45 }, animated: true }); else map.current?.animateCamera({ center: point(startPoint), zoom: 13, heading: 0, pitch: 0 }, { duration: 400 }); } if (selected && !follow && (!navigating || overview)) { map.current?.setCamera({ heading: 0, pitch: 0 }); map.current?.fitToCoordinates(selected.coordinates.map(point), { edgePadding: fitPadding || { top: 45, bottom: 45, left: 45, right: 45 }, animated: true }); } };
@@ -29,7 +31,7 @@ function DeviceMap({ routes, selected, position, follow, onPick, traffic, startP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraTarget]);
   const [w, s, e, n] = selected ? routeBounds(selected.coordinates) : [9.18, 45.46, 9.20, 45.48];
-  return <MapView onRegionChangeComplete={()=>{void map.current?.getCamera().then(c=>setCameraBearing(c.heading)).catch(()=>{});}} onPanDrag={onPan} ref={map} style={{ flex: 1 }} mapPadding={follow ? followPadding || fitPadding : { top: 0, bottom: 0, left: 0, right: 0 }} showsTraffic={traffic} mapType={transit ? 'standard' : 'mutedStandard'} showsPointsOfInterests showsBuildings pitchEnabled rotateEnabled={!follow} onMapReady={() => { setReady(true); fit(); }} legalLabelInsets={{ top: 120, left: 12, right: 12, bottom: fitPadding?.bottom || 45 }} initialRegion={{ latitude: (s + n) / 2, longitude: (w + e) / 2, latitudeDelta: Math.max(.005, (n - s) * 1.5), longitudeDelta: Math.max(.005, (e - w) * 1.5) }} onPress={ev => onPick?.([ev.nativeEvent.coordinate.longitude, ev.nativeEvent.coordinate.latitude])}>
+  return <MapView onRegionChangeComplete={()=>{reportArea();void map.current?.getCamera().then(c=>setCameraBearing(c.heading)).catch(()=>{});}} onPanDrag={onPan} ref={map} style={{ flex: 1 }} mapPadding={follow ? followPadding || fitPadding : { top: 0, bottom: 0, left: 0, right: 0 }} showsTraffic={traffic} mapType={transit ? 'standard' : 'mutedStandard'} showsPointsOfInterests showsBuildings pitchEnabled={!areaSelection} rotateEnabled={!follow&&!areaSelection} onMapReady={() => { setReady(true); fit(); }} legalLabelInsets={{ top: 120, left: 12, right: 12, bottom: fitPadding?.bottom || 45 }} initialRegion={{ latitude: (s + n) / 2, longitude: (w + e) / 2, latitudeDelta: Math.max(.005, (n - s) * 1.5), longitudeDelta: Math.max(.005, (e - w) * 1.5) }} onPress={ev => onPick?.([ev.nativeEvent.coordinate.longitude, ev.nativeEvent.coordinate.latitude])}>
     {routeLayers(routes, selected, completedMeters, trace).flatMap(r => [<Polyline key={`${r.id}-outline`} coordinates={r.coordinates.map(point)} strokeColor={r.outline} strokeWidth={ROUTE_WIDTH + 3} />, <Polyline key={r.id} coordinates={r.coordinates.map(point)} strokeColor={r.color} strokeWidth={ROUTE_WIDTH} />])}
     {(startPoint || selected?.coordinates[0]) && <Marker coordinate={point(startPoint || selected!.coordinates[0])} title={t("Start")} pinColor="#007F6D" />}
     {(endPoint || selected?.coordinates.at(-1)) && <Marker coordinate={point(endPoint || selected!.coordinates.at(-1)!)} title={t("Destination")} />}
