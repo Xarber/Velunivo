@@ -189,18 +189,18 @@ def capture_once(devices, family):
     append_log(family, f'Owned fresh Simulator {udid}; type {device_type}; runtime {runtime}')
     try:
         boot_and_install(udid, family)
-        run('xcrun', 'simctl', 'status_bar', udid, 'override', '--time', '9:41',
-            '--batteryState', 'charged', '--batteryLevel', '100')
         # Public fixture, on this run's disposable Simulator only.
-        run('xcrun', 'simctl', 'privacy', udid, 'grant', 'location', BUNDLE)
-        run('xcrun', 'simctl', 'location', udid, 'set', '45.4642,9.1900')
-        launch = run('xcrun', 'simctl', 'launch', udid, BUNDLE)
+        best_effort('xcrun', 'simctl', 'privacy', udid, 'grant', 'location', BUNDLE, timeout=10)
+        best_effort('xcrun', 'simctl', 'location', udid, 'set', '45.4642,9.1900', timeout=10)
+        launch = run('xcrun', 'simctl', 'launch', udid, BUNDLE, timeout=90)
         match = re.search(r':\s*(\d+)', launch)
         if not match:
             raise RuntimeError(f'Launch did not report an app PID: {launch}')
         pid = int(match.group(1))
         time.sleep(15)
         os.kill(pid, 0)
+        best_effort('xcrun', 'simctl', 'status_bar', udid, 'override', '--time', '9:41',
+                    '--batteryState', 'charged', '--batteryLevel', '100', timeout=10)
         if family == 'ipad':
             landscape(udid)
         run('xcrun', 'simctl', 'io', udid, 'screenshot', str(ARTIFACTS / f'{family}.png'), timeout=30)

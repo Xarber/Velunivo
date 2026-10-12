@@ -31,3 +31,7 @@ Sources: [Apple Device Hub interaction controls](https://developer.apple.com/doc
 - Real capture run 38212784963 consumes the already-built 1.0.2 Simulator app; its result is still pending. No native compilation occurred locally.
 
 Further isolation: Device Hub ignores the old -CurrentDeviceUDID argument. Its registered devices URL targets a particular device window on the GUI fallback. Modern capture now stays headless at boot, uses a smaller standard iPad, and clones a shutdown preconfigured runner template when available. Failed clone creation falls back to a fresh device; cleanup never changes the original template. Updated Python suite: 21 tests passed. Expanded AltSource-only galleries remain gated on a fresh baseline screenshot on both families, as requested.
+
+The stable-runner comparison (38214053892) booted and installed successfully (106.6 s / 32.4 s), then failed on the cosmetic status_bar override after 60 s. Status bar and public location setup are now best effort with short timeouts, and cosmetic status-bar work is delayed until the app is alive. App launch/PID survival, actual screenshot capture and iPad landscape dimensions remain required. Python suite: 22 tests passed.
+
+First genuine baseline: run 38214566470, iPhone 18 Pro, fresh image on attempt 1. Downloaded image was visually inspected and showed Velunivo's welcome screen over its rendered map. No historical image was used. iPad result was still pending at this checkpoint.

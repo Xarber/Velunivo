@@ -159,6 +159,16 @@ class SimulatorVerificationTests(unittest.TestCase):
         self.assertNotIn('io', [c[2] for c in calls])
         self.assertEqual(calls[-2:], [('xcrun', 'simctl', 'shutdown', 'owned-device'), ('xcrun', 'simctl', 'delete', 'owned-device')])
 
+    def test_cosmetic_status_bar_failure_does_not_restart_capture(self):
+        def command(*args, **kwargs):
+            if args[2] == 'create': return 'owned-device'
+            if args[2] == 'status_bar': raise subprocess.TimeoutExpired(args, 10)
+            if args[2] == 'launch': return 'app.velunivo.mobile: 1234'
+            return ''
+        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'run', side_effect=command) as commands, patch.object(sim, 'boot_and_install'), patch.object(sim, 'diagnostics'), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill'):
+            sim.capture_once(self.devices(), 'iphone')
+            self.assertTrue(any(c.args[2] == 'io' for c in commands.call_args_list))
+
     def test_success_requires_survival_before_and_after_screenshot(self):
         def command(*args, **kwargs):
             if args[2] == 'create': return 'owned-device'
