@@ -1,0 +1,51 @@
+name: Simulator screenshot diagnostics
+on:
+  workflow_dispatch:
+    inputs:
+      source_run:
+        description: 'Completed build run containing the ios artifact (no compilation)'
+        required: true
+        default: '38207740453'
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: screenshot-diagnostics
+  cancel-in-progress: true
+jobs:
+  inspect:
+    runs-on: xcode-27
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect installed Simulator tools and host capacity
+        run: |
+          ls -la /Applications
+          find /Applications /Library/Developer -name Simulator.app -maxdepth 7 2>/dev/null || true
+          xcode-select -p
+          xcrun simctl help
+          xcrun simctl io help || true
+          xcrun simctl list devices available
+          df -h
+          sysctl hw.memsize hw.ncpu
+          ps -axo pid,pcpu,pmem,comm | sort -k2 -rn | head -20
+      - uses: actions/download-artifact@v4
+        with:
+          name: ios
+          path: artifacts
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.source_run }}
+      - run: ditto -x -k artifacts/Velunivo-simulator.app.zip artifacts
+      - name: Capture iPad without rebuilding
+        timeout-minutes: 8
+        run: python3 scripts/simulator-screenshots.py --family ipad
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshot-diagnostics
+          path: |
+            artifacts/ipad.png
+            artifacts/*-screenshot.json
+            artifacts/*-simulator.log
+            artifacts/*-launch.log
+            artifacts/*-host.log
