@@ -1,3 +1,4 @@
+import {androidAssetLinks,appleSiteAssociation} from '../src/core/appLinks';
 import {createServer} from 'node:http';
 import express from 'express';
 import {ExpressPeerServer} from 'peer';
@@ -11,7 +12,8 @@ export function createWebServer(directory:string){
  // PeerServer is part of this process. Discovery is disabled; it holds signaling only.
  app.use('/peer',ExpressPeerServer(server,{path:'/',proxied:process.env.BEHIND_PROXY==='1',allow_discovery:false,concurrent_limit:250,expire_timeout:30000,corsOptions:{origin:process.env.SHARE_ORIGIN || true}}));
  app.get('/health',(_req,res)=>res.json({web:true,peer:true}));
- app.get('/.well-known/apple-app-site-association',(_req,res)=>{const team=process.env.APPLE_TEAM_ID;if(!team)return res.status(404).end();res.json({applinks:{apps:[],details:[{appID:`${team}.${process.env.APP_IDENTIFIER || 'app.velunivo.mobile'}`,paths:['/share/*']}]}});});
+ app.get('/.well-known/apple-app-site-association',(_req,res)=>{const data=appleSiteAssociation(process.env.APPLE_TEAM_ID||'',process.env.APP_IDENTIFIER);if(!data)return res.status(404).end();res.setHeader('Cache-Control','public, max-age=300');res.json(data);});
+ app.get('/.well-known/assetlinks.json',(_req,res)=>{const data=androidAssetLinks(process.env.ANDROID_CERT_FINGERPRINTS||'',process.env.APP_IDENTIFIER);if(!data)return res.status(404).end();res.setHeader('Cache-Control','public, max-age=300');res.json(data);});
  app.use(express.static(root,{index:false,setHeaders:(res,path)=>{if(path.endsWith('.mjs'))res.setHeader('Content-Type','application/javascript');if(/\.(html|webmanifest)$|\/sw\.js$/.test(path))res.setHeader('Cache-Control','no-cache');}}));
  app.use((req,res)=>{if(req.method!=='GET'||req.path.startsWith('/peer')||req.path.startsWith('/.well-known')||req.path.match(/\.[a-z0-9]+$/i))return res.status(404).end();res.setHeader('Cache-Control','no-cache');res.sendFile(resolve(root,'index.html'));});
  return server;
