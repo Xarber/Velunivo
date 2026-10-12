@@ -1,3 +1,4 @@
+import {nativeSharePayload} from '../core/nativeSharePayload';
 import {Platform,Share} from 'react-native';
 export async function shareLink(url:string,title:string){
  if(Platform.OS==='web'){
@@ -5,5 +6,5 @@ export async function shareLink(url:string,title:string){
   if(navigator.clipboard){await navigator.clipboard.writeText(url);return;}
   throw new Error('Copy the link shown below.');
  }
- await Share.share({title,message:url,url});
+ await Share.share(nativeSharePayload(Platform.OS,url,title));
 }

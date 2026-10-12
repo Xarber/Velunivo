@@ -6,17 +6,17 @@ export function parseSyncPacket(raw:unknown):SyncPacket|null{const x=raw as Sync
 export class DataSyncSession {
  private local=false;private remote=false;private sent=-1;private awaiting=false;private received:string[]=[];private total=0;private ended=false;private applying=false;
  private offer?:Extract<SyncPacket,{type:'offer'}>;
- constructor(private role:'sender'|'receiver',private send:(message:SyncPacket)=>void,private events:{offer(message:Extract<SyncPacket,{type:'offer'}>):void;status(message:string):void;received(text:string,mode:ImportMode):Promise<void>},private data?:{text:string;session:string;mode:ImportMode;summary:string}){}
+ constructor(private role:'sender'|'receiver',private send:(message:SyncPacket)=>void,private events:{offer(message:Extract<SyncPacket,{type:'offer'}>):void;status(message:string):void;received(text:string,mode:ImportMode):Promise<void>;progress?(done:number,total:number):void},private data?:{text:string;session:string;mode:ImportMode;summary:string}){}
  open(){if(this.role==='sender'&&this.data){this.offer={type:'offer',session:this.data.session,mode:this.data.mode,summary:this.data.summary};this.send(this.offer);this.events.offer(this.offer);}}
  approve(){if(!this.offer||this.ended)return;this.local=true;this.send({type:'accept',session:this.offer.session});this.pump();this.events.status('Waiting for both devices to accept.');}
- private pump(){if(this.awaiting||this.role!=='sender'||!this.local||!this.remote||!this.data||this.ended)return;const chunks=Math.ceil(this.data.text.length/SYNC_CHUNK);if(this.sent+1>=chunks)return;this.sent++;this.awaiting=true;this.send({type:'chunk',session:this.data.session,index:this.sent,total:chunks,value:this.data.text.slice(this.sent*SYNC_CHUNK,(this.sent+1)*SYNC_CHUNK)});this.events.status('Transferring data…');}
+ private pump(){if(this.awaiting||this.role!=='sender'||!this.local||!this.remote||!this.data||this.ended)return;const chunks=Math.ceil(this.data.text.length/SYNC_CHUNK);if(this.sent+1>=chunks)return;this.sent++;this.awaiting=true;this.send({type:'chunk',session:this.data.session,index:this.sent,total:chunks,value:this.data.text.slice(this.sent*SYNC_CHUNK,(this.sent+1)*SYNC_CHUNK)});this.events.progress?.(this.sent+1,chunks);this.events.status('Transferring data…');}
  async receive(raw:unknown){const m=parseSyncPacket(raw);if(!m||this.ended)return;if(m.type==='offer'&&this.role==='receiver'&&!this.offer){this.offer=m;this.events.offer(m);return;}if(!this.offer||m.session!==this.offer.session)return;
  if(m.type==='cancel'){this.ended=true;this.events.status('Transfer cancelled.');return;}
  if(m.type==='accept'){this.remote=true;this.pump();return;}
  if(m.type==='ack'&&this.role==='sender'&&this.local&&this.remote&&m.index===this.sent){this.awaiting=false;this.pump();return;}
  if(m.type==='complete'&&this.role==='sender'&&this.local&&this.remote){this.ended=true;this.events.status('Data transferred.');return;}
  if(m.type!=='chunk'||this.role!=='receiver'||!this.local||!this.remote||this.applying)return;
- if(m.index!==this.received.length||(this.total&&this.total!==m.total)){this.cancel();return;}this.total=m.total;this.received.push(m.value);if(this.received.reduce((n,s)=>n+s.length,0)>MAX_BACKUP){this.cancel();return;}
+ if(m.index!==this.received.length||(this.total&&this.total!==m.total)){this.cancel();return;}this.total=m.total;this.received.push(m.value);this.events.progress?.(this.received.length,this.total);if(this.received.reduce((n,s)=>n+s.length,0)>MAX_BACKUP){this.cancel();return;}
  if(this.received.length===this.total){this.applying=true;try{await this.events.received(this.received.join(''),this.offer.mode);this.send({type:'complete',session:m.session});this.ended=true;this.events.status('Data imported.');}catch{this.cancel();this.events.status('Import failed. Check your backup before retrying.');}this.received=[];}else this.send({type:'ack',session:m.session,index:m.index});
  }
  cancel(){if(this.offer&&!this.ended)this.send({type:'cancel',session:this.offer.session});this.ended=true;this.received=[];this.events.status('Transfer cancelled.');}

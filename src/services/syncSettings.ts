@@ -1,0 +1,5 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';import {SettingEdits,SettingValue,validateSettingEdits} from '../core/syncSettings';
+export const SETTINGS_EDIT_KEY='sync-setting-edits-v1';let queue:Promise<unknown>=Promise.resolve();
+export async function readSettingEdits(){await queue;try{return validateSettingEdits(JSON.parse(await AsyncStorage.getItem(SETTINGS_EDIT_KEY)||'{}'));}catch{return {};}}
+export function recordSettingEdits(values:Record<string,SettingValue>){const now=Date.now();queue=queue.catch(()=>{}).then(async()=>{let edits:SettingEdits={};try{edits=validateSettingEdits(JSON.parse(await AsyncStorage.getItem(SETTINGS_EDIT_KEY)||'{}'));}catch{}for(const [key,value] of Object.entries(values))edits[key]={value,modifiedAt:now,configured:true};await AsyncStorage.setItem(SETTINGS_EDIT_KEY,JSON.stringify(validateSettingEdits(edits)));});return queue;}
+export function saveSettingEdits(edits:SettingEdits){queue=queue.catch(()=>{}).then(()=>AsyncStorage.setItem(SETTINGS_EDIT_KEY,JSON.stringify(validateSettingEdits(edits))));return queue;}
