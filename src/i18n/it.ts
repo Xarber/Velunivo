@@ -581,4 +581,6 @@ Object.assign(italian,{
 "Map points show saved names or addresses.":"I punti sulla mappa mostrano i nomi salvati o gli indirizzi.",
 "Search that finishes":"Ricerche senza attese infinite",
 "Enter keeps results visible and searches time out safely.":"Invio mantiene visibili i risultati e le ricerche hanno un tempo limite.",
+"iPad controls within reach":"Controlli più comodi su iPad",
+"Ride controls stay at the bottom left of the map.":"I controlli del viaggio restano in basso a sinistra sulla mappa.",
 });
