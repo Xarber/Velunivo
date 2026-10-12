@@ -1281,5 +1281,15 @@
   "Ride together": "Gemeinsam fahren",
   "Share a route and live locations with up to eight riders.": "Teile Route und Live-Standorte mit bis zu acht Mitfahrern.",
   "Talk as you ride": "Unterwegs sprechen",
-  "Optional audio-only group calls, with separate microphone and audio controls.": "Optionale Gruppenanrufe nur mit Audio, mit getrennten Mikrofon- und Tonsteuerungen."
+  "Optional audio-only group calls, with separate microphone and audio controls.": "Optionale Gruppenanrufe nur mit Audio, mit getrennten Mikrofon- und Tonsteuerungen.",
+  "Video sharing": "Videofreigabe",
+  "Enable camera": "Kamera einschalten",
+  "Disable camera": "Kamera ausschalten",
+  "Camera unavailable. Check camera permission.": "Kamera nicht verfügbar. Prüfe die Kameraberechtigung.",
+  "Video requires Developer Mode, map pins and voice chat on both devices. Only opted-in riders receive your camera. Turning off camera stops capture.": "Video erfordert Entwicklermodus, Kartenmarkierungen und Sprachchat auf beiden Geräten. Nur zustimmende Mitfahrer empfangen deine Kamera. Ausschalten beendet die Aufnahme.",
+  "Peer payload is too large": "Die Nachricht ist zu groß",
+  "Join and follow": "Beitreten und folgen",
+  "Group routes load automatically, with clearer people pins.": "Gruppenrouten werden automatisch geladen, mit besser erkennbaren Mitfahrern auf der Karte.",
+  "Native peer connections": "Native Geräteverbindungen",
+  "Native WebRTC replaces hidden browser connections for groups, sharing and sync.": "Natives WebRTC ersetzt versteckte Browser-Verbindungen für Gruppen, Freigaben und Synchronisierung."
 }

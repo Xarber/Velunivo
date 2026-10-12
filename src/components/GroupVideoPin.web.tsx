@@ -1,0 +1,2 @@
+import React,{useEffect,useRef} from 'react';import {VideoFeed} from '../groups/voice';
+export default function GroupVideoPin({feed}:{feed:VideoFeed}){const ref=useRef<HTMLVideoElement>(null);useEffect(()=>{const el=ref.current;if(!el||!feed.stream)return;el.srcObject=feed.stream;void el.play().catch(()=>{});return()=>{el.srcObject=null;};},[feed.stream]);return <video ref={ref} muted autoPlay playsInline style={{width:36,height:36,objectFit:'cover'}}/>;}

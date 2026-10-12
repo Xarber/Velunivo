@@ -1,6 +1,7 @@
 import {createViewerPresence} from './viewerPresence';
-import {Peer} from 'peerjs';
-import type {DataConnection} from 'peerjs';
+import type {Peer,DataConnection} from 'peerjs';
+import {loadPeerConstructor} from './peerConstructor';
+
 import {clientPeerId} from './peerIdentity';
 import {peerOptions} from './peerOptions';
 import { parseTripMessage, PIN_PATTERN, TripMessage } from './model';
@@ -55,5 +56,6 @@ export class PeerSession {
 export async function createSession(role:'host'|'viewer',pin:string,events:SessionEvents,viewerId?:string,options:typeof peerOptions|{debug:0}=peerOptions){
   if(!PIN_PATTERN.test(pin))throw new Error('Invalid sharing code');
 
-  return new PeerSession(role==='host'?new Peer(`velunivo-${pin}`,options):new Peer(clientPeerId('viewer',crypto.getRandomValues(new Uint8Array(16))),options),role,pin,events,viewerId);
+  const Peer=await loadPeerConstructor();const bytes=role==='viewer'?(typeof crypto!=='undefined'&&crypto.getRandomValues?crypto.getRandomValues(new Uint8Array(16)):await (await import('expo-crypto')).getRandomBytesAsync(16)):new Uint8Array();
+  return new PeerSession(role==='host'?new Peer(`velunivo-${pin}`,options):new Peer(clientPeerId('viewer',bytes),options),role,pin,events,viewerId);
 }

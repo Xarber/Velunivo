@@ -1,17 +1,17 @@
 import {Coord,Route} from '../core/types';
 import {validCoordinate} from '../sharing/model';
 export const GROUP_LIMIT=8, MEMBER_LEASE=60000;
-export interface RiderProfile {id:string;name:string;photo?:string;voice:boolean;}
+export interface RiderProfile {id:string;name:string;photo?:string;video?:boolean;camera?:boolean;voice:boolean;}
 export interface GroupMember extends RiderProfile {order:number;position:Coord|null;updatedAt:number;}
 export interface GroupSnapshot {code:string;leader:string;revision:number;members:GroupMember[];banned:string[];route:Route|null;}
 export type VoiceSignal={type:'offer'|'answer';sdp:string}|{type:'ice';candidate:{candidate:string;sdpMid:string|null;sdpMLineIndex:number|null}};
-export type GroupMessage={type:'hello';profile:RiderProfile}|{type:'snapshot';snapshot:GroupSnapshot}|{type:'presence';profile:RiderProfile;position:Coord|null;at:number}|{type:'leave';id:string}|{type:'kick';id:string}|{type:'signal';signal:VoiceSignal};
+export type GroupMessage={type:'hello';profile:RiderProfile}|{type:'snapshot';snapshot:GroupSnapshot}|{type:'presence';profile:RiderProfile;position:Coord|null;at:number}|{type:'admitted';id:string}|{type:'leave';id:string}|{type:'kick';id:string}|{type:'signal';signal:VoiceSignal};
 export const GROUP_CODE=/^[A-Z0-9]{8}$/;
 export const RIDER_ID=/^[a-f0-9]{32}$/;
 export function formatGroupCode(value:string){const code=value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,8);return code.length>4?code.slice(0,4)+'-'+code.slice(4):code;}
 export const compactGroupCode=(value:string)=>value.toUpperCase().replace(/-/g,'');
 export const riderInitials=(name:string)=>name.trim().split(/\s+/).slice(0,2).map(s=>Array.from(s)[0]).join('').toUpperCase()||'?';
-export function readProfile(raw:unknown):RiderProfile|null{const p=raw as RiderProfile;if(!p||!RIDER_ID.test(p.id)||typeof p.name!=='string'||!p.name.trim()||p.name.length>40||typeof p.voice!=='boolean'||p.photo!=null&&(typeof p.photo!=='string'||!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(p.photo)||p.photo.length>40000))return null;return {id:p.id,name:p.name.trim(),voice:p.voice,...(p.photo?{photo:p.photo}:{})};}
+export function readProfile(raw:unknown):RiderProfile|null{const p=raw as RiderProfile;if(!p||!RIDER_ID.test(p.id)||typeof p.name!=='string'||!p.name.trim()||p.name.length>40||typeof p.voice!=='boolean'||p.photo!=null&&(typeof p.photo!=='string'||!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(p.photo)||p.photo.length>40000))return null;return {id:p.id,name:p.name.trim(),voice:p.voice,video:p.video===true,camera:p.camera===true,...(p.photo?{photo:p.photo}:{})};}
 export function groupRoute(route:Route):Route|null{
  if(!route||typeof route!=='object'||!Array.isArray(route.coordinates)||route.coordinates.length<2||route.coordinates.length>20000||!route.coordinates.every(validCoordinate)||!Array.isArray(route.steps)||route.steps.length>2000)return null;
  const steps=route.steps.filter(s=>s&&typeof s.text==='string'&&Number.isInteger(s.index)&&s.index>=0&&s.index<route.coordinates.length&&Number.isFinite(s.distance)&&s.distance>=0&&Number.isFinite(s.sign)).map(s=>({text:s.text.slice(0,300),index:s.index,distance:s.distance,sign:s.sign}));
@@ -29,7 +29,7 @@ export function readGroupMessage(raw:unknown):GroupMessage|null{
  if(m.type==='hello'){const profile=readProfile(m.profile);return profile?{type:'hello',profile}:null;}
  if(m.type==='snapshot'){const snapshot=readSnapshot(m.snapshot);return snapshot?{type:'snapshot',snapshot}:null;}
  if(m.type==='presence'){const profile=readProfile(m.profile);return profile&&(m.position===null||validCoordinate(m.position))&&Number.isFinite(m.at)&&m.at>=0?{type:'presence',profile,position:m.position,at:m.at}:null;}
- if((m.type==='leave'||m.type==='kick')&&RIDER_ID.test(m.id))return {type:m.type,id:m.id};
+ if((m.type==='leave'||m.type==='kick'||m.type==='admitted')&&RIDER_ID.test(m.id))return {type:m.type,id:m.id};
  if(m.type==='signal'){const s=m.signal;if(!s||typeof s!=='object')return null;if((s.type==='offer'||s.type==='answer')&&typeof s.sdp==='string'&&s.sdp.length<=100000)return {type:'signal',signal:{type:s.type,sdp:s.sdp}};if(s.type==='ice'&&s.candidate&&typeof s.candidate.candidate==='string'&&s.candidate.candidate.length<4000&&(s.candidate.sdpMid===null||typeof s.candidate.sdpMid==='string'&&s.candidate.sdpMid.length<100)&&(s.candidate.sdpMLineIndex===null||Number.isInteger(s.candidate.sdpMLineIndex)))return {type:'signal',signal:s};}
  return null;
 }

@@ -6,6 +6,7 @@ export const welcomePages=[
  {icon:'shield-checkmark-outline',title:'You stay in control',text:'Check road signs and local rules. Your records stay on your device until you export or share them.'},
 ] as const;
 export const releaseHighlights=[
+ {version:'1.0.9',items:[{icon:'people-outline',title:'Join and follow',text:'Group routes load automatically, with clearer people pins.'},{icon:'link-outline',title:'Native peer connections',text:'Native WebRTC replaces hidden browser connections for groups, sharing and sync.'}]},
  {version:'1.0.8',items:[{icon:'people-outline',title:'Ride together',text:'Share a route and live locations with up to eight riders.'},{icon:'headset-outline',title:'Talk as you ride',text:'Optional audio-only group calls, with separate microphone and audio controls.'}]},
  {version:'1.0.7',items:[{icon:'flag-outline',title:'Arrive and relax',text:'Navigation and recording stop at your destination.'},{icon:'battery-half-outline',title:'Range learned from real rides',text:'Bluetooth battery data improves past rides and updates range after ten consistent rides.'},{icon:'location-outline',title:'Locations in progress',text:'See when coordinates are becoming an address.'}]},
  {version:'1.0.6',items:[{icon:'battery-half-outline',title:'Clear battery age',text:'Android Live Updates keep vehicle battery and mark older readings.'}]},

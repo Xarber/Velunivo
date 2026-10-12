@@ -1,0 +1,3 @@
+/** Tiny map pins do not need a full-size video call. Per recipient, target <=80 kbps. */
+export const PIN_VIDEO={width:96,height:96,frameRate:6,bitrate:80000} as const;
+export async function limitPinVideo<T extends {encodings:{maxBitrate?:number|null;maxFramerate?:number|null}[]}>(sender:{getParameters():T;setParameters(parameters:T):Promise<unknown>}){const parameters=sender.getParameters();if(!parameters.encodings.length)return;for(const encoding of parameters.encodings){encoding.maxBitrate=PIN_VIDEO.bitrate;encoding.maxFramerate=PIN_VIDEO.frameRate;}try{await sender.setParameters(parameters);}catch{/* Small capture constraints remain the fallback on unsupported platforms. */}}

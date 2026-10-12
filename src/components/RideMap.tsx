@@ -37,7 +37,7 @@ function DeviceMap({ routes, selected, position, follow, onPick, traffic, startP
     {(startPoint || selected?.coordinates[0]) && <Marker coordinate={point(startPoint || selected!.coordinates[0])} title={t("Start")} pinColor="#007F6D" />}
     {(endPoint || selected?.coordinates.at(-1)) && <Marker coordinate={point(endPoint || selected!.coordinates.at(-1)!)} title={t("Destination")} />}
     {(planningStops??selected?.waypoints??[]).filter(s=>s.coordinate.every(Number.isFinite)).map((stop,i)=><Marker key={`stop-${i}`} coordinate={point(stop.coordinate)} title={`${t(`Stop ${i+1}`)} · ${stop.label}`} zIndex={100}><View style={{width:30,height:30,alignItems:'center',justifyContent:'center',backgroundColor:'#007F6D',borderWidth:3,borderColor:'#FFFFFF',borderRadius:15}}><Text style={{color:'#FFFFFF',fontWeight:'800'}}>{i+1}</Text></View></Marker>)}
-    {groupRiders.filter(r=>r.position).map(r=><Marker key={r.id} coordinate={point(r.position!)} title={r.name} zIndex={900} anchor={{x:.5,y:.5}}><GroupPin rider={r}/></Marker>)}
+    {groupRiders.filter(r=>r.position).map(r=><Marker key={r.id} coordinate={point(r.position!)} title={r.name} zIndex={900} anchor={{x:.5,y:1}}><GroupPin rider={r}/></Marker>)}
     {position && <Marker coordinate={point(position)} title={t(positionLabel || "Your position")} zIndex={1000} flat anchor={{ x: .5, y: .5 }}><PositionArrow navigating={navigating} rotation={heading-cameraBearing} /></Marker>}
     {traffic && serverUrl && <UrlTile urlTemplate={`${serverUrl}/traffic/{z}/{x}/{y}.png`} tileSize={256} zIndex={1} />}
   </MapView>;
