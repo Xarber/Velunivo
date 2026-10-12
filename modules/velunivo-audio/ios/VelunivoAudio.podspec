@@ -10,6 +10,7 @@ Pod::Spec.new do |s|
   s.source = { :git => 'https://github.com/Xarber/Velunivo' }
   s.static_framework = true
   s.dependency 'ExpoModulesCore'
+  s.dependency 'JitsiWebRTC', '~> 124.0.0'
   s.source_files = '**/*.swift'
   s.swift_version = '5.9'
 end

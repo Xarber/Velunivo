@@ -1,0 +1,3 @@
+import {GroupSession,GroupPeer} from './GroupSession';import {GroupSnapshot,RiderProfile} from './model';
+declare global {interface Window {Peer:new(id:string,options:unknown)=>GroupPeer;createVelunivoGroup:(code:string,profile:RiderProfile,options:unknown,seed:GroupSnapshot|null,create:boolean,emit:(type:string,value:unknown)=>void)=>GroupSession;}}
+window.createVelunivoGroup=(code,profile,options,seed,create,emit)=>new GroupSession(code,profile,id=>new window.Peer(id,options),{snapshot:s=>emit('snapshot',s),status:s=>emit('status',s),signal:(id,signal)=>emit('signal',{id,signal}),ended:s=>emit('ended',s)},seed,create);

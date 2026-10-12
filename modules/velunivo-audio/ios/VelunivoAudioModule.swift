@@ -1,6 +1,8 @@
 import AVFoundation
 import ExpoModulesCore
 
+private enum GroupVoiceAudio { static var active = false; static var owner: String? }
+
 // One owned session. Never leave duckOthers active between utterances.
 private final class NavigationSpeech: NSObject, AVSpeechSynthesizerDelegate {
   private let synthesizer = AVSpeechSynthesizer()
@@ -23,6 +25,7 @@ private final class NavigationSpeech: NSObject, AVSpeechSynthesizerDelegate {
   }
   private func releaseSession(retry: Int = 0) {
     guard ownsSession else { return }
+    if GroupVoiceAudio.active { ownsSession = false; return }
     do {
       try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
       ownsSession = false
@@ -39,7 +42,7 @@ private final class NavigationSpeech: NSObject, AVSpeechSynthesizerDelegate {
     stop()
     let session = AVAudioSession.sharedInstance()
     do {
-      try session.setCategory(.playback, mode: .voicePrompt, options: [.duckOthers, .mixWithOthers])
+      if GroupVoiceAudio.active { try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .allowBluetoothA2DP, .defaultToSpeaker, .mixWithOthers]) } else { try session.setCategory(.playback, mode: .voicePrompt, options: [.duckOthers, .mixWithOthers]) }
       try session.setActive(true); ownsSession = true
       let utterance = AVSpeechUtterance(string: text)
       let family = language.components(separatedBy: "-").first ?? language
@@ -70,6 +73,25 @@ public final class VelunivoAudioModule: Module {
   private var speech: NavigationSpeech?
   public func definition() -> ModuleDefinition {
     Name("VelunivoAudio")
+    Events("voiceCallEnded", "voiceCallMuted")
+    AsyncFunction("setGroupVoiceActive") { (active: Bool, owner: String) in
+      let session = AVAudioSession.sharedInstance()
+      if active {
+        try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .allowBluetoothA2DP, .defaultToSpeaker, .mixWithOthers])
+        try session.setActive(true)
+        GroupVoiceAudio.owner = owner
+        GroupVoiceAudio.active = true
+        VelunivoGroupCall.shared.ended = { [weak self] in self?.sendEvent("voiceCallEnded", [:]) }
+        VelunivoGroupCall.shared.muted = { [weak self] muted in self?.sendEvent("voiceCallMuted", ["muted": muted]) }
+        VelunivoGroupCall.shared.start()
+      } else {
+        guard GroupVoiceAudio.owner == owner else { return }
+        GroupVoiceAudio.owner = nil
+        VelunivoGroupCall.shared.stop()
+        GroupVoiceAudio.active = false
+        try session.setActive(false, options: .notifyOthersOnDeactivation)
+      }
+    }.runOnQueue(.main)
     AsyncFunction("speak") { (text: String, volume: Double, language: String, identifier: String) in
       if self.speech == nil { self.speech = NavigationSpeech() }
       try self.speech?.speak(text, volume: volume, language: language, identifier: identifier)

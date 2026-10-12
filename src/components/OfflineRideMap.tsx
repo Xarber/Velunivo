@@ -1,3 +1,4 @@
+import GroupPin from './GroupPin';
 import {MapAreaSelection} from '../core/mapArea';
 import {useMapArea} from '../services/useMapArea';
 import {View} from 'react-native';
@@ -12,8 +13,8 @@ import { routeBounds } from '../core/geo';
 import { serverUrl } from '../services/api';
 import PositionArrow from './PositionArrow';
 import { mapStyle } from './mapConfig';
-export interface MapProps { areaSelection?:MapAreaSelection; offlineStyle?: string; transit?: boolean; trace?: Coord[][]; completedMeters?: number; overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; positionLabel?:string; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; planningStops?:import('../core/itinerary').RouteStop[]; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
-export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, offlineStyle, transit, positionLabel, planningStops, areaSelection }: MapProps) {
+export interface MapProps {groupRiders?:import('../groups/model').GroupMember[]; areaSelection?:MapAreaSelection; offlineStyle?: string; transit?: boolean; trace?: Coord[][]; completedMeters?: number; overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; positionLabel?:string; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; planningStops?:import('../core/itinerary').RouteStop[]; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
+export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, offlineStyle, transit, positionLabel, planningStops, areaSelection,groupRiders=[] }: MapProps) {
   const camera = useRef<CameraRef>(null);
   const map = useRef<MapRef>(null);
   const [ready, setReady] = useState(false);
@@ -35,6 +36,7 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
     {selected && <GeoJSONSource id="endpoints" data={{ type: 'FeatureCollection', features: [selected.coordinates[0], selected.coordinates.at(-1)!].map((p, i) => ({ type: 'Feature' as const, properties: { end: i }, geometry: { type: 'Point' as const, coordinates: p } })) }}><Layer type="circle" paint={{ 'circle-radius': 7, 'circle-color': '#007F6D', 'circle-stroke-width': 3, 'circle-stroke-color': '#FFFFFF' }} /></GeoJSONSource>}
     {(startPoint || endPoint) && <GeoJSONSource id="planning" data={{ type: 'FeatureCollection', features: [startPoint, endPoint].filter((p): p is Coord => !!p).map(p => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: p } })) }}><Layer type="circle" paint={{ 'circle-radius': 7, 'circle-color': '#007F6D', 'circle-stroke-width': 3, 'circle-stroke-color': '#FFFFFF' }} /></GeoJSONSource>}
     {(planningStops??selected?.waypoints??[]).filter(s=>s.coordinate.every(Number.isFinite)).map((stop,i)=><Marker key={`stop-${i}`} id={`stop-${i}`} lngLat={stop.coordinate} accessibilityLabel={`${t(`Stop ${i+1}`)} · ${stop.label}`}><View style={{width:30,height:30,alignItems:'center',justifyContent:'center',backgroundColor:'#007F6D',borderWidth:3,borderColor:'#FFFFFF',borderRadius:15}}><Text style={{color:'#FFFFFF',fontWeight:'800'}}>{i+1}</Text></View></Marker>)}
+    {groupRiders.filter(r=>r.position).map(r=><Marker key={r.id} id={`group-${r.id}`} lngLat={r.position!} accessibilityLabel={r.name}><GroupPin rider={r}/></Marker>)}
     {position && <Marker id="navigation-position" lngLat={position} accessibilityLabel={t(positionLabel || 'Current position')}><PositionArrow navigating={navigating} rotation={follow ? 0 : heading} /></Marker>}
   </Map>;
 }

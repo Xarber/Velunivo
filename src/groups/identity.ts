@@ -1,0 +1,3 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';import * as Crypto from 'expo-crypto';
+/** Room-scoped identity allows a reconnecting original leader to reclaim their join order. */
+export async function groupIdentity(code:string){const key='group-rider-v1:'+code;try{const raw=JSON.parse(await AsyncStorage.getItem(key)||'null');if(raw&&/^[a-f0-9]{32}$/.test(raw.id)&&Date.now()-raw.at<12*60*60*1000)return raw.id as string;}catch{}const bytes=await Crypto.getRandomBytesAsync(16),id=Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');await AsyncStorage.setItem(key,JSON.stringify({id,at:Date.now()}));return id;}

@@ -1,8 +1,9 @@
 {
   "name": "velunivo",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "main": "index.js",
   "dependencies": {
+    "@config-plugins/react-native-webrtc": "^15.0.2",
     "@expo/ui": "~57.0.22",
     "@expo/vector-icons": "^15.0.2",
     "@maplibre/maplibre-react-native": "^11.5.0",
@@ -56,12 +57,14 @@
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
     "react-native-web": "^0.21.2",
+    "react-native-webrtc": "^124.0.8",
     "react-native-webview": "13.16.1",
     "react-native-worklets": "0.10.1"
   },
   "devDependencies": {
     "@types/geojson": "^7946.0.16",
     "@types/react": "~19.2.2",
+    "esbuild": "^0.28.2",
     "sharp": "^0.35.5",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3"
@@ -75,7 +78,7 @@
     "test": "tsx --test tests/*.test.ts tests/*.test.mjs",
     "server": "tsx server/index.ts",
     "lint": "expo lint",
-    "postinstall": "node scripts/patch-widgets.mjs && node scripts/copy-map-worker.mjs && node scripts/generate-peer-runtime.mjs",
+    "postinstall": "node scripts/patch-widgets.mjs && node scripts/copy-map-worker.mjs && node scripts/generate-peer-runtime.mjs && node scripts/generate-group-runtime.mjs",
     "web:preview": "node scripts/generate-pwa.mjs && expo export --platform web --output-dir dist && node scripts/build-pwa.mjs dist && python3 scripts/serve-web.py",
     "brand:generate": "node scripts/generate-brand.mjs",
     "pwa:generate": "node scripts/generate-pwa.mjs",

@@ -1,0 +1,3 @@
+import {useGroupClock} from '../groups/useGroupClock';
+import React from 'react';import {View} from 'react-native';import Text from './LocalizedText';import {GroupMember,riderInitials} from '../groups/model';
+export default function GroupPin({rider}:{rider:GroupMember}){const now=useGroupClock();return <View accessibilityLabel={rider.name} style={{width:28,height:28,borderRadius:14,backgroundColor:'#007F6D',borderWidth:2,borderColor:'#FFFFFF',alignItems:'center',justifyContent:'center',opacity:now-rider.updatedAt>60000?.45:1}}><Text translate={false} style={{color:'#FFFFFF',fontSize:11,fontWeight:'800'}}>{riderInitials(rider.name)}</Text></View>;}

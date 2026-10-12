@@ -127,3 +127,7 @@ Library now previews up to three Saved Places, Saved Routes and Recorded Rides i
 **Languages:** Settings → General → App language offers System (default), English, Italian, Spanish, French, German and Portuguese. New routes request directions in that language. Settings → Navigation & audio offers installed speech voices and a test button; Automatic uses the system default unless an explicitly higher-quality installed voice is available. Siri voices depend on OS exposure. See [localization and speech requirements](docs/LOCALIZATION.md).
 
 Device backup and account-free transfers are available in Settings → General → Data transfer. See [portable data and transfer details](docs/DATA_TRANSFER.md) for consent, stable-ID merging, server configuration and device-testing limits. General also replays the welcome tour and opens the concise release changelog.
+
+### Group riding (1.0.8)
+
+Share the same route and rider locations with up to eight participants. Optional audio-only calls include microphone and incoming-audio mute controls; recording groups save only your own path. Voice remains off until enabled, and the system End Call action disables the saved voice preference. Native calls require a new build and physical-device validation. See [Group riding and validation](docs/GROUP-RIDING.md).

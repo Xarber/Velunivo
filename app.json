@@ -2,7 +2,7 @@
   "expo": {
     "name": "Velunivo",
     "slug": "velunivo",
-    "version": "1.0.7",
+    "version": "1.0.8",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -78,9 +78,9 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Choose a vehicle picture from your photo library. Pictures stay on your device.",
+          "photosPermission": "Choose vehicle or rider profile pictures. Rider pictures are shared only when joining a group.",
           "cameraPermission": "Take a picture for your vehicle. Pictures stay on your device.",
-          "microphonePermission": false
+          "microphonePermission": "Use the microphone for optional group ride voice chat."
         }
       ],
       [

@@ -1,3 +1,4 @@
+import GroupProfileSettings from './GroupProfileSettings';
 import { goBack } from '../services/navigation';
 import DeveloperTools from './DeveloperTools';
 import {clearAppData} from '../services/clearAppData';
@@ -44,6 +45,7 @@ export default function SettingsScreen({section}:{section?:string}) {
     {section==='general' && card(<><Text style={{color:p.text,fontWeight:'700',fontSize:18}}>App language</Text>{(['system',...languages] as const).map(value=><Button key={value} title={t(value==='system'?'System':languageNames[value])} icon={language.choice===value?'checkmark-circle':'ellipse-outline'} secondary={language.choice!==value} onPress={()=>language.choose(value)} />)}<Text style={{color:p.muted}}>Follow your device language.</Text></>)}
     {section==='navigation' && <VoiceSettings />}
     {section==='general'&&card(<><Button title={t('Show welcome tour')} icon="sparkles-outline" secondary onPress={()=>showIntroduction('welcome')}/><Button title={t('What’s new')} icon="gift-outline" secondary onPress={()=>router.push('/settings/whats-new')}/><Button title={t('Data transfer')} icon="swap-horizontal-outline" secondary disabled={vehicleLocked} onPress={()=>router.push('/settings/data')}/></>)}
+    {section==='group-riding'&&<GroupProfileSettings/>}
     {section==='bluetooth' && <BluetoothSettings />}
     {developer && <><DeveloperTools/><ActivityDiagnostics developerMode rideActive={vehicleLocked} />{card(<><Button title={t('Clear all app data')} icon="trash-outline" secondary disabled={vehicleLocked||clearing} onPress={()=>setClearConfirm(true)}/>{clearConfirm&&<><Text style={{color:p.muted}}>Delete vehicles, places, routes, recordings, Bluetooth credentials, keys and downloads from this device?</Text><Button title={t('Delete all data')} icon="trash-outline" disabled={vehicleLocked||clearing} onPress={()=>{setClearing(true);void clearAppData().then(()=>router.replace('/')).catch(e=>{setMapStatus(e.message);setClearing(false);});}}/><Button title={t('Cancel')} secondary onPress={()=>setClearConfirm(false)}/></>}{!!mapStatus&&<Text style={{color:p.muted}}>{mapStatus}</Text>}</>)}</>}{section && !group && !developer && <Text style={{color:p.muted}}>These options are unavailable.</Text>}
   </ScrollView></SafeAreaView>;
