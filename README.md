@@ -97,7 +97,7 @@ Global voice, motion and recording preferences live in Settings. Ride controls o
 
 ### Learned ETA, places and navigation (0.1.13)
 
-After three qualifying completed rides with the same vehicle and limits, route estimates can use its observed pace, including stops. Saved Places, Saved Routes and Recorded Rides have separate Library menus. Start again plans alternatives between the recorded endpoints without starting navigation. Normal sharing exports GPX; tap the app version at the bottom of Settings to reveal Developer Mode, which enables JSON export and ride simulation.
+After three qualifying completed rides with the same vehicle and limits, route estimates can use its observed pace, including stops. Saved Places, Saved Routes and Recorded Rides have separate Library menus. Start again plans alternatives between the recorded endpoints without starting navigation. Normal sharing exports GPX; tap the app version at the bottom of Settings to reveal Developer Mode, then open Developer Options for JSON export, ride/telemetry simulation and Live Activity diagnostics.
 
 Turn cards use readable metre/kilometre or feet/mile distances; swipe down on the active turn banner to browse upcoming directions. Native iOS builds include audio-session cleanup and optional Live Activities/Dynamic Island guidance. Live Activities need a registered widget extension and may be unavailable in LiveContainer. Transit labels/rail overlays and optional current traffic are map previews, not public transport routing or traffic-based ETA. See [0.1.13 setup](docs/SETUP.md#learned-eta-places-and-native-features-0113).
 
@@ -113,7 +113,7 @@ Open **Library → Recorded Rides → Record trip**, select your vehicle and sta
 
 Road limits are optional online OpenStreetMap lookups; your recording position is sent to Overpass at most once every 30 seconds. Missing/ambiguous data shows **Limit unknown** and never prevents recording. Your vehicle riding limit is displayed separately. Follow posted signs.
 
-Developer tools are hidden: tap the Settings version three times in under three seconds, enable Developer Mode, then open **Developer Options** for Live Activity installation checks.
+Developer tools are hidden: tap the Settings version three times in under three seconds, enable Developer Mode, then open **Developer Options** for ride simulation, vehicle telemetry simulation, recorded JSON exports, Live Activity tests and confirmed data reset. All debug action controls are in this submenu.
 
 ### Bluetooth vehicle telemetry (0.1.23)
 

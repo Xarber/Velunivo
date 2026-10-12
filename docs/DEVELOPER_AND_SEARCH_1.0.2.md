@@ -25,3 +25,9 @@ Enter previously blurred the input, invalidated the request generation, and coul
 ## Hosting note
 
 The 1.0.1 hosted smoke test caught stale Expo Router screen modules in a web export using shared dependency/cache paths. A clean server-side export corrected it, then hosted drag/search, Library stop pins/directions and map-picked naming checks passed. Future manual exports must clear Metro's cache or use a clean GitHub web artifact; seeing a new version string alone is insufficient evidence of a current screen bundle. Previous immutable deployments remain available for rollback; the running PeerServer does not need a software change or restart for these client features.
+
+## Publication verification
+
+Unsigned app commit `8aa3cb2` and documentation `5cd9ec4` were pushed. Previous release run 38206435416 was force-cancelled before starting [1.0.2 run 38207740453](https://github.com/Xarber/Velunivo/actions/runs/38207740453). Preparation and web jobs passed; iOS/Android were still compiling remotely at this check.
+
+The hosted app uses a clean server-side web export of 5cd9ec46ff9066c1093a9a0f94f5d18b69d6eb7b under the existing immutable release layout. Prior deployment is retained in rollback-1.0.2-web-target.txt; the PeerServer process was not restarted. Nginx/service health and hosted headless Enter/reverse/developer simulation checks passed. A live key-free Photon reverse lookup at a public Milan test point returned Via Broletto 44, Milano. No user location or personal data was sent. The GitHub build and hosting use separate remote environments; no native compile ran locally.
