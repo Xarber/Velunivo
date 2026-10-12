@@ -10,7 +10,7 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: screenshot-diagnostics
+  group: screenshot-inventory
   cancel-in-progress: true
 jobs:
   inspect:
@@ -31,12 +31,14 @@ jobs:
           sysctl hw.memsize hw.ncpu
           ps -axo pid,pcpu,pmem,comm | sort -k2 -rn | head -20
       - uses: actions/download-artifact@v4
+        if: false
         with:
           name: ios
           path: artifacts
           github-token: ${{ github.token }}
           run-id: ${{ inputs.source_run }}
-      - run: ditto -x -k artifacts/Velunivo-simulator.app.zip artifacts
+      - if: false
+        run: ditto -x -k artifacts/Velunivo-simulator.app.zip artifacts
       - name: Capture iPad without rebuilding
         if: false # Inventory first; enable after identifying the new Device Hub controls.
         timeout-minutes: 8

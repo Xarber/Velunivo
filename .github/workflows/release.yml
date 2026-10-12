@@ -159,7 +159,7 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           cd android
-          ./gradlew assembleRelease --build-cache --no-daemon --max-workers=2
+          ./gradlew assembleRelease --build-cache --no-daemon --max-workers="$(nproc)"
       - run: |
           mkdir -p artifacts
           cp android/app/build/outputs/apk/release/app-release.apk artifacts/Velunivo.apk
@@ -174,7 +174,7 @@ jobs:
     runs-on: xcode-27
     env:
       CCACHE_DIR: ${{ github.workspace }}/.velunivo-ccache
-      CCACHE_MAXSIZE: 1G
+      CCACHE_MAXSIZE: 2G
       CCACHE_COMPILERCHECK: content
       CCACHE_BASEDIR: ${{ github.workspace }}
       APP_VERSION: ${{ needs.prepare.outputs.version }}
@@ -231,7 +231,7 @@ jobs:
       - name: Archive iPhone app without signing
         run: |
           mkdir -p artifacts
-          xcodebuild -workspace ios/Velunivo.xcworkspace -scheme Velunivo -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -archivePath "$PWD/artifacts/Velunivo.xcarchive" archive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+          xcodebuild -workspace ios/Velunivo.xcworkspace -scheme Velunivo -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -archivePath "$PWD/artifacts/Velunivo.xcarchive" archive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CCACHE_DIR="$CCACHE_DIR" CCACHE_MAXSIZE="$CCACHE_MAXSIZE" CCACHE_BASEDIR="$CCACHE_BASEDIR" CCACHE_COMPILERCHECK="$CCACHE_COMPILERCHECK"
           mkdir -p artifacts/Payload
           cp -R artifacts/Velunivo.xcarchive/Products/Applications/Velunivo.app artifacts/Payload/
           (cd artifacts && zip -qry Velunivo.ipa Payload)
@@ -244,11 +244,6 @@ jobs:
           path: artifacts/Velunivo.ipa
           if-no-files-found: error
           retention-days: 1
-      - name: Build Apple Silicon Simulator app
-        run: |
-          xcodebuild -workspace ios/Velunivo.xcworkspace -scheme Velunivo -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath "$PWD/work/simulator" build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO ARCHS=arm64 ONLY_ACTIVE_ARCH=NO
-          cp -R work/simulator/Build/Products/Release-iphonesimulator/Velunivo.app artifacts/Velunivo-simulator.app
-          ditto -c -k --keepParent artifacts/Velunivo-simulator.app artifacts/Velunivo-simulator.app.zip
       - name: Report compiler cache statistics
         if: always()
         run: if command -v ccache >/dev/null; then ccache --show-stats; fi
@@ -266,9 +261,82 @@ jobs:
             artifacts/*-launch.log
             artifacts/*-simulator.log
             artifacts/*.ips
+  ios-simulator:
+    needs: prepare
+    runs-on: xcode-27
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.velunivo-ccache
+      CCACHE_MAXSIZE: 2G
+      CCACHE_COMPILERCHECK: content
+      CCACHE_BASEDIR: ${{ github.workspace }}
+      APP_VERSION: ${{ needs.prepare.outputs.version }}
+      EXPO_PUBLIC_OVERPASS_URL: ${{ vars.OVERPASS_URL }}
+      EXPO_PUBLIC_APP_VERSION: ${{ needs.prepare.outputs.version }}
+      BUILD_NUMBER: ${{ github.run_number }}
+      EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
+      EXPO_PUBLIC_MAP_STYLE_URL: ${{ vars.MAP_STYLE_URL }}
+      EXPO_PUBLIC_ALLOW_OFFLINE_DOWNLOADS: ${{ vars.ALLOW_OFFLINE_DOWNLOADS }}
+      EXPO_PUBLIC_SHARE_ORIGIN: ${{ vars.SHARE_ORIGIN }}
+      EXPO_PUBLIC_PEER_HOST: ${{ vars.PEER_HOST }}
+      EXPO_PUBLIC_PEER_PORT: ${{ vars.PEER_PORT }}
+      EXPO_PUBLIC_PEER_PATH: ${{ vars.PEER_PATH }}
+      EXPO_PUBLIC_PEER_SECURE: ${{ vars.PEER_SECURE }}
+      EXPO_PUBLIC_PEER_ICE_SERVERS: ${{ vars.PEER_ICE_SERVERS }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Select newest installed Xcode beta (never silently use stable)
+        run: |
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          from pathlib import Path
+          import re
+          candidates=[p for p in Path('/Applications').glob('Xcode*.app') if 'beta' in p.name.lower() and not p.is_symlink()]
+          if not candidates: raise SystemExit('No Xcode beta installed on this runner')
+          chosen=max(candidates,key=lambda p:tuple(map(int,re.findall(r'\d+',p.name))))
+          print(f'DEVELOPER_DIR={chosen}/Contents/Developer')
+          print(f'XCODE_CACHE_ID={chosen.name}')
+          PY
+      - name: Restore iOS C++ compiler cache
+        uses: actions/cache@v4
+        continue-on-error: true
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: simulator-ccache-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-${{ github.sha }}
+          restore-keys: simulator-ccache-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-
+      - name: Enable C++ cache when available on the runner
+        run: |
+          if ! command -v ccache >/dev/null; then
+            brew install ccache || true
+          fi
+          if command -v ccache >/dev/null; then
+            echo 'VELUNIVO_CCACHE=1' >> "$GITHUB_ENV"
+          else
+            echo '::warning::ccache unavailable; continue with a normal native build.'
+          fi
+      - run: xcodebuild -version && xcodebuild -showsdks
+      - run: npm ci
+      - run: npx expo prebuild --platform ios --no-install
+      - run: cd ios && pod install
+      - run: mkdir -p artifacts
+      - name: Build Apple Silicon Simulator app
+        run: |
+          xcodebuild -workspace ios/Velunivo.xcworkspace -scheme Velunivo -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath "$PWD/work/simulator" build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO ARCHS=arm64 ONLY_ACTIVE_ARCH=NO CCACHE_DIR="$CCACHE_DIR" CCACHE_MAXSIZE="$CCACHE_MAXSIZE" CCACHE_BASEDIR="$CCACHE_BASEDIR" CCACHE_COMPILERCHECK="$CCACHE_COMPILERCHECK"
+          cp -R work/simulator/Build/Products/Release-iphonesimulator/Velunivo.app artifacts/Velunivo-simulator.app
+          ditto -c -k --keepParent artifacts/Velunivo-simulator.app artifacts/Velunivo-simulator.app.zip
+      - name: Report compiler cache statistics
+        if: always()
+        run: if command -v ccache >/dev/null; then ccache --show-stats; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-simulator
+          path: artifacts/Velunivo-simulator.app.zip
+          if-no-files-found: error
   verify-ios:
     continue-on-error: true
-    needs: ios
+    needs: ios-simulator
     runs-on: xcode-27
     timeout-minutes: 15
     strategy:
@@ -292,7 +360,7 @@ jobs:
       - uses: actions/download-artifact@v4
         continue-on-error: true
         with:
-          name: ios
+          name: ios-simulator
           path: artifacts
       - name: Unpack compiled Simulator app
         continue-on-error: true
@@ -319,11 +387,11 @@ jobs:
             artifacts/${{ matrix.family }}-simulator.log
             artifacts/*.ips
   publish:
-    if: ${{ always() && needs.prepare.result == 'success' && needs.web.result == 'success' && needs.android.result == 'success' && needs.ios.result == 'success' }}
+    if: ${{ always() && needs.prepare.result == 'success' && needs.web.result == 'success' && needs.android.result == 'success' && needs.ios.result == 'success' && needs.ios-simulator.result == 'success' }}
     concurrency:
       group: altsource
       cancel-in-progress: false
-    needs: [prepare, web, android, ios, verify-ios]
+    needs: [prepare, web, android, ios, ios-simulator, verify-ios]
     runs-on: ubuntu-latest
     permissions:
       contents: write

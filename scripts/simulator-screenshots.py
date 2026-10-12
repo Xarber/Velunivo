@@ -75,7 +75,7 @@ def boot_and_install(udid, family):
     run('xcrun', 'simctl', 'boot', udid, timeout=30)
     open_simulator(udid)
     run('xcrun', 'simctl', 'bootstatus', udid, '-b', timeout=150)
-    run('xcrun', 'simctl', 'install', udid, 'artifacts/Velunivo-simulator.app', timeout=60)
+    run('xcrun', 'simctl', 'install', udid, 'artifacts/Velunivo-simulator.app', timeout=90)
 
 
 def diagnostics(udid, family):
@@ -91,28 +91,51 @@ def diagnostics(udid, family):
                 shutil.copy(report, ARTIFACTS / report.name)
 
 
-def open_simulator(udid):
+def simulator_app():
     developer = Path(os.environ.get('DEVELOPER_DIR') or run('xcode-select', '-p'))
-    preferred = developer / 'Applications/Simulator.app'
-    alternatives = [Path('/Applications/Simulator.app'),
-                    *sorted(Path('/Applications').glob('Xcode*.app/Contents/Developer/Applications/Simulator.app'), reverse=True)]
-    simulator = next((p for p in [preferred, *alternatives] if p.is_dir()), None)
-    if simulator is None:
-        # Some beta runner images provide SDK/CLI tools without that beta's GUI.
-        # Keep the selected beta DEVELOPER_DIR and try headless verification.
-        print(f'::warning::No installed Simulator UI found (selected developer: {developer}); using headless capture.', flush=True)
+    # Xcode 27 renamed Simulator to Device Hub. Prefer the selected toolchain,
+    # including the executable inner app used by some beta distributions.
+    names = ('DeviceHub.app', 'Device Hub.app', 'Simulator.app')
+    roots = [developer.parent / 'Applications', developer / 'Applications', Path('/Applications')]
+    roots.extend(sorted(Path('/Applications').glob('Xcode*.app/Contents/Applications'), reverse=True))
+    roots.extend(sorted(Path('/Applications').glob('Xcode*.app/Contents/Developer/Applications'), reverse=True))
+    for root in roots:
+        for name in names:
+            app = root / name
+            if app.is_dir():
+                return app
+    return None
+
+
+def open_simulator(udid):
+    app = simulator_app()
+    if app is None:
+        print('::warning::No installed Device Hub or Simulator UI found; using headless capture.', flush=True)
         return False
-    run('open', '-a', str(simulator), '--args', '-CurrentDeviceUDID', udid, timeout=30)
+    run('open', '-a', str(app), '--args', '-CurrentDeviceUDID', udid, timeout=30)
     return True
 
 
 def landscape(udid):
-    # Rotate the actual Simulator/UI, not the output image.
-    if not open_simulator(udid):
-        raise RuntimeError('No installed Simulator UI is available to rotate the iPad into landscape')
+    # Rotate the actual device, never a portrait screenshot after capture.
+    app = simulator_app()
+    if app is None or not open_simulator(udid):
+        raise RuntimeError('No installed Device Hub/Simulator UI is available to rotate the iPad into landscape')
+    import plistlib
+    with (app / 'Contents/Info.plist').open('rb') as plist:
+        info = plistlib.load(plist)
+    bundle_id = info['CFBundleIdentifier']
     time.sleep(3)
-    run('osascript', '-e', 'tell application "Simulator" to activate', '-e',
-        'tell application "System Events" to tell process "Simulator" to click menu item "Landscape Left" of menu 1 of menu item "Orientation" of menu 1 of menu bar item "Device" of menu bar 1', timeout=30)
+    activate = f'tell application id "{bundle_id}" to activate'
+    if app.name != 'Simulator.app':
+        # Apple's Xcode 27 documentation: Controls > Rotate Left.
+        rotate = f'''tell application "System Events"
+            set hub to first process whose bundle identifier is "{bundle_id}"
+            tell hub to click menu item "Rotate Left" of menu 1 of menu bar item "Controls" of menu bar 1
+        end tell'''
+    else:
+        rotate = 'tell application "System Events" to tell process "Simulator" to click menu item "Landscape Left" of menu 1 of menu item "Orientation" of menu 1 of menu bar item "Device" of menu bar 1'
+    run('osascript', '-e', activate, '-e', rotate, timeout=30)
     time.sleep(3)
 
 

@@ -30,6 +30,9 @@ class SimulatorVerificationTests(unittest.TestCase):
             developer = Path(folder) / 'Xcode_beta.app/Contents/Developer'
             app = developer / 'Applications/Simulator.app'
             app.mkdir(parents=True)
+            import plistlib
+            (app / 'Contents').mkdir()
+            (app / 'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier': 'com.apple.iphonesimulator'}))
             with patch.dict(sim.os.environ, {'DEVELOPER_DIR': str(developer)}), patch.object(sim, 'run') as commands, patch.object(sim.time, 'sleep'):
                 sim.landscape('owned-device')
                 self.assertEqual(commands.call_args_list[0].args, ('open', '-a', str(app), '--args', '-CurrentDeviceUDID', 'owned-device'))
@@ -39,6 +42,23 @@ class SimulatorVerificationTests(unittest.TestCase):
             self.assertFalse(sim.open_simulator('owned-device'))
             with self.assertRaisesRegex(RuntimeError, 'rotate the iPad'):
                 sim.landscape('owned-device')
+
+    def test_device_hub_is_preferred_and_uses_new_rotation_menu(self):
+        import plistlib
+        with tempfile.TemporaryDirectory() as folder:
+            developer = Path(folder) / 'Developer'
+            app = developer.parent / 'Applications/DeviceHub.app'
+            (app / 'Contents').mkdir(parents=True)
+            (developer / 'Applications/Simulator.app').mkdir(parents=True)
+            (app / 'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier': 'com.apple.dt.DeviceHub'}))
+            with patch.dict(sim.os.environ, {'DEVELOPER_DIR': str(developer)}), patch.object(sim, 'run') as commands, patch.object(sim.time, 'sleep'):
+                sim.landscape('owned-device')
+                self.assertEqual(commands.call_args_list[0].args[2], str(app))
+                script = commands.call_args_list[1].args[-1]
+                self.assertIn('Rotate Left', script)
+                self.assertIn('Controls', script)
+                self.assertIn('com.apple.dt.DeviceHub', script)
+                self.assertNotIn('Landscape Left', script)
 
     def devices(self):
         return {'com.apple.CoreSimulator.SimRuntime.iOS-26-4': [
@@ -95,7 +115,7 @@ class SimulatorVerificationTests(unittest.TestCase):
             sim.boot_and_install('owned-device', 'ipad')
         self.assertEqual(calls[1], ('UI', 'owned-device'))
         self.assertEqual(calls[2][1]['timeout'], 150)
-        self.assertEqual(calls[3][1]['timeout'], 60)
+        self.assertEqual(calls[3][1]['timeout'], 90)
 
     def test_process_exit_blocks_screenshot_and_cleans_only_fresh_device(self):
         calls = []
