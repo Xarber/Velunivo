@@ -1,3 +1,3 @@
 import {GroupSnapshot,RiderProfile,VoiceSignal} from './model';import {Coord,Route} from '../core/types';
-export interface GroupCommands {signal(id:string,signal:VoiceSignal):void;kick(id:string):void;resume():void;}
+export interface GroupCommands {location?(coordinate:Coord):void;signal(id:string,signal:VoiceSignal):void;kick(id:string):void;resume():void;}
 export interface GroupTransportProps {forcePublic?:boolean;code:string;profile:RiderProfile;position:Coord|null;route:Route|null;create:boolean;seed?:GroupSnapshot;onCommands(c:GroupCommands|null):void;onSnapshot(s:GroupSnapshot):void;onStatus(s:string):void;onSignal(id:string,signal:VoiceSignal):void;onEnded(reason:string):void;onServer(publicServer:boolean):void;}

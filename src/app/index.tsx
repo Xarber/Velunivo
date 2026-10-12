@@ -20,7 +20,7 @@ import MapControls from '../components/MapControls';
 import { router, useLocalSearchParams } from 'expo-router';
 import screenshotRoute from '../../scripts/screenshot-route.json';
 import { useNavigationActivity } from '../services/useNavigationActivity';
-import { maneuverDistance, arrivalTime , forwardHeading, freshFix, distanceLeft, displaySpeed } from '../core/rideView';
+import { maneuverDistance, arrivalTime , forwardHeading, freshFix, distanceLeft, displaySpeed , displayableFix} from '../core/rideView';
 import React, { useState, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import {View, ScrollView, Pressable, Modal, Platform, StyleSheet, useWindowDimensions} from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -128,7 +128,7 @@ export default function Explore() {
   const panelP = expandedPanel ? { ...p, dark: true, bg: '#071118', card: '#15222C', text: '#F6FAFC', muted: '#ADBCC6', line: '#30434B', accent: '#64DCC5' } : p;
   const live = useLocation(ride.mode === 'idle');
   const mapFix = active ? ride.fix : live.fix;
-  const mapPosition = mapFix && mapFix.accuracy <= 100 && now - mapFix.timestamp <= 15000 ? mapFix.coordinate : undefined;
+  const mapPosition = displayableFix(mapFix,now) ? mapFix!.coordinate : undefined;
   const visibleRoutes = useMemo(() => active && selected ? [selected] : routes, [active, selected, routes]);
   const expandedMax=active?Math.min(controlsHeight*.6,480):Math.max(180,controlsHeight-insets.top-112);
   const visiblePanelHeight=expandedPanel?Math.min(expandedMax,panelHeaderHeight+(panelContentHeight || expandedMax)):undefined;
@@ -222,7 +222,7 @@ export default function Explore() {
     overviewTimer.current = setTimeout(() => { setOverview(false); overviewTimer.current = null; }, 15000);
   }
   function resumeFollowing() { if (overviewTimer.current) clearTimeout(overviewTimer.current); overviewTimer.current = null; setOverview(false); setFollow(true); }
-  function nGroupPins(){return navigationOptions.groupPins&&active?groupRide.snapshot?.members.filter(m=>m.id!==groupRide.selfId)??[]:[];}
+  function nGroupPins(){return navigationOptions.groupPins&&groupRide.code?groupRide.snapshot?.members.filter(m=>m.id!==groupRide.selfId)??[]:[];}
   function useGroupRoute(route:Route){setRoutes([route]);select(route);setPanelOpen(false);resumeFollowing();setTimeout(()=>ride.start(false),0);}
   function endNavigation(){const returnHome=!!g&&g.valid&&g.total>0&&g.along/g.total>=.5;ride.stop();if(returnHome)clearRide();}
   function clearRide() {cancelLabels();
@@ -284,7 +284,7 @@ export default function Explore() {
         <Text style={{ color: panelP.muted, fontSize: 11 }}>{headingSource}{active && navigationOptions.compass && !compassFresh ? ` · ${compass.status}` : ''}{!precise ? ' · Waiting for a precise GPS fix' : ''}</Text>
 
         <VehicleTelemetryPanel vehicleId={profile.id} />
-        <GroupRiding active={active} onRoute={useGroupRoute}/>{shareControls}{ride.mode==='gps' && !precise && <Button title={t("Retry GPS")} icon="locate-outline" secondary onPress={ride.retryGPS} />}
+        <GroupRiding active={active} onRoute={useGroupRoute}/>{shareControls}{ride.mode==='gps' && !displayableFix(ride.fix,now) && <Button title={t("Retry GPS")} icon="locate-outline" secondary onPress={ride.retryGPS} />}
         {navigationOptions.developerMode && navigationOptions.motion && motion.status !== 'Off' && <Text style={{ color: panelP.muted, fontSize: 12 }}>Motion: {motion.status} · {motion.acceleration.toFixed(2)} g · {motion.rotation.toFixed(2)} rad/s</Text>}
         {g?.offRoute && <Button title={t("End ride & replan")} secondary onPress={() => { ride.stop(); setGpsStart(true); setStart('Current location'); setStartPoint(undefined); setPlanner(true); }} />}
         <Text style={{ color: panelP.muted, fontSize: 12 }}>DIRECTION VOLUME</Text><View style={{ flexDirection: 'row', gap: 6 }}>{(['loud', 'quiet', 'off'] as const).map(volume => <View key={volume} style={{ flex: 1 }}><Button title={t(volume === 'loud' ? 'Loud' : volume === 'quiet' ? 'Quiet' : 'Off')} icon={volume === 'off' ? 'volume-mute-outline' : volume === 'quiet' ? 'volume-low-outline' : 'volume-high-outline'} secondary={navigationOptions.volume !== volume} onPress={() => updateNavigationOptions({ volume })} /></View>)}</View>{!navigationOptions.voice && <Text style={{ color: panelP.muted }}>Spoken directions are off in Settings.</Text>}{!!recorder.error && <Text accessibilityRole="alert" style={{ color: '#D75451' }}>{publicError(recorder.error,navigationOptions.developerMode)}</Text>}<Text style={{ color: panelP.muted, fontSize: 11 }}>{navigationOptions.recordRides ? 'Ride recording on · saved locally to Library' : 'Ride recording off'}</Text>{!!activity.status && Platform.OS==='ios' && <Text style={{color:panelP.muted,fontSize:12}}>{publicError(activity.status,navigationOptions.developerMode)}</Text>}<Button title={t("End ride")} icon="stop-circle-outline" onPress={endNavigation} />

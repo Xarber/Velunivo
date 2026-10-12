@@ -34,3 +34,6 @@ export function forwardHeading(route: Route | null, index: number | undefined, f
   }
   return { heading: 0, source: 'Direction unavailable' };
 }
+
+/** Approximate locations can be displayed/shared, but never used as precise movement or arrival evidence. */
+export function displayableFix(fix:Fix|null,now=Date.now()){return !!fix&&fix.coordinate.every(Number.isFinite)&&Math.abs(fix.coordinate[0])<=180&&Math.abs(fix.coordinate[1])<=85&&Number.isFinite(fix.accuracy)&&fix.accuracy>=0&&fix.accuracy<=10000&&now-fix.timestamp<30000&&now>=fix.timestamp-1000;}

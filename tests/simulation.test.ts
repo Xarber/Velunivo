@@ -20,6 +20,8 @@ test('simulated fixes drive voice and activity while recording and real GPS stay
   const updates: unknown[][]=[], effects:(()=>void)[]=[];
   const mocks: Record<string,unknown>={
     './rideNotice':{notifyRideNotice:()=>{}},
+    '../groups/locationPublisher':{publishGroupLocation:()=>{}},
+    './watchLocation':{watchLocation:async()=>{gpsRequests++;throw new Error('Simulation must not watch GPS');}},
     react:{useState:(initial:unknown)=>[initial==='idle'?'simulation':initial,()=>{}],useRef:(initial:unknown)=>({current:initial}),useEffect:(fn:()=>void)=>effects.push(fn)},
     'react-native':{Platform:{OS:'ios'},AppState:{currentState:'active',addEventListener:(_name:string,fn:(state:string)=>void)=>{appChange=fn;return{remove(){}};}}},
     'expo-location':{requestForegroundPermissionsAsync:async()=>{gpsRequests++;return{status:'denied'};}},
@@ -61,6 +63,8 @@ test('real GPS subscription keeps stationary progress still while delivering ori
  let locationCallback:((p:unknown)=>void)|undefined;
  const mocks:Record<string,unknown>={
   './rideNotice':{notifyRideNotice:()=>{}},
+    '../groups/locationPublisher':{publishGroupLocation:()=>{}},
+    './watchLocation':{watchLocation:async(_options:unknown,cb:(p:unknown)=>void)=>{locationCallback=cb;return{remove(){}};}},
   react:{useState:(initial:unknown)=>[initial==='idle'?'gps':initial,(value:unknown)=>{if(typeof value!=='function')states.push(value);}],useRef:(initial:unknown)=>({current:initial}),useEffect:(fn:()=>void)=>effects.push(fn)},
   'react-native':{Platform:{OS:'web'},AppState:{currentState:'active',addEventListener:()=>({remove(){}})}},
   'expo-location':{Accuracy:{BestForNavigation:6},requestForegroundPermissionsAsync:async()=>({status:'granted'}),watchPositionAsync:async(_options:unknown,cb:(p:unknown)=>void)=>{locationCallback=cb;return{remove(){}};}},

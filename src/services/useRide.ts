@@ -1,3 +1,5 @@
+import {publishGroupLocation} from '../groups/locationPublisher';
+import {watchLocation} from './watchLocation';
 import {RerouteGate} from '../core/rerouting';
 import {notifyRideNotice} from './rideNotice';
 import { MovementTracker, usableMovementFix } from '../core/movement';
@@ -8,7 +10,7 @@ import { speakDirection, stopDirections } from './directionsVoice';
 import { Fix, Profile, Route, NavigationOptions } from '../core/types';
 import { beginBackgroundLocation } from './backgroundLocation';
 import { updateRideActivity, markActivityPaused } from './useNavigationActivity';
-import { maneuverDistance, bearing } from '../core/rideView';
+import { maneuverDistance, bearing, displayableFix } from '../core/rideView';
 import { guidance } from '../core/navigation';
 import { cumulative, pointAt } from '../core/geo';
 export function useRide(route: Route | null, profile: Profile, preferences: NavigationOptions, onFix?: (fix: Fix, arrived?: boolean) => void | Promise<void>, onPermissionDenied?:()=>void,onReroute?:(fix:Fix,index:number)=>Promise<void>) {
@@ -39,9 +41,9 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
       if (cancelled || paused || halted || raw.timestamp <= lastAccepted) return;
       const tracked = mode === 'gps' ? movement.next(raw) : null;
       lastAccepted=raw.timestamp;
-      if (mode === 'gps' && !usableMovementFix(raw)) { setStatus('Waiting for a precise GPS fix'); setProgress(v => v ? { ...v, valid: false } : null); await onFixRef.current?.(raw); return; }
+      if (mode === 'gps' && !usableMovementFix(raw)) { if(displayableFix(raw)){setFix(raw);publishGroupLocation(raw);} setStatus('Waiting for a precise GPS fix'); setProgress(v => v ? { ...v, valid: false } : null); await onFixRef.current?.(raw); return; }
       const next = mode === 'simulation' ? raw : tracked?.fix ?? raw;
-      setFix(next);
+      setFix(next);if(mode==='gps')publishGroupLocation(next);
       const currentRoute=routeRef.current;if(!currentRoute)return;
       const g = guidance(currentRoute, next, along.current);
       if (!g.valid) { setStatus('Waiting for a precise GPS fix'); setProgress(v => v ? { ...v, valid: false } : null); if(mode==='gps')await onFixRef.current?.(raw); return; }
@@ -78,7 +80,7 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
             } catch(e) {if(!cancelled)setStatus(e instanceof Error ? e.message : 'Background location unavailable. Foreground navigation remains available.');}
           }
           if(cancelled)return;
-          const watch = await Location.watchPositionAsync({ accuracy: Location.Accuracy.BestForNavigation, timeInterval: 1000, distanceInterval: 0 }, p => {void accept({ coordinate: [p.coords.longitude, p.coords.latitude], altitude:p.coords.altitude ?? undefined, altitudeAccuracy:p.coords.altitudeAccuracy ?? undefined, accuracy: p.coords.accuracy ?? 999, speed: p.coords.speed !== null && Number.isFinite(p.coords.speed) && p.coords.speed >= 0 ? p.coords.speed : null, heading: p.coords.heading !== null && p.coords.heading >= 0 ? p.coords.heading : undefined, timestamp: p.timestamp }).catch(e=>{if(!cancelled)setStatus(e instanceof Error ? e.message : 'GPS update failed');});});
+          const watch = await watchLocation({ accuracy: Location.Accuracy.BestForNavigation, timeInterval: 1000, distanceInterval: 0 }, p => {void accept({ coordinate: [p.coords.longitude, p.coords.latitude], altitude:p.coords.altitude ?? undefined, altitudeAccuracy:p.coords.altitudeAccuracy ?? undefined, accuracy: p.coords.accuracy ?? 999, speed: p.coords.speed !== null && Number.isFinite(p.coords.speed) && p.coords.speed >= 0 ? p.coords.speed : null, heading: p.coords.heading !== null && p.coords.heading >= 0 ? p.coords.heading : undefined, timestamp: p.timestamp }).catch(e=>{if(!cancelled)setStatus(e instanceof Error ? e.message : 'GPS update failed');});},message=>{if(cancelled)return;setStatus(`GPS unavailable · ${message}`);if(message==='Location permission denied'){deniedRef.current?.();notifyRideNotice({title:'GPS permission is off',message:'Velunivo needs location permission to navigate. Enable it in your browser or device Settings before starting another ride.',confirm:()=>{if(!cancelled)setMode('idle');}});}});
           if (cancelled || halted) watch.remove(); else subscription = watch;
         } catch (e) { if (!cancelled) { setStatus(`GPS unavailable · ${e instanceof Error ? e.message : 'retry GPS'}`); } }
       })();

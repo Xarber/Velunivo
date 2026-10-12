@@ -1291,5 +1291,10 @@
   "Join and follow": "Rejoignez le groupe et suivez le parcours",
   "Group routes load automatically, with clearer people pins.": "Les parcours du groupe se chargent automatiquement, avec des participants plus faciles à reconnaître sur la carte.",
   "Native peer connections": "Connexions natives entre appareils",
-  "Native WebRTC replaces hidden browser connections for groups, sharing and sync.": "WebRTC natif remplace les connexions du navigateur caché pour les groupes, le partage et la synchronisation."
+  "Native WebRTC replaces hidden browser connections for groups, sharing and sync.": "WebRTC natif remplace les connexions du navigateur caché pour les groupes, le partage et la synchronisation.",
+  "Approximate location": "Position approximative",
+  "People stay visible": "Les participants restent visibles",
+  "Browser location refreshes reliably, with people pins independent of video.": "La position du navigateur se met à jour régulièrement et les participants restent sur la carte sans vidéo.",
+  "Quiet when alone": "Microphone coupé quand vous êtes seul",
+  "Microphone capture stops when no voice peers are connected.": "Le microphone est coupé lorsqu’aucun autre participant n’est connecté au chat vocal."
 }
