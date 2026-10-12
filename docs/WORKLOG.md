@@ -510,3 +510,7 @@ Implemented the requested optional rerouting, energy/elevation estimates, multi-
 ## 2026-10-12 — 1.0.1 itinerary correction
 
 Replaced the planner's separate endpoint cards and swap/up/down buttons with a single ordered card containing drag handles for every row. Removed manual search/bookmark controls from fields and the selected-place preview/save controls. Added one-second debounced search, saved-place browsing/naming, protected delayed focus cleanup, numbered pins across all map renderers, intermediate stop maneuvers, Library stop summaries and idempotent repair for earlier saved itineraries. Tests and browser evidence are in PLANNER_1.0.1.md. Native compilation stays remote and commits unsigned; the reserved AltSource 1.0 tag is unchanged.
+
+## 2026-10-12 — 1.0.2 developer menu and search follow-up
+
+Moved vehicle telemetry simulation, route simulation and recorded-ride JSON export into Developer Options alongside Live Activity diagnostics and confirmed data reset. Web/Android show disabled iOS-only test controls rather than hiding them. Added free, bounded reverse geocoding to map selection, Saved Places and submitted coordinates, with saved-name priority and shared in-flight requests. Fixed Enter/blur cancellation leaving search loading active; prevented duplicate submit/debounce requests and bounded search queue wait. 218 tests and actual headless Enter/reverse/developer simulation checks pass. Details and the discovered/fixed manual deployment Metro cache issue are in DEVELOPER_AND_SEARCH_1.0.2.md.
