@@ -22,10 +22,20 @@ app.update({**branding['app'],'developerName':a.repo.split('/')[0],'iconURL':ico
 shots=dict(app.get('screenshots', {}))
 previous_tablet_urls={shot['imageURL'] for shot in shots.get('ipad',[])}
 for device in ['iphone','ipad']:
-    image=folder/f'{device}.png'
-    if image.exists():
-        w,h=struct.unpack('>II',image.read_bytes()[16:24]);shots[device]=[{'imageURL':base+image.name,'width':w,'height':h}]
-    # If capture and historical lookup failed, retain the previous source URL.
+    provenance=folder/f'{device}-screenshot.json'
+    verified=provenance.exists() and json.loads(provenance.read_text()).get('status') in ['fresh','reused']
+    images=[folder/f'{device}-{screen}.png' for screen in ['navigation','explore','library','vehicles']]
+    images=[image for image in images if image.exists()] if verified else []
+    if verified and not images and (folder/f'{device}.png').exists(): images=[folder/f'{device}.png']
+    if images:
+        gallery=[]
+        for image in images:
+            data=image.read_bytes();w,h=struct.unpack('>II',data[16:24])
+            name=f'screenshot-{image.stem}-{hashlib.sha256(data).hexdigest()[:12]}.png'
+            (Path(a.output).parent/name).write_bytes(data)
+            gallery.append({'imageURL':stable+name,'width':w,'height':h})
+        shots[device]=gallery
+    # If both capture attempts fail, retain the previous AltSource gallery.
 
 # Show tablet imagery in the phone gallery too; clients choose one device gallery.
 if shots.get('iphone') and shots.get('ipad'):

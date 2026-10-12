@@ -26,6 +26,7 @@ class ScreenshotFallbackTests(unittest.TestCase):
         def command(*args):
             if args[1] == 'list':
                 return json.dumps(releases)
+            if args[2]=='1.0': raise subprocess.CalledProcessError(1,'gh')
             image = Path(args[args.index('--dir') + 1]) / 'ipad.png'
             image.write_bytes(b'\x89PNG\r\n\x1a\n' + b'\0' * 8 + struct.pack('>II', 2048, 2732))
             self.assertEqual(args[2], 'v0.1.2')
@@ -62,6 +63,39 @@ class ScreenshotFallbackTests(unittest.TestCase):
             self.assertEqual(result['apps'][0]['screenshots'], previous['apps'][0]['screenshots'])
             self.assertEqual(result['apps'][0]['versions'][0]['version'], '0.1.11')
 
+
+    def test_source_galleries_use_source_only_hashes_and_phone_first_order(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            meta={'version':'1.0.3','buildVersion':'50','bundleIdentifier':'app.velunivo.mobile','size':100,'minOSVersion':'16.4','appPermissions':{}}
+            (root/'ios-metadata.json').write_text(json.dumps(meta))
+            for family,width,height in [('iphone',1206,2622),('ipad',2360,1640)]:
+                (root/f'{family}-screenshot.json').write_text(json.dumps({'status':'fresh'}))
+                for screen in ['navigation','explore','library','vehicles']:
+                    (root/f'{family}-{screen}.png').write_bytes(b'\x89PNG\r\n\x1a\n'+b'\0'*8+struct.pack('>II',width,height)+screen.encode())
+            script=Path(__file__).parents[1]/'scripts/update-source.py'
+            output=root/'feed.json'
+            subprocess.check_call(['python3',str(script),'--repo','Xarber/Velunivo','--tag','v1.0.3','--assets',folder,'--output',str(output)])
+            gallery=json.loads(output.read_text())['apps'][0]['screenshots']
+            self.assertEqual(len(gallery['iphone']),8);self.assertEqual(len(gallery['ipad']),4)
+            self.assertTrue(all('/1.0/screenshot-iphone-' in s['imageURL'] for s in gallery['iphone'][:4]))
+            self.assertTrue(all('/1.0/screenshot-ipad-' in s['imageURL'] for s in gallery['iphone'][4:]))
+            self.assertIn('navigation',gallery['iphone'][0]['imageURL'])
+            self.assertTrue(all((root/s['imageURL'].split('/')[-1]).exists() for s in gallery['iphone']))
+
+    def test_source_gallery_is_reused_without_binary_release_screenshots(self):
+        name='screenshot-ipad-navigation-abcdef012345.png'
+        def command(*args):
+            directory=Path(args[args.index('--dir')+1])
+            if 'apps.json' in args:
+                (directory/'apps.json').write_text(json.dumps({'apps':[{'bundleIdentifier':'app.velunivo.mobile','versions':[{'version':'1.0.2'}],'screenshots':{'ipad':[{'imageURL':'https://github.com/Xarber/Velunivo/releases/download/1.0/'+name}]}}]}))
+            else:
+                (directory/name).write_bytes(b'\x89PNG\r\n\x1a\n'+b'\0'*8+struct.pack('>II',2360,1640))
+            return ''
+        with tempfile.TemporaryDirectory() as folder,patch.object(fallback,'gh',side_effect=command):
+            root=Path(folder);status=fallback.reuse('Xarber/Velunivo','ipad',root)
+            self.assertEqual(status['sourceTag'],'v1.0.2')
+            self.assertEqual(fallback.dimensions(root/'ipad-navigation.png'),(2360,1640))
 
     def test_source_refreshes_both_icons_and_exposes_tablet_in_phone_gallery(self):
         with tempfile.TemporaryDirectory() as folder:

@@ -290,6 +290,7 @@ jobs:
     needs: prepare
     runs-on: xcode-27
     env:
+      EXPO_PUBLIC_CAPTURE_FIXTURES: '1'
       CCACHE_DIR: ${{ github.workspace }}/.velunivo-ccache
       CCACHE_MAXSIZE: 2G
       CCACHE_COMPILERCHECK: content
@@ -362,26 +363,35 @@ jobs:
   verify-ios:
     continue-on-error: true
     needs: ios-simulator
-    runs-on: xcode-27
-    timeout-minutes: 15
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 18
     strategy:
       fail-fast: false
       matrix:
-        family: [iphone, ipad]
+        include:
+          - family: iphone
+            runner: xcode-27
+          - family: ipad
+            runner: macos-26
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
-      - name: Select newest installed Xcode beta
+      - name: Select installed verification tools (builds remain Xcode beta)
         run: |
           python3 - <<'PYCODE' >> "$GITHUB_ENV"
           from pathlib import Path
           import re
           candidates=[p for p in Path('/Applications').glob('Xcode*.app') if 'beta' in p.name.lower() and not p.is_symlink()]
-          if not candidates: raise SystemExit('No Xcode beta installed on this runner')
-          chosen=max(candidates,key=lambda p:tuple(map(int,re.findall(r'\d+',p.name))))
-          print(f'DEVELOPER_DIR={chosen}/Contents/Developer')
+          import subprocess
+          if candidates:
+              chosen=max(candidates,key=lambda p:tuple(map(int,re.findall(r'\d+',p.name))))
+              print(f'DEVELOPER_DIR={chosen}/Contents/Developer')
+          else:
+              print('DEVELOPER_DIR='+subprocess.check_output(['xcode-select','-p'],text=True).strip())
           PYCODE
+      - name: Avoid Spotlight indexing on the disposable runner
+        run: sudo mdutil -a -i off || true
       - uses: actions/download-artifact@v4
         continue-on-error: true
         with:
@@ -393,8 +403,8 @@ jobs:
       - name: Capture fresh Simulator screenshots (two bounded attempts)
         id: capture
         continue-on-error: true
-        timeout-minutes: 8
-        run: python3 scripts/simulator-screenshots.py --family "${{ matrix.family }}"
+        timeout-minutes: 12
+        run: python3 scripts/simulator-screenshots.py --family "${{ matrix.family }}" --gallery
       - name: Reuse last published screenshot after capture failure
         if: steps.capture.outcome == 'failure'
         timeout-minutes: 3
@@ -406,6 +416,7 @@ jobs:
           name: ios-${{ matrix.family }}-verification
           path: |
             artifacts/${{ matrix.family }}.png
+            artifacts/${{ matrix.family }}-*.png
             artifacts/${{ matrix.family }}-screenshot.json
             artifacts/${{ matrix.family }}-host.log
             artifacts/${{ matrix.family }}-launch.log
@@ -438,7 +449,7 @@ jobs:
           else
             gh release create "$RELEASE_TAG" --verify-tag --title "Velunivo ${{ needs.prepare.outputs.version }}" --notes-file artifacts/release-notes.md
           fi
-          gh release upload "$RELEASE_TAG" artifacts/* --clobber
+          gh release upload "$RELEASE_TAG" artifacts/Velunivo.ipa artifacts/Velunivo.apk artifacts/Velunivo-simulator.app.zip artifacts/web.zip artifacts/SHA256SUMS artifacts/ios-metadata.json artifacts/ios-build.txt artifacts/android-build.txt --clobber
       - name: Update mutable AltSource release at fixed 1.0 URL
         run: |
           if ! gh release view 1.0 >/dev/null 2>&1; then

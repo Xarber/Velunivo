@@ -13,7 +13,8 @@ import TripSharing from '../components/TripSharing';
 import {routeLink} from '../sharing/model';
 import {shareLink} from '../sharing/shareLink';
 import MapControls from '../components/MapControls';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import screenshotRoute from '../../scripts/screenshot-route.json';
 import { useNavigationActivity } from '../services/useNavigationActivity';
 import { maneuverDistance, arrivalTime , forwardHeading, freshFix, distanceLeft, displaySpeed } from '../core/rideView';
 import React, { useState, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
@@ -104,6 +105,21 @@ export default function Explore() {
   const [picking, setPicking] = useState<'start' | 'end' | null>(null), [follow, setFollow] = useState(true);
   const ride = useRide(selected, profile, navigationOptions, (fix,arrived) => recordingAccept.current(fix,arrived),()=>cancelRecording.current(),reroute), motion = useMotion((navigationOptions.motion && ride.mode !== 'idle') || (navigationOptions.recordRides && ride.mode === 'gps'));
   const active = ride.mode !== 'idle', g = ride.progress;
+  const { capture } = useLocalSearchParams<{capture?:string}>();
+  const capturePrepared=useRef(false),captureStarted=useRef(false);
+  useEffect(()=>{
+    // Simulator QA builds only. Production IPA/APK/web ignore this URL.
+    if(process.env.EXPO_PUBLIC_CAPTURE_FIXTURES!=='1'||capture!=='navigation'||!ready||capturePrepared.current)return;
+    capturePrepared.current=true;
+    const route=screenshotRoute as unknown as Route;setRoutes([route]);select(route);
+    updateNavigationOptions({voice:false,volume:'off',liveActivities:false,recordRides:false});
+    setPanelOpen(false);setFollow(true);
+  },[capture,ready,select,setRoutes,updateNavigationOptions]);
+  useEffect(()=>{
+    if(process.env.EXPO_PUBLIC_CAPTURE_FIXTURES!=='1'||capture!=='navigation'||!capturePrepared.current||captureStarted.current||selected?.id!==screenshotRoute.id)return;
+    captureStarted.current=true;ride.start(true);
+  },[capture,selected,ride]);
+
   const expandedPanel = planner || panelOpen || (wide && !active);
   const panelP = expandedPanel ? { ...p, dark: true, bg: '#071118', card: '#15222C', text: '#F6FAFC', muted: '#ADBCC6', line: '#30434B', accent: '#64DCC5' } : p;
   const live = useLocation(ride.mode === 'idle');
@@ -247,7 +263,7 @@ export default function Explore() {
     <NativeTabSafeOverlay onHeight={setOverlayHeight}>
       {previewPin && <View style={{position:'absolute',bottom:195,left:12}}><Button title={t("Back to Where to")} icon="search" onPress={openPlanner} /></View>}
       {picking && <View style={{ position: 'absolute', bottom: 12, left: 12 }}><Button title={t("Cancel map selection")} secondary onPress={() => { setPicking(null); setPlanner(true); }} /></View>}
-    {!picking && <GlassSurface expanded={expandedPanel} {...motionProps('sheet')} style={[s.floatingPanel, { backgroundColor: panelP.bg, left: 12 + webLeft, right: wide ? undefined : 12 + webRight, width: wide ? 390 : undefined, top: wide && !active && Platform.OS !== 'web' ? insets.top + 88 : undefined, bottom: wide && !active && Platform.OS !== 'web' ? undefined : 12, height: visiblePanelHeight }]}>
+    {!picking && <GlassSurface expanded={expandedPanel} {...motionProps('sheet')} style={[s.floatingPanel, { backgroundColor: panelP.bg, left: 12 + webLeft, right: wide ? undefined : 12 + webRight, width: wide ? 390 : undefined, bottom: 12, height: visiblePanelHeight }]}>
       {planner?<PaletteProvider value={panelP}><View onLayout={e=>setPanelHeaderHeight(e.nativeEvent.layout.height)} style={{paddingHorizontal:16,paddingTop:20,paddingBottom:12}}><View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><Text style={[styles.title, { color: panelP.text }]}>Where to?</Text><Pressable accessibilityRole="button" accessibilityLabel={t("Close planner")} onPress={() => setPlanner(false)}><Ionicons name="close-circle" size={30} color={panelP.muted} /></Pressable></View></View><ScrollView scrollEnabled={!plannerDragging} onContentSizeChange={(_,h)=>setPanelContentHeight(h)} keyboardShouldPersistTaps="handled" style={{flex:1}} contentContainerStyle={{paddingHorizontal:16,paddingBottom:20}}>{plannerContent}</ScrollView></PaletteProvider>:<PaletteProvider value={panelP}><SwipeArea onSwipe={setPanelOpen} style={{ paddingTop: 8 }} onLayout={e=>setPanelHeaderHeight(e.nativeEvent.layout.height)}>
       <View style={{ alignItems: 'center', paddingBottom: 6 }}><View style={{ height: 4, width: 38, borderRadius: 2, backgroundColor: panelP.muted, opacity: .4 }} /></View>
       <View style={{ paddingHorizontal: 16, paddingBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><Text style={{ color: panelP.text, fontWeight: '800', fontSize: 20 }}>{active ? 'Trip' : 'Your ride'}</Text>{(!wide || active) && <Pressable accessibilityRole="button" accessibilityLabel={t(panelOpen ? 'Collapse ride controls' : 'Expand ride controls')} onPress={() => setPanelOpen(v => !v)} style={{ padding: 8 }}><Ionicons name={panelOpen ? 'chevron-down' : 'chevron-up'} color={panelP.accent} size={22} /></Pressable>}</View>

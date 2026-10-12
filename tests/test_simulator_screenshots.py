@@ -13,6 +13,9 @@ spec.loader.exec_module(sim)
 
 
 class SimulatorVerificationTests(unittest.TestCase):
+    def setUp(self):
+        sim.ORIENTATION_HELP=None
+
     def test_landscape_verification_rejects_portrait_framebuffer(self):
         import struct
         with tempfile.TemporaryDirectory() as folder:
@@ -65,6 +68,24 @@ class SimulatorVerificationTests(unittest.TestCase):
             sim.landscape('owned-device')
             command.assert_called_once_with('xcrun', 'devicectl', 'device', 'orientation', 'set', '--device', 'owned-device', 'landscapeLeft', '--timeout', '20', timeout=25)
             gui.assert_not_called()
+
+    def test_gallery_rejects_a_production_app_before_seeding(self):
+        import plistlib
+        with tempfile.TemporaryDirectory() as folder:
+            app=Path(folder)/'Velunivo-simulator.app';app.mkdir()
+            (app/'Info.plist').write_bytes(plistlib.dumps({'CFBundleShortVersionString':'1.0.3'}))
+            with patch.object(sim,'ARTIFACTS',Path(folder)),patch.object(sim,'run') as command:
+                with self.assertRaisesRegex(RuntimeError,'QA build'): sim.seed_gallery('owned-device')
+                command.assert_not_called()
+
+    def test_gallery_uses_existing_screens_and_checks_app_survival(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);(root/'iphone.png').write_bytes(b'baseline')
+            with patch.object(sim,'ARTIFACTS',root),patch.object(sim,'run') as command,patch.object(sim.time,'sleep'),patch.object(sim.os,'kill') as alive:
+                self.assertEqual(sim.capture_gallery('owned-device','iphone',1234),['explore','library','vehicles','navigation'])
+                urls=[c.args[-1] for c in command.call_args_list if c.args[2]=='openurl']
+                self.assertEqual(urls,['velunivo:///offline','velunivo:///scooter','velunivo:///?capture=navigation'])
+                self.assertEqual(alive.call_count,6)
 
     def devices(self):
         return {'com.apple.CoreSimulator.SimRuntime.iOS-26-4': [

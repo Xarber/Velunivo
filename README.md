@@ -16,15 +16,6 @@ An iOS-first navigator and route planner for e-scooters and e-bikes. Compare bic
 
 [Download releases](https://github.com/Xarber/Velunivo/releases) · [Setup guide](docs/SETUP.md) · [Build and signing guide](docs/RELEASES.md) · [Verification](docs/VERIFICATION.md) · [Brand assets](docs/BRANDING.md)
 
-## A map first, with the essentials in reach
-
-<p align="center">
-  <img src="docs/screenshots/navigation-web-phone.jpg" alt="Phone navigation simulation showing the forward-facing map, turn banner, street limit, speed and arrival card" width="240" />
-  <img src="docs/screenshots/navigation-web-desktop.jpg" alt="Desktop navigation simulation with floating controls over the map" width="500" />
-</p>
-
-Actual web screenshots on public Milan routes. Speed is labelled **Demo** because these captures use simulation; they are not physical-device test evidence.
-
 ## Built around your ride
 
 | Feature | What it does |

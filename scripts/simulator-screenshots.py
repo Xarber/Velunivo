@@ -1,6 +1,7 @@
 """Verify real startup on fresh installed Simulators; never download runtimes."""
 import argparse
 import json
+import plistlib
 import os
 import re
 import shutil
@@ -13,6 +14,7 @@ from pathlib import Path
 
 ARTIFACTS = Path('artifacts')
 BUNDLE = 'app.velunivo.mobile'
+ORIENTATION_HELP = None
 
 
 def run(*args, timeout=60):
@@ -72,16 +74,24 @@ def best_effort(*args, timeout=30):
         return None
 
 
+def orientation_supported():
+    global ORIENTATION_HELP
+    if ORIENTATION_HELP is None:
+        ORIENTATION_HELP = best_effort('xcrun','devicectl','help','device','orientation','set',timeout=20) or ''
+    return 'landscapeLeft' in ORIENTATION_HELP
+
+
 def boot_and_install(udid, family):
-    # Retry the whole capture on a fresh device, not a stalled installd instance.
-    run('xcrun', 'simctl', 'boot', udid, timeout=30)
     app = simulator_app()
-    if app is None or app.name == 'Simulator.app':
-        open_simulator(udid)
+    if app is not None and app.name == 'Simulator.app' and not orientation_supported():
+        # Select our fresh device before it boots, so the GUI neither shows a
+        # different default device nor re-boots an already-running device.
+        open_simulator(udid, select=True)
+        best_effort('xcrun','simctl','boot',udid,timeout=30)
     else:
-        # Modern devicectl rotates headlessly; avoid spending the runner's
-        # small memory budget on Device Hub's SwiftUI interface at startup.
-        print('Using headless Device Hub capture.', flush=True)
+        run('xcrun','simctl','boot',udid,timeout=30)
+        if app is None: open_simulator(udid)
+        else: print('Using headless Device Hub capture.',flush=True)
     # bootstatus waits for *all* system apps, which can stall on small hosts.
     # A timeout here does not prove the app is unusable: install, launch, PID
     # survival and framebuffer capture provide the required verification.
@@ -118,7 +128,7 @@ def simulator_app():
     return None
 
 
-def open_simulator(udid):
+def open_simulator(udid, select=False):
     app = simulator_app()
     if app is None:
         print('::warning::No installed Device Hub or Simulator UI found; using headless capture.', flush=True)
@@ -126,7 +136,8 @@ def open_simulator(udid):
     if app.name == 'Simulator.app':
         # The device is already booted; the legacy argument attempts to boot
         # it again and can display a blocking Simulator alert.
-        run('open', '-a', str(app), timeout=30)
+        if select: run('open','-a',str(app),'--args','-CurrentDeviceUDID',udid,timeout=30)
+        else: run('open','-a',str(app),timeout=30)
     else:
         # Device Hub ignores the legacy launch argument. Target the owned
         # simulated device window using its registered devices URL scheme.
@@ -137,8 +148,7 @@ def open_simulator(udid):
 def landscape(udid):
     # Xcode 27 has a supported headless orientation API. No Accessibility
     # permission, menu traversal or image rotation is necessary on that path.
-    help_text = best_effort('xcrun', 'devicectl', 'help', 'device', 'orientation', 'set', timeout=10)
-    if help_text and 'landscapeLeft' in help_text:
+    if orientation_supported():
         run('xcrun', 'devicectl', 'device', 'orientation', 'set', '--device', udid,
             'landscapeLeft', '--timeout', '20', timeout=25)
         time.sleep(3)
@@ -175,7 +185,47 @@ def verify_landscape(path):
         raise RuntimeError(f'iPad screenshot must be landscape; got {width} x {height}')
 
 
-def capture_once(devices, family):
+def seed_gallery(udid):
+    app = ARTIFACTS / 'Velunivo-simulator.app'
+    info = plistlib.loads((app / 'Info.plist').read_bytes())
+    if not info.get('VelunivoCaptureFixtures'):
+        raise RuntimeError('Gallery needs a Simulator QA build with EXPO_PUBLIC_CAPTURE_FIXTURES=1')
+    container = Path(run('xcrun', 'simctl', 'get_app_container', udid, BUNDLE, 'data', timeout=20))
+    directory = container / 'Library/Application Support' / BUNDLE / 'RCTAsyncLocalStorage_V1'
+    directory.mkdir(parents=True, exist_ok=True)
+    route = json.loads((Path(__file__).parent / 'screenshot-route.json').read_text())
+    profile = dict(id='default-scooter', kind='escooter', name='City scooter', maxSpeed=25, ridingLimit=25,
+                   cruiseFactor=.8, acceleration=.8, stopDelay=12, voice=False, motion=False,
+                   rangeKm=35, rangeUnit='km', icon='🛴', photo=None, photos=[])
+    bike = dict(profile, id='screenshot-bike', kind='ebike', name='City e-bike', rangeKm=60, icon='🚲')
+    places = [dict(id='screenshot-duomo', name='Duomo', address='Piazza del Duomo, Milano, Italia', coordinate=[9.1901,45.4642]),
+              dict(id='screenshot-park', name='Parco Sempione', address='Parco Sempione, Milano, Italia', coordinate=[9.1756,45.4738]),
+              dict(id='screenshot-theatre', name='Teatro alla Scala', address='Piazza della Scala, Milano, Italia', coordinate=[9.1895,45.4675])]
+    entries = {'welcome-seen-v1':'true', 'release-seen-v1':json.dumps([info['CFBundleShortVersionString']]),
+               'vehicles-v1':json.dumps(dict(vehicles=[profile,bike],activeId=profile['id'])),
+               'navigation-v1':json.dumps(dict(voice=False,volume='off',liveActivities=False,recordRides=False,tilted=True)),
+               'places-v1':json.dumps(places),'route-library-ids-v2':json.dumps([route['id']]),
+               'route-library-v2:'+route['id']:json.dumps(route)}
+    # Only this run's disposable device. No existing app/user data is read.
+    (directory / 'manifest.json').write_text(json.dumps(entries))
+
+
+def capture_gallery(udid, family, pid):
+    shutil.copy(ARTIFACTS / f'{family}.png', ARTIFACTS / f'{family}-explore.png')
+    screens = ['explore']
+    for name, url in [('library','velunivo:///offline'),('vehicles','velunivo:///scooter'),('navigation','velunivo:///?capture=navigation')]:
+        run('xcrun','simctl','openurl',udid,url,timeout=20)
+        time.sleep(12)
+        os.kill(pid,0)
+        image = ARTIFACTS / f'{family}-{name}.png'
+        run('xcrun','simctl','io',udid,'screenshot',str(image),timeout=30)
+        if family=='ipad': verify_landscape(image)
+        os.kill(pid,0)
+        screens.append(name)
+    return screens
+
+
+def capture_once(devices, family, gallery=False):
     runtime, template = select_device(devices, family)
     device_type = template.get('deviceTypeIdentifier')
     if not device_type:
@@ -194,6 +244,7 @@ def capture_once(devices, family):
     append_log(family, f'Owned fresh Simulator {udid}; type {device_type}; runtime {runtime}')
     try:
         boot_and_install(udid, family)
+        if gallery: seed_gallery(udid)
         # Public fixture, on this run's disposable Simulator only.
         best_effort('xcrun', 'simctl', 'privacy', udid, 'grant', 'location', BUNDLE, timeout=10)
         best_effort('xcrun', 'simctl', 'location', udid, 'set', '45.4642,9.1900', timeout=10)
@@ -211,9 +262,10 @@ def capture_once(devices, family):
         run('xcrun', 'simctl', 'io', udid, 'screenshot', str(ARTIFACTS / f'{family}.png'), timeout=30)
         if family == 'ipad':
             verify_landscape(ARTIFACTS / 'ipad.png')
-        diagnostics(udid, family)
+        screens = capture_gallery(udid,family,pid) if gallery else []
         os.kill(pid, 0)
         append_log(family, f'Verified app PID {pid} survived launch and screenshot capture.')
+        return screens
     except Exception as error:
         append_log(family, f'Required verification failed: {error}')
         diagnostics(udid, family)
@@ -223,30 +275,35 @@ def capture_once(devices, family):
         best_effort('xcrun', 'simctl', 'delete', udid, timeout=15)
 
 
-def capture(devices, family):
+def capture(devices, family, gallery=False):
     # Two complete attempts cover installation, launch, rotation and screenshot.
     image = ARTIFACTS / f'{family}.png'
     for attempt in (1, 2):
         image.unlink(missing_ok=True)
+        for partial in ARTIFACTS.glob(f'{family}-*.png'): partial.unlink()
         try:
-            capture_once(devices, family)
-            (ARTIFACTS / f'{family}-screenshot.json').write_text(json.dumps({'status': 'fresh', 'attempt': attempt}))
+            screens = capture_once(devices, family, gallery=True) if gallery else capture_once(devices,family)
+            (ARTIFACTS / f'{family}-screenshot.json').write_text(json.dumps({'status': 'fresh', 'attempt': attempt, 'screens': screens or []}))
             return
         except Exception as error:
             append_log(family, f'Capture attempt {attempt}/2 failed: {error}')
             if attempt == 2:
                 image.unlink(missing_ok=True)
+                for partial in ARTIFACTS.glob(f'{family}-*.png'): partial.unlink()
                 raise
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--family', choices=['iphone', 'ipad'])
+    parser.add_argument('--gallery',action='store_true')
     args = parser.parse_args(argv)
     ARTIFACTS.mkdir(exist_ok=True)
+    if args.family!='iphone': orientation_supported() # Probe before boot/memory pressure.
     devices = json.loads(run('xcrun', 'simctl', 'list', 'devices', 'available', '--json'))['devices']
     for family in ([args.family] if args.family else ['iphone', 'ipad']):
-        capture(devices, family)
+        if args.gallery: capture(devices,family,gallery=True)
+        else: capture(devices,family)
 
 
 if __name__ == '__main__':
