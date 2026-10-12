@@ -70,7 +70,7 @@ Sharing builds: repository variable SHARE_ORIGIN sets EXPO_PUBLIC_SHARE_ORIGIN f
 
 ## Compact public release assets (October 12, 2026)
 
-Binary releases contain exactly `Velunivo.ipa`, `Velunivo.apk`, `Velunivo-simulator.app.zip` and `build_info.json`. The JSON consolidates binary byte sizes and SHA-256 hashes, compiled iOS metadata, Xcode/Android toolchain records, conventional release notes and screenshot verification diagnostics. Web bundles remain GitHub Actions artifacts, linked through the JSON's workflow run. The hosted XCenter updater was inspected: it exports from Git source and does not depend on a release `web.zip`. AltSource refresh reads compiled metadata from the consolidated JSON, with legacy compatibility for older releases.
+Binary releases contain exactly `Velunivo.ipa`, `Velunivo.apk`, `Velunivo-simulator.app.zip`, `web.zip` and `build_info.json`. The JSON consolidates binary byte sizes and SHA-256 hashes, compiled iOS metadata, Xcode/Android toolchain records, conventional release notes and screenshot verification diagnostics. The web bundle is also retained as a workflow artifact; the consolidated JSON links both distributions. The hosted XCenter updater was inspected: it exports from Git source and does not depend on a release `web.zip`. AltSource refresh reads compiled metadata from the consolidated JSON, with legacy compatibility for older releases.
 
 Native screenshot galleries are published only to the mutable `1.0` AltSource release: iPhone screens first, then landscape iPad screens. README and normal binary releases contain no native screenshot assets. Failed captures preserve the previous gallery after two attempts rather than block binaries. The production IPA/APK/web do not enable Simulator screenshot fixtures.
 

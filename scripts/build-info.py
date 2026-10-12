@@ -41,8 +41,8 @@ def build_info(folder, repo, tag, sha, run_id):
             'sourceCommit': sha, 'createdAt': datetime.datetime.now(datetime.timezone.utc).isoformat(),
             'workflow': {'runId': run_id, 'url': f'https://github.com/{repo}/actions/runs/{run_id}'},
             'binaries': binaries, 'ios': metadata, 'details': details,
-            'web': {'distribution': 'GitHub Actions web artifact', 'name': 'web',
-                    'filename': 'web.zip', 'size': web.stat().st_size if web.exists() else None,
+            'web': {'distribution': 'GitHub release and workflow artifact', 'name': 'web',
+                    'filename': 'web.zip', 'url': f'https://github.com/{repo}/releases/download/{tag}/web.zip', 'size': web.stat().st_size if web.exists() else None,
                     'sha256': web_hash}}
 
 def main():

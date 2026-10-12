@@ -56,3 +56,6 @@ __pycache__/
 
 # Installed PeerJS runtime generated during postinstall
 src/sharing/peerRuntime.generated.ts
+
+# Isolated browser QA export
+dist-test/

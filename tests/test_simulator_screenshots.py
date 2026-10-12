@@ -13,6 +13,18 @@ spec.loader.exec_module(sim)
 
 
 class SimulatorVerificationTests(unittest.TestCase):
+    def test_gallery_uses_device_hub_payload_without_open_url_alert(self):
+        with tempfile.TemporaryDirectory() as folder:
+            artifacts = Path(folder)
+            (artifacts / 'ipad.png').write_bytes(b'fixture')
+            with patch.object(sim, 'ARTIFACTS', artifacts), patch.object(sim, 'orientation_supported', return_value=True), patch.object(sim, 'run') as run, patch.object(sim, 'verify_landscape'), patch.object(sim.os, 'kill'), patch.object(sim.time, 'sleep') as sleep:
+                self.assertEqual(sim.capture_gallery('owned-device', 'ipad', 123), ['explore', 'library', 'vehicles', 'navigation'])
+                launches = [call.args for call in run.call_args_list if 'process' in call.args]
+                self.assertEqual(len(launches), 3)
+                self.assertTrue(all('--payload-url' in args for args in launches))
+                self.assertFalse(any('openurl' in call.args for call in run.call_args_list))
+                self.assertEqual([call.args[0] for call in sleep.call_args_list], [8, 6, 25])
+
     def setUp(self):
         sim.ORIENTATION_HELP=None
 
@@ -97,6 +109,7 @@ class SimulatorVerificationTests(unittest.TestCase):
     def test_family_argument_limits_work_to_one_device(self):
         import json
         with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'run', return_value=json.dumps({'devices': self.devices()})), patch.object(sim, 'capture') as capture:
+            (Path(folder)/'Velunivo-simulator.app').mkdir()
             sim.main(['--family', 'ipad'])
             capture.assert_called_once_with(self.devices(), 'ipad')
 

@@ -15,9 +15,14 @@ from pathlib import Path
 ARTIFACTS = Path('artifacts')
 BUNDLE = 'app.velunivo.mobile'
 ORIENTATION_HELP = None
+ATTEMPT_DEADLINE = None
 
 
 def run(*args, timeout=60):
+    if ATTEMPT_DEADLINE is not None and not any(command in args for command in ('shutdown','delete')):
+        remaining=ATTEMPT_DEADLINE-time.monotonic()
+        if remaining<=0: raise subprocess.TimeoutExpired(args,0)
+        timeout=min(timeout,remaining)
     print('+ ' + ' '.join(args), flush=True)
     started = time.monotonic()
     process = subprocess.Popen(args, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True)
@@ -190,7 +195,7 @@ def seed_gallery(udid):
     info = plistlib.loads((app / 'Info.plist').read_bytes())
     if not info.get('VelunivoCaptureFixtures'):
         raise RuntimeError('Gallery needs a Simulator QA build with EXPO_PUBLIC_CAPTURE_FIXTURES=1')
-    container = Path(run('xcrun', 'simctl', 'get_app_container', udid, BUNDLE, 'data', timeout=20))
+    container = Path(run('xcrun', 'simctl', 'get_app_container', udid, BUNDLE, 'data', timeout=60))
     directory = container / 'Library/Application Support' / BUNDLE / 'RCTAsyncLocalStorage_V1'
     directory.mkdir(parents=True, exist_ok=True)
     route = json.loads((Path(__file__).parent / 'screenshot-route.json').read_text())
@@ -214,8 +219,11 @@ def capture_gallery(udid, family, pid):
     shutil.copy(ARTIFACTS / f'{family}.png', ARTIFACTS / f'{family}-explore.png')
     screens = ['explore']
     for name, url in [('library','velunivo:///offline'),('vehicles','velunivo:///scooter'),('navigation','velunivo:///?capture=navigation')]:
-        run('xcrun','simctl','openurl',udid,url,timeout=20)
-        time.sleep(12)
+        if orientation_supported():
+            run('xcrun','devicectl','device','process','launch','--device',udid,'--payload-url',url,BUNDLE,timeout=30)
+        else:
+            run('xcrun','simctl','openurl',udid,url,timeout=20)
+        time.sleep({'library':8,'vehicles':6,'navigation':25}[name])
         os.kill(pid,0)
         image = ARTIFACTS / f'{family}-{name}.png'
         run('xcrun','simctl','io',udid,'screenshot',str(image),timeout=30)
@@ -226,6 +234,8 @@ def capture_gallery(udid, family, pid):
 
 
 def capture_once(devices, family, gallery=False):
+    global ATTEMPT_DEADLINE
+    ATTEMPT_DEADLINE=time.monotonic()+300
     runtime, template = select_device(devices, family)
     device_type = template.get('deviceTypeIdentifier')
     if not device_type:
@@ -248,12 +258,14 @@ def capture_once(devices, family, gallery=False):
         # Public fixture, on this run's disposable Simulator only.
         best_effort('xcrun', 'simctl', 'privacy', udid, 'grant', 'location', BUNDLE, timeout=10)
         best_effort('xcrun', 'simctl', 'location', udid, 'set', '45.4642,9.1900', timeout=10)
+        if family == 'ipad':
+            landscape(udid)
         launch = run('xcrun', 'simctl', 'launch', udid, BUNDLE, timeout=90)
         match = re.search(r':\s*(\d+)', launch)
         if not match:
             raise RuntimeError(f'Launch did not report an app PID: {launch}')
         pid = int(match.group(1))
-        time.sleep(15)
+        time.sleep(55)
         os.kill(pid, 0)
         best_effort('xcrun', 'simctl', 'status_bar', udid, 'override', '--time', '9:41',
                     '--batteryState', 'charged', '--batteryLevel', '100', timeout=10)
@@ -268,9 +280,11 @@ def capture_once(devices, family, gallery=False):
         return screens
     except Exception as error:
         append_log(family, f'Required verification failed: {error}')
+        ATTEMPT_DEADLINE=None
         diagnostics(udid, family)
         raise
     finally:
+        ATTEMPT_DEADLINE=None
         best_effort('xcrun', 'simctl', 'shutdown', udid, timeout=15)
         best_effort('xcrun', 'simctl', 'delete', udid, timeout=15)
 
@@ -299,6 +313,7 @@ def main(argv=None):
     parser.add_argument('--gallery',action='store_true')
     args = parser.parse_args(argv)
     ARTIFACTS.mkdir(exist_ok=True)
+    if not (ARTIFACTS/'Velunivo-simulator.app').is_dir(): raise SystemExit('Compiled Simulator app is missing; download the ios-simulator workflow artifact first.')
     if args.family!='iphone': orientation_supported() # Probe before boot/memory pressure.
     devices = json.loads(run('xcrun', 'simctl', 'list', 'devices', 'available', '--json'))['devices']
     for family in ([args.family] if args.family else ['iphone', 'ipad']):

@@ -232,6 +232,15 @@ jobs:
           print(f'DEVELOPER_DIR={chosen}/Contents/Developer')
           print(f'XCODE_CACHE_ID={chosen.name}')
           PY
+      - name: Restore incremental iPhone build products
+        uses: actions/cache@v4
+        continue-on-error: true
+        with:
+          path: .derived-ios
+          key: ios-derived-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-${{ hashFiles('package-lock.json', 'app.json', 'modules/**') }}-${{ github.sha }}
+          restore-keys: |
+            ios-derived-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-${{ hashFiles('package-lock.json', 'app.json', 'modules/**') }}-
+            ios-derived-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-
       - name: Restore iOS C++ compiler cache
         uses: actions/cache@v4
         continue-on-error: true
@@ -256,7 +265,7 @@ jobs:
       - name: Archive iPhone app without signing
         run: |
           mkdir -p artifacts
-          xcodebuild -workspace ios/Velunivo.xcworkspace -scheme Velunivo -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -archivePath "$PWD/artifacts/Velunivo.xcarchive" archive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CCACHE_DIR="$CCACHE_DIR" CCACHE_MAXSIZE="$CCACHE_MAXSIZE" CCACHE_BASEDIR="$CCACHE_BASEDIR" CCACHE_COMPILERCHECK="$CCACHE_COMPILERCHECK"
+          xcodebuild -derivedDataPath "$PWD/.derived-ios" -workspace ios/Velunivo.xcworkspace -scheme Velunivo -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -archivePath "$PWD/artifacts/Velunivo.xcarchive" archive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CCACHE_DIR="$CCACHE_DIR" CCACHE_MAXSIZE="$CCACHE_MAXSIZE" CCACHE_BASEDIR="$CCACHE_BASEDIR" CCACHE_COMPILERCHECK="$CCACHE_COMPILERCHECK"
           mkdir -p artifacts/Payload
           cp -R artifacts/Velunivo.xcarchive/Products/Applications/Velunivo.app artifacts/Payload/
           (cd artifacts && zip -qry Velunivo.ipa Payload)
@@ -325,6 +334,15 @@ jobs:
           print(f'DEVELOPER_DIR={chosen}/Contents/Developer')
           print(f'XCODE_CACHE_ID={chosen.name}')
           PY
+      - name: Restore incremental Simulator build products
+        uses: actions/cache@v4
+        continue-on-error: true
+        with:
+          path: work/simulator
+          key: sim-derived-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-${{ hashFiles('package-lock.json', 'app.json', 'modules/**') }}-${{ github.sha }}
+          restore-keys: |
+            sim-derived-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-${{ hashFiles('package-lock.json', 'app.json', 'modules/**') }}-
+            sim-derived-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-
       - name: Restore iOS C++ compiler cache
         uses: actions/cache@v4
         continue-on-error: true
@@ -372,7 +390,7 @@ jobs:
           - family: iphone
             runner: xcode-27
           - family: ipad
-            runner: macos-26
+            runner: xcode-27
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -449,7 +467,7 @@ jobs:
           else
             gh release create "$RELEASE_TAG" --verify-tag --title "Velunivo ${{ needs.prepare.outputs.version }}" --notes-file artifacts/release-notes.md
           fi
-          gh release upload "$RELEASE_TAG" artifacts/Velunivo.ipa artifacts/Velunivo.apk artifacts/Velunivo-simulator.app.zip artifacts/build_info.json --clobber
+          gh release upload "$RELEASE_TAG" artifacts/Velunivo.ipa artifacts/Velunivo.apk artifacts/Velunivo-simulator.app.zip artifacts/web.zip artifacts/build_info.json --clobber
       - name: Update mutable AltSource release at fixed 1.0 URL
         run: |
           if ! gh release view 1.0 >/dev/null 2>&1; then
