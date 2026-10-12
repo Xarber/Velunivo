@@ -14,22 +14,21 @@ permissions:
   contents: read
   actions: read
 concurrency:
-  group: screenshot-device-hub
+  group: screenshot-stable-comparison
   cancel-in-progress: true
 jobs:
   inspect:
-    runs-on: xcode-27
+    runs-on: macos-26
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
-      - name: Select installed Xcode beta
+      - name: Use installed stable tools for comparison
         run: |
           python3 - <<'PYCODE' >> "$GITHUB_ENV"
           from pathlib import Path
           import re
-          candidates=[p for p in Path('/Applications').glob('Xcode*.app') if 'beta' in p.name.lower() and not p.is_symlink()]
-          chosen=max(candidates,key=lambda p:tuple(map(int,re.findall(r'\d+',p.name))))
-          print(f'DEVELOPER_DIR={chosen}/Contents/Developer')
+          import subprocess
+          print('DEVELOPER_DIR=' + subprocess.check_output(['xcode-select', '-p'], text=True).strip())
           PYCODE
       - name: Inspect installed Simulator tools and host capacity
         run: |
