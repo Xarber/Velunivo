@@ -206,13 +206,41 @@ def seed_gallery(udid):
     places = [dict(id='screenshot-duomo', name='Duomo', address='Piazza del Duomo, Milano, Italia', coordinate=[9.1901,45.4642]),
               dict(id='screenshot-park', name='Parco Sempione', address='Parco Sempione, Milano, Italia', coordinate=[9.1756,45.4738]),
               dict(id='screenshot-theatre', name='Teatro alla Scala', address='Piazza della Scala, Milano, Italia', coordinate=[9.1895,45.4675])]
-    entries = {'welcome-seen-v1':'true', 'release-seen-v1':json.dumps([info['CFBundleShortVersionString']]),
+    entries = {'ui-language-v1':'en','welcome-seen-v1':'true', 'release-seen-v1':json.dumps([info['CFBundleShortVersionString']]),
                'vehicles-v1':json.dumps(dict(vehicles=[profile,bike],activeId=profile['id'])),
                'navigation-v1':json.dumps(dict(voice=False,volume='off',liveActivities=False,recordRides=False,tilted=True)),
                'places-v1':json.dumps(places),'route-library-ids-v2':json.dumps([route['id']]),
                'route-library-v2:'+route['id']:json.dumps(route)}
     # Only this run's disposable device. No existing app/user data is read.
     (directory / 'manifest.json').write_text(json.dumps(entries))
+
+
+def screenshot_text(path):
+    return json.loads(run('osascript','-l','JavaScript',str(Path(__file__).parent/'screenshot-text.js'),str(path),timeout=20))
+
+
+def verify_screen_text(text, screen):
+    if any(re.search(r'Open in.+Velunivo', value, re.I) for value in text):
+        raise RuntimeError('Screenshot captured the system Open URL dialog, not an app page')
+    if screen == 'library' and 'Library' not in text[:8]:
+        raise RuntimeError('Library screenshot did not show the Library header')
+    if screen == 'vehicles' and 'Vehicles' not in text[:8]:
+        raise RuntimeError('Vehicles screenshot did not show the Vehicles header')
+    if screen == 'navigation' and not any(re.search(r'Simulation|Stop ride|End ride|Simulated', value, re.I) for value in text):
+        raise RuntimeError('Navigation screenshot did not show active simulation controls')
+
+
+def dismiss_owned_url_prompt(udid, family):
+    # Legacy Simulator openurl can ask for system confirmation. Only touch our
+    # isolated QA window and only after OCR proves that exact dialog is present.
+    probe=ARTIFACTS/f'{family}-url-probe.png'
+    try:
+        run('xcrun','simctl','io',udid,'screenshot',str(probe),timeout=20)
+        if not any(re.search(r'Open in.+Velunivo', value, re.I) for value in screenshot_text(probe)):return
+        open_simulator(udid)
+        run('osascript','-e','tell application "Simulator" to activate','-e','tell application "System Events" to tell process "Simulator" to key code 36',timeout=20)
+    finally:
+        probe.unlink(missing_ok=True)
 
 
 def capture_gallery(udid, family, pid):
@@ -223,11 +251,14 @@ def capture_gallery(udid, family, pid):
             run('xcrun','devicectl','device','process','launch','--device',udid,'--payload-url',url,BUNDLE,timeout=30)
         else:
             run('xcrun','simctl','openurl',udid,url,timeout=20)
+            time.sleep(2)
+            dismiss_owned_url_prompt(udid,family)
         time.sleep({'library':8,'vehicles':6,'navigation':25}[name])
         os.kill(pid,0)
         image = ARTIFACTS / f'{family}-{name}.png'
         run('xcrun','simctl','io',udid,'screenshot',str(image),timeout=30)
         if family=='ipad': verify_landscape(image)
+        verify_screen_text(screenshot_text(image),name)
         os.kill(pid,0)
         screens.append(name)
     return screens
@@ -297,7 +328,7 @@ def capture(devices, family, gallery=False):
         for partial in ARTIFACTS.glob(f'{family}-*.png'): partial.unlink()
         try:
             screens = capture_once(devices, family, gallery=True) if gallery else capture_once(devices,family)
-            (ARTIFACTS / f'{family}-screenshot.json').write_text(json.dumps({'status': 'fresh', 'attempt': attempt, 'screens': screens or []}))
+            (ARTIFACTS / f'{family}-screenshot.json').write_text(json.dumps({'status': 'fresh', 'attempt': attempt, 'screens': screens or [], 'appVersion':plistlib.loads((ARTIFACTS/'Velunivo-simulator.app/Info.plist').read_bytes()).get('CFBundleShortVersionString') if (ARTIFACTS/'Velunivo-simulator.app/Info.plist').exists() else None}))
             return
         except Exception as error:
             append_log(family, f'Capture attempt {attempt}/2 failed: {error}')
@@ -314,7 +345,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     ARTIFACTS.mkdir(exist_ok=True)
     if not (ARTIFACTS/'Velunivo-simulator.app').is_dir(): raise SystemExit('Compiled Simulator app is missing; download the ios-simulator workflow artifact first.')
-    if args.family!='iphone': orientation_supported() # Probe before boot/memory pressure.
+    orientation_supported() # Every family: probe before boot/memory pressure, including phone galleries.
     devices = json.loads(run('xcrun', 'simctl', 'list', 'devices', 'available', '--json'))['devices']
     for family in ([args.family] if args.family else ['iphone', 'ipad']):
         if args.gallery: capture(devices,family,gallery=True)

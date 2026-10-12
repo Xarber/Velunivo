@@ -1,0 +1,113 @@
+name: Refresh native AltSource gallery
+on:
+  workflow_run:
+    workflows: ['Build and release']
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      build_run:
+        description: 'Successful build run containing ios-simulator'
+        required: true
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: altsource-gallery
+  cancel-in-progress: true
+jobs:
+  identify:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.run.outputs.run }}
+    steps:
+      - id: run
+        env:
+          BUILD_RUN: ${{ inputs.build_run || github.event.workflow_run.id }}
+        run: |
+          [[ "$BUILD_RUN" =~ ^[0-9]+$ ]] || exit 1
+          echo "run=$BUILD_RUN" >> "$GITHUB_OUTPUT"
+  capture:
+    needs: identify
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - family: iphone
+            runner: xcode-27
+          - family: ipad
+            runner: macos-26
+    env:
+      GH_TOKEN: ${{ github.token }}
+      BUILD_RUN: ${{ needs.identify.outputs.run }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select installed verification tools without downloading runtimes
+        run: |
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          from pathlib import Path
+          import re, subprocess
+          choices=[p for p in Path('/Applications').glob('Xcode*.app') if 'beta' in p.name.lower() and not p.is_symlink()]
+          developer=str(max(choices,key=lambda p:tuple(map(int,re.findall(r'\d+',p.name))))/'Contents/Developer') if choices else subprocess.check_output(['xcode-select','-p'],text=True).strip()
+          print('DEVELOPER_DIR='+developer)
+          PY
+      - name: Download the already compiled Simulator app
+        run: |
+          mkdir -p artifacts
+          gh run download "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --name ios-simulator --dir artifacts
+          ditto -x -k artifacts/Velunivo-simulator.app.zip artifacts
+          sudo mdutil -a -i off || true
+      - name: Verify real pages on the owned device (two bounded attempts)
+        timeout-minutes: 12
+        run: python3 scripts/simulator-screenshots.py --family "${{ matrix.family }}" --gallery
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gallery-${{ matrix.family }}
+          path: |
+            artifacts/${{ matrix.family }}*.png
+            artifacts/${{ matrix.family }}*.json
+            artifacts/${{ matrix.family }}*.log
+            artifacts/*.ips
+  publish:
+    needs: [identify, capture]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: gallery-*
+          path: artifacts
+          merge-multiple: true
+      - name: Require both fresh galleries and the latest published binary
+        run: |
+          mkdir -p work/source
+          gh release download 1.0 --repo "$GITHUB_REPOSITORY" --pattern apps.json --dir work/source
+          python3 - <<'PY' >> "$GITHUB_ENV"
+          import json
+          from pathlib import Path
+          versions=set()
+          for family in ['iphone','ipad']:
+              status=json.loads(Path(f'artifacts/{family}-screenshot.json').read_text())
+              versions.add(status.get('appVersion'))
+              if status.get('status')!='fresh' or set(status.get('screens',[]))!={'explore','library','vehicles','navigation'}:raise SystemExit('Fresh real pages required on both devices; preserve current source.')
+          source=json.loads(Path('work/source/apps.json').read_text())
+          app=next(a for a in source['apps'] if a['bundleIdentifier']=='app.velunivo.mobile')
+          version=app['versions'][0]['version']
+          import re
+          if not re.fullmatch(r'\d+\.\d+\.\d+',version):raise SystemExit('Invalid source version')
+          if versions!={version}:raise SystemExit('Gallery is not the latest published app; preserve current source.')
+          print('RELEASE_TAG=v'+version)
+          PY
+      - name: Publish screenshots to AltSource only (iPhone before landscape iPad)
+        run: |
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern build_info.json --dir artifacts
+          python3 scripts/update-source.py --repo "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG" --assets artifacts --existing work/source/apps.json --output work/source/apps.json
+          python3 scripts/publish-source.py --repo "$GITHUB_REPOSITORY" --source work/source

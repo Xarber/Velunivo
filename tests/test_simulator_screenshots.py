@@ -17,7 +17,7 @@ class SimulatorVerificationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder:
             artifacts = Path(folder)
             (artifacts / 'ipad.png').write_bytes(b'fixture')
-            with patch.object(sim, 'ARTIFACTS', artifacts), patch.object(sim, 'orientation_supported', return_value=True), patch.object(sim, 'run') as run, patch.object(sim, 'verify_landscape'), patch.object(sim.os, 'kill'), patch.object(sim.time, 'sleep') as sleep:
+            with patch.object(sim, 'ARTIFACTS', artifacts), patch.object(sim, 'orientation_supported', return_value=True), patch.object(sim, 'run') as run, patch.object(sim, 'verify_landscape'), patch.object(sim.os, 'kill'), patch.object(sim,'screenshot_text',return_value=['Library','Vehicles','Simulation']), patch.object(sim.time, 'sleep') as sleep:
                 self.assertEqual(sim.capture_gallery('owned-device', 'ipad', 123), ['explore', 'library', 'vehicles', 'navigation'])
                 launches = [call.args for call in run.call_args_list if 'process' in call.args]
                 self.assertEqual(len(launches), 3)
@@ -93,7 +93,7 @@ class SimulatorVerificationTests(unittest.TestCase):
     def test_gallery_uses_existing_screens_and_checks_app_survival(self):
         with tempfile.TemporaryDirectory() as folder:
             root=Path(folder);(root/'iphone.png').write_bytes(b'baseline')
-            with patch.object(sim,'ARTIFACTS',root),patch.object(sim,'run') as command,patch.object(sim.time,'sleep'),patch.object(sim.os,'kill') as alive:
+            with patch.object(sim,'ARTIFACTS',root),patch.object(sim,'run') as command,patch.object(sim.time,'sleep'),patch.object(sim.os,'kill') as alive,patch.object(sim,'screenshot_text',return_value=['Library','Vehicles','Simulation']),patch.object(sim,'dismiss_owned_url_prompt'):
                 self.assertEqual(sim.capture_gallery('owned-device','iphone',1234),['explore','library','vehicles','navigation'])
                 urls=[c.args[-1] for c in command.call_args_list if c.args[2]=='openurl']
                 self.assertEqual(urls,['velunivo:///offline','velunivo:///scooter','velunivo:///?capture=navigation'])
@@ -236,3 +236,13 @@ class ProcessTimeoutTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class ScreenshotPageValidationTests(unittest.TestCase):
+    def test_open_url_dialog_and_wrong_pages_are_never_a_verified_gallery(self):
+        with self.assertRaisesRegex(RuntimeError,'Open URL dialog'):
+            sim.verify_screen_text(['Velunivo','Open in “Velunivo”?','Open'],'library')
+        with self.assertRaisesRegex(RuntimeError,'Library header'):
+            sim.verify_screen_text(['Velunivo','Your ride']+['Map label']*10+['Library'],'library')
+        sim.verify_screen_text(['9:41','Library','Saved Places'],'library')
+        sim.verify_screen_text(['9:41','Vehicles','Sharing E-Scooter'],'vehicles')
+        sim.verify_screen_text(['9:41','Simulation','Stop ride'],'navigation')

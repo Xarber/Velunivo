@@ -1,0 +1,3 @@
+// Uses the installed macOS Vision framework; no compiler, SDK download or UI access.
+ObjC.import('Foundation');ObjC.import('Vision');
+function run(args){const request=$.VNRecognizeTextRequest.alloc.init;request.recognitionLevel=1;const handler=$.VNImageRequestHandler.alloc.initWithURLOptions($.NSURL.fileURLWithPath(args[0]),$({}));if(!handler.performRequestsError($([request]),null))throw new Error('Screenshot text recognition failed');let text=[];for(let i=0;i<request.results.count;i++){const value=request.results.objectAtIndex(i).topCandidates(1).firstObject;if(value)text.push(ObjC.unwrap(value.string));}return JSON.stringify(text);}
