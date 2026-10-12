@@ -20,7 +20,8 @@ function modulePath(origin,request,platform) {
 test('Metro selects native iOS Live Activity service for Settings and ride subscriptions',()=>{
  for(const [origin,request] of [['src/components/ActivityDiagnostics.tsx','../services/useNavigationActivity'],['src/services/useRide.ts','./useNavigationActivity']]) {
   assert.equal(modulePath(origin,request,'ios'),'src/services/useNavigationActivity.ios.tsx');
-  for(const platform of ['android','web'])assert.equal(modulePath(origin,request,platform),'src/services/useNavigationActivity.tsx');
+  assert.equal(modulePath(origin,request,'android'),'src/services/useNavigationActivity.android.tsx');
+  assert.equal(modulePath(origin,request,'web'),'src/services/useNavigationActivity.tsx');
  }
 });
 test('Metro selects native SF Symbol position marker only on iOS',()=>{

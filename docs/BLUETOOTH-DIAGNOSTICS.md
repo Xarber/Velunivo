@@ -1,0 +1,9 @@
+# Developer Bluetooth Diagnostics
+
+Developer Options → Bluetooth Diagnostics is separate from supported-vehicle discovery. It may inspect unknown devices and never adds a vehicle association or claims compatibility. Native scanning collects advertised UUIDs, manufacturer/service bytes, names, identifiers, RSSI and connectability. Selecting a device enumerates services and characteristic properties, and attempts readable characteristics only. No writes, subscriptions, firmware commands, settings changes or authentication are sent.
+
+Exports use one JSON document with format `velunivo-bluetooth-diagnostics`, schema 1, app/platform/version, capture date, hex/base64 byte representations, GATT UUIDs/properties/read values/errors, optional user model/firmware notes and plugin detection evidence. Native company identifiers use the Bluetooth little-endian manufacturer prefix. Values may expose serial numbers or private identifiers: review the file before sharing. Read failures are retained rather than fabricated.
+
+Web Bluetooth's device chooser cannot supply full advertisement/RSSI data. Browsers grant only requested services, so a developer may supply additional service UUIDs before choosing a device. Native diagnostics are the preferred full scan. Restricted/missing GATT services in a browser are not proof a vehicle lacks those services. The UI explicitly describes these limitations. Normal pairing filters are unchanged.
+
+Diagnostics are unavailable during a ride. A connected vehicle must be disconnected before GATT inspection, avoiding concurrent use of the shared manager. Permissions are requested only when the user starts scanning. Native reads have individual three-second transaction cancellation; the diagnostic connection is closed on completion or failure. Capture is read-only and needs a fresh native build for physical validation; no other protocols are implemented by this feature.

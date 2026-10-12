@@ -1,0 +1,6 @@
+import {BLEDeviceInfo} from '../bluetooth/types';
+export function diagnosticBytes(bytes:Uint8Array|undefined){if(!bytes)return null;return {length:bytes.length,hex:Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join(''),base64:btoa(String.fromCharCode(...bytes))};}
+export function diagnosticAdvertisement(device:BLEDeviceInfo){return {id:device.id,name:device.name,rssi:device.rssi,connectable:device.connectable??null,advertisedServices:device.services,manufacturerData:diagnosticBytes(device.manufacturerData),companyIdentifier:device.manufacturerData&&device.manufacturerData.length>=2?device.manufacturerData[0]|device.manufacturerData[1]<<8:null,serviceData:Object.fromEntries(Object.entries(device.serviceData||{}).map(([key,value])=>[key,diagnosticBytes(value)]))};}
+export interface DiagnosticCharacteristic {uuid:string;properties:Record<string,boolean>;value?:ReturnType<typeof diagnosticBytes>;error?:string;}
+export interface DiagnosticService {uuid:string;characteristics:DiagnosticCharacteristic[];error?:string;}
+export interface BluetoothDiagnostic {format:'velunivo-bluetooth-diagnostics';schema:1;capturedAt:number;platform:string;appVersion:string;device:ReturnType<typeof diagnosticAdvertisement>;services:DiagnosticService[];limitations:string[];notes?:string;matches?:{plugin:string;model?:string;uncertain?:boolean;reason?:string}[];}

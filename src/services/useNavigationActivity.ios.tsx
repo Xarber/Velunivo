@@ -1,3 +1,4 @@
+import {t} from '../i18n/core';
 import {currentActivityExtras} from './activityExtras';
 import React, { useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
@@ -19,17 +20,18 @@ const NavigationLayout = (p: NavigationActivity, environment: LiveActivityEnviro
   const batteryTint=old?'#E49235':p.batteryColor || accent;
   const badges=<HStack spacing={16}>{p.batteryPercent!==undefined && <HStack spacing={5}><Image systemName={p.batterySymbol || 'battery.100percent'} color={batteryTint} /><Text modifiers={[foregroundStyle(batteryTint)]}>{p.batteryPercent}%</Text>{old && <Text modifiers={[foregroundStyle(batteryTint)]}>{p.oldLabel}</Text>}{p.batteryUpdatedAt!==undefined && <Text date={new Date(p.batteryUpdatedAt)} dateStyle="relative" modifiers={[font({size:11}),foregroundStyle(batteryTint)]} />}</HStack>}{p.viewerCount!==undefined && <HStack spacing={5}><Image systemName="person.fill" color={accent} /><Text>{p.viewerCount}</Text>{environment.isStale && <Image systemName="clock" color="#E49235" />}</HStack>}</HStack>;
   return {
-    banner: <VStack modifiers={[padding({all:12})]}><Text modifiers={[font({weight:'bold',size:20}),foregroundStyle(accent)]}>{p.distance} · {p.turn}</Text><Text>{p.arrival} arrival · {p.minutes} · {p.remaining}</Text>{badges}</VStack>,
+    banner: <VStack modifiers={[padding({all:12})]}><Text modifiers={[font({weight:'bold',size:20}),foregroundStyle(accent)]}>{p.distance} · {p.turn}</Text><Text>{p.arrival} arrival · {p.minutes} · {p.remaining}</Text>{environment.isStale&&<Text modifiers={[foregroundStyle('#E49235')]}>{p.oldLabel}</Text>}{badges}</VStack>,
     compactLeading: <Image systemName={p.symbol} color={accent} />,
     compactTrailing: <Text>{p.distance}</Text>,
     minimal: <Image systemName={p.symbol} color={accent} />,
     expandedLeading: <Image systemName={p.symbol} color={accent} />,
     expandedTrailing: <Text modifiers={[font({size:20,weight:'bold'})]}>{p.distance}</Text>,
-    expandedBottom: <VStack modifiers={[padding({all:8})]}><Text>{p.turn}</Text><Text>{p.arrival} arrival · {p.minutes} · {p.remaining}</Text>{badges}</VStack>,
+    expandedBottom: <VStack modifiers={[padding({all:8})]}><Text>{p.turn}</Text><Text>{p.arrival} arrival · {p.minutes} · {p.remaining}</Text>{environment.isStale&&<Text modifiers={[foregroundStyle('#E49235')]}>{p.oldLabel}</Text>}{badges}</VStack>,
   };
 };
 const activity=createLiveActivity<NavigationActivity>('VelunivoNavigation',NavigationLayout);
 // Separate factory: tests must never replace, update or end a real ride.
+const spectatorActivity=createLiveActivity<NavigationActivity>('VelunivoSharedTrip',NavigationLayout);
 const testActivity=createLiveActivity<NavigationActivity>('VelunivoNavigationTest',NavigationLayout);
 let testTimer:ReturnType<typeof setTimeout>|undefined;
 export async function stopTestLiveActivity() {
@@ -49,17 +51,19 @@ export async function startTestLiveActivity() {
   } catch(error) {lastActivityError=error instanceof Error ? error.message : String(error);throw error;}
 }
 
-export function useNavigationActivity(active: boolean, props: NavigationActivity) {
+export function useNavigationActivity(active:boolean,props:NavigationActivity){return useActivity(activity,active,props,'velunivo:///');}
+export function useSpectatorActivity(active:boolean,props:NavigationActivity,link:string){return useActivity(spectatorActivity,active,props,link);}
+function useActivity(factory:typeof activity,active: boolean, props: NavigationActivity,link:string) {
   const instance=useRef<LiveActivity<NavigationActivity> | null>(null), latest=useRef(props), last=useRef('');
-  const [status,setStatus]=useState(''); useEffect(()=>{latest.current=props;currentRideProps=active?props:undefined;},[active,props]);
-  useEffect(()=>{ try { for(const old of activity.getInstances()) void old.end('immediate').catch(()=>{}); } catch { /* Unsupported/sideloaded host. */ } },[]);
+  const [status,setStatus]=useState(''); useEffect(()=>{latest.current={...props,oldLabel:props.oldLabel||t('Old')};if(factory===activity)currentRideProps=active?props:undefined;},[active,props,factory]);
+  useEffect(()=>{ try { for(const old of factory.getInstances()) void old.end('immediate').catch(()=>{}); } catch { /* Unsupported/sideloaded host. */ } },[factory]);
   useEffect(()=>{ if(!active)return;
     // The native ActivityKit factory synchronously reports availability.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    try { instance.current=activity.start(latest.current,'velunivo:///',new Date(Date.now()+30000)); lastActivityError=''; const report=inspectLiveActivity();setStatus(report.checks && Object.values(report.checks).some(value=>!value) ? activityDiagnosis(report) : 'Live Activity requested · check the Lock Screen'); } catch (error) { lastActivityError=error instanceof Error ? error.message : String(error);setStatus(`Live Activity could not start: ${lastActivityError}. Check iOS Settings → Apps → Velunivo → Live Activities.`); }
+    try { instance.current=factory.start(latest.current,link,new Date(Date.now()+30000)); lastActivityError=''; const report=inspectLiveActivity();setStatus(report.checks && Object.values(report.checks).some(value=>!value) ? activityDiagnosis(report) : 'Live Activity requested · check the Lock Screen'); } catch (error) { lastActivityError=error instanceof Error ? error.message : String(error);setStatus(`Live Activity could not start: ${lastActivityError}. Check iOS Settings → Apps → Velunivo → Live Activities.`); }
     return ()=>{const live=instance.current;instance.current=null;last.current='';if(live)void live.end('immediate').catch(()=>{});};
-  },[active]);
-  useEffect(()=>{ if(!active || !instance.current || AppState.currentState !== 'active')return; const key=JSON.stringify(props);if(key===last.current)return;last.current=key;void instance.current.update(props,new Date(Date.now()+30000)).catch(error=>{lastActivityError=error instanceof Error ? error.message : String(error);setStatus(`Live Activity could not update: ${lastActivityError}`);}); },[active,props]);
+  },[active,factory,link]);
+  useEffect(()=>{ if(!active || !instance.current)return; const key=JSON.stringify(props);if(key===last.current)return;last.current=key;void instance.current.update(props,new Date(Date.now()+30000)).catch(error=>{lastActivityError=error instanceof Error ? error.message : String(error);setStatus(`Live Activity could not update: ${lastActivityError}`);}); },[active,props,factory]);
   return {status};
 }
 

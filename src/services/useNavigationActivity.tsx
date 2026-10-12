@@ -9,3 +9,5 @@ export function inspectLiveActivity():ActivityReport {return {checks:null,active
 
 export async function startTestLiveActivity():Promise<ActivityReport> {throw new Error('Live Activities require an iOS native build.');}
 export async function stopTestLiveActivity() {}
+
+export function useSpectatorActivity(_active:boolean,_props:NavigationActivity,_link:string){return {status:'Live Activities require a native build.'};}

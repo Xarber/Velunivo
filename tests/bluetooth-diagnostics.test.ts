@@ -1,0 +1,3 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';
+import {diagnosticAdvertisement,diagnosticBytes} from '../src/core/bluetoothDiagnostics';
+test('diagnostic exports retain byte order, company identifier and advertised services without guessing support',()=>{const result=diagnosticAdvertisement({id:'device',name:'Unknown scooter',rssi:-60,services:['180a'],manufacturerData:Uint8Array.from([0x8f,3,1,2]),serviceData:{fe95:Uint8Array.from([3,4])}});assert.equal(result.companyIdentifier,911);assert.equal(result.manufacturerData?.hex,'8f030102');assert.equal(result.serviceData.fe95?.hex,'0304');assert.equal(result.connectable,null);assert.equal(diagnosticBytes(undefined),null);assert.deepEqual(JSON.parse(JSON.stringify(result)),result);});
