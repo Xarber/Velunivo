@@ -35,7 +35,7 @@ class SimulatorVerificationTests(unittest.TestCase):
             (app / 'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier': 'com.apple.iphonesimulator'}))
             with patch.dict(sim.os.environ, {'DEVELOPER_DIR': str(developer)}), patch.object(sim, 'run') as commands, patch.object(sim.time, 'sleep'), patch.object(sim, 'best_effort', return_value=None):
                 sim.landscape('owned-device')
-                self.assertEqual(commands.call_args_list[0].args, ('open', '-a', str(app), '--args', '-CurrentDeviceUDID', 'owned-device'))
+                self.assertEqual(commands.call_args_list[0].args, ('open', '-a', str(app)))
 
     def test_missing_simulator_gui_does_not_block_headless_install(self):
         with patch.dict(sim.os.environ, {'DEVELOPER_DIR': '/missing/beta/Developer'}), patch.object(Path, 'is_dir', return_value=False), patch.object(sim, 'best_effort', return_value=None):

@@ -124,7 +124,9 @@ def open_simulator(udid):
         print('::warning::No installed Device Hub or Simulator UI found; using headless capture.', flush=True)
         return False
     if app.name == 'Simulator.app':
-        run('open', '-a', str(app), '--args', '-CurrentDeviceUDID', udid, timeout=30)
+        # The device is already booted; the legacy argument attempts to boot
+        # it again and can display a blocking Simulator alert.
+        run('open', '-a', str(app), timeout=30)
     else:
         # Device Hub ignores the legacy launch argument. Target the owned
         # simulated device window using its registered devices URL scheme.
@@ -158,7 +160,7 @@ def landscape(udid):
             tell hub to click menu item "Rotate Left" of menu 1 of menu bar item "Controls" of menu bar 1
         end tell'''
     else:
-        rotate = 'tell application "System Events" to tell process "Simulator" to click menu item "Landscape Left" of menu 1 of menu item "Orientation" of menu 1 of menu bar item "Device" of menu bar 1'
+        rotate = 'tell application "System Events" to tell process "Simulator" to key code 123 using {command down}'
     run('osascript', '-e', activate, '-e', rotate, timeout=30)
     time.sleep(3)
 

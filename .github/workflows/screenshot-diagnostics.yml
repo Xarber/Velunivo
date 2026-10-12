@@ -6,6 +6,11 @@ on:
         description: 'Completed build run containing the ios artifact (no compilation)'
         required: true
         default: '38207740453'
+      runner:
+        description: 'Xcode beta host or stable Simulator comparison'
+        type: choice
+        options: [xcode-27, macos-26]
+        default: xcode-27
       source_artifact:
         description: 'Use ios for older runs; ios-simulator for parallel builds'
         required: true
@@ -18,7 +23,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   inspect:
-    runs-on: xcode-27
+    runs-on: ${{ inputs.runner }}
     strategy:
       fail-fast: false
       matrix:
@@ -31,10 +36,16 @@ jobs:
           python3 - <<'PYCODE' >> "$GITHUB_ENV"
           from pathlib import Path
           import re
+          import subprocess
           candidates=[p for p in Path('/Applications').glob('Xcode*.app') if 'beta' in p.name.lower() and not p.is_symlink()]
-          chosen=max(candidates,key=lambda p:tuple(map(int,re.findall(r'\d+',p.name))))
-          print(f'DEVELOPER_DIR={chosen}/Contents/Developer')
+          if candidates:
+              chosen=max(candidates,key=lambda p:tuple(map(int,re.findall(r'\d+',p.name))))
+              print(f'DEVELOPER_DIR={chosen}/Contents/Developer')
+          else:
+              print('DEVELOPER_DIR='+subprocess.check_output(['xcode-select','-p'],text=True).strip())
           PYCODE
+      - name: Avoid Spotlight indexing on the disposable runner
+        run: sudo mdutil -a -i off || true
       - name: Inspect installed Simulator tools and host capacity
         run: |
           ls -la /Applications
