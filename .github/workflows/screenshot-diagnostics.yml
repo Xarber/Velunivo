@@ -18,6 +18,15 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+      - name: Select installed Xcode beta
+        run: |
+          python3 - <<'PYCODE' >> "$GITHUB_ENV"
+          from pathlib import Path
+          import re
+          candidates=[p for p in Path('/Applications').glob('Xcode*.app') if 'beta' in p.name.lower() and not p.is_symlink()]
+          chosen=max(candidates,key=lambda p:tuple(map(int,re.findall(r'\d+',p.name))))
+          print(f'DEVELOPER_DIR={chosen}/Contents/Developer')
+          PYCODE
       - name: Inspect installed Simulator tools and host capacity
         run: |
           ls -la /Applications
@@ -31,16 +40,13 @@ jobs:
           sysctl hw.memsize hw.ncpu
           ps -axo pid,pcpu,pmem,comm | sort -k2 -rn | head -20
       - uses: actions/download-artifact@v4
-        if: false
         with:
           name: ios
           path: artifacts
           github-token: ${{ github.token }}
           run-id: ${{ inputs.source_run }}
-      - if: false
-        run: ditto -x -k artifacts/Velunivo-simulator.app.zip artifacts
+      - run: ditto -x -k artifacts/Velunivo-simulator.app.zip artifacts
       - name: Capture iPad without rebuilding
-        if: false # Inventory first; enable after identifying the new Device Hub controls.
         timeout-minutes: 8
         run: python3 scripts/simulator-screenshots.py --family ipad
       - uses: actions/upload-artifact@v4

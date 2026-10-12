@@ -33,12 +33,12 @@ class SimulatorVerificationTests(unittest.TestCase):
             import plistlib
             (app / 'Contents').mkdir()
             (app / 'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier': 'com.apple.iphonesimulator'}))
-            with patch.dict(sim.os.environ, {'DEVELOPER_DIR': str(developer)}), patch.object(sim, 'run') as commands, patch.object(sim.time, 'sleep'):
+            with patch.dict(sim.os.environ, {'DEVELOPER_DIR': str(developer)}), patch.object(sim, 'run') as commands, patch.object(sim.time, 'sleep'), patch.object(sim, 'best_effort', return_value=None):
                 sim.landscape('owned-device')
                 self.assertEqual(commands.call_args_list[0].args, ('open', '-a', str(app), '--args', '-CurrentDeviceUDID', 'owned-device'))
 
     def test_missing_simulator_gui_does_not_block_headless_install(self):
-        with patch.dict(sim.os.environ, {'DEVELOPER_DIR': '/missing/beta/Developer'}), patch.object(Path, 'is_dir', return_value=False):
+        with patch.dict(sim.os.environ, {'DEVELOPER_DIR': '/missing/beta/Developer'}), patch.object(Path, 'is_dir', return_value=False), patch.object(sim, 'best_effort', return_value=None):
             self.assertFalse(sim.open_simulator('owned-device'))
             with self.assertRaisesRegex(RuntimeError, 'rotate the iPad'):
                 sim.landscape('owned-device')
@@ -51,7 +51,7 @@ class SimulatorVerificationTests(unittest.TestCase):
             (app / 'Contents').mkdir(parents=True)
             (developer / 'Applications/Simulator.app').mkdir(parents=True)
             (app / 'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier': 'com.apple.dt.DeviceHub'}))
-            with patch.dict(sim.os.environ, {'DEVELOPER_DIR': str(developer)}), patch.object(sim, 'run') as commands, patch.object(sim.time, 'sleep'):
+            with patch.dict(sim.os.environ, {'DEVELOPER_DIR': str(developer)}), patch.object(sim, 'run') as commands, patch.object(sim.time, 'sleep'), patch.object(sim, 'best_effort', return_value=None):
                 sim.landscape('owned-device')
                 self.assertEqual(commands.call_args_list[0].args[2], str(app))
                 script = commands.call_args_list[1].args[-1]
@@ -59,6 +59,12 @@ class SimulatorVerificationTests(unittest.TestCase):
                 self.assertIn('Controls', script)
                 self.assertIn('com.apple.dt.DeviceHub', script)
                 self.assertNotIn('Landscape Left', script)
+
+    def test_modern_headless_orientation_does_not_require_gui(self):
+        with patch.object(sim, 'best_effort', return_value='orientation landscapeLeft'), patch.object(sim, 'run') as command, patch.object(sim, 'simulator_app') as gui, patch.object(sim.time, 'sleep'):
+            sim.landscape('owned-device')
+            command.assert_called_once_with('xcrun', 'devicectl', 'device', 'orientation', 'set', '--device', 'owned-device', 'landscapeLeft', '--timeout', '20', timeout=25)
+            gui.assert_not_called()
 
     def devices(self):
         return {'com.apple.CoreSimulator.SimRuntime.iOS-26-4': [

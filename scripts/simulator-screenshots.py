@@ -117,7 +117,15 @@ def open_simulator(udid):
 
 
 def landscape(udid):
-    # Rotate the actual device, never a portrait screenshot after capture.
+    # Xcode 27 has a supported headless orientation API. No Accessibility
+    # permission, menu traversal or image rotation is necessary on that path.
+    help_text = best_effort('xcrun', 'devicectl', 'help', 'device', 'orientation', 'set', timeout=10)
+    if help_text and 'landscapeLeft' in help_text:
+        run('xcrun', 'devicectl', 'device', 'orientation', 'set', '--device', udid,
+            'landscapeLeft', '--timeout', '20', timeout=25)
+        time.sleep(3)
+        return
+    # Older toolchains use the real UI; never rotate a portrait output image.
     app = simulator_app()
     if app is None or not open_simulator(udid):
         raise RuntimeError('No installed Device Hub/Simulator UI is available to rotate the iPad into landscape')
