@@ -6,6 +6,10 @@ on:
         description: 'Completed build run containing the ios artifact (no compilation)'
         required: true
         default: '38207740453'
+      source_artifact:
+        description: 'Use ios for older runs; ios-simulator for parallel builds'
+        required: true
+        default: 'ios'
 permissions:
   contents: read
   actions: read
@@ -41,7 +45,7 @@ jobs:
           ps -axo pid,pcpu,pmem,comm | sort -k2 -rn | head -20
       - uses: actions/download-artifact@v4
         with:
-          name: ios
+          name: ${{ inputs.source_artifact }}
           path: artifacts
           github-token: ${{ github.token }}
           run-id: ${{ inputs.source_run }}

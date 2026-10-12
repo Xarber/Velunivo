@@ -38,7 +38,7 @@ jobs:
           mkdir -p artifacts
           if [[ -n "$BINARY_RUN_ID" ]]; then
             [[ "$BINARY_RUN_ID" =~ ^[0-9]+$ ]] || { echo 'Use a numeric workflow run ID'; exit 1; }
-            gh run download "$BINARY_RUN_ID" --repo "$GITHUB_REPOSITORY" --name ios --dir artifacts
+            gh run download "$BINARY_RUN_ID" --repo "$GITHUB_REPOSITORY" --name ios-simulator --dir artifacts || gh run download "$BINARY_RUN_ID" --repo "$GITHUB_REPOSITORY" --name ios --dir artifacts
           else
             gh release download "$RELEASE_TAG" --pattern Velunivo-simulator.app.zip --dir artifacts
           fi
