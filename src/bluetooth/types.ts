@@ -26,7 +26,7 @@ export interface VehicleProtocolPlugin {
  open(link:BLELink,context:{signal?:AbortSignal;approvalDeadline?:number;credentials?:Record<string,string>;emit(update:TelemetryUpdate):void; phase(message:string):void; random(length:number):Uint8Array}):Promise<ProtocolSession>;
 }
 export interface Association { schema:1; vehicleId:string; vehicleType:VehicleType; device:BLEDeviceInfo; pluginId:string; identity:ProtocolSession['identity']; associatedAt:number; credentials?:Record<string,string>; simulated?:boolean; }
-export interface BridgeSnapshot { state:ConnectionState; message:string; vehicleId?:string; device?:BLEDeviceInfo; pluginId?:string; simulated?:boolean; fields:Telemetry; extensions:Record<string,Reading>; capabilities?:Capabilities; connectedAt?:number; }
+export interface BridgeSnapshot { rePairRequired?:boolean; state:ConnectionState; message:string; vehicleId?:string; device?:BLEDeviceInfo; pluginId?:string; simulated?:boolean; fields:Telemetry; extensions:Record<string,Reading>; capabilities?:Capabilities; connectedAt?:number; }
 export const vehicleType = (kind:'escooter'|'ebike'):VehicleType => kind==='ebike'?'electric_bike':'electric_scooter';
 
 /** The OS/browser grant is separate from protocol registration; do not retry it silently. */

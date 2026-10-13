@@ -5,7 +5,13 @@ export const welcomePages=[
  {icon:'recording-outline',title:'Ride your way',text:'Follow directions, or record a trip without a destination. Your Library keeps places, routes and rides.'},
  {icon:'shield-checkmark-outline',title:'You stay in control',text:'Check road signs and local rules. Your records stay on your device until you export or share them.'},
 ] as const;
-export const releaseHighlights=[
+export const releaseDetails=[
+ {version:'1.2.1',items:[
+ {icon:'speedometer-outline',title:'Speed readings',text:'Native location speed is preserved. Missing startup readings no longer mark a ride as estimated.'},
+ {icon:'bluetooth-outline',title:'Pair again',text:'Replace rejected scooter credentials without forgetting your vehicle.'},
+ {icon:'pin-outline',title:'Camera pins',text:'Pin a rider’s camera from the group list.'},
+ {icon:'code-slash-outline',title:'Developer tools',text:'Grouped diagnostics, ride analytics and tests for all three Live Activities.'},
+ {icon:'list-outline',title:'Release notes',text:'Short highlights with a separate full changelog.'}]},
  {version:'1.2.0',items:[{icon:'videocam-outline',title:'Pinned camera preview',text:'Tap a camera pin to watch one rider in a small preview.'},{icon:'people-outline',title:'Group riders',text:'Recorded rides remember who joined, without their paths.'},{icon:'call-outline',title:'Group calls',text:'System calls connect with the group and end when you are alone.'}]},
  {version:'1.0.23',items:[{icon:'call-outline',title:'Group calls',text:'Restored system call lifetime and a clearer hangup button.'}]},
  {version:'1.0.22',items:[{icon:'speedometer-outline',title:'GPS speed & group connections',text:'Estimated GPS speed, faster group rejoining and rider-list video previews.'}]},
@@ -38,4 +44,6 @@ export const releaseHighlights=[
  {version:'0.1.29',items:[{icon:'play-outline',title:'Replay your rides',text:'See your recorded route and vehicle readings again.'},{icon:'language-outline',title:'English and Italian',text:'Use your device language or choose your own.'},{icon:'bluetooth-outline',title:'Connected vehicle readings',text:'Keep recent readings visible when updates pause.'}]},
  ...historicalHighlights,
 ] as const;
+/** Keep the complete release history independently of the three-item introduction. */
+export const releaseHighlights=releaseDetails.map(release=>({version:release.version,items:release.version==='1.2.1'?[{icon:'construct-outline' as const,title:'Fixes & Improvements',text:'Clearer speed readings, scooter reconnection and developer tools.'}]:release.items.slice(0,3)}));
 export function initialIntroduction(welcomed:boolean,existingData:boolean,seen:string[],version:string){return !welcomed&&!existingData?'welcome':!seen.includes(version)?'news':null;}

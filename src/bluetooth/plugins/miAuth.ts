@@ -64,7 +64,7 @@ export async function authenticateMi(link:BLELink,ctx:Context):Promise<MiUART>{
   }
   ctx.phase('Authenticating with saved Xiaomi pairing…');const random=ctx.random(16);await channel.write(CONTROL,Uint8Array.of(0x24,0,0,0));await channel.send(0x0b,random);const remote=await channel.receive(),proof=await channel.receive();if(remote.length!==16 || proof.length!==32)throw new Error('Invalid Xiaomi login response');
   const salt=concatBytes(random,remote),derived=hkdf(sha256,token,salt,text('mible-login-info'),64);const keys:Keys={device:derived.slice(0,16),app:derived.slice(16,32),deviceIV:derived.slice(32,36),appIV:derived.slice(36,40)};
-  if(!equalBytes(proof,hmac(sha256,keys.device,concatBytes(remote,random))))throw new SavedPairingRejectedError('The vehicle rejected this saved connection. Pairing is still saved; automatic retries are paused. Close other scooter connections and try Reconnect.');
+  if(!equalBytes(proof,hmac(sha256,keys.device,concatBytes(remote,random))))throw new SavedPairingRejectedError('Your scooter pairing has changed. Close other scooter apps and pair again to update the saved connection.');
   await channel.send(0x0a,hmac(sha256,keys.app,salt));await channel.expect(Uint8Array.of(0x21,0,0,0));return new MiUART(keys,ctx.random);
  }finally{channel.close();}
 }

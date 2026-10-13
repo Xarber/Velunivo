@@ -1,3 +1,4 @@
+import {activityTestData,ActivityTestKind} from '../core/activityTestData';
 import {currentActivityExtras} from './activityExtras';
 import {useEffect,useRef,useState} from 'react';
 import {AppState} from 'react-native';
@@ -20,6 +21,6 @@ export async function updateRideActivity(...args:Parameters<typeof rideActivity>
 export async function markActivityPaused(){await enqueue('velunivo-navigation',async()=>{await native?.end('velunivo-navigation');});}
 export function inspectLiveActivity():ActivityReport{const capabilities=native?.capabilities();return {checks:null,activeCount:null,lastError:!capabilities?'Android Live Updates require the latest native build.':!capabilities.notificationsAllowed?'Allow notifications to see your ride on the Lock Screen.':capabilities.promotionSupported&&capabilities.promotionAllowed?'Android Live Update promotion is allowed. Device appearance still needs checking.':'Android Live Updates are unavailable or disabled. Standard ride notifications are used.'};}
 export async function stopTestLiveActivity(){await enqueue('velunivo-test',async()=>{await native?.end('velunivo-test');});}
-export async function startTestLiveActivity(){await enqueue('velunivo-test',()=>begin('velunivo-test'));await publish('velunivo-test',{updatedAt:Date.now(),turn:t('Live Activity test · Turn right'),symbol:'arrow.turn.up.right',distance:'100 m',arrival:'—',minutes:'10 min',remaining:'2.5 km'},'velunivo:///');return inspectLiveActivity();}
+export async function startTestLiveActivity(kind:ActivityTestKind='navigation',overrides:Partial<NavigationActivity>={}){await enqueue('velunivo-test',()=>begin('velunivo-test'));await publish('velunivo-test',activityTestData(kind,overrides),'velunivo:///');return inspectLiveActivity();}
 
 export async function updateRecordingActivity(props:NavigationActivity){await publish('velunivo-recording',props,'velunivo:///offline/record-trip').catch(()=>{});}

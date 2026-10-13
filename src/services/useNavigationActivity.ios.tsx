@@ -1,3 +1,4 @@
+import {activityTestData,ActivityTestKind} from '../core/activityTestData';
 import {t} from '../i18n/core';
 import {currentActivityExtras} from './activityExtras';
 import React, { useEffect, useRef, useState } from 'react';
@@ -40,11 +41,11 @@ export async function stopTestLiveActivity() {
   testTimer=undefined;
   for(const live of testActivity.getInstances())await live.end('immediate');
 }
-export async function startTestLiveActivity() {
+export async function startTestLiveActivity(kind:ActivityTestKind='navigation',overrides:Partial<NavigationActivity>={}) {
   if(AppState.currentState!=='active')throw new Error('Open the app to start the Live Activity test.');
   try {
     await stopTestLiveActivity();
-    testActivity.start({turn:'Live Activity test · Turn right',symbol:'arrow.turn.up.right',distance:'100 m',arrival:new Date(Date.now()+600000).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}),minutes:'10 min',remaining:'2.5 km'},'velunivo:///',new Date(Date.now()+90000));
+    testActivity.start(activityTestData(kind,overrides),'velunivo:///',new Date(Date.now()+90000));
     lastActivityError='';
     // Best-effort cleanup while JS runs. staleDate alone does not end an activity.
     testTimer=setTimeout(()=>{void stopTestLiveActivity().catch(error=>{lastActivityError=error instanceof Error ? error.message : String(error);});},90000);
