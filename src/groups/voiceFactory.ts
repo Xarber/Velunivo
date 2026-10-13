@@ -2,13 +2,13 @@ import {negotiatedTransceiver} from './negotiatedSenders';
 import {NATIVE_PIN_CAPTURE,limitPinVideo} from './videoQuality';
 import {Microphone} from './microphone';
 import {VoiceConnection,VoiceFactory,VoiceMedia,VideoFeed} from './voice';import {peerOptions} from '../sharing/peerOptions';import {Platform} from 'react-native';import {requireOptionalNativeModule} from 'expo-modules-core';
-export async function voiceFactory(event:(type:'ended'|'mute',muted?:boolean)=>void=()=>{},onVideo:(id:string,feed:VideoFeed|null)=>void=()=>{}):Promise<VoiceFactory>{
+export async function voiceFactory(event:(type:'ended'|'mute'|'unavailable',muted?:boolean,detail?:string)=>void=()=>{},onVideo:(id:string,feed:VideoFeed|null)=>void=()=>{}):Promise<VoiceFactory>{
  const rtc=await import('react-native-webrtc');
- type Listener={remove():void};type NativeEvents={addListener(name:string,fn:(body:{muted?:boolean})=>void):Listener};
+ type Listener={remove():void};type NativeEvents={addListener(name:string,fn:(body:{muted?:boolean;message?:string})=>void):Listener};
  const native=requireOptionalNativeModule<NativeEvents&{setGroupVoiceActive(active:boolean,owner:string):Promise<void>;setGroupVoiceMuted?(muted:boolean,owner:string):Promise<void>}>('VelunivoAudio');
  const service=requireOptionalNativeModule<NativeEvents&{start(owner:string):Promise<void>;stop(owner:string):Promise<void>}>('VelunivoGroupVoice');
  if(Platform.OS==='ios'&&!native||Platform.OS==='android'&&!service)throw new Error('Voice chat needs the latest native build.');
- const module=Platform.OS==='ios'?native!:service!,listeners=[module.addListener('voiceCallEnded',()=>event('ended')),module.addListener('voiceCallMuted',body=>event('mute',body.muted===true))];
+ const module=Platform.OS==='ios'?native!:service!,listeners=[module.addListener('voiceCallEnded',()=>event('ended')),module.addListener('voiceCallMuted',body=>event('mute',body.muted===true)),...(Platform.OS==='ios'?[module.addListener('voiceCallStatus',body=>event('unavailable',undefined,body.message))]:[])];
  const owner=`group-voice-${Date.now()}-${Math.random().toString(36).slice(2)}`;let audioOwned=false,desiredMuted=true;let audioQueue=Promise.resolve();
  let closed=false;const senders=new Map<VoiceConnection,InstanceType<typeof rtc.RTCRtpSender>>();const connections=new Map<VoiceConnection,InstanceType<typeof rtc.RTCPeerConnection>>();
  const audio=(active:boolean)=>{const run=audioQueue.catch(()=>{}).then(async()=>{if(Platform.OS==='ios')await native!.setGroupVoiceActive(active,owner);else if(active)await service!.start(owner);else await service!.stop(owner);});audioQueue=run;return run;};

@@ -76,19 +76,20 @@ public final class VelunivoAudioModule: Module {
   private var speech: NavigationSpeech?
   public func definition() -> ModuleDefinition {
     Name("VelunivoAudio")
-    Events("voiceCallEnded", "voiceCallMuted")
+    Events("voiceCallEnded", "voiceCallMuted", "voiceCallStatus")
     AsyncFunction("setGroupVoiceActive") { (active: Bool, owner: String) in
       let session = AVAudioSession.sharedInstance()
       if active {
         if GroupVoiceAudio.active && GroupVoiceAudio.owner == owner { return }
         self.speech?.stop()
-        try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .allowBluetoothA2DP, .defaultToSpeaker, .mixWithOthers])
+        try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .defaultToSpeaker])
         // CallKit activates the session after the start action succeeds.
         // Pre-activating it can prevent the didActivate callback and leave RTC muted.
         GroupVoiceAudio.owner = owner
         GroupVoiceAudio.active = true
         VelunivoGroupCall.shared.ended = { [weak self] in self?.sendEvent("voiceCallEnded", [:]) }
         VelunivoGroupCall.shared.muted = { [weak self] muted in self?.sendEvent("voiceCallMuted", ["muted": muted]) }
+        VelunivoGroupCall.shared.status = { [weak self] message in self?.sendEvent("voiceCallStatus", ["message": message]) }
         VelunivoGroupCall.shared.start()
       } else {
         guard GroupVoiceAudio.owner == owner else { return }

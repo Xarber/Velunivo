@@ -115,3 +115,9 @@ Pre-push checks for 1.0.20: 300 JavaScript regressions pass at concurrency 2; Ty
 1.0.21 replaces any current navigation/recording on group admission, saves before handoff, allows joining while navigating, and keeps membership until the newly started group activity ends. Group creation requires an active ride. See GROUP-RIDING.md for behavior and verification limits.
 
 Validation: all 307 JS regressions passed, including seven new activity-handoff cases. After the final change restricting location publication to active sessions, TypeScript, lint, 15 group regressions and diff whitespace checks passed again. No local native compilation, SDK downloads or simulator creation.
+
+## GPS speed and group recovery (1.0.22)
+
+Web previously relied on the browser-provided speed, which may be absent. Navigation and explicit recording now share an accuracy-aware GPS travel-distance/time estimator on web, and native uses it when a valid GPS-reported speed is absent. Stationary deadzones, invalid fixes, gaps and implausible jumps cannot become meaningful speed. Estimated readings have yellow text beneath the speed; Bluetooth speed retains priority. Per-fix provenance and the original browser/GPS speed are retained, and new recorded summaries/replays warn when estimates were used. The persisted metadata is additive and optional, preserving older rides without inventing provenance.
+
+Travel direction was already a compass fallback. It now also derives course from sustained movement when GPS reports speed but no heading, while respecting an authoritative stopped-speed reading. Group rejoin/media startup and rider-list video improvements are documented in GROUP-RIDING.md. 313 JavaScript regressions, TypeScript, Expo lint and whitespace checks pass. Native media/CallKit still need real-device retesting in the new binary. No computer use or new SDK.

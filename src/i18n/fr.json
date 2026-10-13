@@ -1327,5 +1327,12 @@
   "Recording groups start recording on your device.": "Rejoindre un groupe qui enregistre un trajet lance aussi l’enregistrement sur votre appareil.",
   "Joining a group saves your current ride and starts the group activity.": "Rejoindre un groupe sauvegarde votre trajet actuel et lance l’activité du groupe.",
   "Ride could not be saved. Check device storage.": "Impossible de sauvegarder le trajet. Vérifiez le stockage de votre appareil.",
-  "Start a ride before creating a group.": "Lancez un trajet avant de créer un groupe."
+  "Start a ride before creating a group.": "Lancez un trajet avant de créer un groupe.",
+  "Estimated · may be inaccurate": "Estimation · précision limitée",
+  "GPS speed estimates may be inaccurate.": "Les vitesses estimées par GPS peuvent être imprécises.",
+  "End voice chat": "Terminer le chat vocal",
+  "System call controls unavailable in this installation. In-app voice can continue.": "Les commandes d’appel du système sont indisponibles dans cette installation. Le chat vocal peut continuer dans l’application.",
+  "System call controls unavailable.": "Commandes d’appel du système indisponibles.",
+  "GPS speed & group connections": "Vitesse GPS et connexions de groupe",
+  "Estimated GPS speed, faster group rejoining and rider-list video previews.": "Vitesse estimée par GPS, retour dans les groupes plus rapide et vidéos dans la liste des participants."
 }

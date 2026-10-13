@@ -1,3 +1,4 @@
+import {GPSSpeedTracker} from '../core/gpsSpeed';
 import {publishGroupLocation} from '../groups/locationPublisher';
 import {watchLocation} from './watchLocation';
 import {RerouteGate} from '../core/rerouting';
@@ -36,8 +37,9 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
     setProgress(null); setFix(null); setCompletedMeters(0);
     const sessionRoute=routeRef.current;if (mode === 'idle' || !sessionRoute) return;
     let cancelled = false, paused = mode === 'gps' && AppState.currentState === 'background', background = false, halted = false, lastAccepted = 0, stopBackground: (()=>Promise<void>) | undefined, subscription: Location.LocationSubscription | undefined, timer: ReturnType<typeof setInterval> | undefined;
-    const movement = new MovementTracker(),rerouting=new RerouteGate();
-    async function accept(raw: Fix) {
+    const speedTracker=new GPSSpeedTracker();const movement = new MovementTracker(),rerouting=new RerouteGate();
+    async function accept(incoming: Fix) {
+      const raw=mode==='gps'?speedTracker.next(incoming,Platform.OS==='web'):incoming;
       if (cancelled || paused || halted || raw.timestamp <= lastAccepted) return;
       const tracked = mode === 'gps' ? movement.next(raw) : null;
       lastAccepted=raw.timestamp;

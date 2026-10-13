@@ -4,7 +4,7 @@ import { usableMovementFix } from './movement';
 import { distance } from './geo';
 export interface VectorReading { x: number; y: number; z: number; timestamp: number; }
 export interface RideSample { displayCoordinate?:Coord; bluetooth?:TripBluetooth; pathFix?: Fix | null; breakBefore?: boolean; fix: Fix; compass: { heading: number; timestamp: number } | null; accelerometer: VectorReading | null; gyroscope: VectorReading | null; }
-export interface RecordedRide { bluetoothConnected?:boolean; energy?:import('./rideEnergy').RideEnergy; energyAnalysisVersion?:1; pathCleanupVersion?:1|2; bluetooth?:TripBluetoothSummary; batteryUsageSource?:'manual'|'bluetooth'; batteryUsagePercent?: number; batteryFeedback?: 'pending' | 'answered' | 'skipped'; id: string; name: string; vehicle: Pick<Vehicle, 'id' | 'name' | 'kind' | 'maxSpeed' | 'ridingLimit'> & Partial<Pick<Vehicle,'cruiseFactor'|'batteryWh'|'totalMassKg'>>; startLabel: string; endLabel: string; startedAt: number; endedAt?: number; lastFixAt?: number; status: 'recording' | 'finished' | 'arrived' | 'interrupted'; samples: number; chunks: number; meters: number; preview: Coord[]; trace?: Coord[][]; start?: Coord; end?: Coord; }
+export interface RecordedRide { estimatedSpeed?:boolean; bluetoothConnected?:boolean; energy?:import('./rideEnergy').RideEnergy; energyAnalysisVersion?:1; pathCleanupVersion?:1|2; bluetooth?:TripBluetoothSummary; batteryUsageSource?:'manual'|'bluetooth'; batteryUsagePercent?: number; batteryFeedback?: 'pending' | 'answered' | 'skipped'; id: string; name: string; vehicle: Pick<Vehicle, 'id' | 'name' | 'kind' | 'maxSpeed' | 'ridingLimit'> & Partial<Pick<Vehicle,'cruiseFactor'|'batteryWh'|'totalMassKg'>>; startLabel: string; endLabel: string; startedAt: number; endedAt?: number; lastFixAt?: number; status: 'recording' | 'finished' | 'arrived' | 'interrupted'; samples: number; chunks: number; meters: number; preview: Coord[]; trace?: Coord[][]; start?: Coord; end?: Coord; }
 export function freshVector(v: VectorReading | null, now: number): VectorReading | null { return v && now - v.timestamp >= 0 && now - v.timestamp < 2000 ? v : null; }
 export function appendSample(r: RecordedRide, sample: RideSample, previous: Fix | null): RecordedRide {
   const f = sample.pathFix === undefined ? sample.fix : sample.pathFix, usable = !!f && usableMovementFix(f);
@@ -16,7 +16,7 @@ export function appendSample(r: RecordedRide, sample: RideSample, previous: Fix 
     trace = !trace.length || sample.breakBefore ? [...trace, [f.coordinate]] : [...trace.slice(0,-1), [...trace.at(-1)!, f.coordinate]];
     if (trace.reduce((n,segment)=>n+segment.length,0)>4096) trace=trace.map(segment=>segment.filter((_,i)=>i===0 || i%2===0 || i===segment.length-1));
   }
-  return { ...r, bluetooth:sample.bluetooth?updateTripBluetooth(r.bluetooth,sample.bluetooth,r.startedAt):r.bluetooth, trace, samples: r.samples + 1, lastFixAt: sample.fix.timestamp, meters: r.meters + meters, preview, start: r.start || (usable ? f.coordinate : undefined), end: usable ? f.coordinate : r.end };
+  return { ...r, estimatedSpeed:r.estimatedSpeed||sample.fix.speedSource==='estimated', bluetooth:sample.bluetooth?updateTripBluetooth(r.bluetooth,sample.bluetooth,r.startedAt):r.bluetooth, trace, samples: r.samples + 1, lastFixAt: sample.fix.timestamp, meters: r.meters + meters, preview, start: r.start || (usable ? f.coordinate : undefined), end: usable ? f.coordinate : r.end };
 }
 
 /** Uses accumulated filtered path length, so loops count and stationary GPS drift does not. */

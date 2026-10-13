@@ -3,6 +3,7 @@ import CallKit
 import WebRTC
 final class VelunivoGroupCall: NSObject, CXProviderDelegate {
  static let shared = VelunivoGroupCall()
+ var status: ((String) -> Void)?
  var ended: (() -> Void)?
  var muted: ((Bool) -> Void)?
  private var uuid: UUID?
@@ -33,9 +34,11 @@ final class VelunivoGroupCall: NSObject, CXProviderDelegate {
     DispatchQueue.main.async {
      guard let self, !self.requestedEnd, self.uuid == id else { return }
      self.uuid = nil
+     self.status?("CallKit: \(error!.localizedDescription)")
      // Sideloaded containers may not permit CallKit transactions. The already
      // activated AVAudioSession can still carry in-app WebRTC audio.
      try? AVAudioSession.sharedInstance().setActive(true)
+     RTCAudioSession.sharedInstance().audioSessionDidActivate(AVAudioSession.sharedInstance())
      RTCAudioSession.sharedInstance().useManualAudio = false
      RTCAudioSession.sharedInstance().isAudioEnabled = true
     }

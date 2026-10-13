@@ -1,3 +1,4 @@
+import {GPSSpeedTracker} from '../core/gpsSpeed';
 import {publishGroupLocation} from '../groups/locationPublisher';
 import {watchLocation} from './watchLocation';
 import { MovementTracker } from '../core/movement';
@@ -14,8 +15,9 @@ export function useTripLocation(active: boolean, background: boolean, accept: (f
   useEffect(() => {
     if (!active) return;
     let cancelled = false, previous = 0, watch: Location.LocationSubscription | undefined, stopBackground: (() => Promise<void>) | undefined;
-    const movement = new MovementTracker();
-    async function receive(next: Fix) {
+    const movement = new MovementTracker(),speedTracker=new GPSSpeedTracker();
+    async function receive(incoming: Fix) {
+      const next=speedTracker.next(incoming,Platform.OS==='web');
       if(cancelled||next.timestamp<=previous)return;if(!freshFix(next)){if(displayableFix(next)){setFix({...next,speed:null});publishGroupLocation(next);}return;}
       previous = next.timestamp; const tracked=movement.next(next); if(tracked){setFix(tracked.fix);publishGroupLocation(tracked.fix);} await callback.current(next);
     }

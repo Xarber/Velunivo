@@ -13,7 +13,7 @@ export class TravelHeadingTracker {
   if(precise){
    const f=fix!;
    if(moving&&f.heading!==undefined&&Number.isFinite(f.heading)&&f.heading>=0&&f.heading<360){this.course=f.heading;this.courseAt=f.timestamp;}
-   else if(f.speed==null&&this.anchor&&f.timestamp>this.anchor.timestamp&&f.timestamp-this.anchor.timestamp<=15000){
+   else if((moving||f.speed==null)&&this.anchor&&f.timestamp>this.anchor.timestamp&&f.timestamp-this.anchor.timestamp<=15000){
     const delta=distance(this.anchor.coordinate,f.coordinate),seconds=(f.timestamp-this.anchor.timestamp)/1000;
     if(delta>=Math.max(8,(f.accuracy+this.anchor.accuracy)*.6)&&delta/seconds>=1.5&&delta/seconds<20){this.course=bearing(this.anchor.coordinate,f.coordinate);this.courseAt=f.timestamp;this.anchor=f;this.inferredSpeed=delta/seconds;moving=true;}
    }
