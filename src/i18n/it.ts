@@ -1,5 +1,6 @@
 /** English source messages are stable keys. User-authored content is never stored translated. */
 export const italian:Record<string,string>={
+"Joining a group saves your current ride and starts the group activity.":"Unisciti a un gruppo: il viaggio attuale viene salvato e parte l’attività del gruppo.","Ride could not be saved. Check device storage.":"Impossibile salvare il viaggio. Controlla lo spazio sul dispositivo.","Start a ride before creating a group.":"Avvia un viaggio prima di creare un gruppo.",
 "Recording groups start recording on your device.":"Quando ti unisci a un gruppo che registra un viaggio, la registrazione parte anche sul tuo dispositivo.",
 "Ride updates":"Aggiornamenti del viaggio","Fixed Android ride activity builds.":"Corretta la compilazione delle attività di viaggio su Android.",
 "Larger turn icons and left-aligned distance in the expanded Island.":"Icone delle svolte più grandi e distanza a sinistra nella Dynamic Island espansa.",

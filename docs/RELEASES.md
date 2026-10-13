@@ -111,3 +111,7 @@ Published as 1.0.19 using a new immutable tag. The user obtained the 1.0.18 simu
 1.0.20 adds recording-group automatic start, recording Island symbol/timer, safer activity padding and further native sender/CallKit metadata hardening. Shared-trip/navigation activity values remain unchanged. See GROUP-RIDING.md for the exact scope and physical validation limits. The requested second-simulator test is deferred.
 
 Pre-push checks for 1.0.20: 300 JavaScript regressions pass at concurrency 2; TypeScript, Expo lint and whitespace checks pass. Native sender, CallKit and Island appearance still require the new binary and later device tests.
+
+1.0.21 replaces any current navigation/recording on group admission, saves before handoff, allows joining while navigating, and keeps membership until the newly started group activity ends. Group creation requires an active ride. See GROUP-RIDING.md for behavior and verification limits.
+
+Validation: all 307 JS regressions passed, including seven new activity-handoff cases. After the final change restricting location publication to active sessions, TypeScript, lint, 15 group regressions and diff whitespace checks passed again. No local native compilation, SDK downloads or simulator creation.

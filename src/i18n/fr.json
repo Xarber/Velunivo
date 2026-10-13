@@ -1324,5 +1324,8 @@
   "Larger turn icons and left-aligned distance in the expanded Island.": "Icônes de direction plus grandes et distance à gauche dans la Dynamic Island déployée.",
   "Ride updates": "Suivi du trajet",
   "Fixed Android ride activity builds.": "Correction de la compilation des activités de trajet sur Android.",
-  "Recording groups start recording on your device.": "Rejoindre un groupe qui enregistre un trajet lance aussi l’enregistrement sur votre appareil."
+  "Recording groups start recording on your device.": "Rejoindre un groupe qui enregistre un trajet lance aussi l’enregistrement sur votre appareil.",
+  "Joining a group saves your current ride and starts the group activity.": "Rejoindre un groupe sauvegarde votre trajet actuel et lance l’activité du groupe.",
+  "Ride could not be saved. Check device storage.": "Impossible de sauvegarder le trajet. Vérifiez le stockage de votre appareil.",
+  "Start a ride before creating a group.": "Lancez un trajet avant de créer un groupe."
 }

@@ -1,3 +1,4 @@
+import {useGroupActivity} from '../../groups/useGroupActivity';
 import {subscribeGroupNavigation,takeGroupNavigation} from '../../groups/navigationRequest';
 import GroupRiding from '../../components/GroupRiding';
 import {useRideGroup} from '../../groups/useRideGroup';
@@ -154,6 +155,7 @@ export default function Explore() {
   }, [wide, active, picking, visiblePanelHeight, controlsHeight, bottomObstruction]);
   const followPadding = useMemo(() => ({ ...fitPadding, top: fitPadding.top + Math.max(0, (mapHeight - fitPadding.top - fitPadding.bottom) * .42) }), [fitPadding, mapHeight]);
   const eta = selected ? estimate(selected, profile, active && g && !g.offRoute ? g.along : 0) : null;
+  useGroupActivity(active,async()=>{if(await recorder.finish()===false)return false;ride.stop();lockVehicle(false);return true;});
   const groupRide=useRideGroup(active,mapPosition??null,selected);
   const bluetoothSnapshot=useBluetoothVehicle(profile.id);
   const sharingPresence=useSyncExternalStore(subscribeHostPresence,getHostPresence,getHostPresence);
