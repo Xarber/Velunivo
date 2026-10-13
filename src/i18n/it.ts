@@ -751,3 +751,5 @@ Object.assign(italian,{"Safari finds you": "Safari ti trova", "Safari location t
 Object.assign(italian,{"Group map stability": "Mappa del gruppo più stabile", "People pins initialize at their actual location and preserve video playback.": "I segnaposto partono dalla posizione corretta e mantengono il video in riproduzione."});
 
 Object.assign(italian,{"Reliable native downloads": "Download nativi più affidabili", "Native dependency downloads retry and reuse verified cached files.": "I download delle dipendenze native vengono ritentati e riutilizzano file verificati in cache."});
+
+Object.assign(italian,{"Ready for group video": "Video di gruppo pronto", "Video sharing defaults on. Your camera stays off until you turn it on in each group.": "La condivisione video è attiva per impostazione predefinita. La tua videocamera resta spenta finché non la accendi in ogni gruppo."});

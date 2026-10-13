@@ -1,5 +1,5 @@
 import {freshReading} from '../bluetooth/telemetry';
-import {recordSettingEdits} from './syncSettings';
+import {recordSettingEdits,readSettingEdits} from './syncSettings';
 import {setRideLock} from './rideLock';
 import { sortVehicles } from '../core/vehicleUsage';
 import React, { createContext, useContext, useEffect, useMemo,useCallback, useState,useSyncExternalStore } from 'react';
@@ -29,8 +29,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [selected, select] = useState<Route | null>(null), [saved, setSaved] = useState<Route[]>([]), [ready, setReady] = useState(false);
   useEffect(() => { (async () => {
     try {
-      const [p, r, g, n] = await Promise.all([AsyncStorage.getItem('profile-v1'), AsyncStorage.getItem('routes-v1'), AsyncStorage.getItem('vehicles-v1'), AsyncStorage.getItem('navigation-v1')]);
-      const garage = restoreGarage(g, p); const preferences=restorePreferences(n, garage.vehicles.find(v => v.id === garage.activeId) || garage.vehicles[0]); if (!preferences.showSharingVehicle && garage.activeId === 'sharing-scooter') garage.activeId=garage.vehicles.find(v=>v.id !== 'sharing-scooter')!.id; setGarage(garage);
+      const [p, r, g, n, edits] = await Promise.all([AsyncStorage.getItem('profile-v1'), AsyncStorage.getItem('routes-v1'), AsyncStorage.getItem('vehicles-v1'), AsyncStorage.getItem('navigation-v1'),readSettingEdits()]);
+      const garage = restoreGarage(g, p); const preferences=restorePreferences(n, garage.vehicles.find(v => v.id === garage.activeId) || garage.vehicles[0],edits['navigation.groupVideo']?.configured===true); if (!preferences.showSharingVehicle && garage.activeId === 'sharing-scooter') garage.activeId=garage.vehicles.find(v=>v.id !== 'sharing-scooter')!.id; setGarage(garage);
       setNavigationOptions(preferences);
       await loadMapSettings().catch(console.warn); setSaved(await loadSavedRoutes(r)); setPlaces(restorePlaces(await AsyncStorage.getItem('places-v1')));
     } catch { /* Corrupt local data: keep an empty planner. */ }

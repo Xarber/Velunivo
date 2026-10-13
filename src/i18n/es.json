@@ -1307,5 +1307,7 @@
   "Group map stability": "Mapa del grupo más estable",
   "People pins initialize at their actual location and preserve video playback.": "Los marcadores se crean en su ubicación real y mantienen la reproducción del vídeo.",
   "Reliable native downloads": "Descargas nativas más fiables",
-  "Native dependency downloads retry and reuse verified cached files.": "Las descargas de dependencias nativas se reintentan y reutilizan archivos verificados en caché."
+  "Native dependency downloads retry and reuse verified cached files.": "Las descargas de dependencias nativas se reintentan y reutilizan archivos verificados en caché.",
+  "Ready for group video": "Listo para el vídeo en grupo",
+  "Video sharing defaults on. Your camera stays off until you turn it on in each group.": "El vídeo está activado por defecto. Tu cámara permanece apagada hasta que la enciendas en cada grupo."
 }
