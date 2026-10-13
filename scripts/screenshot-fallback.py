@@ -7,11 +7,16 @@ import shutil
 import struct
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 
+LOOKUP_DEADLINE = None
 
 def gh(*args):
-    return subprocess.check_output(['gh', *args], text=True, timeout=30)
+    timeout = 30 if LOOKUP_DEADLINE is None else min(30, LOOKUP_DEADLINE - time.monotonic())
+    if timeout <= 0:
+        raise subprocess.TimeoutExpired('gh historical screenshot lookup', 90)
+    return subprocess.check_output(['gh', *args], text=True, timeout=timeout)
 
 
 def dimensions(image):
@@ -50,6 +55,8 @@ def source_gallery(repo, family, folder):
 
 
 def reuse(repo, family, folder):
+    global LOOKUP_DEADLINE
+    LOOKUP_DEADLINE = time.monotonic() + 90
     target = folder / f'{family}.png'
     target.unlink(missing_ok=True)
     for partial in folder.glob(f'{family}-*.png'): partial.unlink()

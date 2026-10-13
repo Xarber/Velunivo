@@ -161,7 +161,7 @@ class SimulatorVerificationTests(unittest.TestCase):
         with patch.object(sim, 'run', side_effect=lambda *args, **kw: calls.append((args, kw))), patch.object(sim, 'open_simulator', side_effect=lambda udid: calls.append(('UI', udid))), patch.object(sim, 'simulator_app', return_value=None):
             sim.boot_and_install('owned-device', 'ipad')
         self.assertEqual(calls[1], ('UI', 'owned-device'))
-        self.assertEqual(calls[2][1]['timeout'], 90)
+        self.assertEqual(calls[2][1]['timeout'], 30)
         self.assertEqual(calls[3][1]['timeout'], 90)
 
     def test_system_boot_readiness_timeout_still_tests_actual_install(self):
@@ -246,3 +246,30 @@ class ScreenshotPageValidationTests(unittest.TestCase):
         sim.verify_screen_text(['9:41','Library','Saved Places'],'library')
         sim.verify_screen_text(['9:41','Vehicles','Sharing E-Scooter'],'vehicles')
         sim.verify_screen_text(['9:41','Simulation','Stop ride'],'navigation')
+
+class SimulatorAPIFallbackTests(unittest.TestCase):
+    def test_supported_command_that_rejects_simulator_falls_back_to_real_rotation(self):
+        import plistlib
+        with tempfile.TemporaryDirectory() as temp:
+            app=Path(temp)/'Simulator.app';(app/'Contents').mkdir(parents=True)
+            (app/'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier':'com.apple.iphonesimulator'}))
+            calls=[]
+            def command(*args,**kwargs):
+                calls.append(args)
+                if args[1]=='devicectl':raise subprocess.CalledProcessError(1,args,'Device not supported')
+                return ''
+            with patch.object(sim,'orientation_supported',return_value=True),patch.object(sim,'simulator_app',return_value=app),patch.object(sim,'open_simulator',return_value=True),patch.object(sim,'run',side_effect=command),patch.object(sim.time,'sleep'):
+                sim.landscape('owned-device')
+            self.assertTrue(any(c[0]=='osascript' and 'key code 123' in c[-1] for c in calls))
+
+    def test_rejected_device_payload_uses_simctl_for_each_actual_screen(self):
+        with tempfile.TemporaryDirectory() as temp:
+            folder=Path(temp);(folder/'iphone.png').write_bytes(b'image')
+            calls=[]
+            def command(*args,**kwargs):
+                calls.append(args)
+                if args[1]=='devicectl':raise subprocess.CalledProcessError(1,args,'Device not supported')
+                return ''
+            with patch.object(sim,'ARTIFACTS',folder),patch.object(sim,'orientation_supported',return_value=True),patch.object(sim,'run',side_effect=command),patch.object(sim,'dismiss_owned_url_prompt'),patch.object(sim,'screenshot_text',return_value=['Library','Vehicles','Simulation']),patch.object(sim.time,'sleep'),patch.object(sim.os,'kill'):
+                self.assertEqual(sim.capture_gallery('owned-device','iphone',123),['explore','library','vehicles','navigation'])
+            self.assertEqual(len([c for c in calls if c[1:3]==('simctl','openurl')]),3)

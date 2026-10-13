@@ -4,7 +4,7 @@ Never manufacture a downloadURL, size, OS floor or permissions before a build.
 import argparse, json, datetime, struct, hashlib
 from pathlib import Path
 p=argparse.ArgumentParser(); p.add_argument('--repo',required=True); p.add_argument('--tag',required=True); p.add_argument('--assets',default='artifacts'); p.add_argument('--existing',default='apps.json'); p.add_argument('--output',default='apps.json'); a=p.parse_args()
-folder=Path(a.assets); meta=json.loads((folder/'ios-metadata.json').read_text()) if (folder/'ios-metadata.json').exists() else json.loads((folder/'build_info.json').read_text())['ios']; tag=a.tag
+folder=Path(a.assets); build_info=json.loads((folder/'build_info.json').read_text()) if (folder/'build_info.json').exists() else {}; meta=json.loads((folder/'ios-metadata.json').read_text()) if (folder/'ios-metadata.json').exists() else build_info['ios']; tag=a.tag
 if tag != 'v'+meta['version']: raise SystemExit('Tag does not match the built IPA version')
 base=f'https://github.com/{a.repo}/releases/download/{tag}/'; stable=f'https://github.com/{a.repo}/releases/download/1.0/'
 source=json.loads(Path(a.existing).read_text()) if Path(a.existing).exists() else {'name':'Velunivo','subtitle':'Routes for small electric wheels','description':'The official Velunivo source for e-scooter and e-bike navigation. AltStore Classic / SideStore.','iconURL':stable+'icon.png','tintColor':'007F6D','website':f'https://github.com/{a.repo}','apps':[],'news':[]}
@@ -42,8 +42,8 @@ if shots.get('iphone') and shots.get('ipad'):
     tablet_urls=previous_tablet_urls | {shot['imageURL'] for shot in shots['ipad']}
     shots['iphone']=[shot for shot in shots['iphone'] if shot.get('width',0)<shot.get('height',0) and shot['imageURL'] not in tablet_urls]+shots['ipad']
 app['screenshots']=shots;app['appPermissions']=meta['appPermissions']
-notes=(folder/'release-notes.md').read_text() if (folder/'release-notes.md').exists() else f'Velunivo {meta["version"]}'
 previous_version=next((v for v in app['versions'] if (v['version'],v.get('buildVersion'))==(meta['version'],meta['buildVersion'])),None)
+notes=(folder/'release-notes.md').read_text() if (folder/'release-notes.md').exists() else build_info.get('details',{}).get('release-notes.md') or (previous_version or {}).get('localizedDescription') or f'Velunivo {meta["version"]}'
 version={k:meta[k] for k in ['version','buildVersion','size','minOSVersion']};version.update({'date':previous_version['date'] if previous_version else datetime.datetime.now(datetime.timezone.utc).isoformat(),'downloadURL':base+'Velunivo.ipa','localizedDescription':notes})
 app['versions']=[version]+[v for v in app['versions'] if (v['version'],v.get('buildVersion'))!=(version['version'],version['buildVersion'])]
 source['news']=[{'title':f'Velunivo {meta["version"]}','identifier':tag+'-'+meta['buildVersion'],'caption':'A new build for your next ride.','date':version['date'],'tintColor':'007F6D','imageURL':icon_url,'notify':True,'url':f'https://github.com/{a.repo}/releases/tag/{tag}','appID':meta['bundleIdentifier']}]+[n for n in source.get('news',[]) if n['identifier'] != tag+'-'+meta['buildVersion']]

@@ -2,6 +2,7 @@ import importlib.util
 import json
 import struct
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -124,3 +125,20 @@ class ScreenshotFallbackTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class SourceReleaseNotesTests(unittest.TestCase):
+    def test_gallery_refresh_retains_full_release_description_and_date(self):
+        with tempfile.TemporaryDirectory() as temp:
+            folder=Path(temp)
+            meta={'version':'2.0.2','buildVersion':'100','bundleIdentifier':'app.velunivo.mobile','size':100,'minOSVersion':'18.0','appPermissions':{}}
+            source={'apps':[{'bundleIdentifier':meta['bundleIdentifier'],'versions':[{**meta,'date':'2026-10-13','localizedDescription':'Original release details'}]}],'news':[]}
+            file=folder/'apps.json';file.write_text(json.dumps(source))
+            info=folder/'build_info.json';info.write_text(json.dumps({'ios':meta,'details':{'release-notes.md':'Full conventional release notes'}}))
+            script=Path(__file__).parents[1]/'scripts/update-source.py'
+            args=[sys.executable,str(script),'--repo','Xarber/Velunivo','--tag','v2.0.2','--assets',temp,'--existing',str(file),'--output',str(file)]
+            subprocess.check_call(args)
+            result=json.loads(file.read_text())['apps'][0]['versions'][0]
+            self.assertEqual(result['localizedDescription'],'Full conventional release notes');self.assertEqual(result['date'],'2026-10-13')
+            info.write_text(json.dumps({'ios':meta}))
+            subprocess.check_call(args)
+            self.assertEqual(json.loads(file.read_text())['apps'][0]['versions'][0]['localizedDescription'],'Full conventional release notes')

@@ -426,74 +426,12 @@ jobs:
           name: ios-simulator
           path: artifacts/Velunivo-simulator.app.zip
           if-no-files-found: error
-  verify-ios:
-    continue-on-error: true
-    needs: ios-simulator
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 18
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - family: iphone
-            runner: xcode-27
-          - family: ipad
-            runner: macos-26
-    env:
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Select installed verification tools (builds remain Xcode beta)
-        run: |
-          python3 - <<'PYCODE' >> "$GITHUB_ENV"
-          from pathlib import Path
-          import re
-          candidates=[p for p in Path('/Applications').glob('Xcode*.app') if 'beta' in p.name.lower() and not p.is_symlink()]
-          import subprocess
-          if candidates:
-              chosen=max(candidates,key=lambda p:tuple(map(int,re.findall(r'\d+',p.name))))
-              print(f'DEVELOPER_DIR={chosen}/Contents/Developer')
-          else:
-              print('DEVELOPER_DIR='+subprocess.check_output(['xcode-select','-p'],text=True).strip())
-          PYCODE
-      - name: Avoid Spotlight indexing on the disposable runner
-        run: sudo mdutil -a -i off || true
-      - uses: actions/download-artifact@v4
-        continue-on-error: true
-        with:
-          name: ios-simulator
-          path: artifacts
-      - name: Unpack compiled Simulator app
-        continue-on-error: true
-        run: ditto -x -k artifacts/Velunivo-simulator.app.zip artifacts
-      - name: Capture fresh Simulator screenshots (two bounded attempts)
-        id: capture
-        continue-on-error: true
-        timeout-minutes: 12
-        run: python3 scripts/simulator-screenshots.py --family "${{ matrix.family }}" --gallery
-      - name: Reuse last published screenshot after capture failure
-        if: steps.capture.outcome == 'failure'
-        timeout-minutes: 3
-        continue-on-error: true
-        run: python3 scripts/screenshot-fallback.py --repo "$GITHUB_REPOSITORY" --family "${{ matrix.family }}"
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: ios-${{ matrix.family }}-verification
-          path: |
-            artifacts/${{ matrix.family }}.png
-            artifacts/${{ matrix.family }}-*.png
-            artifacts/${{ matrix.family }}-screenshot.json
-            artifacts/${{ matrix.family }}-host.log
-            artifacts/${{ matrix.family }}-launch.log
-            artifacts/${{ matrix.family }}-simulator.log
-            artifacts/*.ips
   publish:
     if: ${{ always() && needs.prepare.result == 'success' && needs.web.result == 'success' && needs.android.result == 'success' && needs.ios.result == 'success' && needs.ios-simulator.result == 'success' }}
     concurrency:
       group: altsource
       cancel-in-progress: false
-    needs: [prepare, web, android, ios, ios-simulator, verify-ios]
+    needs: [prepare, web, android, ios, ios-simulator]
     runs-on: ubuntu-latest
     permissions:
       contents: write

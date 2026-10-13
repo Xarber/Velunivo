@@ -42,6 +42,7 @@ def run(*args, timeout=60):
                 process.stdout.close()
             raise subprocess.TimeoutExpired(args, timeout)
         if process.returncode:
+            print(output[-6000:], flush=True)
             raise subprocess.CalledProcessError(process.returncode, args, output)
         return output.strip()
     finally:
@@ -88,7 +89,7 @@ def orientation_supported():
 
 def boot_and_install(udid, family):
     app = simulator_app()
-    if app is not None and app.name == 'Simulator.app' and not orientation_supported():
+    if app is not None and app.name == 'Simulator.app':
         # Select our fresh device before it boots, so the GUI neither shows a
         # different default device nor re-boots an already-running device.
         open_simulator(udid, select=True)
@@ -100,7 +101,7 @@ def boot_and_install(udid, family):
     # bootstatus waits for *all* system apps, which can stall on small hosts.
     # A timeout here does not prove the app is unusable: install, launch, PID
     # survival and framebuffer capture provide the required verification.
-    best_effort('xcrun', 'simctl', 'bootstatus', udid, '-b', timeout=90)
+    best_effort('xcrun', 'simctl', 'bootstatus', udid, '-b', timeout=30)
     run('xcrun', 'simctl', 'install', udid, 'artifacts/Velunivo-simulator.app', timeout=90)
 
 
@@ -154,10 +155,13 @@ def landscape(udid):
     # Xcode 27 has a supported headless orientation API. No Accessibility
     # permission, menu traversal or image rotation is necessary on that path.
     if orientation_supported():
-        run('xcrun', 'devicectl', 'device', 'orientation', 'set', '--device', udid,
-            'landscapeLeft', '--timeout', '20', timeout=25)
-        time.sleep(3)
-        return
+        try:
+            run('xcrun', 'devicectl', 'device', 'orientation', 'set', '--device', udid,
+                'landscapeLeft', '--timeout', '20', timeout=25)
+            time.sleep(3)
+            return
+        except (subprocess.SubprocessError, OSError) as error:
+            print(f'::warning::Orientation API rejected this simulated device; using its real UI: {error}', flush=True)
     # Older toolchains use the real UI; never rotate a portrait output image.
     app = simulator_app()
     if app is None or not open_simulator(udid):
@@ -247,9 +251,14 @@ def capture_gallery(udid, family, pid):
     shutil.copy(ARTIFACTS / f'{family}.png', ARTIFACTS / f'{family}-explore.png')
     screens = ['explore']
     for name, url in [('library','velunivo:///offline'),('vehicles','velunivo:///scooter'),('navigation','velunivo:///?capture=navigation')]:
+        launched=False
         if orientation_supported():
-            run('xcrun','devicectl','device','process','launch','--device',udid,'--payload-url',url,BUNDLE,timeout=30)
-        else:
+            try:
+                run('xcrun','devicectl','device','process','launch','--device',udid,'--payload-url',url,BUNDLE,timeout=30)
+                launched=True
+            except (subprocess.SubprocessError,OSError) as error:
+                print(f'::warning::Device URL API unavailable; using simctl: {error}',flush=True)
+        if not launched:
             run('xcrun','simctl','openurl',udid,url,timeout=20)
             time.sleep(2)
             dismiss_owned_url_prompt(udid,family)
@@ -266,7 +275,7 @@ def capture_gallery(udid, family, pid):
 
 def capture_once(devices, family, gallery=False):
     global ATTEMPT_DEADLINE
-    ATTEMPT_DEADLINE=time.monotonic()+300
+    ATTEMPT_DEADLINE=time.monotonic()+240
     runtime, template = select_device(devices, family)
     device_type = template.get('deviceTypeIdentifier')
     if not device_type:

@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       build_run:
-        description: 'Successful build run containing ios-simulator'
+        description: 'Published build run containing ios-simulator (no compilation)'
         required: true
 permissions:
   contents: read
@@ -16,10 +16,13 @@ concurrency:
   cancel-in-progress: true
 jobs:
   identify:
-    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository)
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-latest
     outputs:
       run: ${{ steps.run.outputs.run }}
+      ready: ${{ steps.run.outputs.ready }}
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - id: run
         env:
@@ -27,18 +30,19 @@ jobs:
         run: |
           [[ "$BUILD_RUN" =~ ^[0-9]+$ ]] || exit 1
           echo "run=$BUILD_RUN" >> "$GITHUB_OUTPUT"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN/jobs?per_page=100" > jobs.json
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, sys
+          jobs=json.load(open('jobs.json'))['jobs']
+          published=any(j['name']=='publish' and j['conclusion']=='success' for j in jobs)
+          print('ready='+str(published).lower())
+          if not published: print('::notice::No successful binary publication; gallery refresh skipped.',file=sys.stderr)
+          PY
   capture:
     needs: identify
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 18
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - family: iphone
-            runner: xcode-27
-          - family: ipad
-            runner: macos-26
+    if: needs.identify.outputs.ready == 'true'
+    runs-on: xcode-27
+    timeout-minutes: 30
     env:
       GH_TOKEN: ${{ github.token }}
       BUILD_RUN: ${{ needs.identify.outputs.run }}
@@ -59,21 +63,31 @@ jobs:
           gh run download "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --name ios-simulator --dir artifacts
           ditto -x -k artifacts/Velunivo-simulator.app.zip artifacts
           sudo mdutil -a -i off || true
-      - name: Verify real pages on the owned device (two bounded attempts)
-        timeout-minutes: 12
-        run: python3 scripts/simulator-screenshots.py --family "${{ matrix.family }}" --gallery
+      - name: Capture iPhone then landscape iPad; preserve old screenshots on failure
+        timeout-minutes: 24
+        run: |
+          for family in iphone ipad; do
+            if ! python3 scripts/simulator-screenshots.py --family "$family" --gallery; then
+              echo "::warning::$family fresh capture failed twice; retaining the published gallery."
+              python3 scripts/screenshot-fallback.py --repo "$GITHUB_REPOSITORY" --family "$family"
+            fi
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: gallery-${{ matrix.family }}
+          name: gallery-native
           path: |
-            artifacts/${{ matrix.family }}*.png
-            artifacts/${{ matrix.family }}*.json
-            artifacts/${{ matrix.family }}*.log
+            artifacts/iphone*.png
+            artifacts/ipad*.png
+            artifacts/*-screenshot.json
+            artifacts/*-*.log
             artifacts/*.ips
   publish:
     needs: [identify, capture]
     runs-on: ubuntu-latest
+    concurrency:
+      group: altsource
+      cancel-in-progress: false
     permissions:
       contents: write
       actions: read
@@ -86,27 +100,16 @@ jobs:
           pattern: gallery-*
           path: artifacts
           merge-multiple: true
-      - name: Require both fresh galleries and the latest published binary
+      - name: Check both fresh galleries against the latest published binary
+        id: gallery
         run: |
           mkdir -p work/source
           gh release download 1.0 --repo "$GITHUB_REPOSITORY" --pattern apps.json --dir work/source
-          python3 - <<'PY' >> "$GITHUB_ENV"
-          import json
-          from pathlib import Path
-          versions=set()
-          for family in ['iphone','ipad']:
-              status=json.loads(Path(f'artifacts/{family}-screenshot.json').read_text())
-              versions.add(status.get('appVersion'))
-              if status.get('status')!='fresh' or set(status.get('screens',[]))!={'explore','library','vehicles','navigation'}:raise SystemExit('Fresh real pages required on both devices; preserve current source.')
-          source=json.loads(Path('work/source/apps.json').read_text())
-          app=next(a for a in source['apps'] if a['bundleIdentifier']=='app.velunivo.mobile')
-          version=app['versions'][0]['version']
-          import re
-          if not re.fullmatch(r'\d+\.\d+\.\d+',version):raise SystemExit('Invalid source version')
-          if versions!={version}:raise SystemExit('Gallery is not the latest published app; preserve current source.')
-          print('RELEASE_TAG=v'+version)
-          PY
+          python3 scripts/gallery-ready.py --assets artifacts --source work/source/apps.json >> "$GITHUB_OUTPUT"
       - name: Publish screenshots to AltSource only (iPhone before landscape iPad)
+        if: steps.gallery.outputs.ready == 'true'
+        env:
+          RELEASE_TAG: ${{ steps.gallery.outputs.tag }}
         run: |
           gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern build_info.json --dir artifacts
           python3 scripts/update-source.py --repo "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG" --assets artifacts --existing work/source/apps.json --output work/source/apps.json
