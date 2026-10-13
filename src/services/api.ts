@@ -1,3 +1,4 @@
+import {routePreferences,RoutePreferences} from '../core/routePreferences';
 import {mapAreaName} from '../core/mapAreaName';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {offlineRoute,offlineAddresses} from './offlineRouting';
@@ -9,21 +10,21 @@ import { fromValhalla, valhallaRequest, valhallaAttributesRequest } from '../cor
 import { fromGraphHopper } from '../core/routing';
 export type { AddressResult } from '../core/addresses';
 export const serverUrl = process.env.EXPO_PUBLIC_ROUTING_URL ?? '';
-async function onlineRoute(start: Coord, end: Coord, kind: 'bike' | 'car', profile: Profile): Promise<Route> {
+async function onlineRoute(start: Coord, end: Coord, kind: 'bike' | 'car', profile: Profile,preferences:RoutePreferences={}): Promise<Route> {
   if (!serverUrl) {
-    const q = valhallaRequest(start, end, kind, profile,getLanguage()), data = await publicJson('https://valhalla1.openstreetmap.de/route', q);
+    const q = valhallaRequest(start, end, kind, profile,getLanguage(),preferences), data = await publicJson('https://valhalla1.openstreetmap.de/route', q);
     const shape = data?.trip?.legs?.[0]?.shape; if (!shape) throw new Error('No route found');
     const attributes = await publicJson('https://valhalla1.openstreetmap.de/trace_attributes', valhallaAttributesRequest(shape, q)).catch(error => ({ verificationError: error instanceof Error ? error.message : 'Road verification unavailable' }));
     return fromValhalla(data, attributes, kind, Math.min(profile.maxSpeed, profile.ridingLimit), [start, end]);
   }
-  const { response, body } = await requestJson(`${serverUrl.replace(/\/$/, '')}/route`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ start, end, kind, language:getLanguage(), maxSpeed: profile.maxSpeed, ridingLimit: profile.ridingLimit }) });
+  const { response, body } = await requestJson(`${serverUrl.replace(/\/$/, '')}/route`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ start, end, kind, language:getLanguage(),routePreferences:preferences, maxSpeed: profile.maxSpeed, ridingLimit: profile.ridingLimit }) });
   if (!response.ok) throw new Error(body.error || `Routing error ${response.status}`);
   if (body.route) return body.route as Route;
   if (!body.paths?.[0]) throw new Error('No route found.');
   return { ...fromGraphHopper(body.paths[0], kind), plannedCap: Math.min(profile.maxSpeed, profile.ridingLimit) };
 }
 
-export async function fetchRoute(start:Coord,end:Coord,kind:'bike'|'car',profile:Profile):Promise<Route>{const preferences=await AsyncStorage.getItem('navigation-v1');let prefer=false;try{prefer=JSON.parse(preferences||'{}').preferOfflineRouting===true;}catch{}if(prefer||typeof navigator!=='undefined'&&navigator.onLine===false){const local=await offlineRoute(start,end,kind,profile);if(local)return local;}try{return await onlineRoute(start,end,kind,profile);}catch(error){const local=await offlineRoute(start,end,kind,profile);if(local)return local;throw error;}}
+export async function fetchRoute(start:Coord,end:Coord,kind:'bike'|'car',profile:Profile):Promise<Route>{const preferences=await AsyncStorage.getItem('navigation-v1');let prefer=false,prefs:RoutePreferences={};try{const n=JSON.parse(preferences||'{}');prefer=n.preferOfflineRouting===true;prefs=routePreferences(n);}catch{}if(prefer||typeof navigator!=='undefined'&&navigator.onLine===false){const local=await offlineRoute(start,end,kind,profile,prefs);if(local)return local;}try{return await onlineRoute(start,end,kind,profile,prefs);}catch(error){const local=await offlineRoute(start,end,kind,profile,prefs);if(local)return local;throw error;}}
 
 async function onlineAddresses(query: string): Promise<AddressResult[]> {
   if (query.trim().length < 3 || query.length > 200) throw new Error('Enter an address or place between 3 and 200 characters.');

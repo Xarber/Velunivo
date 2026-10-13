@@ -3,7 +3,7 @@ import {canPairVehicle,dashboardReading} from '../bluetooth/policy';
 import {retainedReading,batteryColor} from '../bluetooth/telemetry';
 import {BridgeSnapshot} from '../bluetooth/types';
 import {BluetoothPreferences,metricVisible} from '../bluetooth/preferences';
-export interface ActivityExtras {batteryPercent?:number;batteryOld?:boolean;batteryUpdatedAt?:number;oldLabel?:string;batteryColor?:string;batterySymbol?:'battery.0percent'|'battery.25percent'|'battery.50percent'|'battery.75percent'|'battery.100percent'|'battery.100percent.bolt';viewerCount?:number;groupCount?:number;}
+export interface ActivityExtras {regroup?:string;batteryPercent?:number;batteryOld?:boolean;batteryUpdatedAt?:number;oldLabel?:string;batteryColor?:string;batterySymbol?:'battery.0percent'|'battery.25percent'|'battery.50percent'|'battery.75percent'|'battery.100percent'|'battery.100percent.bolt';viewerCount?:number;groupCount?:number;}
 /** ActivityKit retains the last verified battery with explicit age/stale state for the active vehicle. */
 export function activityExtras(snapshot:BridgeSnapshot,preferences:BluetoothPreferences,vehicleId:string,presence:{sharing:boolean;viewers:number},now:number):ActivityExtras {
  const result:ActivityExtras={};

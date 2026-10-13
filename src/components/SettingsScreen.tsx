@@ -1,3 +1,4 @@
+import BatteryPlanningSettings from './BatteryPlanningSettings';
 import NativeUpdateBanner from './NativeUpdateBanner';
 import ScratchSettings from './ScratchSettings';
 import PrivacyDetails from './PrivacyDetails';
@@ -49,6 +50,7 @@ export default function SettingsScreen({section}:{section?:string}) {
     {section==='general' && card(<><Text style={{color:p.text,fontWeight:'700',fontSize:18}}>App language</Text>{(['system',...languages] as const).map(value=><Button key={value} title={t(value==='system'?'System':languageNames[value])} icon={language.choice===value?'checkmark-circle':'ellipse-outline'} secondary={language.choice!==value} onPress={()=>language.choose(value)} />)}<Text style={{color:p.muted}}>Follow your device language.</Text></>)}
     {section==='navigation' && <VoiceSettings />}
     {section==='general'&&card(<><Button title={t('Show welcome tour')} icon="sparkles-outline" secondary onPress={()=>showIntroduction('welcome')}/><Button title={t('What’s new')} icon="gift-outline" secondary onPress={()=>router.push('/settings/whats-new')}/><Button title={t('Data transfer')} icon="swap-horizontal-outline" secondary disabled={vehicleLocked} onPress={()=>router.push('/settings/data')}/></>)}
+    {section==='recording'&&<BatteryPlanningSettings/>}
     {section==='group-riding'&&<GroupProfileSettings/>}
     {section==='scratch'&&<ScratchSettings/>}
     {section==='bluetooth' && <BluetoothSettings />}

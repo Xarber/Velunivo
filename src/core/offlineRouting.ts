@@ -1,3 +1,4 @@
+import {RoutePreferences} from './routePreferences';
 import {Coord,Route,Profile} from './types';
 import {distance,cumulative} from './geo';
 import {bearing} from './rideView';
@@ -25,7 +26,7 @@ function accessible(tags:Record<string,string>,kind:'bike'|'car'){
 }
 class Heap<T>{private values:{score:number;value:T}[]=[];push(value:T,score:number){const v=this.values;v.push({value,score});let i=v.length-1;while(i){const p=(i-1)>>1;if(v[p].score<=score)break;[v[i],v[p]]=[v[p],v[i]];i=p;}}pop(){const v=this.values,first=v[0],last=v.pop();if(v.length&&last){v[0]=last;let i=0;while(true){let j=i*2+1;if(j>=v.length)break;if(j+1<v.length&&v[j+1].score<v[j].score)j++;if(v[i].score<=v[j].score)break;[v[i],v[j]]=[v[j],v[i]];i=j;}}return first?.value;}get length(){return this.values.length;}}
 /** Real local graph search. OSM road access is not legal certification for scooters. */
-export function calculateOfflineRoute(pack:RoadPack,start:Coord,end:Coord,kind:'bike'|'car',profile:Profile):Route{
+export function calculateOfflineRoute(pack:RoadPack,start:Coord,end:Coord,kind:'bike'|'car',profile:Profile,preferences:RoutePreferences={}):Route{
  if(!packContains(pack,start)||!packContains(pack,end))throw new Error('The endpoints are outside downloaded road coverage.');
  const points=new Map<number,Coord>(),graph=new Map<number,Edge[]>(),ways=new Map<number,OSMElement>(),restrictions:Restriction[]=[],blocked=new Set<number>();
  for(const e of pack.elements){if(e.type==='node')points.set(e.id,[e.lon!,e.lat!]);if(e.type==='way')ways.set(e.id,e);}
@@ -47,7 +48,8 @@ export function calculateOfflineRoute(pack:RoadPack,start:Coord,end:Coord,kind:'
    const only=rules.filter(r=>r.only);if(rules.some(r=>r.conditional||!r.only&&edge.way===r.to&&(!r.uTurn||edge.to===state.previous))||only.length&&!only.some(r=>edge.way===r.to))continue;
    const limit=mappedLimit(edge.tags),speed=Math.max(1,Math.min(profile.maxSpeed,profile.ridingLimit,limit||60,kind==='bike'&&['footway','path','pedestrian'].includes(edge.tags.highway)?12:60));
    const rough=['gravel','dirt','sand','ground','unpaved'].includes(edge.tags.surface||'')?1.5:1,fast=limit&&limit>50?2:1;
-   const nextCost=cost+edge.meters/(speed/3.6)*rough*fast,nextKey=`${edge.to}:${edge.way}:${state.node}`;if(nextCost>=(costs.get(nextKey)??Infinity))continue;
+   const preference=kind==='bike'?(preferences.preferBikeLanes&&edge.tags.highway!=='cycleway'&&!edge.tags.cycleway?1.25:1)*(preferences.preferQuietRoads&&['primary','secondary','tertiary'].includes(edge.tags.highway)?1.5:1):1;
+   const nextCost=cost+edge.meters/(speed/3.6)*rough*fast*preference,nextKey=`${edge.to}:${edge.way}:${state.node}`;if(nextCost>=(costs.get(nextKey)??Infinity))continue;
    costs.set(nextKey,nextCost);states.set(nextKey,{node:edge.to,way:edge.way,previous:state.node});parents.set(nextKey,{key,edge});queue.push(nextKey,nextCost+distance(points.get(edge.to)!,points.get(target)!)/(Math.min(profile.maxSpeed,profile.ridingLimit)/3.6));
   }
  }

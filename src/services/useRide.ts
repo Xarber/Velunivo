@@ -1,3 +1,5 @@
+import * as Haptics from 'expo-haptics';
+import {NavigationHapticGate} from '../core/navigationHaptics';
 import {GPSSpeedTracker} from '../core/gpsSpeed';
 import {publishGroupLocation} from '../groups/locationPublisher';
 import {watchLocation} from './watchLocation';
@@ -39,7 +41,7 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
     setProgress(null); setFix(null); setCompletedMeters(0);
     const sessionRoute=routeRef.current;if (mode === 'idle' || !sessionRoute) return;
     let cancelled = false, paused = mode === 'gps' && AppState.currentState === 'background', background = false, halted = false, lastAccepted = 0, stopBackground: (()=>Promise<void>) | undefined, subscription: Location.LocationSubscription | undefined, timer: ReturnType<typeof setInterval> | undefined;
-    const speedTracker=new GPSSpeedTracker();const movement = new MovementTracker(),rerouting=new RerouteGate();
+    const hapticGate=new NavigationHapticGate();const speedTracker=new GPSSpeedTracker();const movement = new MovementTracker(),rerouting=new RerouteGate();
     async function accept(incoming: Fix) {
       const raw=mode==='gps'?speedTracker.next(incoming,Platform.OS==='web'):incoming;
       if (cancelled || paused || halted || raw.timestamp <= lastAccepted) return;
@@ -52,6 +54,7 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
       const g = guidance(currentRoute, next, along.current);
       if (!g.valid) { setStatus('Waiting for a precise GPS fix'); setProgress(v => v ? { ...v, valid: false } : null); if(mode==='gps')await onFixRef.current?.(raw); return; }
       if(g.arrived){halted=true;if(timer)clearInterval(timer);subscription?.remove();}
+      const pulse=hapticGate.next(g,next.timestamp,currentRoute.id);if(preferencesRef.current.navigationHaptics&&pulse)void (pulse==='turn'?Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium):Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)).catch(()=>{});
       setProgress(g); if (!g.offRoute) setCompletedMeters(v => Math.max(v, g.along));
       if(mode==='gps'&&rerouting.ready(next,g.offRoute,preferencesRef.current.automaticRerouting)&&rerouteRef.current){setStatus('Finding a new route…');void rerouteRef.current(next,g.index).catch(()=>setStatus('Rerouting failed. Guidance continues on the previous route.')).finally(()=>rerouting.finish());}
       if (g.offRoute) {if(!rerouting.busy)setStatus('Off route · stop safely to replan');}

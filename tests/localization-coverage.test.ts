@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
 import {translate} from '../src/i18n/core';
-const properNamesAndUnits=new Set(['#F6FAFC','2-digit','Apple Maps','Google Maps','MPH','Velunivo','XXXX-XXXX','rad/s','Bluetooth','English','Hardware','· Hardware','Demo · ']);
+const properNamesAndUnits=new Set(['#F6FAFC','2-digit','Apple Maps','Google Maps','MPH','Velunivo','XXXX-XXXX','rad/s','Bluetooth','English','Hardware','· Hardware','Demo · ','@start','{place}']); // Internal return-location ID and named interpolation token are not displayed.
 test('UI literals and user-facing error messages have Italian translations',()=>{
  const messages=new Set<string>();
  const props=['title','description','detail','label','message','placeholder','accessibilityLabel','text','limitations'];

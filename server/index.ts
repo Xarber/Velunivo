@@ -1,3 +1,4 @@
+import {routePreferences,customRoutePreferences} from '../src/core/routePreferences';
 import {resolveLanguage} from '../src/i18n/core';
 import { createServer } from 'node:http';
 import { routeRequest } from '../src/core/routing';
@@ -62,7 +63,7 @@ createServer(async (req, res) => {
     let body: any; try { body = JSON.parse(raw); } catch { send(400, { error: 'Invalid JSON' }); return; }
     const coord = (p: any) => Array.isArray(p) && p.length === 2 && p.every(Number.isFinite) && Math.abs(p[0]) <= 180 && Math.abs(p[1]) <= 85;
     if (!coord(body.start) || !coord(body.end) || !['bike', 'car'].includes(body.kind) || !Number.isFinite(body.maxSpeed) || body.maxSpeed < 1 || body.maxSpeed > 60 || !Number.isFinite(body.ridingLimit) || body.ridingLimit < 1 || body.ridingLimit > 60) { send(400, { error: 'Invalid route parameters' }); return; }
-    if (!key) { send(200, { route: await publicRoute(body.start, body.end, body.kind, { ...defaultProfile, maxSpeed: body.maxSpeed, ridingLimit: body.ridingLimit },resolveLanguage('system',body.language)) }); return; }
+    if (!key||body.kind==='bike'&&customRoutePreferences(routePreferences(body.routePreferences))) { send(200, { route: await publicRoute(body.start, body.end, body.kind, { ...defaultProfile, maxSpeed: body.maxSpeed, ridingLimit: body.ridingLimit },resolveLanguage('system',body.language),routePreferences(body.routePreferences)) }); return; }
     const upstream = await fetch(`https://graphhopper.com/api/1/route?key=${encodeURIComponent(key)}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(routeRequest(body.start, body.end, body.kind, { ...defaultProfile, maxSpeed: body.maxSpeed, ridingLimit: body.ridingLimit },resolveLanguage('system',body.language))), signal: AbortSignal.timeout(20000),

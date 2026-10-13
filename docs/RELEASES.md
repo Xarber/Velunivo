@@ -184,3 +184,7 @@ Inspected release run `38422328519`: prepare, Android, iPhone, Simulator, web an
 - Gallery publication shares the source-update concurrency lock. Refreshing screenshots preserves conventional release descriptions and original release dates from `build_info.json` or the existing feed, instead of replacing them with a generic version label.
 
 Added regression coverage for fallback routing, complete-gallery publication, landscape enforcement, stale version protection, binary/screenshot separation and release-note preservation. Local Python workflow tests, lint and type checks pass. No app code, version number, native compilation or local simulator sessions changed. GitHub runner availability remains external; a runner-allocation failure in the independent gallery can still require a retry without affecting binaries or source metadata.
+
+## 2.1.0 riding update
+
+See [RIDING_2.1.md](RIDING_2.1.md) for battery-aware planning, bookmarks, exploration progress, regroup warnings, haptics, reliability reports and map interaction changes. Update the hosted routing proxy to honour bicycle route preferences. PeerServer requires no deployment change. Native effects are validated through runner builds and separate device tests; local native compilation remains disabled.

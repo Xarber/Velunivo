@@ -7,6 +7,15 @@ export const welcomePages=[
  {icon:'shield-checkmark-outline',title:'You stay in control',text:'Check road signs and local rules. Your records stay on your device until you export or share them.'},
 ] as const;
 export const releaseDetails=[
+ {version:'2.1.0',items:[
+ {icon:'battery-half-outline',title:'Ride with confidence',text:'Plan around your battery reserve and feel turn prompts with navigation haptics.'},
+ {icon:'trophy-outline',title:'Explore and level up',text:'Earn explorer levels and achievements. Bookmark useful spots as you ride.'},
+ {icon:'people-outline',title:'Stay together',text:'Ask your group to regroup, with clear ride and Lock Screen warnings.'},
+ {icon:'pulse-outline',title:'Ride reliability report',text:'Export private aggregate GPS, Bluetooth and peer connection diagnostics.'},
+ {icon:'options-outline',title:'Route preferences',text:'Choose cycleway, quieter-road and hill preferences in global Settings.'},
+ {icon:'grid-outline',title:'Scratch map overview',text:'Zoom out to combine detailed tiles into larger explored areas.'},
+ {icon:'map-outline',title:'Browse while riding',text:'Explore the map freely. Following resumes after eight seconds without interaction.'},
+ ]},
  {version:'2.0.2',items:[{icon:'construct-outline',title:'Fixes & Improvements',text:'Clearer scratch maps at wider zoom levels, brighter borders and a location-centred viewer.'}]},
  {version:'2.0.1',items:[{icon:'construct-outline',title:'Fixes & Improvements',text:'Fixed a startup crash when loading the scratch map on native devices.'}]},
  {version:'2.0.0',items:[

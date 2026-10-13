@@ -1,5 +1,6 @@
 /** Historical versions stay unchanged; only their overview is curated. Everything stays in full details. */
 export const featureTitles:Record<string,readonly string[]>={
+ '2.1.0':['Ride with confidence','Explore and level up','Stay together'],
  '2.0.0':['Explore your world','Your riding profile','Vehicle care'],
  '1.2.0':['Pinned camera preview','Group riders'],
  '1.0.20':['Recording trip'],'1.0.16':['Recording trip'],'1.0.9':['Native peer connections'],

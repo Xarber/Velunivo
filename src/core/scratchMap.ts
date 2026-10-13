@@ -1,4 +1,4 @@
-import {latLngToCell,cellToBoundary,cellToLatLng,cellsToMultiPolygon,isValidCell,getResolution} from 'h3-js';
+import {latLngToCell,cellToBoundary,cellToLatLng,cellsToMultiPolygon,cellToParent,isValidCell,getResolution} from 'h3-js';
 import {Coord,Fix} from './types';
 import {distance} from './geo';
 export const SCRATCH_RESOLUTION=10;
@@ -14,34 +14,25 @@ export function visitScratch(index:ScratchIndex,c:Coord,time:number,rideId?:stri
 /** Raw GPS only: reject old/imprecise fixes, teleports and one-off tile-boundary jitter. */
 export class ScratchFixGate {private previous?:Fix;private candidate?:{id:string;at:number};private current?:string;accept(f:Fix,now=Date.now()):boolean{if(!validScratchCoordinate(f.coordinate)||!Number.isFinite(f.timestamp)||f.timestamp>now+3000||now-f.timestamp>15000||!Number.isFinite(f.accuracy)||f.accuracy<0||f.accuracy>25||this.previous&&f.timestamp<=this.previous.timestamp)return false;const before=this.previous;if(before&&f.timestamp-before.timestamp<15000&&distance(before.coordinate,f.coordinate)/((f.timestamp-before.timestamp)/1000)>25)return false;this.previous=f;const id=scratchCell(f.coordinate);if(id===this.current)return true;const [lat,lon]=cellToLatLng(id),boundary=cellToBoundary(id),radius=Math.min(...boundary.map(([la,lo])=>distance([lon,lat],[lo,la])))*.84;const inside=distance(f.coordinate,[lon,lat])+f.accuracy<radius;if(!inside&&(!this.candidate||this.candidate.id!==id||f.timestamp-this.candidate.at<1500)){if(this.candidate?.id!==id)this.candidate={id,at:f.timestamp};return false;}this.current=id;this.candidate=undefined;return true;}}
 export function scratchVisible(display:ScratchDisplay,navigating:boolean,viewer=false){return viewer||display==='always'||display==='home'&&!navigating;}
-export interface ScratchGeometry {type:'FeatureCollection';features:{type:'Feature';id:string;properties:{cell:string;opacity:number;highlight:boolean};geometry:{type:'Polygon';coordinates:Coord[][]}}[];}
+export interface ScratchGeometry {resolution?:number;type:'FeatureCollection';features:{type:'Feature';id:string;properties:{cell:string;opacity:number;highlight:boolean};geometry:{type:'Polygon';coordinates:Coord[][]}}[];}
 /** Render continuous fog, keeping H3 indexing separate from its rounded presentation. */
 let unionCache:{key:string;polygons:Coord[][][]}={key:'__initial__',polygons:[]};
 function roundedRing(ring:Coord[]):Coord[]{let points=ring.length>1&&ring[0][0]===ring.at(-1)![0]&&ring[0][1]===ring.at(-1)![1]?ring.slice(0,-1):ring;for(let pass=0;pass<2;pass++){const next:Coord[]=[];for(let i=0;i<points.length;i++){const a=points[i],b=points[(i+1)%points.length];next.push([a[0]*.83+b[0]*.17,a[1]*.83+b[1]*.17],[a[0]*.17+b[0]*.83,a[1]*.17+b[1]*.83]);}points=next;}return [...points,points[0]];}
-/** Presentation only: a small fixed-distance halo, never coarser visited parent cells. */
-export function scratchExpansion(bounds:[number,number,number,number]){
- const [w,s,e,n]=bounds,span=Math.max((e-w)*111320*Math.cos((s+n)*Math.PI/360),(n-s)*111320);
- return Number.isFinite(span)?Math.min(40,Math.max(0,Math.round((span-2000)/500)*5)):0;
-}
-export function expandedScratchRing(ring:Coord[],meters:number):Coord[]{
- if(meters<=0||ring.length<4)return ring;
- const points=ring.slice(0,-1),latitude=points[0][1],scaleX=111320*Math.max(.01,Math.cos(latitude*Math.PI/180)),scaleY=111320;
- const signed=points.reduce((sum,a,i)=>{const b=points[(i+1)%points.length];return sum+a[0]*b[1]-b[0]*a[1];},0),direction=signed>=0?1:-1;
- const normal=(a:Coord,b:Coord)=>{const x=(b[0]-a[0])*scaleX,y=(b[1]-a[1])*scaleY,length=Math.hypot(x,y)||1;return [direction*y/length,-direction*x/length];};
- const expanded=points.map((point,i):Coord=>{const a=normal(points[(i+points.length-1)%points.length],point),b=normal(point,points[(i+1)%points.length]),x=a[0]+b[0],y=a[1]+b[1],length=Math.hypot(x,y)||1;return [point[0]+x/length*meters/scaleX,point[1]+y/length*meters/scaleY];});
- return [...expanded,expanded[0]];
-}
+/** Display aggregation only. Stored GPS cells always remain at resolution 10. */
+export function scratchDisplayResolution(bounds:[number,number,number,number]){const [w,s,e,n]=bounds,span=Math.max((e-w)*111320*Math.cos((s+n)*Math.PI/360),(n-s)*111320);return span>=18000?8:span>=5000?9:10;}
+export function scratchTileVisits(index:ScratchIndex,id:string){const resolution=getResolution(id);if(resolution===10)return index.tiles[id];const children=Object.entries(index.tiles).filter(([key])=>cellToParent(key,resolution)===id).map(([,tile])=>tile);if(!children.length)return undefined;return {firstVisited:Math.min(...children.map(t=>t.firstVisited)),lastVisited:Math.max(...children.map(t=>t.lastVisited)),approximate:children.some(t=>t.approximate)};}
 export function scratchGeometry(index:ScratchIndex,bounds:[number,number,number,number],highlight:readonly string[]=[]):ScratchGeometry {
  const [west,south,east,north]=bounds;if(!bounds.every(Number.isFinite)||east<west||north<south)return {type:'FeatureCollection',features:[]};
- const pad=Math.max(.004,Math.min(1,(east-west+north-south)*.05));
+ const resolution=scratchDisplayResolution(bounds),cellPad=resolution===8?.02:resolution===9?.008:.004;
+ const pad=Math.max(cellPad,Math.min(1,(east-west+north-south)*.05));
  const ids=Object.keys(index.tiles).filter(id=>{const [lat,lon]=cellToLatLng(id);return lat>=south-pad&&lat<=north+pad&&lon>=west-pad&&lon<=east+pad;});
- const key=ids.join(',');if(key!==unionCache.key)unionCache={key,polygons:ids.length?(cellsToMultiPolygon(ids,true) as Coord[][][]).map(p=>p.map(roundedRing)):[]};
+ const displayIds=[...new Set(ids.map(id=>resolution===10?id:cellToParent(id,resolution)))];
+ const key=resolution+':'+displayIds.join(',');if(key!==unionCache.key)unionCache={key,polygons:displayIds.length?(cellsToMultiPolygon(displayIds,true) as Coord[][][]).map(p=>p.map(roundedRing)):[]};
  const w=Math.max(-180,west-pad*2),e=Math.min(180,east+pad*2),s=Math.max(-90,south-pad*2),n=Math.min(90,north+pad*2),outer:Coord[]=[[w,s],[e,s],[e,n],[w,n],[w,s]];
  const feature=(id:string,rings:Coord[][],highlighted=false)=>({type:'Feature' as const,id,properties:{cell:id,opacity:1,highlight:highlighted},geometry:{type:'Polygon' as const,coordinates:rings}});
- const expansion=scratchExpansion(bounds);
- const features=[feature('unexplored',[outer,...unionCache.polygons.map(p=>expandedScratchRing(p[0],expansion))])];
+ const features=[feature('unexplored',[outer,...unionCache.polygons.map(p=>p[0])])];
  // Islands inside explored loops stay covered; never silently mark the middle of a loop explored.
  for(const [i,polygon] of unionCache.polygons.entries())for(let j=1;j<polygon.length;j++)features.push(feature(`island-${i}-${j}`,[polygon[j]]));
- const marked=highlight.filter(id=>index.tiles[id]);if(marked.length)for(const [i,polygon] of (cellsToMultiPolygon(marked,true) as Coord[][][]).entries())features.push(feature(`new-${i}`,polygon.map((ring,j)=>j===0?expandedScratchRing(roundedRing(ring),expansion):roundedRing(ring)),true));
- return {type:'FeatureCollection',features};
+ const marked=[...new Set(highlight.filter(id=>index.tiles[id]).map(id=>resolution===10?id:cellToParent(id,resolution)))];if(marked.length)for(const [i,polygon] of (cellsToMultiPolygon(marked,true) as Coord[][][]).entries())features.push(feature(`new-${i}`,polygon.map(roundedRing),true));
+ return {type:'FeatureCollection',resolution,features};
 }

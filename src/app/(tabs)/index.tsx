@@ -1,3 +1,7 @@
+import BatteryPlanWarning from '../../components/BatteryPlanWarning';
+import RegroupWarning from '../../components/RegroupWarning';
+import RideBookmarkButton from '../../components/RideBookmarkButton';
+import {useMapBrowsing} from '../../services/useMapBrowsing';
 import {exploreAlternatives} from '../../services/explorationRouting';
 import VehicleCareNotice from '../../components/VehicleCareNotice';
 import GroupCameraPreview from '../../components/GroupCameraPreview';
@@ -104,6 +108,7 @@ export default function Explore() {
   const [start, setStart] = useState('Current location'), [end, setEnd] = useState('');
   const [startPoint, setStartPoint] = useState<Coord | undefined>(), [endPoint, setEndPoint] = useState<Coord | undefined>();
   const [gpsStart, setGpsStart] = useState(true), [locating, setLocating] = useState(false), [optionsOpen, setOptionsOpen] = useState(false);
+  const [turnCardHeight,setTurnCardHeight]=useState(0);
   const [overview, setOverview] = useState(false), [overviewRequest, setOverviewRequest] = useState(0);
   const locationRequest = useRef(0), planRequest = useRef(0);
   const overviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -114,6 +119,7 @@ export default function Explore() {
   const [picking, setPicking] = useState<'start' | 'end' | null>(null), [follow, setFollow] = useState(true);
   const ride = useRide(selected, profile, navigationOptions, (fix,arrived) => recordingAccept.current(fix,arrived),()=>cancelRecording.current(),reroute), motion = useMotion((navigationOptions.motion && (ride.mode === 'gps'||ride.mode==='simulation')) || (navigationOptions.recordRides && ride.mode === 'gps'));
   const active = ride.mode === 'gps'||ride.mode==='simulation', g = ride.progress;
+  const mapBrowsing=useMapBrowsing(active,resumeFollowing);
   const { capture } = useLocalSearchParams<{capture?:string}>();
   const capturePrepared=useRef(false),captureStarted=useRef(false);
   useEffect(()=>{
@@ -228,7 +234,7 @@ export default function Explore() {
     setPanelOpen(false); setOverview(true); setOverviewRequest(n => n + 1);
     overviewTimer.current = setTimeout(() => { setOverview(false); overviewTimer.current = null; }, 15000);
   }
-  function resumeFollowing() { if (overviewTimer.current) clearTimeout(overviewTimer.current); overviewTimer.current = null; setOverview(false); setFollow(true); }
+  function resumeFollowing() { mapBrowsing.cancel(); if (overviewTimer.current) clearTimeout(overviewTimer.current); overviewTimer.current = null; setOverview(false); setFollow(true); }
   function nGroupPins(){return navigationOptions.groupPins&&groupRide.code?groupRide.snapshot?.members.filter(m=>m.id!==groupRide.selfId)??[]:[];}
   function useGroupRoute(route:Route){setRoutes([route]);select(route);setPanelOpen(false);resumeFollowing();setTimeout(()=>ride.start(false),0);}
   function endNavigation(){const returnHome=!!g&&g.valid&&g.total>0&&g.along/g.total>=.5;ride.stop();if(returnHome)clearRide();}
@@ -268,9 +274,9 @@ export default function Explore() {
     {active && <Awake />}<RidingPrompt fix={live.fix} enabled={ready&&!active&&!planner&&!selected&&!vehicleLocked&&!picking} onPlan={openPlanner}/>
 
     <View style={StyleSheet.absoluteFill}>
-      <RideMap scratchContext={active?'ride':'home'} groupRiders={nGroupPins()} completedMeters={active ? ride.completedMeters : undefined} routes={previewPin ? [] : visibleRoutes} selected={previewPin ? null : selected} position={mapPosition} follow={follow && !overview && !previewPin && (active || (!selected && !startPoint && !picking))} onPan={() => setFollow(false)} heading={heading} tilted={navigationOptions.tilted && !overview} overviewRequest={overviewRequest} overview={overview} onPick={picked} transit={navigationOptions.transit} traffic={navigationOptions.traffic} startPoint={previewPin || startPoint} endPoint={previewPin ? undefined : endPoint} offlineMap={offlineMap} planningStops={stops.filter(s=>s.coordinate.every(Number.isFinite))} fitPadding={fitPadding} followPadding={followPadding} navigating={active} />
+      <RideMap bookmarks={active?recorder.record?.bookmarks:undefined} scratchContext={active?'ride':'home'} groupRiders={nGroupPins()} completedMeters={active ? ride.completedMeters : undefined} routes={previewPin ? [] : visibleRoutes} selected={previewPin ? null : selected} position={mapPosition} follow={follow && !overview && !previewPin && (active || (!selected && !startPoint && !picking))} onPan={() => {setFollow(false);mapBrowsing.touch();}} heading={heading} tilted={navigationOptions.tilted && !overview} overviewRequest={overviewRequest} overview={overview} onPick={picked} transit={navigationOptions.transit} traffic={navigationOptions.traffic} startPoint={previewPin || startPoint} endPoint={previewPin ? undefined : endPoint} offlineMap={offlineMap} planningStops={stops.filter(s=>s.coordinate.every(Number.isFinite))} fitPadding={fitPadding} followPadding={followPadding} navigating={active} />
       {!active && <View pointerEvents="none" style={[s.mapBadge, { backgroundColor: p.card, top: insets.top + (wide ? 24 : 82) }]}><View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: p.accent }} /><Text style={{ color: p.text, fontSize: 12, fontWeight: '700' }}>{picking ? `Tap your ${picking === 'start' ? 'start location' : 'destination'}` : selected?.source === 'gpx' ? 'GPX · TRACK PREVIEW' : !selected ? live.fix && !mapPosition ? 'Waiting for fresh GPS…' : live.status : 'ROUTE COMPARISON'}</Text></View>}
-      {active && <><GlassSurface style={{ position:'absolute',top:insets.top+12,left:12+webLeft,right:wide ? undefined : 12+webRight,width:wide ? 420 : undefined,borderRadius:24 }}><SwipeArea onSwipe={open=>setTurnList(!open)}><Pressable accessibilityRole="button" accessibilityLabel={t("Show upcoming directions")} onPress={()=>setTurnList(true)}><TurnDirection unit={navigationOptions.unit} sign={g?.next?.sign} meters={g?.maneuverMeters} arrived={g?.arrived} text={g?.offRoute ? 'Off route · stop safely to replan' : g?.next?.text || (selected?.source === 'gpx' ? 'GPX track · turns unavailable' : 'Turn instructions unavailable · follow the mapped route')} status={ride.mode === 'simulation' ? 'Simulation · no live GPS' : ride.status} /></Pressable></SwipeArea></GlassSurface><View style={{ position: 'absolute', left: 12 + webLeft, top: insets.top + 156 }}><SpeedBadges route={selected} profile={profile} fix={ride.fix} index={g?.index} offRoute={g?.offRoute} now={now} unit={navigationOptions.unit} simulation={ride.mode === 'simulation'} /></View></>}
+      {active && <><GlassSurface onLayout={e=>setTurnCardHeight(e.nativeEvent.layout.height)} style={{ position:'absolute',top:insets.top+12,left:12+webLeft,right:wide ? undefined : 12+webRight,width:wide ? 420 : undefined,borderRadius:24 }}><SwipeArea onSwipe={open=>setTurnList(!open)}><Pressable accessibilityRole="button" accessibilityLabel={t("Show upcoming directions")} onPress={()=>setTurnList(true)}><TurnDirection unit={navigationOptions.unit} sign={g?.next?.sign} meters={g?.maneuverMeters} arrived={g?.arrived} text={g?.offRoute ? 'Off route · stop safely to replan' : g?.next?.text || (selected?.source === 'gpx' ? 'GPX track · turns unavailable' : 'Turn instructions unavailable · follow the mapped route')} status={ride.mode === 'simulation' ? 'Simulation · no live GPS' : ride.status} /></Pressable></SwipeArea><RegroupWarning/></GlassSurface><View style={{ position: 'absolute', left: 12 + webLeft, top: insets.top + Math.max(156,turnCardHeight+24) }}><SpeedBadges route={selected} profile={profile} fix={ride.fix} index={g?.index} offRoute={g?.offRoute} now={now} unit={navigationOptions.unit} simulation={ride.mode === 'simulation'} /></View></>}
 
       <MapControls top={insets.top+(active?162:wide?110:170)} right={12+webRight} follow={follow} compass={navigationOptions.compass} tilted={navigationOptions.tilted} overview={overview} resume={resumeFollowing} toggleCompass={()=>updateNavigationOptions({compass:!navigationOptions.compass})} toggleTilt={()=>updateNavigationOptions({tilted:!navigationOptions.tilted})} onOverview={selected && active?showOverview:undefined} />
 
@@ -290,7 +296,7 @@ export default function Explore() {
         <Text style={{ color: panelP.muted, fontSize: 12 }}>{profile.name} · Cap {displaySpeed(Math.min(profile.maxSpeed, profile.ridingLimit), navigationOptions.unit).toFixed(0)} {navigationOptions.unit === 'mi' ? 'mph' : 'km/h'} · {eta ? routeEnergyLabel(selected!, profile,active&&g&&!g.offRoute?g.along:0) : 'Range unknown'}</Text>
         <Text style={{ color: panelP.muted, fontSize: 11 }}>{headingSource}{active && navigationOptions.compass && !compassFresh ? ` · ${compass.status}` : ''}{!precise ? ' · Waiting for a precise GPS fix' : ''}</Text>
 
-        <VehicleTelemetryPanel vehicleId={profile.id} />
+        <RideBookmarkButton fix={ride.fix} onBookmark={recorder.bookmark}/><VehicleTelemetryPanel vehicleId={profile.id} />
         <VehicleCareNotice vehicleId={profile.id}/><GroupRiding active={active} onRoute={useGroupRoute}/>{shareControls}{ride.mode==='gps' && !displayableFix(ride.fix,now) && <Button title={t("Retry GPS")} icon="locate-outline" secondary onPress={ride.retryGPS} />}
         {navigationOptions.developerMode && navigationOptions.motion && motion.status !== 'Off' && <Text style={{ color: panelP.muted, fontSize: 12 }}>Motion: {motion.status} · {motion.acceleration.toFixed(2)} g · {motion.rotation.toFixed(2)} rad/s</Text>}
         {g?.offRoute && <Button title={t("End ride & replan")} secondary onPress={() => { ride.stop(); setGpsStart(true); setStart('Current location'); setStartPoint(undefined); setPlanner(true); }} />}
@@ -301,7 +307,7 @@ export default function Explore() {
         {routes.length === 0 && <View style={[styles.card, { backgroundColor: panelP.card }]}><Text style={{ color: panelP.text, fontSize: 18, fontWeight: '700' }}>Where will you ride?</Text><Text style={{color:panelP.muted,lineHeight:22}}>Choose a destination to compare routes, or record a trip without one.</Text></View>}
         {routes.map(r => { const e = estimate(r, profile), chosen = r.id === selected?.id; return <Pressable {...motionProps('route')} accessibilityRole="button" accessibilityLabel={t(`${r.name}, ${minutes(e.seconds)}`)} accessibilityState={{ selected: chosen,disabled:busy }} disabled={busy} key={r.id} onPress={() => { select(r); void Haptics.selectionAsync(); }} style={[styles.card, { backgroundColor: panelP.card, borderWidth: 2, borderColor: chosen ? panelP.accent : 'transparent',opacity:busy?.4:1 }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><View style={[s.round, { backgroundColor: panelP.bg }]}><Ionicons name={r.kind === 'bike' ? 'bicycle' : r.kind === 'car' ? 'car-outline' : 'trail-sign-outline'} size={24} color={panelP.accent} /></View><View style={{ flex: 1 }}><Text style={{ color: panelP.text, fontSize: 17, fontWeight: '700' }}>{r.name}</Text><Text style={{ color: panelP.muted, marginTop: 3 }}>{distanceLeft(e.meters, navigationOptions.unit)} · {r.source === 'gpx' ? 'Track only' : 'Access unverified'}</Text></View><View style={{ alignItems: 'flex-end' }}><Text style={{ color: panelP.text, fontSize: 25, fontWeight: '800' }}>{minutes(e.seconds)}</Text><Text style={{ color: panelP.muted, fontSize: 11 }}>minimum {minutes(e.minimumSeconds)}</Text></View></View>
-          <Text style={{ color: panelP.muted, fontSize: 12 }}>{routeEnergyLabel(r, profile)}</Text>
+          <Text style={{ color: panelP.muted, fontSize: 12 }}>{routeEnergyLabel(r, profile)}</Text><BatteryPlanWarning route={r} vehicle={profile}/>
           {r.source !== 'gpx' && r.plannedCap !== Math.min(profile.maxSpeed, profile.ridingLimit) && <Text style={{ color: '#C75A36', fontSize: 12 }}>Speed settings changed. Replan to update road speeds, alternatives and ETA.</Text>}
         </Pressable>; })}
         {selected?.warnings.map(w => <Text key={w} style={{ color: panelP.muted, fontSize: 12, lineHeight: 18 }}>{w}</Text>)}

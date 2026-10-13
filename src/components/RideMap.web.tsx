@@ -16,8 +16,8 @@ import { Route, Coord } from '../core/types';
 import { routeBounds } from '../core/geo';
 import { serverUrl } from '../services/api';
 import { mapStyle } from './mapConfig';
-interface MapProps {mapBounds?:[number,number,number,number];scratchContext?:import('../services/useScratchLayer').ScratchContext;scratchHighlight?:string[];onScratchTile?(id:string):void;groupRiders?:import('../groups/model').GroupMember[]; areaSelection?:MapAreaSelection; transit?: boolean; trace?: Coord[][]; completedMeters?: number; overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; positionLabel?:string; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; planningStops?:import('../core/itinerary').RouteStop[]; offlineMap?: string; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
-export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit, positionLabel, planningStops, areaSelection,groupRiders=[],scratchContext,scratchHighlight,onScratchTile,mapBounds }: MapProps) {
+interface MapProps {bookmarks?:import('../core/recordings').RideBookmark[];mapBounds?:[number,number,number,number];scratchContext?:import('../services/useScratchLayer').ScratchContext;scratchHighlight?:string[];onScratchTile?(id:string):void;groupRiders?:import('../groups/model').GroupMember[]; areaSelection?:MapAreaSelection; transit?: boolean; trace?: Coord[][]; completedMeters?: number; overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; positionLabel?:string; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord,resolution?:number): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; planningStops?:import('../core/itinerary').RouteStop[]; offlineMap?: string; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
+export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit, positionLabel, planningStops, areaSelection,groupRiders=[],bookmarks=[],scratchContext,scratchHighlight,onScratchTile,mapBounds }: MapProps) {
  const [scratchBounds,setScratchBounds]=useState<[number,number,number,number]>([9.18,45.46,9.20,45.48]),scratch=useScratchLayer(scratchContext,scratchBounds,scratchHighlight);
  const groupVideo=useGroupRide(),peoplePalette=usePalette();
   const div = useRef<HTMLDivElement>(null), map = useRef<maplibregl.Map | null>(null);
@@ -29,6 +29,7 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
   const cameraTarget = useCameraTarget(position, heading, !!follow && loaded, JSON.stringify([tilted, followPadding || fitPadding]));
   const pan = useRef(onPan);
   useEffect(() => { pan.current = onPan; }, [onPan]);
+  const resolution=useRef(scratch.geometry.resolution);useEffect(()=>{resolution.current=scratch.geometry.resolution;},[scratch.geometry.resolution]);
   const click = useRef(onPick);
   useEffect(() => { click.current = onPick; }, [onPick]);
   useEffect(() => {
@@ -37,9 +38,9 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
       maplibregl.setWorkerUrl('/maplibre-gl-worker.mjs');
       const m = new maplibregl.Map({ container: div.current, style: mapStyle, center: [9.186, 45.468], zoom: 12, attributionControl: false }); map.current = m;
       m.addControl(new maplibregl.AttributionControl({ compact: true }), 'top-right');
-      m.on('dragstart', () => pan.current?.());
+      m.on('movestart', e => {if(e.originalEvent)pan.current?.();});m.on('move',e=>{if(e.originalEvent)pan.current?.();});m.on('moveend',e=>{if(e.originalEvent)pan.current?.();});
       m.on('load', () => setLoaded(true)); m.on('error', () => setError(true));
-      m.on('click', e => click.current?.([e.lngLat.lng, e.lngLat.lat]));
+      m.on('click', e => click.current?.([e.lngLat.lng, e.lngLat.lat],resolution.current));
       const observer = new ResizeObserver(() => m.resize()); observer.observe(div.current);
       return () => { observer.disconnect(); people.current?.clear();people.current=null;user.current?.remove(); user.current = null; m.remove(); };
     } catch { queueMicrotask(() => setError(true)); }
@@ -47,7 +48,7 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
   useEffect(()=>{if(mapBounds&&loaded)map.current?.fitBounds([[mapBounds[0],mapBounds[1]],[mapBounds[2],mapBounds[3]]],{padding:80,maxZoom:16,duration:400});},[loaded,mapBounds]);
   useEffect(()=>{const m=map.current;if(!m||!loaded||!scratchContext)return;const update=()=>{const b=m.getBounds();setScratchBounds([b.getWest(),b.getSouth(),b.getEast(),b.getNorth()]);};m.on('moveend',update);update();return()=>{m.off('moveend',update);};},[loaded,scratchContext]);
   useEffect(()=>{const m=map.current;if(!m||!loaded)return;if(!m.getSource('scratch-map')){m.addSource('scratch-map',{type:'geojson',data:scratch.geometry});m.addLayer({id:'scratch-fill',source:'scratch-map',type:'fill',paint:{'fill-color':['case',['get','highlight'],'#64DCC5','#007F6D'],'fill-opacity':['*',['get','opacity'],scratch.opacity]}},m.getStyle().layers.find(l=>l.type==='symbol')?.id);m.addLayer({id:'scratch-border',source:'scratch-map',type:'line',paint:{'line-color':'#79EBD1','line-width':1.8,'line-opacity':['case',['get','highlight'],.95,scratchContext==='ride'?.60:.78]}},m.getStyle().layers.find(l=>l.type==='symbol')?.id);}else{(m.getSource('scratch-map') as maplibregl.GeoJSONSource).setData(scratch.geometry);m.setPaintProperty('scratch-fill','fill-opacity',['*',['get','opacity'],scratch.opacity]);m.setPaintProperty('scratch-border','line-opacity',['case',['get','highlight'],.95,scratchContext==='ride'?.60:.78]);}const pick=(e:maplibregl.MapLayerMouseEvent)=>{const id=e.features?.[0]?.properties?.cell;if(onScratchTile&&typeof id==='string'){e.originalEvent.stopPropagation();onScratchTile(id);}};m.on('click','scratch-fill',pick);return()=>{m.off('click','scratch-fill',pick);};},[loaded,scratch.geometry,scratch.opacity,onScratchTile,scratchContext]);
-  useEffect(() => { const m = map.current; if (m && loaded && !mapBounds && !selected && (!follow || !hasPosition)) m.easeTo({ pitch: tilted ? 50 : 0, duration: 350 }); }, [loaded, tilted, selected, follow, hasPosition,mapBounds]);
+  useEffect(() => { const m = map.current; if (m && loaded && !mapBounds && !selected && (!follow || !hasPosition) && Math.abs(m.getPitch()-(tilted?50:0))>.1) m.easeTo({ pitch: tilted ? 50 : 0, duration: 350 }); }, [loaded, tilted, selected, follow, hasPosition,mapBounds]);
   useEffect(() => { const m = map.current; if (!m || !loaded) return; if (follow || areaSelection) { m.dragRotate.disable(); m.touchZoomRotate.disableRotation(); m.keyboard.disableRotation(); if(areaSelection)m.touchPitch.disable();else m.touchPitch.enable(); } else { m.dragRotate.enable(); m.touchZoomRotate.enableRotation(); m.keyboard.enableRotation(); m.touchPitch.enable(); } }, [follow, loaded, areaSelection]);
   useEffect(() => {
     const m = map.current; if (!m || !loaded) return;
@@ -109,5 +110,6 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
     people.current??=new PeopleMarkers((element,position)=>new maplibregl.Marker({element,anchor:'bottom'}).setLngLat(position).addTo(m));
     people.current.update(groupRiders,groupVideo.videoFeeds,groupVideo.videoEnabled,peoplePalette.accent,peoplePalette.dark,navigating?groupVideo.pinVideo:undefined);
   },[groupRiders,loaded,groupVideo.videoEnabled,groupVideo.videoFeeds,peoplePalette.accent,peoplePalette.dark,groupVideo.pinVideo,navigating]);
+  useEffect(()=>{const m=map.current;if(!m||!loaded)return;const markers=bookmarks.slice(0,1000).map(bookmark=>{const el=document.createElement('div');el.setAttribute('aria-label',bookmark.name);el.title=bookmark.name;el.innerHTML='<svg width="28" height="32" viewBox="0 0 28 32"><path d="M5 2H23V29L14 23L5 29Z" fill="#007F6D" stroke="white" stroke-width="2"/></svg>';return new maplibregl.Marker({element:el,anchor:'bottom'}).setLngLat(bookmark.coordinate).addTo(m);});return()=>markers.forEach(marker=>marker.remove());},[bookmarks,loaded]);
   return <View style={{ flex: 1, zIndex: 0 }}><style>{`.maplibregl-ctrl-top-right { top: 125px; right: 10px; } @media (min-width: 700px) { .maplibregl-ctrl-top-right { top: 70px; } }`}</style><div ref={div} style={{ position: 'absolute', inset: 0 }} />{error && <Text style={{ position: 'absolute', top: 8, left: 8, right: 8, padding: 8, backgroundColor: '#fff', color: '#536671', fontSize: 12 }}>Map resources unavailable. Route geometry and ETA remain available.</Text>}</View>;
 }

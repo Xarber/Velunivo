@@ -11,6 +11,7 @@ private struct VelunivoActivityData {
   var timer: String { values["timer"] as? String ?? "—" }
   var recording: Bool { values["recording"] as? Bool ?? false }
   var groups: Int? { guard let count = values["groupCount"] as? Double, count.isFinite, (1...8).contains(count) else { return nil }; return Int(count) }
+  var regroup: String? { values["regroup"] as? String }
   var turn: String { values["turn"] as? String ?? "Open Velunivo for directions" }
   var distance: String { values["distance"] as? String ?? "—" }
   var arrival: String { values["arrival"] as? String ?? "—" }
@@ -35,6 +36,7 @@ private struct VelunivoActivityData {
     return ["battery.0percent", "battery.25percent", "battery.50percent", "battery.75percent", "battery.100percent", "battery.100percent.bolt"].contains(value) ? value : "battery.100percent"
   }
   var symbol: String {
+    if regroup != nil { return "exclamationmark.triangle.fill" }
     let value = values["symbol"] as? String ?? "arrow.up"
     return ["flag.fill", "arrow.turn.up.left", "arrow.turn.up.right", "arrow.up", "record.circle"].contains(value) ? value : "arrow.up"
   }
@@ -47,10 +49,11 @@ private struct VelunivoActivityBanner: View {
     let data = VelunivoActivityData(context.state.props)
     VStack(alignment: .leading, spacing: 10) {
       HStack(alignment: .top, spacing: 12) {
-        Image(systemName: data.symbol).font(.title).foregroundStyle(Color.mint)
+        Image(systemName: data.symbol).font(.title).foregroundStyle(data.regroup == nil ? Color.mint : Color.red)
         VStack(alignment: .leading, spacing: 4) {
           Text(data.distance).font(.headline).foregroundStyle(Color.mint)
           Text(data.turn).font(.headline).lineLimit(2)
+          if let warning = data.regroup { Text(warning).font(.headline).foregroundStyle(Color.red).lineLimit(2) }
         }
       }
       HStack {
@@ -91,6 +94,7 @@ private struct VelunivoActivitySection: View {
     case "expandedBottom":
       VStack(alignment: .leading, spacing: 6) {
         Text(data.turn).font(.headline).lineLimit(2)
+          if let warning = data.regroup { Text(warning).font(.headline).foregroundStyle(Color.red).lineLimit(2) }
         Text(data.recording ? "\(data.arrival) · \(data.minutes) · \(data.remaining)" : "\(data.arrival) \(data.arrivalLabel) · \(data.minutes) · \(data.remaining)").font(.caption)
         VelunivoActivityBadges(data: data, stale: velunivoActivityIsStale(context))
       }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 8).padding(.bottom, 6)

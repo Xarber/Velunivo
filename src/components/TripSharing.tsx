@@ -1,3 +1,4 @@
+import {notePeerStatus} from '../services/rideReliabilityEvents';
 import {PUBLIC_SERVER_WARNING} from '../sharing/serverSelection';
 import {setHostPresence} from '../sharing/hostPresence';
 import {t} from '../i18n/core';
@@ -14,6 +15,7 @@ import {Coord,Route} from '../core/types';
 export default function TripSharing({active,children,route,position,seconds,meters,now}:{active:boolean;children(controls:React.ReactNode):React.ReactNode;route:Route|null;position?:Coord;seconds:number;meters:number;now:number}){
  const [publicServer,setPublicServer]=useState(false);
  const p=usePalette(),[confirm,setConfirm]=useState(false),[pin,setPin]=useState<string|null>(null),[status,setStatus]=useState(''),[ready,setReady]=useState(false),[starting,setStarting]=useState(false),[viewers,setViewers]=useState(0);
+ useEffect(()=>{if(active&&pin)notePeerStatus(status,'sharing');},[status,active,pin]);
  const coordinates=route?.coordinates;
  const initial=useMemo<TripMessage|undefined>(()=>route?{type:'route',route:sharedRoute(route)}:undefined,[route]);
  const request=useRef(0),live=useRef(active);

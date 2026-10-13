@@ -873,3 +873,82 @@ Object.assign(italian, {
 Object.assign(italian, {
  "Clearer scratch maps at wider zoom levels, brighter borders and a location-centred viewer.": "Mappa di esplorazione più leggibile con lo zoom ridotto, bordi più luminosi e vista centrata sulla tua posizione."
 });
+
+Object.assign(italian, {
+  "Achievements": "Traguardi",
+  "Achievements & challenges": "Traguardi e sfide",
+  "Explorer level": "Livello esploratore",
+  "This week": "Questa settimana",
+  "new tiles": "nuove tessere",
+  "First discovery": "Prima scoperta",
+  "Neighbourhood explorer": "Esploratore del quartiere",
+  "City explorer": "Esploratore della città",
+  "Regular rider": "Sempre in sella",
+  "Beyond the familiar": "Oltre i soliti percorsi",
+  "Weekly explorer": "Esploratore della settimana",
+  "Real rides and new GPS tiles earn XP. Levels and achievements stay earned after deleting rides or resetting your scratch map.": "I viaggi reali e le nuove tessere scoperte con il GPS assegnano XP. Livelli e traguardi restano acquisiti anche dopo aver eliminato viaggi o azzerato la mappa.",
+  "Battery planning": "Pianificazione della batteria",
+  "Battery-aware planning": "Pianificazione in base alla batteria",
+  "Battery reserve · %": "Riserva della batteria · %",
+  "Current charge · % (manual)": "Carica attuale · % (manuale)",
+  "Include return journey": "Includi il ritorno",
+  "Battery reserve may be insufficient.": "La riserva della batteria potrebbe non bastare.",
+  "One-way battery plan": "Stima della batteria per l’andata",
+  "Same-route return included": "Ritorno sullo stesso percorso incluso",
+  "Reserve": "Riserva",
+  "Estimated arrival charge": "Carica stimata all’arrivo",
+  "Current charge unknown. Set it in Battery planning or connect your vehicle.": "Carica attuale sconosciuta. Inseriscila nella pianificazione della batteria o collega il veicolo.",
+  "Using manually entered charge.": "Viene usata la carica inserita manualmente.",
+  "Unknown": "Sconosciuta",
+  "Fresh vehicle Bluetooth battery takes priority. Return estimates assume the same route back. Weather, load and battery condition can change actual consumption.": "I dati recenti della batteria via Bluetooth hanno la precedenza. Il ritorno è stimato sullo stesso percorso. Meteo, carico e stato della batteria possono cambiare i consumi reali.",
+  "Bookmark this spot": "Segna questo punto",
+  "Bookmarked": "Punto salvato",
+  "Ride bookmark": "Punto del viaggio",
+  "Ride bookmarks": "Punti del viaggio",
+  "Saved privately in Saved Places.": "Salvato in privato nei Luoghi salvati.",
+  "Regroup requested": "Richiesta di ricompattamento",
+  "Request regroup": "Chiedi di ricompattarsi",
+  "Group is together": "Gruppo ricompattato",
+  "Stop safely and wait for your group.": "Fermati in sicurezza e aspetta il gruppo.",
+  "Navigation haptics": "Vibrazioni di navigazione",
+  "One haptic for turn prompts, a distinct warning after sustained off-route movement. Availability depends on your device and system settings.": "Una vibrazione per le indicazioni di svolta e una diversa quando resti fuori percorso. La disponibilità dipende dal dispositivo e dalle impostazioni di sistema.",
+  "Ride reliability report": "Rapporto di affidabilità del viaggio",
+  "GPS quality": "Qualità del GPS",
+  "Precise samples": "Campioni precisi",
+  "Longest GPS gap": "Intervallo GPS più lungo",
+  "Estimated speed samples": "Campioni di velocità stimata",
+  "Bluetooth interruptions": "Interruzioni Bluetooth",
+  "Peer reconnections": "Riconnessioni tra dispositivi",
+  "Export reliability report": "Esporta rapporto di affidabilità",
+  "Could not export report.": "Impossibile esportare il rapporto.",
+  "Aggregate diagnostics only. No coordinates, Bluetooth credentials or media.": "Solo diagnostica aggregata. Nessuna coordinata, credenziale Bluetooth o contenuto multimediale.",
+  "Route preferences": "Preferenze dei percorsi",
+  "Prefer cycleways": "Preferisci piste ciclabili",
+  "Prefer quieter roads": "Preferisci strade più tranquille",
+  "Prefer fewer hills": "Preferisci meno salite",
+  "Global preferences for bicycle route planning": "Preferenze globali per i percorsi ciclabili",
+  "Global bicycle-route preference. Road restrictions still apply.": "Preferenza globale per i percorsi ciclabili. Restano valide le limitazioni stradali.",
+  "Favour bicycle routes away from higher-class roads. Mapped data cannot guarantee low traffic.": "Preferisci percorsi ciclabili lontani dalle strade principali. I dati della mappa non garantiscono poco traffico.",
+  "Global bicycle-route preference using online elevation-aware routing. Downloaded road networks do not include terrain.": "Preferenza globale per i percorsi ciclabili calcolati online con dati di quota. Le reti stradali scaricate non includono il terreno."
+});
+
+Object.assign(italian, {
+  "Favour bicycle routes away from higher-class roads. Mapped data cannot guarantee low traffic.": "Preferisci percorsi ciclabili lontani dalle strade principali. I dati della mappa non garantiscono poco traffico.",
+  "Global bicycle-route preference using online elevation-aware routing. Downloaded road networks do not include terrain.": "Preferenza globale per i percorsi ciclabili calcolati online con dati di quota. Le reti stradali scaricate non includono il terreno.",
+  "Ride with confidence": "Viaggia con più tranquillità",
+  "Plan around your battery reserve and feel turn prompts with navigation haptics.": "Pianifica tenendo conto della riserva della batteria e ricevi le indicazioni di svolta con una vibrazione.",
+  "Explore and level up": "Esplora e sali di livello",
+  "Earn explorer levels and achievements. Bookmark useful spots as you ride.": "Guadagna livelli e traguardi di esplorazione. Segna i punti utili durante i viaggi.",
+  "Stay together": "Restate insieme",
+  "Ask your group to regroup, with clear ride and Lock Screen warnings.": "Chiedi al gruppo di ricompattarsi, con avvisi chiari durante il viaggio e nella schermata di blocco.",
+  "Export private aggregate GPS, Bluetooth and peer connection diagnostics.": "Esporta un riepilogo privato della diagnostica GPS, Bluetooth e delle connessioni tra dispositivi.",
+  "Choose cycleway, quieter-road and hill preferences in global Settings.": "Scegli le preferenze per piste ciclabili, strade tranquille e salite nelle impostazioni globali.",
+  "Scratch map overview": "Panoramica della mappa di esplorazione",
+  "Zoom out to combine detailed tiles into larger explored areas.": "Riduci lo zoom per raggruppare le tessere in aree esplorate più grandi.",
+  "Browse while riding": "Esplora la mappa durante il viaggio",
+  "Explore the map freely. Following resumes after eight seconds without interaction.": "Esplora liberamente la mappa. Il centraggio riprende dopo otto secondi senza interazioni."
+});
+
+Object.assign(italian, {"Return location": "Luogo di ritorno", "Same route back": "Torna lungo lo stesso percorso", "Ride starting point": "Punto di partenza del viaggio", "Return to {place}": "Ritorno a {place}", "Checking return battery…": "Calcolo della batteria per il ritorno…", "Return route unavailable. Battery estimate covers the outward trip only.": "Percorso di ritorno non disponibile. La stima della batteria include solo l’andata.", "Requires a paired, connected vehicle with fresh battery readings. Return estimates include your chosen return location. Weather, load and battery condition can change actual consumption.": "Richiede un veicolo associato e connesso con letture recenti della batteria. La stima include il luogo di ritorno scelto. Meteo, carico e stato della batteria possono influire sul consumo reale."});
+
+Object.assign(italian, {"Return leg": "Tratto di ritorno"});

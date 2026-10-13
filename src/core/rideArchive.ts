@@ -1,3 +1,4 @@
+import {rideReliability} from './rideReliability';
 import { analyzeRideEnergy } from './rideEnergy';
 import {repairRecordedRide} from './repairRide';
 import { validBatteryUsage } from './batteryLearning';
@@ -22,10 +23,10 @@ function recordedRides(): Promise<RecordedRide[]> { return queue(async () => {
     for (const [, value] of values) if (value) {
       let r: RecordedRide = JSON.parse(value);
       if(r.status === 'recording' && !liveSessions.has(r.id))r={...r,status:'interrupted',endedAt:r.lastFixAt||r.startedAt};
-      if(r.status!=='recording' && (r.energyAnalysisVersion!==1||r.pathCleanupVersion!==2)){
+      if(r.status!=='recording' && (r.energyAnalysisVersion!==1||r.pathCleanupVersion!==2||r.reliability?.schema!==1)){
         const raw=await AsyncStorage.multiGet(Array.from({length:r.chunks},(_,i)=>chunkKey(r.id,i)));
         const repaired=repairRecordedRide(r,raw.flatMap(([,v])=>v?JSON.parse(v):[]));
-        r=analyzeRideEnergy(repaired.summary,repaired.samples);
+        r={...analyzeRideEnergy(repaired.summary,repaired.samples),reliability:rideReliability(repaired.samples,r.reliability?.peerReconnects)};
         await AsyncStorage.multiSet(Array.from({length:r.chunks},(_,i)=>[chunkKey(r.id,i),JSON.stringify(repaired.samples.slice(i*100,(i+1)*100))]));
         await AsyncStorage.setItem(summaryKey(r.id),JSON.stringify(r));
       }
@@ -45,7 +46,7 @@ function persistRide(ride: RecordedRide, chunks: { index: number; samples: RideS
     if(summary.status!=='recording'){
       const raw=await AsyncStorage.multiGet(Array.from({length:summary.chunks},(_,i)=>chunkKey(ride.id,i)));
       const repaired=repairRecordedRide(summary,raw.flatMap(([,v])=>v?JSON.parse(v):[]));
-      summary=analyzeRideEnergy(repaired.summary,repaired.samples);
+      summary={...analyzeRideEnergy(repaired.summary,repaired.samples),reliability:rideReliability(repaired.samples,summary.reliability?.peerReconnects)};
       await AsyncStorage.multiSet(Array.from({length:summary.chunks},(_,i)=>[chunkKey(ride.id,i),JSON.stringify(repaired.samples.slice(i*100,(i+1)*100))]));
     }
     await AsyncStorage.setItem(summaryKey(ride.id), JSON.stringify(summary));

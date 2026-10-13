@@ -1,3 +1,4 @@
+import {peerReconnectCount} from './rideReliabilityEvents';
 import {getGroupActivityRiders,subscribeGroupActivityRiders} from '../groups/activityPresence';
 import {rememberRideRiders} from '../core/groupRideRoster';
 import {LiveRecordedPath} from '../core/recordedPath';
@@ -18,11 +19,11 @@ export function useRideRecorder(active: boolean, enabled: boolean, arrived: bool
   const {preferences:bluetoothPreferences}=useBluetoothPreferences();
   const collect=useRef(bluetoothPreferences.collectTelemetry);useEffect(()=>{collect.current=bluetoothPreferences.collectTelemetry;},[bluetoothPreferences.collectTelemetry]);
   const sensors = useRef({ motion, compass }); useEffect(() => { sensors.current = { motion, compass }; }, [motion, compass]);
-  const session = useRef<{ ride: RecordedRide; buffer: RideSample[]; pending: Map<number, RideSample[]>; chunk: number; previous: Fix | null; movement: MovementTracker; displayPath:LiveRecordedPath; lastTimestamp: number; dirty: boolean; minimumMeters:number; discarded?:boolean } | null>(null);
+  const session = useRef<{ ride: RecordedRide; buffer: RideSample[]; pending: Map<number, RideSample[]>; chunk: number; previous: Fix | null; movement: MovementTracker; displayPath:LiveRecordedPath; lastTimestamp: number; dirty: boolean; minimumMeters:number; peerBaseline:number;discarded?:boolean } | null>(null);
   const flush = useCallback((status?: RecordedRide['status']) => {
     const s = session.current; if (!s || (!s.dirty && !status)) return;
     if(s.discarded)return Promise.resolve(true);
-    s.ride=rememberRideRiders(s.ride,getGroupActivityRiders());
+    s.ride={...rememberRideRiders(s.ride,getGroupActivityRiders()),reliability:{schema:1,samples:0,preciseGPS:0,poorGPS:0,estimatedSpeed:0,longestGapSeconds:0,bluetoothSamples:0,bluetoothInterruptions:0,peerReconnects:Math.max(0,peerReconnectCount()-s.peerBaseline)}};
     if(!qualifiesRecordedRide(s.ride.meters,s.minimumMeters)){if(status){s.discarded=true;s.ride={...s.ride,status,endedAt:Date.now(),batteryFeedback:undefined};notifyShortRide();}return Promise.resolve(true);}
     if (status) { const endedAt=Date.now(),snapshot=bluetoothBridge.getSnapshot();if(snapshot.vehicleId===s.ride.vehicle.id&&snapshot.state==='connected'&&!snapshot.simulated)s.ride={...s.ride,bluetoothConnected:true};const last=collect.current?sampleBluetooth(snapshot,s.ride.vehicle.id,endedAt):undefined;if(last)s.ride={...s.ride,bluetooth:updateTripBluetooth(s.ride.bluetooth,last,s.ride.startedAt)};const used=automaticBatteryUsage(s.ride.bluetooth,endedAt);s.ride = { ...s.ride, status, endedAt, ...(used!==null?{batteryUsagePercent:used,batteryUsageSource:'bluetooth' as const,batteryFeedback:'answered' as const}:s.ride.bluetoothConnected||(s.ride.bluetooth?.connected&&!s.ride.bluetooth.simulated)?{batteryFeedback:'skipped' as const}:{}) }; }
     const chunks = [...s.pending].map(([index, samples]) => ({ index, samples: [...samples] }));
@@ -45,7 +46,7 @@ export function useRideRecorder(active: boolean, enabled: boolean, arrived: bool
   useEffect(() => {
     if (!active || !enabled || !route) return;
     const startedAt = Date.now();
-    session.current = { ride: { id: `${startedAt}-${Math.random().toString(36).slice(2, 9)}`, name: route.name, vehicle: { id: vehicle.id, name: vehicle.name, kind: vehicle.kind, maxSpeed: vehicle.maxSpeed, ridingLimit: vehicle.ridingLimit,cruiseFactor:vehicle.cruiseFactor,batteryWh:vehicle.batteryWh,totalMassKg:vehicle.totalMassKg }, startLabel: route.startLabel || 'Ride start', endLabel: route.endLabel || 'Ride arrival', startedAt, batteryFeedback: canAskBatteryUsage(vehicle,askBatteryUsage) ? 'pending' : undefined, status: 'recording', samples: 0, chunks: 0, meters: 0, preview: [] }, buffer: [], pending: new Map(), chunk: 0, previous: null, movement: new MovementTracker(), displayPath:new LiveRecordedPath(), lastTimestamp: 0, dirty: true,minimumMeters };
+    session.current = { ride: { id: `${startedAt}-${Math.random().toString(36).slice(2, 9)}`, name: route.name, vehicle: { id: vehicle.id, name: vehicle.name, kind: vehicle.kind, maxSpeed: vehicle.maxSpeed, ridingLimit: vehicle.ridingLimit,cruiseFactor:vehicle.cruiseFactor,batteryWh:vehicle.batteryWh,totalMassKg:vehicle.totalMassKg }, startLabel: route.startLabel || 'Ride start', endLabel: route.endLabel || 'Ride arrival', startedAt, batteryFeedback: canAskBatteryUsage(vehicle,askBatteryUsage) ? 'pending' : undefined, status: 'recording', samples: 0, chunks: 0, meters: 0, preview: [] }, buffer: [], pending: new Map(), chunk: 0, previous: null, movement: new MovementTracker(), displayPath:new LiveRecordedPath(), lastTimestamp: 0, dirty: true,minimumMeters,peerBaseline:peerReconnectCount() };
     const snapshot=bluetoothBridge.getSnapshot(),first=collect.current?sampleBluetooth(snapshot,vehicle.id,startedAt):undefined;
     if(first)session.current.ride={...session.current.ride,bluetooth:updateTripBluetooth(undefined,first,startedAt),bluetoothConnected:snapshot.state==='connected'&&!snapshot.simulated};
     setRecord(session.current.ride); liveRecording(session.current.ride.id, true); flush();
@@ -57,5 +58,6 @@ export function useRideRecorder(active: boolean, enabled: boolean, arrived: bool
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, enabled, route?.id, flush]);
   useEffect(() => { if (arrived) flush('arrived'); }, [arrived, flush]);
-  return {snapshot:()=>session.current?.ride??null, accept, error, record, cancel:()=>{const s=session.current;if(s){s.discarded=true;liveRecording(s.ride.id,false);}}, finish: () => flush('finished') };
+  const bookmark=useCallback((coordinate:import('../core/types').Coord,name:string)=>{const s=session.current;if(!s||s.ride.status!=='recording'||(s.ride.bookmarks?.length??0)>=1000)return;const timestamp=Date.now();s.ride={...s.ride,bookmarks:[...(s.ride.bookmarks||[]),{id:`${timestamp}-${Math.random().toString(36).slice(2,8)}`,name,coordinate,timestamp}]};s.dirty=true;setRecord(s.ride);void flush();},[flush]);
+  return {bookmark,snapshot:()=>session.current?.ride??null, accept, error, record, cancel:()=>{const s=session.current;if(s){s.discarded=true;liveRecording(s.ride.id,false);}}, finish: () => flush('finished') };
 }

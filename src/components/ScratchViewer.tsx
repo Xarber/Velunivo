@@ -1,11 +1,11 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {View} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {cellToLatLng,getResolution} from 'h3-js';
+import {cellToLatLng,getResolution,latLngToCell} from 'h3-js';
 import RideMap from './RideMap';
 import {scratchMap,useScratchIndex} from '../services/scratchMap';
 import {useLocation} from '../services/useLocation';
-import {scratchCell} from '../core/scratchMap';
+import {scratchTileVisits} from '../core/scratchMap';
 import {routeBounds} from '../core/geo';
 import {Coord} from '../core/types';
 import Text from './LocalizedText';
@@ -19,9 +19,9 @@ export default function ScratchViewer({highlight,close}:{highlight?:string[];clo
  useEffect(()=>{if(!highlight&&fix&&!located.current){const [lon,lat]=fix.coordinate,dy=.014,dx=dy/Math.max(.1,Math.cos(lat*Math.PI/180));setLocationBounds([lon-dx,lat-dy,lon+dx,lat+dy]);located.current=true;}},[fix,highlight]);
  const cellKey=(highlight?.length?highlight:Object.keys(index.tiles)).join(',');
  const bounds=useMemo(()=>{const ids=cellKey?cellKey.split(','):[];if(!ids.length)return undefined;return routeBounds(ids.map(id=>{const [lat,lon]=cellToLatLng(id);return [lon,lat] as Coord;}));},[cellKey]);
- const chosen=tile?index.tiles[tile]:undefined;
+ const chosen=tile?scratchTileVisits(index,tile):undefined;
  return <View style={{flex:1,backgroundColor:p.bg}}>
-  <RideMap routes={[]} selected={null} scratchContext="viewer" scratchHighlight={highlight} position={fix?.coordinate} startPoint={focus} mapBounds={focus?undefined:locationBounds||bounds} onPan={()=>{located.current=true;}} onPick={coordinate=>setTile(scratchCell(coordinate))}/>
+  <RideMap routes={[]} selected={null} scratchContext="viewer" scratchHighlight={highlight} position={fix?.coordinate} startPoint={focus} mapBounds={focus?undefined:locationBounds||bounds} onPan={()=>{located.current=true;}} onPick={(coordinate,resolution=10)=>setTile(latLngToCell(coordinate[1],coordinate[0],resolution))}/>
   <View style={{position:'absolute',top:insets.top+12,left:16,right:16,flexDirection:'row',alignItems:'center',gap:14}}>
    <IconButton label={t('Close')} icon="close" onPress={()=>{scratchMap.dismissRecap();close();}}/>
    <View style={[styles.card,{backgroundColor:p.card,padding:12}]}><Text style={{color:p.text,fontWeight:'700'}}>{highlight?'New areas explored':'Scratch map'}</Text></View>
