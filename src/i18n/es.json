@@ -1296,5 +1296,12 @@
   "People stay visible": "Los participantes siguen visibles",
   "Browser location refreshes reliably, with people pins independent of video.": "La ubicación del navegador se actualiza regularmente y los participantes siguen en el mapa sin vídeo.",
   "Quiet when alone": "Micrófono apagado cuando estás solo",
-  "Microphone capture stops when no voice peers are connected.": "El micrófono se apaga cuando ningún otro participante está conectado al chat de voz."
+  "Microphone capture stops when no voice peers are connected.": "El micrófono se apaga cuando ningún otro participante está conectado al chat de voz.",
+  "Only riders who enable video can exchange camera feeds. Your camera starts off each time you join a group. Use the camera button in the ride to turn it on.": "Solo quienes activan el vídeo pueden compartir imágenes de la cámara. Tu cámara está apagada cada vez que te unes a un grupo. Usa el botón de cámara del viaje para encenderla.",
+  "Safari finds you": "Safari te encuentra",
+  "Safari location timestamps are corrected without accepting stale fixes.": "Se corrigen las marcas de tiempo de Safari sin aceptar ubicaciones antiguas.",
+  "Camera sharing, your choice": "La cámara, tú decides",
+  "Group video is in regular settings, starts off and keeps people pins steady.": "El vídeo del grupo está en los ajustes normales, empieza apagado y mantiene los marcadores estables.",
+  "Capture really stops": "La captura se detiene de verdad",
+  "Muting releases native microphone and camera capture.": "Silenciar libera la captura nativa del micrófono y la cámara."
 }

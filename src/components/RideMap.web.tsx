@@ -1,6 +1,6 @@
 import {usePalette} from './ui';
 import {useGroupRide} from '../groups/GroupProvider';
-import {riderInitials} from '../groups/model';
+import {PeopleMarkers} from '../groups/peopleMarkers.web';
 import {MapAreaSelection} from '../core/mapArea';
 import {useMapArea} from '../services/useMapArea';
 import {t} from '../i18n/core';
@@ -22,7 +22,7 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
   const [loaded, setLoaded] = useState(false), [error, setError] = useState(false);
   const reportArea=useMapArea(areaSelection,loaded,async(x,y)=>{if(!map.current)throw new Error('Map unavailable');const c=map.current.unproject([x,y]);return [c.lng,c.lat];});
   useEffect(()=>{const m=map.current;if(!m||!loaded||!areaSelection)return;m.on('moveend',reportArea);reportArea();return()=>{m.off('moveend',reportArea);};},[areaSelection,loaded,reportArea]);
-  const user = useRef<maplibregl.Marker | null>(null);
+  const user = useRef<maplibregl.Marker | null>(null), people = useRef<PeopleMarkers | null>(null);
   const hasPosition = !!position;
   const cameraTarget = useCameraTarget(position, heading, !!follow && loaded, JSON.stringify([tilted, followPadding || fitPadding]));
   const pan = useRef(onPan);
@@ -39,7 +39,7 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
       m.on('load', () => setLoaded(true)); m.on('error', () => setError(true));
       m.on('click', e => click.current?.([e.lngLat.lng, e.lngLat.lat]));
       const observer = new ResizeObserver(() => m.resize()); observer.observe(div.current);
-      return () => { observer.disconnect(); user.current?.remove(); user.current = null; m.remove(); };
+      return () => { observer.disconnect(); people.current?.clear();people.current=null;user.current?.remove(); user.current = null; m.remove(); };
     } catch { queueMicrotask(() => setError(true)); }
   }, []);
   useEffect(() => { const m = map.current; if (m && loaded && !selected && (!follow || !hasPosition)) m.easeTo({ pitch: tilted ? 50 : 0, duration: 350 }); }, [loaded, tilted, selected, follow, hasPosition]);
@@ -100,6 +100,9 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
     if (source) source.setData(data); else { m.addSource('planning', { type: 'geojson', data }); m.addLayer({ id: 'planning', source: 'planning', type: 'circle', paint: { 'circle-radius': 7, 'circle-color': '#007F6D', 'circle-stroke-width': 3, 'circle-stroke-color': '#fff' } }); }
     if (!selected && startPoint && !follow) { if (endPoint) { const [w, s, e, n] = routeBounds([startPoint, endPoint]); m.fitBounds([[w,s],[e,n]], { padding: fitPadding || 45, maxZoom: 16, bearing: 0, pitch: tilted ? 50 : 0, duration: 400 }); } else m.easeTo({ center: startPoint, zoom: 13, padding: fitPadding, bearing: 0, pitch: tilted ? 50 : 0, duration: 400 }); }
   }, [startPoint, endPoint, loaded, selected, follow, fitPadding, tilted]);
-  useEffect(()=>{const m=map.current;if(!m||!loaded)return;const markers=groupRiders.filter(r=>r.position).map(r=>{const el=document.createElement('div');const feed=groupVideo.videoEnabled&&r.video&&r.camera?groupVideo.videoFeeds[r.id]:undefined;if(feed?.stream){const v=document.createElement('video');v.srcObject=feed.stream;v.muted=true;v.autoplay=true;v.playsInline=true;v.style.cssText='width:36px;height:36px;object-fit:cover';el.appendChild(v);void v.play().catch(()=>{});}else if(r.photo){const img=document.createElement('img');img.src=r.photo;img.alt=r.name;img.style.cssText='width:36px;height:36px;object-fit:cover';el.appendChild(img);}else el.textContent=riderInitials(r.name);el.title=r.name;el.setAttribute('aria-label',r.name);el.style.cssText=`width:36px;height:36px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:${peoplePalette.accent};border:3px solid white;outline:2px solid ${peoplePalette.accent};border-radius:50%;color:${peoplePalette.dark?'#102A28':'white'};font:700 12px system-ui;box-shadow:0 2px 5px #0005;pointer-events:none`;if(Date.now()-r.updatedAt>60000)el.style.opacity='.45';const pin=document.createElement('div');pin.style.cssText='position:relative;width:46px;height:54px;display:flex;justify-content:center;pointer-events:none';const tip=document.createElement('div');tip.style.cssText=`position:absolute;top:35px;width:14px;height:14px;transform:rotate(45deg);background:white;border:2px solid ${peoplePalette.accent}`;el.style.position='relative';el.style.marginTop='2px';pin.append(tip,el);return new maplibregl.Marker({element:pin,anchor:'bottom'}).setLngLat(r.position!).addTo(m);});return()=>markers.forEach(marker=>marker.remove());},[groupRiders,loaded,groupVideo.videoEnabled,groupVideo.videoFeeds,peoplePalette.accent,peoplePalette.dark]);
+  useEffect(()=>{const m=map.current;if(!m||!loaded)return;
+    people.current??=new PeopleMarkers(element=>new maplibregl.Marker({element,anchor:'bottom'}).addTo(m));
+    people.current.update(groupRiders,groupVideo.videoFeeds,groupVideo.videoEnabled,peoplePalette.accent,peoplePalette.dark);
+  },[groupRiders,loaded,groupVideo.videoEnabled,groupVideo.videoFeeds,peoplePalette.accent,peoplePalette.dark]);
   return <View style={{ flex: 1, zIndex: 0 }}><style>{`.maplibregl-ctrl-top-right { top: 125px; right: 10px; } @media (min-width: 700px) { .maplibregl-ctrl-top-right { top: 70px; } }`}</style><div ref={div} style={{ position: 'absolute', inset: 0 }} />{error && <Text style={{ position: 'absolute', top: 8, left: 8, right: 8, padding: 8, backgroundColor: '#fff', color: '#536671', fontSize: 12 }}>Map resources unavailable. Route geometry and ETA remain available.</Text>}</View>;
 }

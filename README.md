@@ -132,4 +132,4 @@ Device backup and account-free transfers are available in Settings → General �
 
 Share the same route and rider locations with up to eight participants. Optional audio-only calls include microphone and incoming-audio mute controls; recording groups save only your own path. Voice remains off until enabled, and the system End Call action disables the saved voice preference. Native calls require a new build and physical-device validation. See [Group riding and validation](docs/GROUP-RIDING.md).
 
-Group routes are selected automatically on joining. Version 1.0.9 uses native WebRTC for mobile peer connections. Optional map-pin video is available under Developer Options → Group riding and requires mutual opt-in; capture targets 96×96 at 6 fps. Physical-device video rendering and native recovery still need validation.
+Group routes are selected automatically on joining. Version 1.0.9 uses native WebRTC for mobile peer connections. Optional map-pin video is available under Settings → Profile & Group Riding and requires mutual opt-in; capture targets 96×96 at 6 fps. Physical-device video rendering and native recovery still need validation.
