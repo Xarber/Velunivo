@@ -1334,5 +1334,6 @@
   "System call controls unavailable in this installation. In-app voice can continue.": "Los controles de llamada del sistema no están disponibles en esta instalación. El chat de voz puede continuar en la aplicación.",
   "System call controls unavailable.": "Controles de llamada del sistema no disponibles.",
   "GPS speed & group connections": "Velocidad GPS y conexiones de grupo",
-  "Estimated GPS speed, faster group rejoining and rider-list video previews.": "Velocidad estimada por GPS, reconexión a grupos más rápida y vídeos en la lista de participantes."
+  "Estimated GPS speed, faster group rejoining and rider-list video previews.": "Velocidad estimada por GPS, reconexión a grupos más rápida y vídeos en la lista de participantes.",
+  "Restored system call lifetime and a clearer hangup button.": "Restaurada la duración de la llamada del sistema y mejorado el botón para colgar."
 }

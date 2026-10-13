@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import PressMotion from './PressMotion';
 import { motionProps, useReducedMotion } from './WebMotion';
 import {Animated, Easing, ActivityIndicator, StyleSheet, useColorScheme, View, TextInput, TextInputProps} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons,MaterialCommunityIcons } from '@expo/vector-icons';
 import {t} from '../i18n/core';
 import {useLanguage} from '../i18n/react';
 const PaletteContext = createContext<ReturnType<typeof useSystemPalette> | null>(null);
@@ -34,4 +34,4 @@ export const styles = StyleSheet.create({
   subtitle: { fontSize: 15, lineHeight: 22 },
 });
 
-export function IconButton({ label, icon, onPress, disabled = false, muted=false }: { label: string; icon: keyof typeof Ionicons.glyphMap; onPress(): void; disabled?: boolean; muted?:boolean }) { const p = usePalette();useLanguage(); return <PressMotion accessibilityRole="button" accessibilityLabel={t(label)} disabled={disabled} onPress={onPress} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: p.line, opacity: disabled ? .4 : 1 }}><Ionicons name={icon} size={22} color={icon === 'trash-outline' ? '#D75451' : muted?p.muted:p.accent} /></PressMotion>; }
+export function IconButton({ label, icon, onPress, disabled = false, muted=false }: { label: string; icon: keyof typeof Ionicons.glyphMap|'phone-hangup-outline'; onPress(): void; disabled?: boolean; muted?:boolean }) { const p = usePalette();useLanguage(); return <PressMotion accessibilityRole="button" accessibilityLabel={t(label)} disabled={disabled} onPress={onPress} style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: p.line, opacity: disabled ? .4 : 1 }}>{icon==='phone-hangup-outline'?<MaterialCommunityIcons name="phone-hangup-outline" size={22} color="#D75451"/>:<Ionicons name={icon} size={22} color={icon === 'trash-outline' ? '#D75451' : muted?p.muted:p.accent} />}</PressMotion>; }

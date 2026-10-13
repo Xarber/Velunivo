@@ -6,6 +6,7 @@ export const welcomePages=[
  {icon:'shield-checkmark-outline',title:'You stay in control',text:'Check road signs and local rules. Your records stay on your device until you export or share them.'},
 ] as const;
 export const releaseHighlights=[
+ {version:'1.0.23',items:[{icon:'call-outline',title:'Group calls',text:'Restored system call lifetime and a clearer hangup button.'}]},
  {version:'1.0.22',items:[{icon:'speedometer-outline',title:'GPS speed & group connections',text:'Estimated GPS speed, faster group rejoining and rider-list video previews.'}]},
  {version:'1.0.21',items:[{icon:'people-outline',title:'Group riding',text:'Joining a group saves your current ride and starts the group activity.'}]},
  {version:'1.0.20',items:[{icon:'recording-outline',title:'Recording trip',text:'Recording groups start recording on your device.'},{icon:'call-outline',title:'Group calls',text:'Improved microphone, video and call audio setup.'}]},

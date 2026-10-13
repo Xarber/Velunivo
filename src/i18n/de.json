@@ -1334,5 +1334,6 @@
   "System call controls unavailable in this installation. In-app voice can continue.": "Systemanrufsteuerungen sind bei dieser Installation nicht verfügbar. Der Sprachchat kann in der App fortgesetzt werden.",
   "System call controls unavailable.": "Systemanrufsteuerungen nicht verfügbar.",
   "GPS speed & group connections": "GPS-Geschwindigkeit und Gruppenverbindungen",
-  "Estimated GPS speed, faster group rejoining and rider-list video previews.": "Geschätzte GPS-Geschwindigkeit, schnellerer Gruppen-Wiedereintritt und Videos in der Teilnehmerliste."
+  "Estimated GPS speed, faster group rejoining and rider-list video previews.": "Geschätzte GPS-Geschwindigkeit, schnellerer Gruppen-Wiedereintritt und Videos in der Teilnehmerliste.",
+  "Restored system call lifetime and a clearer hangup button.": "Systemanrufe bleiben wieder aktiv; die Auflegen-Taste ist klarer erkennbar."
 }
