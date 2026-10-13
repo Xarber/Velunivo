@@ -1305,5 +1305,7 @@
   "Capture really stops": "Aufnahme wirklich beenden",
   "Muting releases native microphone and camera capture.": "Stummschalten gibt die native Mikrofon- und Kameraaufnahme frei.",
   "Group map stability": "Stabile Gruppenkarte",
-  "People pins initialize at their actual location and preserve video playback.": "Personenmarkierungen starten an ihrer tatsächlichen Position und erhalten die Videowiedergabe."
+  "People pins initialize at their actual location and preserve video playback.": "Personenmarkierungen starten an ihrer tatsächlichen Position und erhalten die Videowiedergabe.",
+  "Reliable native downloads": "Zuverlässige native Downloads",
+  "Native dependency downloads retry and reuse verified cached files.": "Native Abhängigkeiten werden bei Fehlern erneut geladen und nutzen geprüfte Dateien im Cache."
 }

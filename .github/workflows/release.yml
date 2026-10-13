@@ -271,7 +271,24 @@ jobs:
       - run: xcodebuild -version && xcodebuild -showsdks
       - run: npm ci
       - run: npx expo prebuild --platform ios --no-install
-      - run: cd ios && pod install
+      - name: Cache verified React Native downloads
+        uses: actions/cache@v4
+        continue-on-error: true
+        with:
+          path: ~/Library/Caches/ReactNative
+          key: rn-download-${{ runner.arch }}-${{ env.NATIVE_DEPENDENCY_KEY }}-${{ github.run_id }}-${{ github.job }}
+          restore-keys: rn-download-${{ runner.arch }}-${{ env.NATIVE_DEPENDENCY_KEY }}-
+      - name: Configure bounded dependency download retries
+        run: bash scripts/configure-ios-downloads.sh
+      - name: Install iOS dependencies with retry
+        timeout-minutes: 15
+        run: |
+          for attempt in 1 2; do
+            if (cd ios && pod install); then exit 0; fi
+            if [ "$attempt" -eq 2 ]; then exit 1; fi
+            echo '::warning::Dependency installation failed; retrying once.'
+            sleep 5
+          done
       - name: Archive iPhone app without signing
         run: |
           mkdir -p artifacts
@@ -375,7 +392,24 @@ jobs:
       - run: xcodebuild -version && xcodebuild -showsdks
       - run: npm ci
       - run: npx expo prebuild --platform ios --no-install
-      - run: cd ios && pod install
+      - name: Cache verified React Native downloads
+        uses: actions/cache@v4
+        continue-on-error: true
+        with:
+          path: ~/Library/Caches/ReactNative
+          key: rn-download-${{ runner.arch }}-${{ env.NATIVE_DEPENDENCY_KEY }}-${{ github.run_id }}-${{ github.job }}
+          restore-keys: rn-download-${{ runner.arch }}-${{ env.NATIVE_DEPENDENCY_KEY }}-
+      - name: Configure bounded dependency download retries
+        run: bash scripts/configure-ios-downloads.sh
+      - name: Install iOS dependencies with retry
+        timeout-minutes: 15
+        run: |
+          for attempt in 1 2; do
+            if (cd ios && pod install); then exit 0; fi
+            if [ "$attempt" -eq 2 ]; then exit 1; fi
+            echo '::warning::Dependency installation failed; retrying once.'
+            sleep 5
+          done
       - run: mkdir -p artifacts
       - name: Build Apple Silicon Simulator app
         run: |

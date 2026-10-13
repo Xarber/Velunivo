@@ -75,3 +75,9 @@ Binary releases contain exactly `Velunivo.ipa`, `Velunivo.apk`, `Velunivo-simula
 Native screenshot galleries are published only to the mutable `1.0` AltSource release: iPhone screens first, then landscape iPad screens. README and normal binary releases contain no native screenshot assets. Failed captures preserve the previous gallery after two attempts rather than block binaries. The production IPA/APK/web do not enable Simulator screenshot fixtures.
 
 Validation: 28 Python tests including metadata/checksum consolidation, gallery ordering and capture fallbacks pass. Native compilation remains exclusively in GitHub Actions.
+
+## iOS dependency download recovery (1.0.13)
+
+Run 38345157668 failed in `pod install`, before compilation: the 17.8 MB ReactNativeDependencies debug tarball from repo1.maven.org downloaded slowly for over seven minutes, then curl reported connection reset (56). The iOS and simulator jobs now use React Native's supported `ENTERPRISE_REPOSITORY` override with Maven Central's alternate HTTPS endpoint, cache its verified completed tarballs under `~/Library/Caches/ReactNative`, and configure job-local curl defaults: 20-second connect timeout, 180-second request timeout, two retries and stalled-download detection. CocoaPods retries once within a 15-minute step limit. TLS and upstream checksum checks remain enabled; failed/partial downloads are not promoted to the shared cache. No local compilation or SDK download is involved.
+
+Both alternate-endpoint redirects and the final artifact HEAD response were checked (200, 18,746,275 bytes). Safari computer-use checks additionally verified the complete corrected app reaches Live location, and real local microphone/camera captures each become ended when disabled. These tests never record or transmit media. Camera permission wording now describes normal group video rather than a developer-only feature.
