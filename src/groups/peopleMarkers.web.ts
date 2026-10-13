@@ -4,11 +4,11 @@ interface Marker {setLngLat(p:[number,number]):Marker;remove():void;}
 /** Keep video elements alive while location/presence snapshots change. */
 export class PeopleMarkers {
  private pins=new Map<string,{marker:Marker;face:HTMLDivElement;tip:HTMLDivElement;stream?:MediaStream;photo?:string;initials?:string}>();
- constructor(private create:(element:HTMLDivElement)=>Marker){}
+ constructor(private create:(element:HTMLDivElement,position:[number,number])=>Marker){}
  update(riders:GroupMember[],feeds:Record<string,VideoFeed>,enabled:boolean,accent:string,dark:boolean){
   const wanted=new Set<string>();
   for(const r of riders){if(!r.position)continue;wanted.add(r.id);let pin=this.pins.get(r.id);
-   if(!pin){const root=document.createElement('div'),face=document.createElement('div'),tip=document.createElement('div');root.style.cssText='position:relative;width:46px;height:54px;display:flex;justify-content:center;pointer-events:none';root.append(tip,face);pin={marker:this.create(root),face,tip};this.pins.set(r.id,pin);}
+   if(!pin){const root=document.createElement('div'),face=document.createElement('div'),tip=document.createElement('div');root.style.cssText='position:relative;width:46px;height:54px;display:flex;justify-content:center;pointer-events:none';root.append(tip,face);pin={marker:this.create(root,r.position),face,tip};this.pins.set(r.id,pin);}
    pin.marker.setLngLat(r.position);pin.face.title=r.name;pin.face.setAttribute('aria-label',r.name);
    pin.face.style.cssText=`position:relative;margin-top:2px;width:36px;height:36px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:${accent};border:3px solid white;outline:2px solid ${accent};border-radius:50%;color:${dark?'#102A28':'white'};font:700 12px system-ui;box-shadow:0 2px 5px #0005;pointer-events:none;opacity:${Date.now()-r.updatedAt>60000?'.45':'1'}`;
    pin.tip.style.cssText=`position:absolute;top:35px;width:14px;height:14px;transform:rotate(45deg);background:white;border:2px solid ${accent}`;

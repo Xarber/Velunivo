@@ -1303,5 +1303,7 @@
   "Camera sharing, your choice": "Kamera teilen, deine Entscheidung",
   "Group video is in regular settings, starts off and keeps people pins steady.": "Gruppenvideo ist in den normalen Einstellungen, startet ausgeschaltet und hält Kartenmarkierungen stabil.",
   "Capture really stops": "Aufnahme wirklich beenden",
-  "Muting releases native microphone and camera capture.": "Stummschalten gibt die native Mikrofon- und Kameraaufnahme frei."
+  "Muting releases native microphone and camera capture.": "Stummschalten gibt die native Mikrofon- und Kameraaufnahme frei.",
+  "Group map stability": "Stabile Gruppenkarte",
+  "People pins initialize at their actual location and preserve video playback.": "Personenmarkierungen starten an ihrer tatsächlichen Position und erhalten die Videowiedergabe."
 }
