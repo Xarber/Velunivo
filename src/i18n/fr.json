@@ -1320,5 +1320,6 @@
   "Lock Screen dashboards show recording progress and group counts.": "L’écran verrouillé affiche l’enregistrement et le nombre de participants.",
   "Improved microphone, video and call audio setup.": "Connexion du microphone, de la vidéo et de l’audio des appels améliorée.",
   "Smoother ride traces": "Tracés plus réguliers",
-  "Small GPS offsets are straightened while you record.": "Les petits écarts du GPS sont corrigés pendant l’enregistrement."
+  "Small GPS offsets are straightened while you record.": "Les petits écarts du GPS sont corrigés pendant l’enregistrement.",
+  "Larger turn icons and left-aligned distance in the expanded Island.": "Icônes de direction plus grandes et distance à gauche dans la Dynamic Island déployée."
 }

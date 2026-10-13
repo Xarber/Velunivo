@@ -91,3 +91,9 @@ Final pre-push validation: 287 JavaScript tests and 31 Python tests pass; TypeSc
 1.0.16 incorporates native negotiated-sender binding, CallKit-owned activation, automatic shared-route starts, recording activities, group/spectator badges, loading feedback and conservative live trace fitting. See GROUP-RIDING.md for verification limits. Version 1.0.15 completed successfully; no active previous release run remains to cancel. Do not move existing version tags. Native compilation remains on GitHub only. Local regression checks run with test concurrency 2 after the Mac memory/disk pressure; no SDK/runtime was downloaded.
 
 Pre-push verification for 1.0.16: 296 JS tests, 31 Python tests, TypeScript, Expo lint and whitespace checks. Native changes are not locally compiled. The post-interruption browser UI smoke rerun hit a sandbox startup restriction; earlier actual RTP/media tests and the new intent/trace/activity regression tests are documented separately. After cleanup the Mac had approximately 6.5 GiB free; no additional SDK was installed.
+
+## Expanded Dynamic Island layout (1.0.17)
+
+The expanded Island groups a larger 32-point maneuver symbol and 24-point distance on the left, rather than separating the distance on the right. Guidance and arrival details align to the left across the bottom region. Compact/minimal Island and Lock Screen layouts retain their current sizing. Both the direct Swift renderer and Expo layout agree. No SDK downloads or local native compilation; native appearance requires the new CI binary.
+
+Also removes a duplicate microphone-button disabled property accidentally introduced after 1.0.16's verification, which prevented its type/lint checks from passing.

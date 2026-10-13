@@ -1,5 +1,6 @@
 /** English source messages are stable keys. User-authored content is never stored translated. */
 export const italian:Record<string,string>={
+"Larger turn icons and left-aligned distance in the expanded Island.":"Icone delle svolte più grandi e distanza a sinistra nella Dynamic Island espansa.",
 "Joining starts the shared route automatically.":"Quando ti unisci, la navigazione sul percorso condiviso parte automaticamente.","Lock Screen dashboards show recording progress and group counts.":"La schermata di blocco mostra la registrazione e il numero di partecipanti.","Improved microphone, video and call audio setup.":"Migliorata la connessione di microfono, video e audio delle chiamate.","Smoother ride traces":"Tracce più regolari","Small GPS offsets are straightened while you record.":"Le piccole imprecisioni del GPS vengono corrette durante la registrazione.",
 "Travelled":"Percorsi",
 "riders":"partecipanti",

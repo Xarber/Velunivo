@@ -76,16 +76,23 @@ private struct VelunivoActivitySection: View {
   var body: some View {
     let data = VelunivoActivityData(context.state.props)
     switch sectionName {
-    case "expandedLeading", "compactLeading", "minimal":
+    case "expandedLeading":
+      HStack(alignment: .center, spacing: 10) {
+        Image(systemName: data.symbol).font(.system(size: 32, weight: .semibold))
+        Text(data.distance).font(.system(size: 24, weight: .bold)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
+      }.foregroundStyle(Color.mint)
+    case "expandedTrailing":
+      EmptyView()
+    case "compactLeading", "minimal":
       Image(systemName: data.symbol).foregroundStyle(Color.mint)
-    case "expandedTrailing", "compactTrailing":
+    case "compactTrailing":
       Text(data.distance).font(.headline).foregroundStyle(Color.mint)
     case "expandedBottom":
       VStack(alignment: .leading, spacing: 6) {
         Text(data.turn).font(.headline).lineLimit(2)
         Text(data.recording ? "\(data.arrival) · \(data.minutes) · \(data.remaining)" : "\(data.arrival) \(data.arrivalLabel) · \(data.minutes) · \(data.remaining)").font(.caption)
         VelunivoActivityBadges(data: data, stale: velunivoActivityIsStale(context))
-      }
+      }.frame(maxWidth: .infinity, alignment: .leading)
     default:
       EmptyView()
     }
