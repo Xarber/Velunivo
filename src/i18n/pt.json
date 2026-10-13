@@ -1321,5 +1321,7 @@
   "Improved microphone, video and call audio setup.": "Melhorias na ligação do microfone, vídeo e áudio das chamadas.",
   "Smoother ride traces": "Traçados mais suaves",
   "Small GPS offsets are straightened while you record.": "Os pequenos desvios do GPS são corrigidos durante a gravação.",
-  "Larger turn icons and left-aligned distance in the expanded Island.": "Ícones de direção maiores e distância à esquerda na Dynamic Island expandida."
+  "Larger turn icons and left-aligned distance in the expanded Island.": "Ícones de direção maiores e distância à esquerda na Dynamic Island expandida.",
+  "Ride updates": "Atualizações da viagem",
+  "Fixed Android ride activity builds.": "Corrigida a compilação das atividades de viagem no Android."
 }

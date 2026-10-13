@@ -101,3 +101,9 @@ Also removes a duplicate microphone-button disabled property accidentally introd
 ## Expanded Island refinement (1.0.18)
 
 Per the clarified layout, expanded leading now stacks a 36-point direction arrow above a smaller 16-point distance. Compact/minimal Island, Lock Screen and all activity data remain unchanged. Version 1.0.16's duplicate microphone property failure was already fixed in 1.0.17. Cancel the active 1.0.17 build when starting the replacement; do not move its version tag. No local native compilation or SDK download.
+
+## Android Live Updates compilation repair
+
+Run 38362103801 failed Android Kotlin compilation at VelunivoLiveUpdatesModule.kt:66: adding the recording ID to the supported-ID set had also inadvertently changed a timeout equality check into an invalid comma-separated expression. Restore the timeout check to the test activity only; recording retains the normal renewable 90-second timeout. iPhone compilation succeeded; leave this run and its simulator job running as requested. This repair is prepared locally without dispatching another workflow or compiling locally.
+
+Published as 1.0.19 using a new immutable tag. The user obtained the 1.0.18 simulator artifact and authorized cancelling its remaining work before dispatching the replacement. Validation: TypeScript, Expo lint, data-transfer/version regressions and whitespace checks; native compilation is exclusively performed by GitHub Actions.

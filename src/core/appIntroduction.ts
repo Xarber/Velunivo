@@ -6,6 +6,7 @@ export const welcomePages=[
  {icon:'shield-checkmark-outline',title:'You stay in control',text:'Check road signs and local rules. Your records stay on your device until you export or share them.'},
 ] as const;
 export const releaseHighlights=[
+ {version:'1.0.19',items:[{icon:'notifications-outline',title:'Ride updates',text:'Fixed Android ride activity builds.'}]},
  {version:'1.0.18',items:[{icon:'navigate-outline',title:'Navigation view',text:'Larger turn icons and left-aligned distance in the expanded Island.'}]},
  {version:'1.0.17',items:[{icon:'navigate-outline',title:'Navigation view',text:'Larger turn icons and left-aligned distance in the expanded Island.'}]},
  {version:'1.0.16',items:[{icon:'people-outline',title:'Group riding',text:'Joining starts the shared route automatically.'},{icon:'recording-outline',title:'Recording trip',text:'Lock Screen dashboards show recording progress and group counts.'},{icon:'call-outline',title:'Group calls',text:'Improved microphone, video and call audio setup.'},{icon:'map-outline',title:'Smoother ride traces',text:'Small GPS offsets are straightened while you record.'}]},

@@ -63,7 +63,7 @@ private object Updates {
       .setSmallIcon(R.drawable.velunivo_navigation).setContentTitle("Velunivo")
       .setContentText(body).setStyle(NotificationCompat.BigTextStyle().bigText(body))
       .setContentIntent(tap).setDeleteIntent(dismissed).setOngoing(true).setAutoCancel(false)
-      .setOnlyAlertOnce(true).setSilent(true).setColorized(false).setTimeoutAfter(if (id == "velunivo-test", "velunivo-recording") (90000 - age).coerceAtLeast(1) else 90000)
+      .setOnlyAlertOnce(true).setSilent(true).setColorized(false).setTimeoutAfter(if (id == "velunivo-test") (90000 - age).coerceAtLeast(1) else 90000)
       .setCategory(NotificationCompat.CATEGORY_NAVIGATION).setPriority(NotificationCompat.PRIORITY_LOW)
       .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
       .setRequestPromotedOngoing(!old).setShortCriticalText(if (old) "" else content.chip.take(7))
