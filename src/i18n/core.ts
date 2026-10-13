@@ -35,5 +35,6 @@ export function translate(text:string,language:Language=getLanguage()):string{
  return text;
 }
 export const t=translate;
+export function countText(message:string,count:number){return t(message).replace('{count}',String(count));}
 
 const templates=Object.fromEntries(Object.entries(dictionaries).map(([lang,dictionary])=>[lang,Object.entries(dictionary).filter(([key])=>key.includes('{')).map(([key,value])=>{const names:string[]=[];const pattern=key.split(/(\{[^}]+\})/).map(part=>{if(part.startsWith('{')&&part.endsWith('}')){names.push(part.slice(1,-1));return '(.+?)';}return part.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}).join('');return [{regex:new RegExp('^'+pattern+'$'),names},value] as const;})]));

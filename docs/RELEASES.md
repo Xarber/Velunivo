@@ -150,3 +150,7 @@ What's New presents at most three concise highlights. Patch changes are grouped 
 Hardware limitation: credential-rejection and replacement are verified with protocol/bridge fixtures, not a new physical Pro 2 pairing. Lock Screen appearance must be checked in the resulting native build. Existing 1.2.0 release completed successfully before this update.
 
 Validation completed before push: **329 JavaScript/TypeScript tests passed**, including new credential replacement/rollback, speed provenance, activity sample, release-history and developer-placement tests; lint and typecheck passed without warnings; `git diff --check` passed. CallKit, voice/media factories and native call modules have no changes in this update.
+
+## 2.0.0
+
+The user explicitly authorized a major release for ride-only exploration, exploration route alternatives, maintenance reminders and profile ride statistics. Native GitHub update checks, saved-profile group setup and retrospective changelog formatting are included. See [implementation and validation](EXPLORATION_2.0.md). Historical tags are unchanged; the mutable `1.0` source release remains separate from `v2.0.0` binaries. CallKit/media/protocol implementations are unchanged, no local native build or SDK download occurred, and new QA screenshots are not added to README/release assets.

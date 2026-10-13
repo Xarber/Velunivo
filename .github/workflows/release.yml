@@ -13,6 +13,8 @@ permissions:
 concurrency:
   group: velunivo-release
   cancel-in-progress: true
+env:
+  EXPO_PUBLIC_UPDATE_REPOSITORY: ${{ github.repository }}
 jobs:
   prepare:
     permissions:

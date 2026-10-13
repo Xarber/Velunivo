@@ -19,7 +19,7 @@ test('simulated fixes drive voice and activity while recording and real GPS stay
   let now=Date.now(), tick: (()=>void)|undefined, appChange: ((state:string)=>void)|undefined;
   let recordings=0, gpsRequests=0, pausedActivities=0, spoken=0, stopped=false;
   const updates: unknown[][]=[], effects:(()=>void)[]=[];
-  const mocks: Record<string,unknown>={
+  const mocks: Record<string,unknown>={'./scratchMap':{useScratchSession:()=>()=>{}},
     './rideNotice':{notifyRideNotice:()=>{}},
     '../groups/locationPublisher':{publishGroupLocation:()=>{}},
     './watchLocation':{watchLocation:async()=>{gpsRequests++;throw new Error('Simulation must not watch GPS');}},
@@ -62,7 +62,7 @@ test('simulated Live Activity remains clearly labelled with normal navigation me
 test('real GPS subscription keeps stationary progress still while delivering original recording samples',async()=>{
  const states:unknown[]=[], effects:(()=>void)[]=[], originals:unknown[]=[];
  let locationCallback:((p:unknown)=>void)|undefined;
- const mocks:Record<string,unknown>={
+ const mocks:Record<string,unknown>={'./scratchMap':{useScratchSession:()=>()=>{}},
   './rideNotice':{notifyRideNotice:()=>{}},
     '../groups/locationPublisher':{publishGroupLocation:()=>{}},
     './watchLocation':{watchLocation:async(_options:unknown,cb:(p:unknown)=>void)=>{locationCallback=cb;return{remove(){}};}},
@@ -92,7 +92,7 @@ test('real GPS subscription keeps stationary progress still while delivering ori
 
 test('denied GPS warns first, cancels recording and closes navigation on acknowledgement',async()=>{
  const states:unknown[]=[],effects:(()=>void)[]=[];let notice:{title:string;message:string;confirm:()=>void}|undefined,cancelled=0,watched=0;
- const mocks:Record<string,unknown>={
+ const mocks:Record<string,unknown>={'./scratchMap':{useScratchSession:()=>()=>{}},
   './rideNotice':{notifyRideNotice:(value:typeof notice)=>{notice=value;}},
   react:{useState:(initial:unknown)=>[initial==='idle'?'gps':initial,(value:unknown)=>states.push(value)],useRef:(initial:unknown)=>({current:initial}),useEffect:(fn:()=>void)=>effects.push(fn)},
   'react-native':{Platform:{OS:'web'},AppState:{currentState:'active',addEventListener:()=>({remove(){}})}},

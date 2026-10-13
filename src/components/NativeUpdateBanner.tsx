@@ -1,0 +1,10 @@
+import React,{useCallback,useState} from 'react';
+import {useFocusEffect} from 'expo-router';
+import {View,Platform,Linking,AppState} from 'react-native';
+import {checkNativeUpdate} from '../services/appUpdates';
+import {compareVersions,BinaryRelease} from '../core/appUpdates';
+import {APP_VERSION} from '../core/appVersion';
+import Text from './LocalizedText';
+import {Button,styles,usePalette} from './ui';
+import {t} from '../i18n/core';
+export default function NativeUpdateBanner(){const p=usePalette(),[latest,setLatest]=useState<BinaryRelease|null>(null),[busy,setBusy]=useState(false),[message,setMessage]=useState('');useFocusEffect(useCallback(()=>{let mounted=true;const check=()=>{if(Platform.OS==='ios'||Platform.OS==='android')void checkNativeUpdate(Platform.OS).then(r=>{if(mounted)setLatest(r);}).catch(()=>{});};check();const sub=AppState.addEventListener('change',state=>{if(state==='active')check();});return()=>{mounted=false;sub.remove();};},[]));if(Platform.OS==='web')return null;const available=latest&&compareVersions(latest.version,APP_VERSION)>0;return <View style={[styles.card,{backgroundColor:p.card}]}>{available&&<><Text style={{color:p.text,fontWeight:'700'}}>Update available</Text><Text translate={false} style={{color:p.muted}}>Velunivo {latest.version}</Text><Button title={t('Open update')} icon="download-outline" onPress={()=>void Linking.openURL(latest.url).catch(()=>setMessage('Could not open the update.'))}/><Text style={{color:p.muted,fontSize:12}}>Install the new build using your usual app installer. Your data stays on this device.</Text></>}<Button title={t('Check for updates')} icon="refresh-outline" secondary loading={busy} onPress={()=>{setBusy(true);setMessage('');void checkNativeUpdate(Platform.OS as 'ios'|'android',true).then(r=>{setLatest(r);setMessage(r&&compareVersions(r.version,APP_VERSION)>0?'Update available':'You are up to date.');}).catch(()=>setMessage('Could not check for updates.')).finally(()=>setBusy(false));}}/>{!!message&&<Text style={{color:p.muted,fontSize:12}}>{message}</Text>}</View>}

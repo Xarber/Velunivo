@@ -1,3 +1,4 @@
+import {scratchMap} from './scratchMap';
 import {freshReading} from '../bluetooth/telemetry';
 import {recordSettingEdits,readSettingEdits} from './syncSettings';
 import {setRideLock} from './rideLock';
@@ -22,6 +23,7 @@ export const useStore = () => useContext(Context);
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [garage, setGarage] = useState(defaultGarage), [routes, setRoutes] = useState<Route[]>([]);
   const [navigationOptions, setNavigationOptions] = useState(defaultNavigationOptions);
+  useEffect(()=>{scratchMap.configure(navigationOptions.scratchEnabled,navigationOptions.scratchDisplay);void scratchMap.load();},[navigationOptions.scratchEnabled,navigationOptions.scratchDisplay]);
   const [places, setPlaces] = useState<SavedPlace[]>([]), [pendingJourney, requestJourney] = useState<Journey | null>(null), [paces, setPaces] = useState<RidePace[]>([]);
   const [batteryRides, setBatteryRides] = useState<RecordedRide[]>([]);
   const [vehicleLocked, setVehicleLocked] = useState(false);

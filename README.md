@@ -10,6 +10,9 @@
 
 # Velunivo
 
+Ride-only exploration, optional routes through new areas, personal-vehicle maintenance reminders and profile ride statistics are available in **2.0**. The scratch map collects only during real navigation/recording, is hidden by default, and can be viewed, recovered or reset in Settings. Native Settings checks GitHub for newer builds. [2.0 feature guide and validation](docs/EXPLORATION_2.0.md).
+
+
 **Your route. Your riding speed.**
 
 An iOS-first navigator and route planner for e-scooters and e-bikes. Compare bicycle and car-road candidates, estimate travel time for the vehicle you actually ride, and plan on a fullscreen map with floating controls. Built with Expo and React Native for iPhone, iPad, Android and web.

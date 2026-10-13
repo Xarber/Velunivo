@@ -1,6 +1,7 @@
 import {GroupProvider} from '../groups/GroupProvider';
 import PairedDeviceSync from '../components/PairedDeviceSync';
 import AppIntroduction from '../components/AppIntroduction';
+import ScratchRecap from '../components/ScratchRecap';
 import {subscribeDataChange} from '../services/dataChange';
 import ShortRideNotice from '../components/ShortRideNotice';
 import React,{useEffect,useState} from 'react';
@@ -17,5 +18,5 @@ import { StoreProvider } from '../services/store';
 import { usePalette } from '../components/ui';
 export default function Layout() {
   const [dataEpoch,setDataEpoch]=useState(0);useEffect(()=>subscribeDataChange(()=>setDataEpoch(v=>v+1)),[]);const p = usePalette();const language=useLanguage();useEffect(()=>{void loadLanguage();const state=AppState.addEventListener('change',s=>{if(s==='active')notifySystemLanguage();});if(Platform.OS==='web')window.addEventListener('languagechange',notifySystemLanguage);return()=>{state.remove();if(Platform.OS==='web')window.removeEventListener('languagechange',notifySystemLanguage);};},[]);useEffect(()=>{if(Platform.OS==='web')document.documentElement.lang=language.language;},[language.choice,language.language]);
-  return <><PairedDeviceSync/><StoreProvider key={dataEpoch}><BluetoothProvider><GroupProvider><AppIntroduction /><BatteryUsagePrompt /><ShortRideNotice /><PwaLifecycle /><WebMotion /><StatusBar style={p.dark ? 'light' : 'dark'} /><Stack screenOptions={{headerShown:false}}><Stack.Screen name="(tabs)"/><Stack.Screen name="share"/></Stack></GroupProvider></BluetoothProvider></StoreProvider></>;
+  return <><PairedDeviceSync/><StoreProvider key={dataEpoch}><BluetoothProvider><GroupProvider><AppIntroduction /><ScratchRecap/><BatteryUsagePrompt /><ShortRideNotice /><PwaLifecycle /><WebMotion /><StatusBar style={p.dark ? 'light' : 'dark'} /><Stack screenOptions={{headerShown:false}}><Stack.Screen name="(tabs)"/><Stack.Screen name="share"/></Stack></GroupProvider></BluetoothProvider></StoreProvider></>;
 }

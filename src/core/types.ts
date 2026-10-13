@@ -3,7 +3,7 @@ export type RouteKind = 'bike' | 'car' | 'track';
 export type Detail = [number, number, number | string];
 export interface Step { text: string; sign: number; index: number; distance: number; }
 export interface Route {
-  id: string; name: string; kind: RouteKind; coordinates: Coord[];
+  exploration?:boolean;id: string; name: string; kind: RouteKind; coordinates: Coord[];
   steps: Step[]; details: Record<string, Detail[]>; source: 'graphhopper' | 'valhalla' | 'gpx' | 'local-osm';
   waypoints?: import('./itinerary').RouteStop[]; elevation?:number[];
   startLabel?: string; endLabel?: string;
@@ -19,7 +19,7 @@ export const defaultProfile: Profile = {
 };
 export interface Fix { speedSource?:'gps'|'estimated';rawSpeed?:number|null; altitude?:number; altitudeAccuracy?:number; coordinate: Coord; accuracy: number; speed: number | null; heading?: number; timestamp: number; }
 
-export interface Vehicle extends Profile { batteryWh?:number; totalMassKg?:number; energyReferenceSpeedKmh?:number; id: string; kind: 'escooter' | 'ebike'; rangeKm: number | null; learnedRangeKm?: number; learnedBatteryRideCount?: number; rangeUnit: 'km' | 'mi'; icon: string; photo: string | null; photos?: string[]; }
+export interface Vehicle extends Profile { maintenance?:import('./maintenance').MaintenanceReminder[]; batteryWh?:number; totalMassKg?:number; energyReferenceSpeedKmh?:number; id: string; kind: 'escooter' | 'ebike'; rangeKm: number | null; learnedRangeKm?: number; learnedBatteryRideCount?: number; rangeUnit: 'km' | 'mi'; icon: string; photo: string | null; photos?: string[]; }
 
-export interface NavigationOptions { groupVideo:boolean;groupName:string;groupPhoto?:string;groupPins:boolean;groupVoice:boolean; preferOfflineRouting:boolean; automaticRerouting: boolean; pedestrianLabel: boolean; speechVoice?: string; compass: boolean; tilted: boolean; unit: 'km' | 'mi'; voice: boolean; motion: boolean; volume: 'loud' | 'quiet' | 'off'; recordRides: boolean; askBatteryUsage: boolean; downloadedMaps: boolean; developerMode: boolean; showSharingVehicle: boolean; learnedEta: boolean; transit: boolean; traffic: boolean; liveActivities: boolean; backgroundNavigation: boolean; }
-export const defaultNavigationOptions: NavigationOptions = {groupVideo:true,groupName:'',groupPins:true,groupVoice:false, preferOfflineRouting:false, automaticRerouting: true, pedestrianLabel: false, compass: true, tilted: false, unit: 'km', voice: true, motion: false, volume: 'loud', recordRides: true, askBatteryUsage: false, downloadedMaps: true, developerMode: false, showSharingVehicle: true, learnedEta: true, transit: false, traffic: false, liveActivities: true, backgroundNavigation: true };
+export interface NavigationOptions { scratchEnabled:boolean;scratchDisplay:import('./scratchMap').ScratchDisplay;explorationRoutes:boolean; groupVideo:boolean;groupName:string;groupPhoto?:string;groupPins:boolean;groupVoice:boolean; preferOfflineRouting:boolean; automaticRerouting: boolean; pedestrianLabel: boolean; speechVoice?: string; compass: boolean; tilted: boolean; unit: 'km' | 'mi'; voice: boolean; motion: boolean; volume: 'loud' | 'quiet' | 'off'; recordRides: boolean; askBatteryUsage: boolean; downloadedMaps: boolean; developerMode: boolean; showSharingVehicle: boolean; learnedEta: boolean; transit: boolean; traffic: boolean; liveActivities: boolean; backgroundNavigation: boolean; }
+export const defaultNavigationOptions: NavigationOptions = {scratchEnabled:true,scratchDisplay:'never',explorationRoutes:false,groupVideo:true,groupName:'',groupPins:true,groupVoice:false, preferOfflineRouting:false, automaticRerouting: true, pedestrianLabel: false, compass: true, tilted: false, unit: 'km', voice: true, motion: false, volume: 'loud', recordRides: true, askBatteryUsage: false, downloadedMaps: true, developerMode: false, showSharingVehicle: true, learnedEta: true, transit: false, traffic: false, liveActivities: true, backgroundNavigation: true };

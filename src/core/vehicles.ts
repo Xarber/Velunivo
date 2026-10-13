@@ -1,3 +1,4 @@
+import {restoreMaintenance} from './maintenance';
 import { defaultProfile, Vehicle } from './types';
 export interface Garage { vehicles: Vehicle[]; activeId: string; sharingPresetAdded?: boolean; }
 export function createVehicle(kind: Vehicle['kind'], id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`): Vehicle {
@@ -16,7 +17,7 @@ export function restoreGarage(raw: string | null, legacy: string | null): Garage
       const vehicles: Vehicle[] = g.vehicles.filter((v: any) => {
         if (!validProfile(v) || typeof v.id !== 'string' || seen.has(v.id) || !['escooter', 'ebike'].includes(v.kind)) return false;
         seen.add(v.id); return true;
-      }).map((v: Vehicle) => ({ ...createVehicle(v.kind, v.id), ...energyOptions(v),  voice: typeof v.voice === 'boolean' ? v.voice : true, motion: typeof v.motion === 'boolean' ? v.motion : false, rangeKm: Number.isFinite(v.rangeKm) && v.rangeKm! > 0 && v.rangeKm! <= 10000 ? v.rangeKm : null, rangeUnit: v.rangeUnit === 'mi' ? 'mi' : 'km', icon: typeof v.icon === 'string' && v.icon.length <= 32 && v.icon.trim() ? v.icon : v.kind === 'ebike' ? '🚲' : '🛴', photos: Array.from(new Set([...(Array.isArray(v.photos) ? v.photos : []), ...(v.photo ? [v.photo] : [])].filter(validPhoto))), photo: validPhoto(v.photo) ? v.photo : null, ...(v.id === sharingVehicle.id ? {name:'Sharing E-Scooter',photo:null,photos:[],icon:'sharing-scooter',rangeKm:null,batteryWh:undefined} : {}) }));
+      }).map((v: Vehicle) => ({ ...createVehicle(v.kind, v.id), ...energyOptions(v),...(v.maintenance===undefined?{}:{maintenance:v.id===sharingVehicle.id?[]:restoreMaintenance(v.maintenance)}),  voice: typeof v.voice === 'boolean' ? v.voice : true, motion: typeof v.motion === 'boolean' ? v.motion : false, rangeKm: Number.isFinite(v.rangeKm) && v.rangeKm! > 0 && v.rangeKm! <= 10000 ? v.rangeKm : null, rangeUnit: v.rangeUnit === 'mi' ? 'mi' : 'km', icon: typeof v.icon === 'string' && v.icon.length <= 32 && v.icon.trim() ? v.icon : v.kind === 'ebike' ? '🚲' : '🛴', photos: Array.from(new Set([...(Array.isArray(v.photos) ? v.photos : []), ...(v.photo ? [v.photo] : [])].filter(validPhoto))), photo: validPhoto(v.photo) ? v.photo : null, ...(v.id === sharingVehicle.id ? {name:'Sharing E-Scooter',photo:null,photos:[],icon:'sharing-scooter',rangeKm:null,batteryWh:undefined} : {}) }));
       if (vehicles.length) { if (vehicles.every(v=>v.id === sharingVehicle.id)) vehicles.unshift(createVehicle('escooter','default-scooter')); if (!vehicles.some(v => v.id === sharingVehicle.id)) vehicles.push(sharingVehicle); return { sharingPresetAdded: true, vehicles, activeId: vehicles.some(v => v.id === g.activeId) ? g.activeId : vehicles[0].id }; }
     }
   } catch { /* Recover the former single profile when possible. */ }

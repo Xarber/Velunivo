@@ -1,3 +1,4 @@
+import {curateRelease} from './changelogFormat';
 import {historicalHighlights} from './releaseHistory';
 export const welcomePages=[
  {icon:'navigate-outline',title:'Welcome to Velunivo',text:'Compare bicycle and road routes, with travel times tailored to your vehicle.'},
@@ -6,6 +7,16 @@ export const welcomePages=[
  {icon:'shield-checkmark-outline',title:'You stay in control',text:'Check road signs and local rules. Your records stay on your device until you export or share them.'},
 ] as const;
 export const releaseDetails=[
+ {version:'2.0.0',items:[
+ {icon:'grid-outline',title:'Explore your world',text:'Uncover a ride-only scratch map and discover optional routes through new areas.'},
+ {icon:'stats-chart-outline',title:'Your riding profile',text:'See ride statistics in your profile, with simpler group setup.'},
+ {icon:'construct-outline',title:'Vehicle care',text:'Personal maintenance reminders follow your recorded distance and service dates.'},
+ {icon:'download-outline',title:'Native update checks',text:'Settings compares your installed version with published GitHub builds.'},
+ {icon:'refresh-outline',title:'Scratch map recovery',text:'Recover tiles from old rides, inspect visit dates, or reset your map with confirmation.'},
+ {icon:'shield-checkmark-outline',title:'Ride-only exploration',text:'Scratch collection reuses active GPS, including locked-screen rides. Navigation uses a lighter overlay.'},
+ {icon:'swap-horizontal-outline',title:'Your exploration on both devices',text:'Backups and device sync include your explored tiles and maintenance reminders.'},
+ {icon:'list-outline',title:'Clearer update history',text:'All historical releases use short feature highlights with separate complete changelogs.'},
+ ]},
  {version:'1.2.1',items:[
  {icon:'speedometer-outline',title:'Speed readings',text:'Native location speed is preserved. Missing startup readings no longer mark a ride as estimated.'},
  {icon:'bluetooth-outline',title:'Pair again',text:'Replace rejected scooter credentials without forgetting your vehicle.'},
@@ -45,5 +56,5 @@ export const releaseDetails=[
  ...historicalHighlights,
 ] as const;
 /** Keep the complete release history independently of the three-item introduction. */
-export const releaseHighlights=releaseDetails.map(release=>({version:release.version,items:release.version==='1.2.1'?[{icon:'construct-outline' as const,title:'Fixes & Improvements',text:'Clearer speed readings, scooter reconnection and developer tools.'}]:release.items.slice(0,3)}));
+export const releaseHighlights=releaseDetails.map(release=>curateRelease<(typeof releaseDetails)[number]['items'][number]>(release));
 export function initialIntroduction(welcomed:boolean,existingData:boolean,seen:string[],version:string){return !welcomed&&!existingData?'welcome':!seen.includes(version)?'news':null;}

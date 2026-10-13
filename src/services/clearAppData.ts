@@ -1,3 +1,4 @@
+import {scratchMap} from './scratchMap';
 import {saveDevicePair} from './devicePairState';
 import {resetRoadPackCache} from './offlineRouting';
 import {resetTransferIdentity} from './dataTransfer';
@@ -17,8 +18,8 @@ export async function clearAppData(){
  const garage=restoreGarage(await AsyncStorage.getItem('vehicles-v1'),null);
  await bluetoothBridge.disconnect();for(const a of await associationStorage.load())await bluetoothBridge.forget(a.vehicleId);await associationStorage.save([]);await setMapKey('');
  for(const pack of await packs())await deletePack(pack.id);
- const keys=(await AsyncStorage.getAllKeys()).filter(k=>transferableKey(k)||['welcome-seen-v1','release-seen-v1','portable-installation-id-v1','velunivo-web-ble-associations-v1','velunivo-synced-stadia-key'].includes(k)||['backup-files-v1','automatic-sync-revisions-v1'].includes(k)||k.startsWith('backup-file-v1:')||k.startsWith('offline-routing-v1'));
+ const keys=(await AsyncStorage.getAllKeys()).filter(k=>transferableKey(k)||['welcome-seen-v1','release-seen-v1','portable-installation-id-v1','velunivo-web-ble-associations-v1','velunivo-synced-stadia-key'].includes(k)||['backup-files-v1','automatic-sync-revisions-v1'].includes(k)||k.startsWith('app-update-cache-v1:')||k.startsWith('backup-file-v1:')||k.startsWith('offline-routing-v1'));
  await AsyncStorage.multiRemove(keys);
  for(const photo of new Set(garage.vehicles.flatMap(v=>[...(v.photos||[]),...(v.photo?[v.photo]:[])])))deletePhoto(photo);
- resetRoadPackCache();resetTransferIdentity();setLanguageChoice('system');refreshAppData();
+ await scratchMap.reload();resetRoadPackCache();resetTransferIdentity();setLanguageChoice('system');refreshAppData();
 }

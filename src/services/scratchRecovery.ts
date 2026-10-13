@@ -1,0 +1,7 @@
+import {recordedRides,rideSamples} from './rideHistory';
+import {scratchMap} from './scratchMap';
+import {ScratchFixGate} from '../core/scratchMap';
+import {Coord} from '../core/types';
+import {distance} from '../core/geo';
+/** Prefer raw stored fixes; legacy preview-only paths are explicitly approximate. */
+export async function recoverScratch(progress:(done:number,total:number)=>void){const rides=(await recordedRides()).filter(r=>r.status!=='recording');let added=0;for(let i=0;i<rides.length;i++){const ride=rides[i],samples=await rideSamples(ride),gate=new ScratchFixGate();const points:{coordinate:Coord;timestamp:number;rideId:string;approximate?:boolean}[]=[];if(samples.length){for(const sample of samples)if(gate.accept(sample.fix,sample.fix.timestamp))points.push({coordinate:sample.fix.coordinate,timestamp:sample.fix.timestamp,rideId:ride.id});}else{const segments=ride.trace?.length?ride.trace:[ride.preview];for(const segment of segments)for(let j=0;j<segment.length;j++){const current=segment[j];points.push({coordinate:current,timestamp:ride.startedAt,rideId:ride.id,approximate:true});if(j&&distance(segment[j-1],current)<1000){const previous=segment[j-1],steps=Math.ceil(distance(previous,current)/50);for(let k=1;k<steps;k++)points.push({coordinate:[previous[0]+(current[0]-previous[0])*k/steps,previous[1]+(current[1]-previous[1])*k/steps],timestamp:ride.startedAt,rideId:ride.id,approximate:true});}}}added+=await scratchMap.recover(points);progress(i+1,rides.length);}return added;}

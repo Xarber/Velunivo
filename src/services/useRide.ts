@@ -9,6 +9,7 @@ import { AppState, Platform } from 'react-native';
 import * as Location from 'expo-location';
 import { speakDirection, stopDirections } from './directionsVoice';
 import { Fix, Profile, Route, NavigationOptions } from '../core/types';
+import {useScratchSession} from './scratchMap';
 import { beginBackgroundLocation } from './backgroundLocation';
 import { updateRideActivity, markActivityPaused } from './useNavigationActivity';
 import { maneuverDistance, bearing, displayableFix } from '../core/rideView';
@@ -19,6 +20,7 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
   const [gpsAttempt,retryGPS]=useState(0);
   const [completedMeters, setCompletedMeters] = useState(0);
   const [mode, setMode] = useState<'idle' | 'gps' | 'simulation' | 'arrived'>('idle');
+  const scratch=useScratchSession(mode==='gps'),scratchRef=useRef(scratch);useEffect(()=>{scratchRef.current=scratch;},[scratch]);
   const [fix, setFix] = useState<Fix | null>(null), [status, setStatus] = useState('Ready to ride');
   const [progress, setProgress] = useState<ReturnType<typeof guidance> | null>(null);
   const deniedRef=useRef(onPermissionDenied);useEffect(()=>{deniedRef.current=onPermissionDenied;},[onPermissionDenied]);
@@ -42,7 +44,7 @@ export function useRide(route: Route | null, profile: Profile, preferences: Navi
       const raw=mode==='gps'?speedTracker.next(incoming,Platform.OS==='web'):incoming;
       if (cancelled || paused || halted || raw.timestamp <= lastAccepted) return;
       const tracked = mode === 'gps' ? movement.next(raw) : null;
-      lastAccepted=raw.timestamp;
+      lastAccepted=raw.timestamp;if(mode==='gps')scratchRef.current(raw);
       if (mode === 'gps' && !usableMovementFix(raw)) { if(displayableFix(raw)){setFix(raw);publishGroupLocation(raw);} setStatus('Waiting for a precise GPS fix'); setProgress(v => v ? { ...v, valid: false } : null); await onFixRef.current?.(raw); return; }
       const next = mode === 'simulation' ? raw : tracked?.fix ?? raw;
       setFix(next);if(mode==='gps')publishGroupLocation(next);
