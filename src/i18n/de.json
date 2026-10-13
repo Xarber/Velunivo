@@ -1309,5 +1309,9 @@
   "Reliable native downloads": "Zuverlässige native Downloads",
   "Native dependency downloads retry and reuse verified cached files.": "Native Abhängigkeiten werden bei Fehlern erneut geladen und nutzen geprüfte Dateien im Cache.",
   "Ready for group video": "Bereit für Gruppenvideo",
-  "Video sharing defaults on. Your camera stays off until you turn it on in each group.": "Videofreigabe ist standardmäßig an. Deine Kamera bleibt aus, bis du sie in jeder Gruppe einschaltest."
+  "Video sharing defaults on. Your camera stays off until you turn it on in each group.": "Videofreigabe ist standardmäßig an. Deine Kamera bleibt aus, bis du sie in jeder Gruppe einschaltest.",
+  "Shared links open outside the tab bar. Shared-trip Live Activities now use the native renderer.": "Geteilte Links öffnen sich außerhalb der Tabs. Live-Aktivitäten geteilter Fahrten nutzen jetzt die native Ansicht.",
+  "Group calls": "Gruppenanrufe",
+  "More reliable media reconnection and system call controls.": "Zuverlässigere Medienverbindung und Systemsteuerung für Anrufe.",
+  "Shared trips": "Geteilte Fahrten"
 }

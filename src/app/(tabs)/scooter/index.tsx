@@ -1,13 +1,13 @@
-import {t} from '../../i18n/core';
-import Text from '../../components/LocalizedText';
+import {t} from '../../../i18n/core';
+import Text from '../../../components/LocalizedText';
 import React, { useState } from 'react';
 import {Modal, Pressable, ScrollView, View} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useStore } from '../../services/store';
-import { VehicleIcon } from '../../components/VehicleSelector';
-import { Button, IconButton, styles, usePalette } from '../../components/ui';
+import { useStore } from '../../../services/store';
+import { VehicleIcon } from '../../../components/VehicleSelector';
+import { Button, IconButton, styles, usePalette } from '../../../components/ui';
 export default function Vehicles() {
   const p = usePalette(), { vehicles, addVehicle, vehicleLocked, navigationOptions } = useStore();
   const [adding, setAdding] = useState(false);

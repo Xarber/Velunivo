@@ -130,3 +130,13 @@ test('native and web viewer transports send the same stable session identity acr
  const window:any={ReactNativeWebView:{postMessage:()=>{}},addEventListener:()=>{}};let peer:FakePeer|undefined;const context=vm.createContext({window,Peer:class extends FakePeer{constructor(){super();peer=this;}},crypto:{getRandomValues:(out:Uint8Array)=>out.fill(9)},setTimeout,clearTimeout,setInterval,clearInterval,Date,Map,JSON});vm.runInContext(nativePeerHtml('viewer',pin,viewerId).split('<script>').at(-1)!.split('</script>')[0],context);peer!.emit('open');assert.equal(peer!.connectOptions.metadata.viewerId,viewerId);window.stopSharing();
 });
 test('late data from a replaced or closed viewer cannot cancel recovery or update the screen',()=>{const peer=new FakePeer();let messages=0;const s=new PeerSession(peer as any,'viewer',pin,{status:()=>{},message:()=>messages++});peer.emit('open');peer.connection.open=true;peer.connection.emit('open');peer.connection.close();peer.connection.emit('data',{type:'progress',progress:sharedProgress(null,100,100,100000)});assert.equal(messages,0);s.close();});
+test('custom links accept both host and triple-slash route forms',()=>{
+ for(const initial of [true,false]){
+  assert.equal(redirectSystemPath({path:`velunivo:///share/trip?pin=${pin}`,initial}),`/share/trip?pin=${pin}`);
+  assert.equal(redirectSystemPath({path:`velunivo://share/trip?pin=${pin}`,initial}),`/share/trip?pin=${pin}`);
+ }
+});
+test('shared routes sit outside native tabs so hidden tabs cannot swallow deep links',()=>{
+ const fs=require('node:fs');const root=fs.readFileSync('src/app/_layout.tsx','utf8'),tabs=fs.readFileSync('src/app/(tabs)/_layout.tsx','utf8');
+ assert.match(root,/<Stack.Screen name="share"/);assert.match(root,/<Stack.Screen name="\(tabs\)"/);assert.doesNotMatch(tabs,/name="share"/);assert(fs.existsSync('src/app/share/trip.tsx'));
+});

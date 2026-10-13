@@ -4,10 +4,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {applyPatch,patchSources} from '../scripts/patch-widgets.mjs';
-test('installed widget renders both Velunivo factories directly before touching shared storage',()=>{
+test('installed widget renders all Velunivo factories directly before touching shared storage',()=>{
  const utils=fs.readFileSync('node_modules/expo-widgets/ios/Widgets/Utils.swift','utf8');
  const body=utils.slice(utils.indexOf('func getLiveActivityNodes('));
- assert.ok(body.indexOf('name == "VelunivoNavigation" || name == "VelunivoNavigationTest"') < body.indexOf('let layout = WidgetsStorage'));
+ assert.ok(body.indexOf('name == "VelunivoNavigation" || name == "VelunivoNavigationTest" || name == "VelunivoSharedTrip"') < body.indexOf('let layout = WidgetsStorage'));
  assert.match(body,/return \["__velunivo_native": true\]/);
  const views=fs.readFileSync('native/VelunivoActivityViews.swift','utf8');
  assert.match(views,/JSONSerialization.jsonObject/);
@@ -25,7 +25,8 @@ test('patch is repeatable and refuses unreviewed upstream versions',()=>{
   const dir=path.join(root,'node_modules/expo-widgets');fs.mkdirSync(path.join(dir,'ios/Widgets'),{recursive:true});
   fs.writeFileSync(path.join(dir,'package.json'),JSON.stringify({version:'57.0.23'}));
   for(const name of ['WidgetLiveActivity.swift','Utils.swift'])fs.copyFileSync(`node_modules/expo-widgets/ios/Widgets/${name}`,path.join(dir,'ios/Widgets',name));
-  applyPatch(root);const before=fs.readFileSync(path.join(dir,'ios/Widgets/WidgetLiveActivity.swift'),'utf8');applyPatch(root);
+  const utilsFile=path.join(dir,'ios/Widgets/Utils.swift');fs.writeFileSync(utilsFile,fs.readFileSync(utilsFile,'utf8').replace(' || name == "VelunivoSharedTrip"',''));
+  applyPatch(root);assert.match(fs.readFileSync(utilsFile,'utf8'),/name == "VelunivoSharedTrip"/);const before=fs.readFileSync(path.join(dir,'ios/Widgets/WidgetLiveActivity.swift'),'utf8');applyPatch(root);
   assert.equal(fs.readFileSync(path.join(dir,'ios/Widgets/WidgetLiveActivity.swift'),'utf8'),before);
   fs.writeFileSync(path.join(dir,'package.json'),JSON.stringify({version:'57.0.24'}));assert.throws(()=>applyPatch(root),/Review native activity patch/);
   assert.throws(()=>patchSources('changed','changed',''),/source changed/);

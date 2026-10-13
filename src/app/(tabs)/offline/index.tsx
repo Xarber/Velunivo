@@ -1,18 +1,18 @@
 import {Ionicons} from '@expo/vector-icons';
-import {t} from '../../i18n/core';
-import Text from '../../components/LocalizedText';
+import {t} from '../../../i18n/core';
+import Text from '../../../components/LocalizedText';
 import React,{useCallback,useState} from 'react';
 import {ScrollView, View,Pressable} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router,useFocusEffect} from 'expo-router';
-import {Button,styles,usePalette} from '../../components/ui';
-import RoutePreview from '../../components/RoutePreview';
-import RideMap from '../../components/RideMap';
-import {useStore} from '../../services/store';
-import {recordedRides} from '../../services/rideHistory';
-import {RecordedRide} from '../../core/recordings';
-import {journeyTitle} from '../../core/places';
-import {Route} from '../../core/types';
+import {Button,styles,usePalette} from '../../../components/ui';
+import RoutePreview from '../../../components/RoutePreview';
+import RideMap from '../../../components/RideMap';
+import {useStore} from '../../../services/store';
+import {recordedRides} from '../../../services/rideHistory';
+import {RecordedRide} from '../../../core/recordings';
+import {journeyTitle} from '../../../core/places';
+import {Route} from '../../../core/types';
 export default function Library(){
  const p=usePalette(),{places,saved,vehicleLocked,setRoutes,select,requestJourney}=useStore();
  const [history,setHistory]=useState<RecordedRide[]>([]),[error,setError]=useState(''),[previewWidth,setPreviewWidth]=useState(0);

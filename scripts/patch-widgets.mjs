@@ -11,7 +11,7 @@ function once(source,needle,replacement) {
 export function patchSources(widget,utils,views) {
  widget=once(widget,'    if let node = nodes[sectionName] as? [String: Any] {','    if nodes["__velunivo_native"] as? Bool == true {\n      VelunivoActivitySection(context: context, sectionName: sectionName)\n    } else if let node = nodes[sectionName] as? [String: Any] {');
  widget=once(widget,'    if #available(iOS 18.0, *) {','    if nodes["__velunivo_native"] as? Bool == true {\n      VelunivoActivityBanner(context: context)\n    } else if #available(iOS 18.0, *) {');
- utils=once(utils,'  let layout = WidgetsStorage.getString(forKey: "__expo_widgets_live_activity_\\(name)_layout") ?? ""',`${marker}\n  if name == "VelunivoNavigation" || name == "VelunivoNavigationTest" {\n    return ["__velunivo_native": true]\n  }\n  let layout = WidgetsStorage.getString(forKey: "__expo_widgets_live_activity_\\(name)_layout") ?? ""`);
+ utils=once(utils,'  let layout = WidgetsStorage.getString(forKey: "__expo_widgets_live_activity_\\(name)_layout") ?? ""',`${marker}\n  if name == "VelunivoNavigation" || name == "VelunivoNavigationTest" || name == "VelunivoSharedTrip" {\n    return ["__velunivo_native": true]\n  }\n  let layout = WidgetsStorage.getString(forKey: "__expo_widgets_live_activity_\\(name)_layout") ?? ""`);
  return {widget:widget+`\n${marker}\n`+views,utils};
 }
 export function applyPatch(directory=root) {
@@ -25,7 +25,8 @@ export function applyPatch(directory=root) {
   // Refresh checked-in views on repeated installation without duplicating helpers.
   widget=widget.replace("VelunivoActivitySection(props: context.state.props, sectionName: sectionName)","VelunivoActivitySection(context: context, sectionName: sectionName)");
   widget=widget.split(`\n${marker}\n`)[0]+`\n${marker}\n`+views;
-  fs.writeFileSync(widgetPath,widget);return;
+  utils=utils.replace('name == "VelunivoNavigation" || name == "VelunivoNavigationTest" {','name == "VelunivoNavigation" || name == "VelunivoNavigationTest" || name == "VelunivoSharedTrip" {');
+  fs.writeFileSync(widgetPath,widget);fs.writeFileSync(utilsPath,utils);return;
  }
  const hashes=[['eb094a8dabfc256d5aaa3c85f31dc26f18264250992acd417da65aa811bd02f6',widget],['cca8d5a8d80fa9a21d863876f62c6c134fcb9d1155c04a00728479ff34776850',utils]];
  for(const [expected,source] of hashes)if(crypto.createHash('sha256').update(source).digest('hex')!==expected)throw new Error('Expo Widgets source hash changed; review native activity patch.');

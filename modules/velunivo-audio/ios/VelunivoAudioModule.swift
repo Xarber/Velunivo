@@ -92,6 +92,10 @@ public final class VelunivoAudioModule: Module {
         try session.setActive(false, options: .notifyOthersOnDeactivation)
       }
     }.runOnQueue(.main)
+    AsyncFunction("setGroupVoiceMuted") { (muted: Bool, owner: String) in
+      guard GroupVoiceAudio.owner == owner else { return }
+      VelunivoGroupCall.shared.setMuted(muted)
+    }.runOnQueue(.main)
     AsyncFunction("speak") { (text: String, volume: Double, language: String, identifier: String) in
       if self.speech == nil { self.speech = NavigationSpeech() }
       try self.speech?.speak(text, volume: volume, language: language, identifier: identifier)

@@ -5,3 +5,26 @@ test('leaving while microphone permission is pending stops a late stream and nev
 
 test('mute all preserves individual mutes and video offers are rejected',async()=>{const levels=new Map<string,boolean>();let descriptions=0;const factory:VoiceFactory={media:async()=>({attach(){},muteSelf(){},stop(){}}),connection:id=>({offer:async()=> 'audio',answer:async()=> 'audio',remote:async()=>{descriptions++;},ice:async()=>{},mute:m=>{levels.set(id,m);},close(){}}),stop:async()=>{}};const call=new GroupVoice('a',factory,()=>{},()=>{});await call.start();call.sync(['b','c']);await call.mute('b',true);call.muteAll(true);assert.equal(levels.get('c'),true);call.muteAll(false);assert.equal(levels.get('b'),true);assert.equal(levels.get('c'),false);await call.signal('b',{type:'offer',sdp:'v=0\r\nm=video 9 UDP/TLS/RTP/SAVPF 96\r\n'});assert.equal(descriptions,0);await call.close();});
 test('microphone stays closed alone, opens with an established peer, and closes on last disconnect',async()=>{let requestedMuted:boolean|undefined,state:(s:string)=>void=()=>{};const mutes:boolean[]=[];const factory:VoiceFactory={media:async muted=>{requestedMuted=muted;return {attach(){},muteSelf:m=>{mutes.push(m);},stop(){}};},connection:(_id,_emit,change)=>{state=change;return {offer:async()=> 'audio',answer:async()=> 'audio',remote:async()=>{},ice:async()=>{},mute(){},close(){}};},stop:async()=>{}};const call=new GroupVoice('a',factory,()=>{},()=>{});await call.start();assert.equal(requestedMuted,true);call.sync(['b']);assert.deepEqual(mutes,[]);state('connected');assert.deepEqual(mutes,[false]);state('disconnected');assert.deepEqual(mutes,[false,true]);state('connected');assert.deepEqual(mutes,[false,true,false]);await call.mute('a',true);call.sync([]);call.sync(['b']);state('connected');assert.equal(mutes.at(-1),true);await call.close();});
+
+test('replacement calls reject delayed answers and ICE from retired sessions',async()=>{
+ const sent:any[]=[];let remote=0,ice=0,closed=0;
+ const factory:VoiceFactory={media:async()=>({attach(){},muteSelf(){},stop(){}}),connection:()=>({offer:async()=> 'audio',answer:async()=> 'audio',remote:async()=>{remote++;},ice:async()=>{ice++;},mute(){},close(){closed++;}}),stop:async()=>{}};
+ const call=new GroupVoice('b',factory,(_id,s)=>sent.push(s),()=>{});await call.start();call.sync(['a'],['a']);
+ await call.signal('a',{type:'offer',sdp:'audio',session:'first'});
+ await call.signal('a',{type:'offer',sdp:'audio',session:'second'});
+ await call.signal('a',{type:'answer',sdp:'old',session:'first'});
+ await call.signal('a',{type:'ice',session:'first',candidate:{candidate:'old',sdpMid:null,sdpMLineIndex:0}});
+ assert.equal(remote,2);assert.equal(ice,0);assert.equal(closed,1);assert.equal(sent.at(-1).session,'second');await call.close();
+});
+test('native-style asynchronous descriptions finish before queued ICE is applied',async()=>{
+ let finish!:()=>void;const order:string[]=[];
+ const factory:VoiceFactory={media:async()=>({attach(){},muteSelf(){},stop(){}}),connection:()=>({offer:async()=> 'audio',answer:async()=>{order.push('answer');return 'audio';},remote:async()=>{order.push('remote');await new Promise<void>(r=>finish=r);order.push('ready');},ice:async()=>{order.push('ice');},mute(){},close(){}}),stop:async()=>{}};
+ const call=new GroupVoice('b',factory,()=>{},()=>{});await call.start();call.sync(['a']);
+ const offer=call.signal('a',{type:'offer',sdp:'audio',session:'new'});await flush();
+ const ice=call.signal('a',{type:'ice',session:'new',candidate:{candidate:'test',sdpMid:null,sdpMLineIndex:0}});await flush();assert.deepEqual(order,['remote']);finish();await Promise.all([offer,ice]);assert.deepEqual(order,['remote','ready','answer','ice']);await call.close();
+});
+test('temporary transport loss closes capture but keeps the system call until the peer leaves',async()=>{
+ let state:(s:string)=>void=()=>{},idle=0;const mutes:boolean[]=[];
+ const factory:VoiceFactory={media:async()=>({attach(){},idle:async()=>{idle++;},muteSelf:m=>{mutes.push(m);},stop(){}}),connection:(_id,_emit,change)=>{state=change;return {offer:async()=> 'audio',answer:async()=> 'audio',remote:async()=>{},ice:async()=>{},mute(){},close(){}};},stop:async()=>{}};
+ const call=new GroupVoice('b',factory,()=>{},()=>{});await call.start();const before=idle;call.sync(['a']);state('connected');state('disconnected');await flush();assert.deepEqual(mutes,[false,true]);assert.equal(idle,before);call.sync([]);await flush();assert.equal(idle,before+1);await call.close();
+});

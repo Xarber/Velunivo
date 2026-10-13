@@ -1,17 +1,17 @@
-import { goBack } from '../../../services/navigation';
-import {t} from '../../../i18n/core';
-import Text from '../../../components/LocalizedText';
-import VehicleBluetooth from '../../../components/VehicleBluetooth';
+import { goBack } from '../../../../services/navigation';
+import {t} from '../../../../i18n/core';
+import Text from '../../../../components/LocalizedText';
+import VehicleBluetooth from '../../../../components/VehicleBluetooth';
 import React, { useState } from 'react';
 import {Image, Linking, ScrollView, View, Pressable} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
-import { Button, Field, IconButton, styles, usePalette } from '../../../components/ui';
-import { VehicleIcon } from '../../../components/VehicleSelector';
-import { useStore } from '../../../services/store';
-import { pickVehiclePhoto, VehiclePhotoSource } from '../../../services/files';
-import { photoUri, deletePhoto } from '../../../services/vehiclePhotos';
-import { rangeKm, rangeValue } from '../../../core/vehicles';
+import { Button, Field, IconButton, styles, usePalette } from '../../../../components/ui';
+import { VehicleIcon } from '../../../../components/VehicleSelector';
+import { useStore } from '../../../../services/store';
+import { pickVehiclePhoto, VehiclePhotoSource } from '../../../../services/files';
+import { photoUri, deletePhoto } from '../../../../services/vehiclePhotos';
+import { rangeKm, rangeValue } from '../../../../core/vehicles';
 function NumberField({ label, value, min, max, onSave }: { label: string; value: number; min: number; max: number; onSave(v: number): void }) {
   const [text, setText] = useState(String(value)), [error, setError] = useState('');
   return <View style={{ gap: 4 }}><Field label={t(label)} value={text} onChangeText={setText} keyboardType="decimal-pad" onBlur={() => { const v = Number(text.replace(',', '.')); if (!text.trim() || !Number.isFinite(v) || v < min || v > max) { setError(`Choose ${min}–${max}.`); setText(String(value)); } else { setError(''); if (v !== value) onSave(v); } }} />{!!error && <Text style={{ color: '#C75A36' }}>{error}</Text>}</View>;

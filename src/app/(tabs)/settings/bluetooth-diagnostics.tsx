@@ -1,17 +1,17 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {Platform,ScrollView,View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import Text from '../../components/LocalizedText';
-import {Button,Field,IconButton,styles,usePalette} from '../../components/ui';
-import {useStore} from '../../services/store';
-import {goBack} from '../../services/navigation';
-import {BLEDeviceInfo} from '../../bluetooth/types';
-import {bluetoothBridge,registry} from '../../bluetooth/service';
-import {chooseDiagnosticDevice,scanDiagnosticDevices,inspectDiagnosticDevice,diagnosticsUseChooser} from '../../bluetooth/diagnostics';
-import {BluetoothDiagnostic,diagnosticAdvertisement} from '../../core/bluetoothDiagnostics';
-import {APP_VERSION} from '../../core/appVersion';
-import {shareJson} from '../../services/shareJson';
-import {t} from '../../i18n/core';
+import Text from '../../../components/LocalizedText';
+import {Button,Field,IconButton,styles,usePalette} from '../../../components/ui';
+import {useStore} from '../../../services/store';
+import {goBack} from '../../../services/navigation';
+import {BLEDeviceInfo} from '../../../bluetooth/types';
+import {bluetoothBridge,registry} from '../../../bluetooth/service';
+import {chooseDiagnosticDevice,scanDiagnosticDevices,inspectDiagnosticDevice,diagnosticsUseChooser} from '../../../bluetooth/diagnostics';
+import {BluetoothDiagnostic,diagnosticAdvertisement} from '../../../core/bluetoothDiagnostics';
+import {APP_VERSION} from '../../../core/appVersion';
+import {shareJson} from '../../../services/shareJson';
+import {t} from '../../../i18n/core';
 export default function Diagnostics(){const p=usePalette(),{navigationOptions,vehicleLocked}=useStore(),[devices,setDevices]=useState<BLEDeviceInfo[]>([]),[busy,setBusy]=useState(false),[busyId,setBusyId]=useState(''),[scanning,setScanning]=useState(false),[error,setError]=useState(''),[notes,setNotes]=useState(''),[extra,setExtra]=useState(''),[report,setReport]=useState<BluetoothDiagnostic|null>(null);const stop=useRef<(()=>void)|undefined>(undefined),timer=useRef<ReturnType<typeof setTimeout>|undefined>(undefined),mounted=useRef(true);
  function endScan(){stop.current?.();stop.current=undefined;clearTimeout(timer.current);setScanning(false);}
  useEffect(()=>{if(!navigationOptions.developerMode)return;const reconnect=bluetoothBridge.autoReconnect;bluetoothBridge.autoReconnect=false;return()=>{mounted.current=false;stop.current?.();clearTimeout(timer.current);bluetoothBridge.autoReconnect=reconnect;};},[navigationOptions.developerMode]);

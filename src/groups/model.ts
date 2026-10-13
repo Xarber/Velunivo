@@ -4,7 +4,7 @@ export const GROUP_LIMIT=8, MEMBER_LEASE=60000;
 export interface RiderProfile {id:string;name:string;photo?:string;video?:boolean;camera?:boolean;voice:boolean;}
 export interface GroupMember extends RiderProfile {order:number;position:Coord|null;updatedAt:number;}
 export interface GroupSnapshot {code:string;leader:string;revision:number;members:GroupMember[];banned:string[];route:Route|null;}
-export type VoiceSignal={type:'offer'|'answer';sdp:string}|{type:'ice';candidate:{candidate:string;sdpMid:string|null;sdpMLineIndex:number|null}};
+export type VoiceSignal=({type:'offer'|'answer';sdp:string}|{type:'ice';candidate:{candidate:string;sdpMid:string|null;sdpMLineIndex:number|null}})&{session?:string};
 export type GroupMessage={type:'hello';profile:RiderProfile}|{type:'snapshot';snapshot:GroupSnapshot}|{type:'presence';profile:RiderProfile;position:Coord|null;at:number}|{type:'admitted';id:string}|{type:'leave';id:string}|{type:'kick';id:string}|{type:'signal';signal:VoiceSignal};
 export const GROUP_CODE=/^[A-Z0-9]{8}$/;
 export const RIDER_ID=/^[a-f0-9]{32}$/;
@@ -30,7 +30,7 @@ export function readGroupMessage(raw:unknown):GroupMessage|null{
  if(m.type==='snapshot'){const snapshot=readSnapshot(m.snapshot);return snapshot?{type:'snapshot',snapshot}:null;}
  if(m.type==='presence'){const profile=readProfile(m.profile);return profile&&(m.position===null||validCoordinate(m.position))&&Number.isFinite(m.at)&&m.at>=0?{type:'presence',profile,position:m.position,at:m.at}:null;}
  if((m.type==='leave'||m.type==='kick'||m.type==='admitted')&&RIDER_ID.test(m.id))return {type:m.type,id:m.id};
- if(m.type==='signal'){const s=m.signal;if(!s||typeof s!=='object')return null;if((s.type==='offer'||s.type==='answer')&&typeof s.sdp==='string'&&s.sdp.length<=100000)return {type:'signal',signal:{type:s.type,sdp:s.sdp}};if(s.type==='ice'&&s.candidate&&typeof s.candidate.candidate==='string'&&s.candidate.candidate.length<4000&&(s.candidate.sdpMid===null||typeof s.candidate.sdpMid==='string'&&s.candidate.sdpMid.length<100)&&(s.candidate.sdpMLineIndex===null||Number.isInteger(s.candidate.sdpMLineIndex)))return {type:'signal',signal:s};}
+ if(m.type==='signal'){const s=m.signal;if(!s||typeof s!=='object'||s.session!==undefined&&(typeof s.session!=='string'||!/^[a-z0-9]{1,64}$/.test(s.session)))return null;if((s.type==='offer'||s.type==='answer')&&typeof s.sdp==='string'&&s.sdp.length<=100000)return {type:'signal',signal:{type:s.type,sdp:s.sdp,...(s.session?{session:s.session}:{})}};if(s.type==='ice'&&s.candidate&&typeof s.candidate.candidate==='string'&&s.candidate.candidate.length<4000&&(s.candidate.sdpMid===null||typeof s.candidate.sdpMid==='string'&&s.candidate.sdpMid.length<100)&&(s.candidate.sdpMLineIndex===null||Number.isInteger(s.candidate.sdpMLineIndex)))return {type:'signal',signal:s};}
  return null;
 }
 export function admitRider(s:GroupSnapshot,profile:RiderProfile,now:number):GroupSnapshot|null{if(s.banned.includes(profile.id))return null;if(s.members.some(m=>m.id===profile.id))return {...s,members:s.members.map(m=>m.id===profile.id?{...m,...profile,updatedAt:now}:m)};if(s.members.length>=GROUP_LIMIT)return null;return {...s,revision:s.revision+1,members:[...s.members,{...profile,order:Math.max(...s.members.map(m=>m.order))+1,position:null,updatedAt:now}]};}
