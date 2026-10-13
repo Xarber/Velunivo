@@ -869,3 +869,7 @@ Object.assign(italian,{"Edit reminder":"Modifica promemoria"});
 Object.assign(italian, {
   "Fixed a startup crash when loading the scratch map on native devices.": "Corretto un arresto all’avvio durante il caricamento della mappa di esplorazione sui dispositivi mobili."
 });
+
+Object.assign(italian, {
+ "Clearer scratch maps at wider zoom levels, brighter borders and a location-centred viewer.": "Mappa di esplorazione più leggibile con lo zoom ridotto, bordi più luminosi e vista centrata sulla tua posizione."
+});

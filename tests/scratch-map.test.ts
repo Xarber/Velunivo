@@ -15,3 +15,18 @@ test('continuous fog cuts visited areas out with rounded holes and highlights on
 test('native-scale cells are not tiny and differ across neighbouring streets only when truly crossed',()=>{assert.equal(gridDisk(id,1).length,7);const a=cellToLatLng(id),b=cellToLatLng(gridDisk(id,1)[1]);assert.notDeepEqual(a,b);});
 test('a visited ring does not uncover the unvisited island in its middle',()=>{let index=emptyScratch();for(const cell of gridDisk(id,1).filter(x=>x!==id)){const [la,lo]=cellToLatLng(cell);index=visitScratch(index,[lo,la],1000).index;}const data=scratchGeometry(index,[lon-.005,lat-.005,lon+.005,lat+.005]);assert(data.features.some(f=>f.id.startsWith('island-')));assert.equal(index.tiles[id],undefined);});
 test('GPS arriving during a storage write remains dirty and is persisted by the next flush',async()=>{const values=new Map<string,string>();let release:(()=>void)|undefined,hold=true;const archive=createScratchArchive({getItem:async()=>null,setItem:async(k,v)=>{if(hold)await new Promise<void>(r=>{release=r;});values.set(k,v);}});archive.begin('ride');await archive.accept('ride',fix());const writing=archive.flush();while(!release)await Promise.resolve();const other=gridDisk(id,2).at(-1)!;const [la,lo]=cellToLatLng(other);const recovering=archive.recover([{coordinate:[lo,la],timestamp:1000,rideId:'recovery'}]);await Promise.resolve();hold=false;release!();await writing;await recovering;assert.equal(Object.keys(JSON.parse(values.get('scratch-map-v1')!).tiles).length,2);});
+
+test('zoomed-out scratch presentation enlarges modestly without changing visited cells or dates',async()=>{
+ const {scratchExpansion,expandedScratchRing}=await import('../src/core/scratchMap');
+ const {distance}=await import('../src/core/geo');
+ const close:[number,number,number,number]=[lon-.003,lat-.003,lon+.003,lat+.003],wide:[number,number,number,number]=[lon-.2,lat-.2,lon+.2,lat+.2];
+ assert.equal(scratchExpansion(close),0);assert.equal(scratchExpansion(wide),40);assert.equal(scratchExpansion([-180,-85,180,85]),40);
+ const ring:Coord[]=[[lon,lat],[lon+.001,lat],[lon+.001,lat+.001],[lon,lat+.001],[lon,lat]];
+ const expanded=expandedScratchRing(ring,40),reversed=expandedScratchRing([...ring].reverse(),40);
+ for(let i=0;i<ring.length;i++)assert(distance(ring[i],expanded[i])<=40.5);
+ assert(expanded[0][0]<lon&&expanded[0][1]<lat);assert(reversed.at(-1)![0]<lon&&reversed.at(-1)![1]<lat);
+ const index=visitScratch(emptyScratch(),center,1000).index,before=JSON.stringify(index);
+ const tight=scratchGeometry(index,close).features[0].geometry.coordinates[1],distant=scratchGeometry(index,wide).features[0].geometry.coordinates[1];
+ assert.equal(tight.length,distant.length);for(let i=0;i<tight.length;i++)assert(distance(tight[i],distant[i])<=40.5);
+ assert.equal(JSON.stringify(index),before);assert.equal(Object.keys(index.tiles).length,1);
+});

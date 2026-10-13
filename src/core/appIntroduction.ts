@@ -7,6 +7,7 @@ export const welcomePages=[
  {icon:'shield-checkmark-outline',title:'You stay in control',text:'Check road signs and local rules. Your records stay on your device until you export or share them.'},
 ] as const;
 export const releaseDetails=[
+ {version:'2.0.2',items:[{icon:'construct-outline',title:'Fixes & Improvements',text:'Clearer scratch maps at wider zoom levels, brighter borders and a location-centred viewer.'}]},
  {version:'2.0.1',items:[{icon:'construct-outline',title:'Fixes & Improvements',text:'Fixed a startup crash when loading the scratch map on native devices.'}]},
  {version:'2.0.0',items:[
  {icon:'grid-outline',title:'Explore your world',text:'Uncover a ride-only scratch map and discover optional routes through new areas.'},

@@ -1479,5 +1479,6 @@
   "Backups and device sync include your explored tiles and maintenance reminders.": "Les sauvegardes et la synchronisation incluent les zones explorées et les rappels d’entretien.",
   "All historical releases use short feature highlights with separate complete changelogs.": "Toutes les anciennes versions affichent les nouveautés en bref et les changements complets sur une page dédiée.",
   "Edit reminder": "Modifier le rappel",
-  "Fixed a startup crash when loading the scratch map on native devices.": "Correction d’un plantage au démarrage lors du chargement de la carte d’exploration sur mobile."
+  "Fixed a startup crash when loading the scratch map on native devices.": "Correction d’un plantage au démarrage lors du chargement de la carte d’exploration sur mobile.",
+  "Clearer scratch maps at wider zoom levels, brighter borders and a location-centred viewer.": "Carte d’exploration plus lisible en dézoomant, contours plus lumineux et vue centrée sur votre position."
 }
