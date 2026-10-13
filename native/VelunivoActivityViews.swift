@@ -8,6 +8,7 @@ private struct VelunivoActivityData {
   }
   var pausedLabel: String { values["pausedLabel"] as? String ?? "Waiting for a navigation update" }
   var arrivalLabel: String { values["arrivalLabel"] as? String ?? "Arrival" }
+  var timer: String { values["timer"] as? String ?? "—" }
   var recording: Bool { values["recording"] as? Bool ?? false }
   var groups: Int? { guard let count = values["groupCount"] as? Double, count.isFinite, (1...8).contains(count) else { return nil }; return Int(count) }
   var turn: String { values["turn"] as? String ?? "Open Velunivo for directions" }
@@ -35,7 +36,7 @@ private struct VelunivoActivityData {
   }
   var symbol: String {
     let value = values["symbol"] as? String ?? "arrow.up"
-    return ["flag.fill", "arrow.turn.up.left", "arrow.turn.up.right", "arrow.up"].contains(value) ? value : "arrow.up"
+    return ["flag.fill", "arrow.turn.up.left", "arrow.turn.up.right", "arrow.up", "record.circle"].contains(value) ? value : "arrow.up"
   }
 }
 
@@ -62,7 +63,7 @@ private struct VelunivoActivityBanner: View {
         if context.isStale { Text(data.pausedLabel).font(.caption).foregroundStyle(.secondary) }
       }
     }
-    .padding(16)
+    .padding(20)
     .activityBackgroundTint(Color(red: 0.04, green: 0.10, blue: 0.13))
     .activitySystemActionForegroundColor(.white)
     .foregroundStyle(.white)
@@ -79,20 +80,20 @@ private struct VelunivoActivitySection: View {
     case "expandedLeading":
       VStack(alignment: .leading, spacing: 6) {
         Image(systemName: data.symbol).font(.system(size: 36, weight: .semibold))
-        Text(data.distance).font(.system(size: 16, weight: .semibold)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
+        if !data.recording { Text(data.distance).font(.system(size: 16, weight: .semibold)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8) }
       }.foregroundStyle(Color.mint)
     case "expandedTrailing":
-      EmptyView()
+      if data.recording { Text(data.timer).font(.system(size: 22, weight: .semibold)).monospacedDigit().padding(.trailing, 4) }
     case "compactLeading", "minimal":
       Image(systemName: data.symbol).foregroundStyle(Color.mint)
     case "compactTrailing":
-      Text(data.distance).font(.headline).foregroundStyle(Color.mint)
+      Text(data.recording ? data.timer : data.distance).font(.headline).foregroundStyle(Color.mint)
     case "expandedBottom":
       VStack(alignment: .leading, spacing: 6) {
         Text(data.turn).font(.headline).lineLimit(2)
         Text(data.recording ? "\(data.arrival) · \(data.minutes) · \(data.remaining)" : "\(data.arrival) \(data.arrivalLabel) · \(data.minutes) · \(data.remaining)").font(.caption)
         VelunivoActivityBadges(data: data, stale: velunivoActivityIsStale(context))
-      }.frame(maxWidth: .infinity, alignment: .leading)
+      }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 8).padding(.bottom, 6)
     default:
       EmptyView()
     }

@@ -3,7 +3,7 @@ import {recordingActivity} from '../../../core/liveActivity';
 import {useRecordingActivity,updateRecordingActivity} from '../../../services/useNavigationActivity';
 import GroupRiding from '../../../components/GroupRiding';
 import {useRideGroup} from '../../../groups/useRideGroup';
-import {consumeRecordingStart} from '../../../services/recordingStartRequest';
+import {consumeRecordingStart,subscribeRecordingStart} from '../../../services/recordingStartRequest';
 import {useRideHeading} from '../../../services/useRideHeading';
 import {publicError} from '../../../core/publicErrors';
 import {t} from '../../../i18n/core';
@@ -72,6 +72,7 @@ export default function RecordTrip(){
   useEffect(()=>navigation.addListener('beforeRemove',event=>{if(active && !leaving.current){event.preventDefault();void finish();}}),[navigation,active]); // eslint-disable-line react-hooks/exhaustive-deps
   async function finish(){if(savingRef.current)return;savingRef.current=true;setSaving(true);const saved=await recorder.finish();savingRef.current=false;setSaving(false);if(saved!==false){leaving.current=true;setActive(false);router.replace('/offline/rides');}}
   useEffect(()=>{if(startRequested&&!autoStarted.current&&!vehicleLocked){autoStarted.current=true;setActive(true);}},[startRequested,vehicleLocked]);
+  useEffect(()=>subscribeRecordingStart(()=>{if(!active&&!vehicleLocked&&consumeRecordingStart()){setPeak(0);setActive(true);setPanelOpen(false);}}),[active,vehicleLocked]);
   const panelP=panelOpen?{...p,dark:true,bg:'#071118',card:'#15222C',text:'#F6FAFC',muted:'#ADBCC6',line:'#30434B',accent:'#64DCC5'}:p;
   const metric=(label:string,value:string)=><View key={label} style={{minWidth:130,flex:1,gap:4}}><Text style={{color:panelP.muted,fontSize:12}}>{label}</Text><Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{color:panelP.text,fontSize:22,fontWeight:'800',fontVariant:['tabular-nums']}}>{value}</Text></View>;
   return <View style={{flex:1,backgroundColor:p.bg}}>{active && <KeepAwake />}<RideMap groupRiders={n.groupPins&&groupRide.code?groupRide.snapshot?.members.filter(m=>m.id!==groupRide.selfId)??[]:[]} trace={active?trail:undefined} routes={[]} selected={null} position={position} follow={follow} onPan={()=>setFollow(false)} heading={heading} navigating={active} tilted={n.tilted} offlineMap={offlineMap} transit={n.transit} traffic={n.traffic} followPadding={{top:insets.top+75+Math.max(0,(height-bottomObstruction-245)*.42),bottom:bottomObstruction+170,left:20,right:20}} />

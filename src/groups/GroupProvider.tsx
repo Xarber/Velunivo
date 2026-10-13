@@ -1,4 +1,5 @@
 import {setGroupActivityCount} from './activityPresence';
+import {requestRecordingStart} from '../services/recordingStartRequest';
 import {requestGroupNavigation} from './navigationRequest';
 import {subscribeGroupLocation} from './locationPublisher';
 import {router} from 'expo-router';import {allowsGroupVideo,videoRecipients,GROUP_CAMERA_STARTS_MUTED} from './videoPolicy';
@@ -24,7 +25,7 @@ export function GroupProvider({children}:{children:React.ReactNode}){const {navi
  useEffect(()=>{voice.current?.sync(snapshot?.members.filter(m=>m.voice&&m.id!==selfId).map(m=>m.id)??[],videoRecipients(snapshot?.members??[],selfId,videoEnabled));},[snapshot,selfId,voiceReady,videoEnabled]);
  const recipientKey=videoRecipients(snapshot?.members??[],selfId,videoEnabled).sort().join(',');
  useEffect(()=>{void voice.current?.camera(videoEnabled&&!cameraMuted&&!cameraPaused&&connectedVoicePeers>0,recipientKey?recipientKey.split(','):[]).catch(()=>setVoiceStatus('Camera unavailable. Check camera permission.'));},[recipientKey,videoEnabled,cameraMuted,cameraPaused,voiceReady,connectedVoicePeers]);
- useEffect(()=>{const shared=snapshot?.route;if(!code||create||!admitted||!shared||vehicleLocked&&!route)return;const key=code+':'+shared.id;if(appliedRoute.current===key)return;appliedRoute.current=key;routeActions.current.setRoutes([shared]);routeActions.current.select(shared);requestGroupNavigation(shared.id);router.navigate('/');},[code,create,admitted,snapshot?.route,vehicleLocked,route]);
+ useEffect(()=>{const shared=snapshot?.route;if(!code||create||!admitted||!snapshot||vehicleLocked&&!route)return;const key=code+':'+(shared?.id??'recording');if(appliedRoute.current===key)return;appliedRoute.current=key;if(!shared){if(!vehicleLocked){requestRecordingStart();router.navigate('/offline/record-trip');}return;}routeActions.current.setRoutes([shared]);routeActions.current.select(shared);requestGroupNavigation(shared.id);router.navigate('/');},[code,create,admitted,snapshot,vehicleLocked,route]);
  useEffect(()=>{if(code&&admitted)return subscribeGroupLocation(p=>commands.current?.location?.(p));},[code,admitted]);
  useEffect(()=>{const sub=AppState.addEventListener('change',s=>{setCameraPaused(s!=='active');if(s==='active'){commands.current?.resume();voice.current?.resume();}else void voice.current?.camera(false,[]).catch(()=>{});});return()=>sub.remove();},[]);
  useEffect(()=>()=>{commands.current=null;void voice.current?.close();},[]);

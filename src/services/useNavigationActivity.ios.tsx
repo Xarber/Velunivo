@@ -20,13 +20,13 @@ const NavigationLayout = (p: NavigationActivity, environment: LiveActivityEnviro
   const batteryTint=old?'#E49235':p.batteryColor || accent;
   const badges=<HStack spacing={16}>{p.batteryPercent!==undefined && <HStack spacing={5}><Image systemName={p.batterySymbol || 'battery.100percent'} color={batteryTint} /><Text modifiers={[foregroundStyle(batteryTint)]}>{p.batteryPercent}%</Text>{old && <Text modifiers={[foregroundStyle(batteryTint)]}>{p.oldLabel}</Text>}{p.batteryUpdatedAt!==undefined && <Text date={new Date(p.batteryUpdatedAt)} dateStyle="relative" modifiers={[font({size:11}),foregroundStyle(batteryTint)]} />}</HStack>}{p.viewerCount!==undefined && <HStack spacing={5}><Image systemName="eye.fill" color={accent} /><Text>{p.viewerCount}</Text>{environment.isStale && <Image systemName="clock" color="#E49235" />}</HStack>}{p.groupCount!==undefined&&<HStack spacing={5}><Image systemName="person.2.fill" color={accent}/><Text>{p.groupCount}</Text></HStack>}</HStack>;
   return {
-    banner: <VStack modifiers={[padding({all:12})]}><Text modifiers={[font({weight:'bold',size:20}),foregroundStyle(accent)]}>{p.distance} · {p.turn}</Text><Text>{p.arrival}{p.recording?'':` ${p.arrivalLabel||'Arrival'}`} · {p.minutes} · {p.remaining}</Text>{environment.isStale&&<Text modifiers={[foregroundStyle('#E49235')]}>{p.oldLabel}</Text>}{badges}</VStack>,
+    banner: <VStack modifiers={[padding({all:16})]}><Text modifiers={[font({weight:'bold',size:20}),foregroundStyle(accent)]}>{p.distance} · {p.turn}</Text><Text>{p.arrival}{p.recording?'':` ${p.arrivalLabel||'Arrival'}`} · {p.minutes} · {p.remaining}</Text>{environment.isStale&&<Text modifiers={[foregroundStyle('#E49235')]}>{p.oldLabel}</Text>}{badges}</VStack>,
     compactLeading: <Image systemName={p.symbol} color={accent} />,
-    compactTrailing: <Text>{p.distance}</Text>,
+    compactTrailing: <Text>{p.recording?p.timer:p.distance}</Text>,
     minimal: <Image systemName={p.symbol} color={accent} />,
-    expandedLeading: <VStack alignment="leading" spacing={6}><Image systemName={p.symbol} color={accent} modifiers={[font({size:36,weight:'semibold'})]} /><Text modifiers={[font({size:16,weight:'semibold'}),foregroundStyle(accent)]}>{p.distance}</Text></VStack>,
-    expandedTrailing: <HStack>{null}</HStack>,
-    expandedBottom: <VStack modifiers={[padding({all:8})]}><Text>{p.turn}</Text><Text>{p.arrival}{p.recording?'':` ${p.arrivalLabel||'Arrival'}`} · {p.minutes} · {p.remaining}</Text>{environment.isStale&&<Text modifiers={[foregroundStyle('#E49235')]}>{p.oldLabel}</Text>}{badges}</VStack>,
+    expandedLeading: <VStack alignment="leading" spacing={6}><Image systemName={p.symbol} color={accent} modifiers={[font({size:36,weight:'semibold'})]} />{!p.recording&&<Text modifiers={[font({size:16,weight:'semibold'}),foregroundStyle(accent)]}>{p.distance}</Text>}</VStack>,
+    expandedTrailing: <HStack>{p.recording?<Text modifiers={[font({size:22,weight:'semibold'})]}>{p.timer}</Text>:null}</HStack>,
+    expandedBottom: <VStack modifiers={[padding({all:12})]}><Text>{p.turn}</Text><Text>{p.arrival}{p.recording?'':` ${p.arrivalLabel||'Arrival'}`} · {p.minutes} · {p.remaining}</Text>{environment.isStale&&<Text modifiers={[foregroundStyle('#E49235')]}>{p.oldLabel}</Text>}{badges}</VStack>,
   };
 };
 const activity=createLiveActivity<NavigationActivity>('VelunivoNavigation',NavigationLayout);

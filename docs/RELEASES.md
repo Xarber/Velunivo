@@ -107,3 +107,7 @@ Per the clarified layout, expanded leading now stacks a 36-point direction arrow
 Run 38362103801 failed Android Kotlin compilation at VelunivoLiveUpdatesModule.kt:66: adding the recording ID to the supported-ID set had also inadvertently changed a timeout equality check into an invalid comma-separated expression. Restore the timeout check to the test activity only; recording retains the normal renewable 90-second timeout. iPhone compilation succeeded; leave this run and its simulator job running as requested. This repair is prepared locally without dispatching another workflow or compiling locally.
 
 Published as 1.0.19 using a new immutable tag. The user obtained the 1.0.18 simulator artifact and authorized cancelling its remaining work before dispatching the replacement. Validation: TypeScript, Expo lint, data-transfer/version regressions and whitespace checks; native compilation is exclusively performed by GitHub Actions.
+
+1.0.20 adds recording-group automatic start, recording Island symbol/timer, safer activity padding and further native sender/CallKit metadata hardening. Shared-trip/navigation activity values remain unchanged. See GROUP-RIDING.md for the exact scope and physical validation limits. The requested second-simulator test is deferred.
+
+Pre-push checks for 1.0.20: 300 JavaScript regressions pass at concurrency 2; TypeScript, Expo lint and whitespace checks pass. Native sender, CallKit and Island appearance still require the new binary and later device tests.

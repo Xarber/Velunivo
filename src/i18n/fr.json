@@ -1323,5 +1323,6 @@
   "Small GPS offsets are straightened while you record.": "Les petits écarts du GPS sont corrigés pendant l’enregistrement.",
   "Larger turn icons and left-aligned distance in the expanded Island.": "Icônes de direction plus grandes et distance à gauche dans la Dynamic Island déployée.",
   "Ride updates": "Suivi du trajet",
-  "Fixed Android ride activity builds.": "Correction de la compilation des activités de trajet sur Android."
+  "Fixed Android ride activity builds.": "Correction de la compilation des activités de trajet sur Android.",
+  "Recording groups start recording on your device.": "Rejoindre un groupe qui enregistre un trajet lance aussi l’enregistrement sur votre appareil."
 }

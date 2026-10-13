@@ -5,7 +5,7 @@ import { Route, Profile, NavigationOptions, Fix } from './types';
 import { guidance } from './navigation';
 import { estimate, minutes } from './eta';
 import { arrivalTime, maneuverDistance, distanceLeft,displaySpeed } from './rideView';
-export interface NavigationActivity extends ActivityExtras { pausedLabel?:string;arrivalLabel?:string;recording?:boolean;updatedAt?:number; turn: string; symbol: 'flag.fill' | 'arrow.turn.up.left' | 'arrow.turn.up.right' | 'arrow.up'; distance: string; arrival: string; minutes: string; remaining: string; }
+export interface NavigationActivity extends ActivityExtras { pausedLabel?:string;arrivalLabel?:string;recording?:boolean;timer?:string;updatedAt?:number; turn: string; symbol: 'flag.fill' | 'arrow.turn.up.left' | 'arrow.turn.up.right' | 'arrow.up' | 'record.circle'; distance: string; arrival: string; minutes: string; remaining: string; }
 
 export function rideActivity(route:Route,profile:Profile,options:NavigationOptions,g:ReturnType<typeof guidance>,fix?:Fix,simulation=false):NavigationActivity {
  const eta=estimate(route,profile,g.offRoute ? 0 : g.along);
@@ -14,5 +14,5 @@ export function rideActivity(route:Route,profile:Profile,options:NavigationOptio
 
 export function recordingActivity(fix:Fix|null|undefined,meters:number,startedAt:number,unit:NavigationOptions['unit'],now=Date.now(),speedKmh?:number|null):NavigationActivity{
  const speed=speedKmh===undefined?(fix?.speed==null?null:fix.speed*3.6):speedKmh;
- return {pausedLabel:t('Updates paused · last location may be outdated'),oldLabel:t('Old'),recording:true,updatedAt:fix?.timestamp,turn:t('Recording trip'),symbol:'arrow.up',distance:speed===null?'—':`${displaySpeed(speed,unit).toFixed(0)} ${unit==='mi'?'mph':'km/h'}`,arrival:`${t('Trip time')} · ${tripDuration(startedAt,now)}`,minutes:distanceLeft(meters,unit),remaining:t('Travelled')};
+ return {pausedLabel:t('Updates paused · last location may be outdated'),oldLabel:t('Old'),recording:true,updatedAt:fix?.timestamp,turn:t('Recording trip'),symbol:'record.circle',timer:tripDuration(startedAt,now),distance:speed===null?'—':`${displaySpeed(speed,unit).toFixed(0)} ${unit==='mi'?'mph':'km/h'}`,arrival:`${t('Trip time')} · ${tripDuration(startedAt,now)}`,minutes:distanceLeft(meters,unit),remaining:t('Travelled')};
 }

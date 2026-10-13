@@ -14,7 +14,7 @@ final class VelunivoGroupCall: NSObject, CXProviderDelegate {
  private let controller = CXCallController()
  private let provider: CXProvider
  override init() {
-  let config = CXProviderConfiguration()
+  let config = CXProviderConfiguration(localizedName: "Velunivo Group Ride")
   config.supportsVideo = false
   config.maximumCallsPerCallGroup = 1
   config.maximumCallGroups = 1
@@ -60,6 +60,7 @@ final class VelunivoGroupCall: NSObject, CXProviderDelegate {
   update.supportsGrouping = false
   update.supportsUngrouping = false
   update.supportsDTMF = false
+  provider.reportCall(with: action.callUUID, updated: update)
   action.fulfill()
   provider.reportOutgoingCall(with: action.callUUID, startedConnectingAt: Date())
   provider.reportOutgoingCall(with: action.callUUID, connectedAt: Date())
