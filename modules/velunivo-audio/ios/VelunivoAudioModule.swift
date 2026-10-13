@@ -99,6 +99,10 @@ public final class VelunivoAudioModule: Module {
         try session.setActive(false, options: .notifyOthersOnDeactivation)
       }
     }.runOnQueue(.main)
+    AsyncFunction("setGroupVoiceConnected") { (connected: Bool, owner: String) in
+      guard GroupVoiceAudio.owner == owner else { return }
+      VelunivoGroupCall.shared.setConnected(connected)
+    }.runOnQueue(.main)
     AsyncFunction("setGroupVoiceMuted") { (muted: Bool, owner: String) in
       guard GroupVoiceAudio.owner == owner else { return }
       VelunivoGroupCall.shared.setMuted(muted)

@@ -1,3 +1,4 @@
+import GroupCameraPreview from '../../components/GroupCameraPreview';
 import {useGroupActivity} from '../../groups/useGroupActivity';
 import {subscribeGroupNavigation,takeGroupNavigation} from '../../groups/navigationRequest';
 import GroupRiding from '../../components/GroupRiding';
@@ -273,7 +274,7 @@ export default function Explore() {
 
     </View>
     {!active && <View pointerEvents="box-none" style={[s.header, { top: insets.top + 12, left: 16 + webLeft, right: wide ? undefined : 16 + webRight }]}><GlassSurface style={s.brandCard}><Brand /></GlassSurface><Pressable accessibilityRole="button" accessibilityLabel={t("Plan a ride")} disabled={active || busy} onPress={openPlanner} style={[s.round, { backgroundColor: p.card, opacity:busy?.4:1 }]}><Ionicons name="search" size={22} color={p.text} /></Pressable></View>}
-    <NativeTabSafeOverlay onHeight={setOverlayHeight}>
+    <NativeTabSafeOverlay onHeight={setOverlayHeight}><GroupCameraPreview active={active} right={12+webRight} bottom={wide?16:(visiblePanelHeight??176)+24}/>
       {previewPin && <View style={{position:'absolute',bottom:195,left:12}}><Button title={t("Back to Where to")} icon="search" onPress={openPlanner} /></View>}
       {picking && <View style={{ position: 'absolute', bottom: 12, left: 12 }}><Button title={t("Cancel map selection")} secondary onPress={() => { setPicking(null); setPlanner(true); }} /></View>}
     {!picking && <GlassSurface expanded={expandedPanel} {...motionProps('sheet')} style={[s.floatingPanel, { backgroundColor: panelP.bg, left: 12 + webLeft, right: wide ? undefined : 12 + webRight, width: wide ? 390 : undefined, bottom: 12, height: visiblePanelHeight }]}>

@@ -1,3 +1,5 @@
+import {getGroupActivityRiders,subscribeGroupActivityRiders} from '../groups/activityPresence';
+import {rememberRideRiders} from '../core/groupRideRoster';
 import {LiveRecordedPath} from '../core/recordedPath';
 import {canAskBatteryUsage} from '../core/batteryLearning';
 import {nameRecordedTrip} from './tripNames';
@@ -20,6 +22,7 @@ export function useRideRecorder(active: boolean, enabled: boolean, arrived: bool
   const flush = useCallback((status?: RecordedRide['status']) => {
     const s = session.current; if (!s || (!s.dirty && !status)) return;
     if(s.discarded)return Promise.resolve(true);
+    s.ride=rememberRideRiders(s.ride,getGroupActivityRiders());
     if(!qualifiesRecordedRide(s.ride.meters,s.minimumMeters)){if(status){s.discarded=true;s.ride={...s.ride,status,endedAt:Date.now(),batteryFeedback:undefined};notifyShortRide();}return Promise.resolve(true);}
     if (status) { const endedAt=Date.now(),snapshot=bluetoothBridge.getSnapshot();if(snapshot.vehicleId===s.ride.vehicle.id&&snapshot.state==='connected'&&!snapshot.simulated)s.ride={...s.ride,bluetoothConnected:true};const last=collect.current?sampleBluetooth(snapshot,s.ride.vehicle.id,endedAt):undefined;if(last)s.ride={...s.ride,bluetooth:updateTripBluetooth(s.ride.bluetooth,last,s.ride.startedAt)};const used=automaticBatteryUsage(s.ride.bluetooth,endedAt);s.ride = { ...s.ride, status, endedAt, ...(used!==null?{batteryUsagePercent:used,batteryUsageSource:'bluetooth' as const,batteryFeedback:'answered' as const}:s.ride.bluetoothConnected||(s.ride.bluetooth?.connected&&!s.ride.bluetooth.simulated)?{batteryFeedback:'skipped' as const}:{}) }; }
     const chunks = [...s.pending].map(([index, samples]) => ({ index, samples: [...samples] }));
@@ -36,7 +39,7 @@ export function useRideRecorder(active: boolean, enabled: boolean, arrived: bool
     const now = Date.now(), sensor = sensors.current,snapshot=bluetoothBridge.getSnapshot();
     if(snapshot.state==='connected'&&snapshot.vehicleId===s.ride.vehicle.id&&!snapshot.simulated)s.ride={...s.ride,bluetoothConnected:true};
     const sample: RideSample = { bluetooth:collect.current?sampleBluetooth(bluetoothBridge.getSnapshot(),s.ride.vehicle.id,now):undefined, fix, pathFix: tracked?.point ?? null, breakBefore: tracked?.breakBefore, compass: sensor.compass.heading !== null && now - sensor.compass.timestamp < 3000 ? { heading: sensor.compass.heading, timestamp: sensor.compass.timestamp } : null, accelerometer: freshVector(sensor.motion.accelerometer, now), gyroscope: freshVector(sensor.motion.gyroscope, now) };
-    s.ride = {...appendSample(s.ride, sample, s.previous),trace:s.displayPath.next(sample)}; if(tracked?.point)s.previous = tracked.point; setRecord(s.ride); s.buffer.push(sample); s.dirty = true;
+    s.ride = {...appendSample(rememberRideRiders(s.ride,getGroupActivityRiders()), sample, s.previous),trace:s.displayPath.next(sample)}; if(tracked?.point)s.previous = tracked.point; setRecord(s.ride); s.buffer.push(sample); s.dirty = true;
     if (arrived || s.buffer.length >= 100 || AppState.currentState !== 'active') return flush(arrived ? 'arrived' : undefined)?.then(() => {});
   }, [flush]);
   useEffect(() => {
@@ -46,9 +49,10 @@ export function useRideRecorder(active: boolean, enabled: boolean, arrived: bool
     const snapshot=bluetoothBridge.getSnapshot(),first=collect.current?sampleBluetooth(snapshot,vehicle.id,startedAt):undefined;
     if(first)session.current.ride={...session.current.ride,bluetooth:updateTripBluetooth(undefined,first,startedAt),bluetoothConnected:snapshot.state==='connected'&&!snapshot.simulated};
     setRecord(session.current.ride); liveRecording(session.current.ride.id, true); flush();
+    const stopRoster=subscribeGroupActivityRiders(riders=>{const s=session.current;if(s&&s.ride.status==='recording'){const next=rememberRideRiders(s.ride,riders);if(next!==s.ride){s.ride=next;s.dirty=true;setRecord(s.ride);}}});
     const timer = setInterval(() => flush(), 5000);
     const app = AppState.addEventListener('change', state => { if (state !== 'active') flush(); });
-    return () => { clearInterval(timer); app.remove(); if (session.current) liveRecording(session.current.ride.id, false); flush(session.current?.ride.status === 'recording' ? 'finished' : undefined); session.current = null; };
+    return () => { stopRoster();clearInterval(timer); app.remove(); if (session.current) liveRecording(session.current.ride.id, false); flush(session.current?.ride.status === 'recording' ? 'finished' : undefined); session.current = null; };
     // A session snapshots its vehicle and route; setting changes end/start recording without replacing navigation.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, enabled, route?.id, flush]);

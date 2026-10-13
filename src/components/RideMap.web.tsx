@@ -102,7 +102,7 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
   }, [startPoint, endPoint, loaded, selected, follow, fitPadding, tilted]);
   useEffect(()=>{const m=map.current;if(!m||!loaded)return;
     people.current??=new PeopleMarkers((element,position)=>new maplibregl.Marker({element,anchor:'bottom'}).setLngLat(position).addTo(m));
-    people.current.update(groupRiders,groupVideo.videoFeeds,groupVideo.videoEnabled,peoplePalette.accent,peoplePalette.dark);
-  },[groupRiders,loaded,groupVideo.videoEnabled,groupVideo.videoFeeds,peoplePalette.accent,peoplePalette.dark]);
+    people.current.update(groupRiders,groupVideo.videoFeeds,groupVideo.videoEnabled,peoplePalette.accent,peoplePalette.dark,navigating?groupVideo.pinVideo:undefined);
+  },[groupRiders,loaded,groupVideo.videoEnabled,groupVideo.videoFeeds,peoplePalette.accent,peoplePalette.dark,groupVideo.pinVideo,navigating]);
   return <View style={{ flex: 1, zIndex: 0 }}><style>{`.maplibregl-ctrl-top-right { top: 125px; right: 10px; } @media (min-width: 700px) { .maplibregl-ctrl-top-right { top: 70px; } }`}</style><div ref={div} style={{ position: 'absolute', inset: 0 }} />{error && <Text style={{ position: 'absolute', top: 8, left: 8, right: 8, padding: 8, backgroundColor: '#fff', color: '#536671', fontSize: 12 }}>Map resources unavailable. Route geometry and ETA remain available.</Text>}</View>;
 }

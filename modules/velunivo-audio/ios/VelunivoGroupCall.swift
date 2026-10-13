@@ -9,6 +9,8 @@ final class VelunivoGroupCall: NSObject, CXProviderDelegate {
  private var uuid: UUID?
  private var requestedEnd = true
  private var microphoneMuted = false
+ private var connectionEstablished = false
+ private var connectionReported = false
  private var callStarted = false
  private var lastMuteRequested: Bool?
  private var applicationMuteActions = Set<UUID>()
@@ -46,13 +48,13 @@ final class VelunivoGroupCall: NSObject, CXProviderDelegate {
   }
  }
  func stop() {
-  requestedEnd = true; callStarted = false; lastMuteRequested = nil; applicationMuteActions.removeAll()
+  requestedEnd = true; connectionEstablished = false; connectionReported = false; callStarted = false; lastMuteRequested = nil; applicationMuteActions.removeAll()
   if let id = uuid { controller.request(CXTransaction(action: CXEndCallAction(call: id))) { _ in } }
   uuid = nil
   RTCAudioSession.sharedInstance().isAudioEnabled = false
   RTCAudioSession.sharedInstance().useManualAudio = false
  }
- func providerDidReset(_ provider: CXProvider) { callStarted = false; lastMuteRequested = nil; applicationMuteActions.removeAll(); uuid = nil; RTCAudioSession.sharedInstance().isAudioEnabled = false; if !requestedEnd { start() } }
+ func providerDidReset(_ provider: CXProvider) { connectionReported = false; callStarted = false; lastMuteRequested = nil; applicationMuteActions.removeAll(); uuid = nil; RTCAudioSession.sharedInstance().isAudioEnabled = false; if !requestedEnd { start() } }
  func provider(_ provider: CXProvider, perform action: CXStartCallAction) {
   guard uuid == action.callUUID, !requestedEnd else { action.fail(); return }
   let update = CXCallUpdate()
@@ -66,10 +68,22 @@ final class VelunivoGroupCall: NSObject, CXProviderDelegate {
   action.fulfill()
   provider.reportCall(with: action.callUUID, updated: update)
   provider.reportOutgoingCall(with: action.callUUID, startedConnectingAt: Date())
-  provider.reportOutgoingCall(with: action.callUUID, connectedAt: Date())
   provider.reportCall(with: action.callUUID, updated: update)
   callStarted = true; lastMuteRequested = false
+  reportConnectedIfReady()
   setMuted(microphoneMuted)
+ }
+ // Connecting is CallKit's real outgoing-call state, not an app overlay.
+ func setConnected(_ value: Bool) {
+  let recovering = connectionEstablished && !value && uuid != nil
+  connectionEstablished = value
+  if recovering { stop(); start() }
+  reportConnectedIfReady()
+ }
+ private func reportConnectedIfReady() {
+  guard connectionEstablished, callStarted, !connectionReported, let id = uuid else { return }
+  connectionReported = true
+  provider.reportOutgoingCall(with: id, connectedAt: Date())
  }
  func setMuted(_ value: Bool) {
   microphoneMuted = value
