@@ -17,7 +17,7 @@ import React, {useState,useRef,useEffect,useCallback} from 'react';
 import {View, ScrollView, Switch, Pressable, Platform, Linking} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {router,useFocusEffect} from 'expo-router';
-import {APP_VERSION} from '../core/appVersion';
+import {APP_VERSION,APP_COMMIT} from '../core/appVersion';
 import {Ionicons} from '@expo/vector-icons';
 import {useStore} from '../services/store';
 import {setMapKey,hasMapKey} from '../services/mapSettings';
@@ -55,5 +55,6 @@ export default function SettingsScreen({section}:{section?:string}) {
     {section==='scratch'&&<ScratchSettings/>}
     {section==='bluetooth' && <BluetoothSettings />}
     {developer && <>{section==='developer'&&card(<>{[['developer-simulation','Ride simulation','play-outline'],['developer-telemetry','Developer telemetry','pulse-outline'],['bluetooth-diagnostics','Bluetooth Diagnostics','bluetooth-outline'],['developer-activities','Live Activity tests','notifications-outline'],['developer-records','Recorded ride diagnostics','recording-outline'],['developer-analytics','Developer analytics','analytics-outline'],['developer-storage','Storage & reset','server-outline']].map(([target,title,icon])=><Button key={target} title={t(title)} icon={icon as keyof typeof Ionicons.glyphMap} secondary onPress={()=>router.push({pathname:'/settings/[section]',params:{section:target}})}/>)}</>)}{['developer-simulation','developer-telemetry','developer-records','developer-analytics'].includes(section!)&&<DeveloperTools section={section!.slice(10)}/ >}{section==='developer-activities'&&<ActivityDiagnostics developerMode rideActive={vehicleLocked}/ >}{section==='developer-storage'&&card(<><Button title={t('Clear all app data')} icon="trash-outline" secondary disabled={vehicleLocked||clearing} onPress={()=>setClearConfirm(true)}/>{clearConfirm&&<><Text style={{color:p.muted}}>Delete vehicles, places, routes, recordings, Bluetooth credentials, keys and downloads from this device?</Text><Button title={t('Delete all data')} icon="trash-outline" disabled={vehicleLocked||clearing} onPress={()=>{setClearing(true);void clearAppData().then(()=>router.replace('/')).catch(e=>{setMapStatus(e.message);setClearing(false);});}}/><Button title={t('Cancel')} secondary onPress={()=>setClearConfirm(false)}/></>}{!!mapStatus&&<Text style={{color:p.muted}}>{mapStatus}</Text>}</>)}</>}{section && !group && !developer && <Text style={{color:p.muted}}>These options are unavailable.</Text>}
+    {section==='developer'&&developer&&<Text translate={false} selectable style={{color:p.muted,fontSize:12,textAlign:'center',paddingVertical:18}}>Velunivo {APP_VERSION} · {APP_COMMIT?.slice(0,7)||t('Development build')}</Text>}
   </ScrollView></SafeAreaView>;
 }

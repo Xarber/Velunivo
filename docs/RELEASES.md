@@ -188,3 +188,7 @@ Added regression coverage for fallback routing, complete-gallery publication, la
 ## 2.1.0 riding update
 
 See [RIDING_2.1.md](RIDING_2.1.md) for battery-aware planning, bookmarks, exploration progress, regroup warnings, haptics, reliability reports and map interaction changes. Update the hosted routing proxy to honour bicycle route preferences. PeerServer requires no deployment change. Native effects are validated through runner builds and separate device tests; local native compilation remains disabled.
+
+## 2.1.1 comparison baseline
+
+The first release for the translation, group controls, scratch viewport and developer build identity changes is documented in [UPDATE_2.1.1.md](UPDATE_2.1.1.md). All four app build jobs embed `EXPO_PUBLIC_COMMIT_SHA` from the exact Actions source revision. App-wide performance review and cleanup are deferred until user testing; preserve this version as the rollback/comparison baseline.

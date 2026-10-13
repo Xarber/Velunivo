@@ -63,6 +63,7 @@ jobs:
       APP_VERSION: ${{ needs.prepare.outputs.version }}
       EXPO_PUBLIC_OVERPASS_URL: ${{ vars.OVERPASS_URL }}
       EXPO_PUBLIC_APP_VERSION: ${{ needs.prepare.outputs.version }}
+      EXPO_PUBLIC_COMMIT_SHA: ${{ github.sha }}
       BUILD_NUMBER: ${{ github.run_number }}
       EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
       EXPO_PUBLIC_MAP_STYLE_URL: ${{ vars.MAP_STYLE_URL }}
@@ -101,6 +102,7 @@ jobs:
       APP_VERSION: ${{ needs.prepare.outputs.version }}
       EXPO_PUBLIC_OVERPASS_URL: ${{ vars.OVERPASS_URL }}
       EXPO_PUBLIC_APP_VERSION: ${{ needs.prepare.outputs.version }}
+      EXPO_PUBLIC_COMMIT_SHA: ${{ github.sha }}
       BUILD_NUMBER: ${{ github.run_number }}
       EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
       EXPO_PUBLIC_MAP_STYLE_URL: ${{ vars.MAP_STYLE_URL }}
@@ -215,6 +217,7 @@ jobs:
       APP_VERSION: ${{ needs.prepare.outputs.version }}
       EXPO_PUBLIC_OVERPASS_URL: ${{ vars.OVERPASS_URL }}
       EXPO_PUBLIC_APP_VERSION: ${{ needs.prepare.outputs.version }}
+      EXPO_PUBLIC_COMMIT_SHA: ${{ github.sha }}
       BUILD_NUMBER: ${{ github.run_number }}
       EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
       EXPO_PUBLIC_MAP_STYLE_URL: ${{ vars.MAP_STYLE_URL }}
@@ -336,6 +339,7 @@ jobs:
       APP_VERSION: ${{ needs.prepare.outputs.version }}
       EXPO_PUBLIC_OVERPASS_URL: ${{ vars.OVERPASS_URL }}
       EXPO_PUBLIC_APP_VERSION: ${{ needs.prepare.outputs.version }}
+      EXPO_PUBLIC_COMMIT_SHA: ${{ github.sha }}
       BUILD_NUMBER: ${{ github.run_number }}
       EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
       EXPO_PUBLIC_MAP_STYLE_URL: ${{ vars.MAP_STYLE_URL }}

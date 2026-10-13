@@ -7,6 +7,12 @@ export const welcomePages=[
  {icon:'shield-checkmark-outline',title:'You stay in control',text:'Check road signs and local rules. Your records stay on your device until you export or share them.'},
 ] as const;
 export const releaseDetails=[
+ {version:'2.1.1',items:[
+ {icon:'language-outline',title:'More natural translations',text:'Clearer navigation, battery, group and recording language.'},
+ {icon:'map-outline',title:'Scratch map follows your view',text:'Exploration coverage updates while moving and resizing the map.'},
+ {icon:'people-outline',title:'Cleaner group controls',text:'Leave your current group before joining another.'},
+ {icon:'code-slash-outline',title:'Build identity',text:'Find the app version and commit at the bottom of Developer Options.'},
+ ]},
  {version:'2.1.0',items:[
  {icon:'battery-half-outline',title:'Ride with confidence',text:'Plan around your battery reserve and feel turn prompts with navigation haptics.'},
  {icon:'trophy-outline',title:'Explore and level up',text:'Earn explorer levels and achievements. Bookmark useful spots as you ride.'},
