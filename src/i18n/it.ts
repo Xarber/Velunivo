@@ -865,3 +865,7 @@ Object.assign(italian,{
 });
 
 Object.assign(italian,{"Edit reminder":"Modifica promemoria"});
+
+Object.assign(italian, {
+  "Fixed a startup crash when loading the scratch map on native devices.": "Corretto un arresto all’avvio durante il caricamento della mappa di esplorazione sui dispositivi mobili."
+});

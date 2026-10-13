@@ -1478,5 +1478,6 @@
   "Scratch collection reuses active GPS, including locked-screen rides. Navigation uses a lighter overlay.": "La recopilación usa el GPS del viaje activo, incluso con la pantalla bloqueada. La navegación usa una capa más ligera.",
   "Backups and device sync include your explored tiles and maintenance reminders.": "Las copias de seguridad y la sincronización incluyen zonas exploradas y recordatorios de mantenimiento.",
   "All historical releases use short feature highlights with separate complete changelogs.": "Todas las versiones anteriores muestran novedades breves y todos los cambios en una página aparte.",
-  "Edit reminder": "Editar recordatorio"
+  "Edit reminder": "Editar recordatorio",
+  "Fixed a startup crash when loading the scratch map on native devices.": "Se ha corregido un fallo al iniciar la app al cargar el mapa de exploración en dispositivos móviles."
 }

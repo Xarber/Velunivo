@@ -154,3 +154,13 @@ Validation completed before push: **329 JavaScript/TypeScript tests passed**, in
 ## 2.0.0
 
 The user explicitly authorized a major release for ride-only exploration, exploration route alternatives, maintenance reminders and profile ride statistics. Native GitHub update checks, saved-profile group setup and retrospective changelog formatting are included. See [implementation and validation](EXPLORATION_2.0.md). Historical tags are unchanged; the mutable `1.0` source release remains separate from `v2.0.0` binaries. CallKit/media/protocol implementations are unchanged, no local native build or SDK download occurred, and new QA screenshots are not added to README/release assets.
+
+## 2.0.1 — native startup compatibility
+
+The 2.0.0 scratch-map dependency, h3-js 4.5.0, eagerly constructs a UTF-16LE TextDecoder while importing its compiled JavaScript. Hermes rejects that encoding, preventing Expo Router from loading screens. This is unrelated to saved tiles or route data.
+
+`scripts/patch-h3.mjs` runs first during postinstall and guards only that optional decoder initializer in all four CommonJS/ES module and browser entry bundles. H3 4.5.0 never uses the UTF16Decoder variable; its geographic calculations remain unchanged. The platform's global TextDecoder and UTF-8 implementation are untouched. The patch verifies the dependency version and source shape, is idempotent, and fails clearly if an upstream change needs review.
+
+`tests/h3-native-decoder.test.mjs` loads the actual dependency bundles with a UTF-8-only decoder: the original source reproduces the reported exception; patched code imports and calculates cells, boundaries and contiguous polygons. It also checks full decoder support, no TextDecoder, repeated installation and all patched entry points. Version metadata and localized What's New are updated to 2.0.1. No native APIs, CallKit/media code or stored schemas changed. No local native compilation or SDK download is performed.
+
+Validation: lint, typecheck, 346 JavaScript/TypeScript tests, 31 Python workflow tests (Python 3.13), diff whitespace checks and the production iOS JavaScript/Hermes bundle export passed. The export bundles JavaScript only; it does not compile an Xcode app. Installed-device startup verification remains pending the replacement IPA.

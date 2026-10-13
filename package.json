@@ -1,6 +1,6 @@
 {
   "name": "velunivo",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "main": "index.js",
   "dependencies": {
     "@config-plugins/react-native-webrtc": "^15.0.2",
@@ -79,7 +79,7 @@
     "test": "tsx --test tests/*.test.ts tests/*.test.mjs",
     "server": "tsx server/index.ts",
     "lint": "expo lint",
-    "postinstall": "node scripts/patch-widgets.mjs && node scripts/copy-map-worker.mjs && node scripts/generate-peer-runtime.mjs && node scripts/generate-group-runtime.mjs",
+    "postinstall": "node scripts/patch-h3.mjs && node scripts/patch-widgets.mjs && node scripts/copy-map-worker.mjs && node scripts/generate-peer-runtime.mjs && node scripts/generate-group-runtime.mjs",
     "web:preview": "node scripts/generate-pwa.mjs && expo export --platform web --output-dir dist && node scripts/build-pwa.mjs dist && python3 scripts/serve-web.py",
     "brand:generate": "node scripts/generate-brand.mjs",
     "pwa:generate": "node scripts/generate-pwa.mjs",
