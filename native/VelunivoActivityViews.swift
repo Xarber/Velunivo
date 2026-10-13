@@ -77,9 +77,9 @@ private struct VelunivoActivitySection: View {
     let data = VelunivoActivityData(context.state.props)
     switch sectionName {
     case "expandedLeading":
-      HStack(alignment: .center, spacing: 10) {
-        Image(systemName: data.symbol).font(.system(size: 32, weight: .semibold))
-        Text(data.distance).font(.system(size: 24, weight: .bold)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
+      VStack(alignment: .leading, spacing: 6) {
+        Image(systemName: data.symbol).font(.system(size: 36, weight: .semibold))
+        Text(data.distance).font(.system(size: 16, weight: .semibold)).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
       }.foregroundStyle(Color.mint)
     case "expandedTrailing":
       EmptyView()

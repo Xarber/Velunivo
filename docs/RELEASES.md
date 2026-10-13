@@ -97,3 +97,7 @@ Pre-push verification for 1.0.16: 296 JS tests, 31 Python tests, TypeScript, Exp
 The expanded Island groups a larger 32-point maneuver symbol and 24-point distance on the left, rather than separating the distance on the right. Guidance and arrival details align to the left across the bottom region. Compact/minimal Island and Lock Screen layouts retain their current sizing. Both the direct Swift renderer and Expo layout agree. No SDK downloads or local native compilation; native appearance requires the new CI binary.
 
 Also removes a duplicate microphone-button disabled property accidentally introduced after 1.0.16's verification, which prevented its type/lint checks from passing.
+
+## Expanded Island refinement (1.0.18)
+
+Per the clarified layout, expanded leading now stacks a 36-point direction arrow above a smaller 16-point distance. Compact/minimal Island, Lock Screen and all activity data remain unchanged. Version 1.0.16's duplicate microphone property failure was already fixed in 1.0.17. Cancel the active 1.0.17 build when starting the replacement; do not move its version tag. No local native compilation or SDK download.

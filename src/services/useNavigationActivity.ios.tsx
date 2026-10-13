@@ -24,7 +24,7 @@ const NavigationLayout = (p: NavigationActivity, environment: LiveActivityEnviro
     compactLeading: <Image systemName={p.symbol} color={accent} />,
     compactTrailing: <Text>{p.distance}</Text>,
     minimal: <Image systemName={p.symbol} color={accent} />,
-    expandedLeading: <HStack spacing={10}><Image systemName={p.symbol} color={accent} modifiers={[font({size:32,weight:'semibold'})]} /><Text modifiers={[font({size:24,weight:'bold'}),foregroundStyle(accent)]}>{p.distance}</Text></HStack>,
+    expandedLeading: <VStack alignment="leading" spacing={6}><Image systemName={p.symbol} color={accent} modifiers={[font({size:36,weight:'semibold'})]} /><Text modifiers={[font({size:16,weight:'semibold'}),foregroundStyle(accent)]}>{p.distance}</Text></VStack>,
     expandedTrailing: <HStack>{null}</HStack>,
     expandedBottom: <VStack modifiers={[padding({all:8})]}><Text>{p.turn}</Text><Text>{p.arrival}{p.recording?'':` ${p.arrivalLabel||'Arrival'}`} · {p.minutes} · {p.remaining}</Text>{environment.isStale&&<Text modifiers={[foregroundStyle('#E49235')]}>{p.oldLabel}</Text>}{badges}</VStack>,
   };
