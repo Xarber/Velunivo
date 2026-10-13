@@ -28,3 +28,8 @@ test('temporary transport loss closes capture but keeps the system call until th
  const factory:VoiceFactory={media:async()=>({attach(){},idle:async()=>{idle++;},muteSelf:m=>{mutes.push(m);},stop(){}}),connection:(_id,_emit,change)=>{state=change;return {offer:async()=> 'audio',answer:async()=> 'audio',remote:async()=>{},ice:async()=>{},mute(){},close(){}};},stop:async()=>{}};
  const call=new GroupVoice('b',factory,()=>{},()=>{});await call.start();const before=idle;call.sync(['a']);state('connected');state('disconnected');await flush();assert.deepEqual(mutes,[false,true]);assert.equal(idle,before);call.sync([]);await flush();assert.equal(idle,before+1);await call.close();
 });
+test('legacy peers still receive ICE when their offers have no session ID',async()=>{
+ let emit!:(s:any)=>void;const sent:any[]=[];
+ const factory:VoiceFactory={media:async()=>({attach(){},muteSelf(){},stop(){}}),connection:(_id,send)=>{emit=send;return {offer:async()=> 'audio',answer:async()=> 'audio',remote:async()=>{},ice:async()=>{},mute(){},close(){}};},stop:async()=>{}};
+ const call=new GroupVoice('b',factory,(_id,s)=>sent.push(s),()=>{});await call.start();call.sync(['a']);await call.signal('a',{type:'offer',sdp:'audio'});emit({type:'ice',candidate:{candidate:'legacy',sdpMid:null,sdpMLineIndex:0}});assert.equal(sent.at(-1).candidate.candidate,'legacy');assert.equal(sent.at(-1).session,undefined);await call.close();
+});
