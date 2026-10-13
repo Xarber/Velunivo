@@ -38,7 +38,7 @@ test('Lock Screen and expanded island render battery and spectators, and omit un
  const h=harness(),layout=h.layouts.get('VelunivoNavigation')!;
  const base={turn:'turn',distance:'100 m',arrival:'10:00',minutes:'5 min',remaining:'1 km',symbol:'arrow.up'};
  const visible=layout({...base,batteryPercent:56,batterySymbol:'battery.50percent',viewerCount:2},{isLuminanceReduced:false});
- for(const area of ['banner','expandedBottom']){const json=JSON.stringify(visible[area]);assert.match(json,/battery.50percent/);assert.match(json,/person.fill/);assert.match(json,/56/);}
+ for(const area of ['banner','expandedBottom']){const json=JSON.stringify(visible[area]);assert.match(json,/battery.50percent/);assert.match(json,/eye.fill/);assert.match(json,/56/);}
  const absent=layout(base,{isLuminanceReduced:false});assert.doesNotMatch(JSON.stringify(absent.banner),/battery\.|person.fill/);
 });
 test('background GPS activity update retains current local battery and spectator fields',async()=>{
@@ -48,3 +48,6 @@ test('background GPS activity update retains current local battery and spectator
 });
 
 test('paused guidance preserves last battery and spectators and marks the battery old',async()=>{const h=harness();let received:any;h.factories.get('VelunivoNavigation')!.instances.push({end:async()=>{},update:async(props:any)=>{received=props;}} as any);await h.api.updateRideActivity({}, {id:'vehicle'}, {liveActivities:true}, {arrived:false}, {timestamp:Date.now()});await h.api.markActivityPaused();assert.equal(received.batteryPercent,56);assert.equal(received.viewerCount,2);assert.equal(received.batteryOld,true);});
+test('recording activity uses its own factory and eye/people badges remain distinct',()=>{
+ const h=harness();assert(h.factories.has('VelunivoRecording'));const layout=h.layouts.get('VelunivoRecording')!;const text=JSON.stringify(layout({recording:true,turn:'Recording trip',distance:'20 km/h',arrival:'Trip time · 10:00',minutes:'3 km',remaining:'Travelled',groupCount:3,viewerCount:2},{}));assert(text.includes('person.2.fill'));assert(text.includes('eye.fill'));assert(!text.includes(' arrival'));assert(text.includes('Recording trip'));
+});

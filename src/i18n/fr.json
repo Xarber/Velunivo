@@ -1313,5 +1313,12 @@
   "Shared links open outside the tab bar. Shared-trip Live Activities now use the native renderer.": "Les liens partagés s’ouvrent en dehors des onglets. Les Activités en direct des trajets partagés utilisent l’affichage natif.",
   "Group calls": "Appels de groupe",
   "More reliable media reconnection and system call controls.": "Reconnexion audio et vidéo plus fiable et commandes d’appel du système.",
-  "Shared trips": "Trajets partagés"
+  "Shared trips": "Trajets partagés",
+  "riders": "participants",
+  "Travelled": "Parcourus",
+  "Joining starts the shared route automatically.": "La navigation sur l’itinéraire partagé démarre automatiquement à l’arrivée dans le groupe.",
+  "Lock Screen dashboards show recording progress and group counts.": "L’écran verrouillé affiche l’enregistrement et le nombre de participants.",
+  "Improved microphone, video and call audio setup.": "Connexion du microphone, de la vidéo et de l’audio des appels améliorée.",
+  "Smoother ride traces": "Tracés plus réguliers",
+  "Small GPS offsets are straightened while you record.": "Les petits écarts du GPS sont corrigés pendant l’enregistrement."
 }

@@ -1,3 +1,4 @@
+import {subscribeGroupNavigation,takeGroupNavigation} from '../../groups/navigationRequest';
 import GroupRiding from '../../components/GroupRiding';
 import {useRideGroup} from '../../groups/useRideGroup';
 import ArrivalScreen from '../../components/ArrivalScreen';
@@ -156,7 +157,7 @@ export default function Explore() {
   const groupRide=useRideGroup(active,mapPosition??null,selected);
   const bluetoothSnapshot=useBluetoothVehicle(profile.id);
   const sharingPresence=useSyncExternalStore(subscribeHostPresence,getHostPresence,getHostPresence);
-  const activityProps = useMemo<import('../../core/liveActivity').NavigationActivity>(()=>({...activityExtras(bluetoothSnapshot,bluetoothPreferences,profile.id,sharingPresence,now),updatedAt:ride.mode==='simulation'?now:ride.fix?.timestamp,turn:(ride.mode === 'simulation' ? 'Simulation · ' : '') + (g?.offRoute ? 'Off route · stop safely to replan' : g?.next?.text || 'Follow the route'),symbol:g?.next?.sign === 4 || g?.next?.sign===5 ? 'flag.fill' : g?.next?.sign && g.next.sign < 0 ? 'arrow.turn.up.left' : g?.next?.sign && g.next.sign > 0 ? 'arrow.turn.up.right' : 'arrow.up',distance:g?.maneuverMeters === undefined ? '—' : maneuverDistance(g.maneuverMeters,navigationOptions.unit),arrival:eta ? arrivalTime(eta.seconds,now) : '—',minutes:eta ? minutes(eta.seconds) : '—',remaining:eta ? distanceLeft(eta.meters,navigationOptions.unit) : '—'}),[g,eta,now,navigationOptions.unit,ride.mode,bluetoothSnapshot,bluetoothPreferences,profile.id,sharingPresence,ride.fix?.timestamp]);
+  const activityProps = useMemo<import('../../core/liveActivity').NavigationActivity>(()=>({...activityExtras(bluetoothSnapshot,bluetoothPreferences,profile.id,sharingPresence,now),...(groupRide.code?{groupCount:groupRide.snapshot?.members.length}:{}),updatedAt:ride.mode==='simulation'?now:ride.fix?.timestamp,turn:(ride.mode === 'simulation' ? 'Simulation · ' : '') + (g?.offRoute ? 'Off route · stop safely to replan' : g?.next?.text || 'Follow the route'),symbol:g?.next?.sign === 4 || g?.next?.sign===5 ? 'flag.fill' : g?.next?.sign && g.next.sign < 0 ? 'arrow.turn.up.left' : g?.next?.sign && g.next.sign > 0 ? 'arrow.turn.up.right' : 'arrow.up',distance:g?.maneuverMeters === undefined ? '—' : maneuverDistance(g.maneuverMeters,navigationOptions.unit),arrival:eta ? arrivalTime(eta.seconds,now) : '—',minutes:eta ? minutes(eta.seconds) : '—',remaining:eta ? distanceLeft(eta.meters,navigationOptions.unit) : '—'}),[g,eta,now,navigationOptions.unit,ride.mode,bluetoothSnapshot,bluetoothPreferences,profile.id,sharingPresence,ride.fix?.timestamp,groupRide.code,groupRide.snapshot]);
   const activity = useNavigationActivity(active && !g?.arrived && navigationOptions.liveActivities, activityProps);
   const run = async (task: () => Promise<unknown>) => { try { await task(); } catch (e) { setNotice(e instanceof Error ? e.message : String(e)); } };
   async function plan(journey?: Journey) {
@@ -210,6 +211,7 @@ export default function Explore() {
   }
   function cancelPendingLocation() { locationRequest.current++; setLocating(false); }
   function manualStart() {cancelLabel('start'); cancelPendingLocation();setError(''); setGpsStart(false); }
+  useEffect(()=>subscribeGroupNavigation(()=>{if(selected&&takeGroupNavigation(selected.id)){setPanelOpen(false);resumeFollowing();ride.start();if(active)ride.retryGPS();}}),[selected]); // eslint-disable-line react-hooks/exhaustive-deps
   function beginRide(simulate = false, confirmed = false) { if (vehicleLocked && !active) {setNotice('Finish your trip recording in Library before starting navigation.');return;} if (!confirmed && selected?.safetyWarnings?.length) { warningSimulation.current = simulate; setWarningRoute(selected); return; } setNow(Date.now()); setPanelOpen(false); resumeFollowing(); ride.start(simulate); }
   useEffect(()=>subscribeRideSimulation(()=>{if(takeRideSimulation()&&navigationOptions.developerMode&&selected&&!active)beginRide(true);}),[navigationOptions.developerMode,selected,active]); // eslint-disable-line react-hooks/exhaustive-deps
   function openPlanner() {

@@ -1,3 +1,6 @@
+import {currentActivityExtras} from '../../../services/activityExtras';
+import {recordingActivity} from '../../../core/liveActivity';
+import {useRecordingActivity,updateRecordingActivity} from '../../../services/useNavigationActivity';
 import GroupRiding from '../../../components/GroupRiding';
 import {useRideGroup} from '../../../groups/useRideGroup';
 import {consumeRecordingStart} from '../../../services/recordingStartRequest';
@@ -47,8 +50,8 @@ export default function RecordTrip(){
   const bottomObstruction=nativeTabs?Math.max(0,height-controlsHeight):0;
   const metadata=useMemo(()=>({id:`free-trip-${Date.now()}`,name:`Free ride · ${new Date().toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}`,startLabel:'Trip start',endLabel:'Trip finish'}),[]);
   const motion=useMotion(active),compass=useHeading(active),recorder=useRideRecorder(active,true,false,metadata,profile,motion,compass,n.askBatteryUsage);
-  const recordFix=recorder.accept;
-  const accept=React.useCallback(async (fix:import('../../../core/types').Fix)=>{if(fix.speed!==null)setPeak(v=>Math.max(v,fix.speed!*3.6));await recordFix(fix);},[recordFix]);
+  const recordFix=recorder.accept,recordSnapshot=recorder.snapshot;
+  const accept=React.useCallback(async (fix:import('../../../core/types').Fix)=>{if(fix.speed!==null)setPeak(v=>Math.max(v,fix.speed!*3.6));await recordFix(fix);const summary=recordSnapshot();if(n.liveActivities&&summary)await updateRecordingActivity({...recordingActivity(fix,summary.meters,summary.startedAt,n.unit,fix.timestamp),...currentActivityExtras(profile.id,fix.timestamp)});},[recordFix,recordSnapshot,n.liveActivities,n.unit,profile.id]);
   const location=useTripLocation(active,n.backgroundNavigation,accept),preview=useLocation(!active);
   const fix=active ? location.fix : preview.fix,valid=freshFix(fix,now),position=fix?.coordinate;
   useBluetoothLease(profile.id,active);
@@ -59,6 +62,7 @@ export default function RecordTrip(){
   const roadLimit=useTripRoadLimit(active,fix,now);
   const offlineMap=useDownloadedMaps(n.downloadedMaps,position,null);
   const meters=recorder.record?.meters || 0,startedAt=recorder.record?.startedAt || now,unit=n.unit==='mi'?'mph':'km/h';
+  useRecordingActivity(active&&n.liveActivities,{...recordingActivity(fix,meters,startedAt,n.unit,now,currentSpeed),...currentActivityExtras(profile.id,now)});
   const trail=recorder.record?.trace;
   const trailHeading=useMemo(()=>{const segment=trail?.at(-1);return segment && segment.length>1?bearing(segment[segment.length-2],segment.at(-1)!):null;},[trail]);
   const heading=useRideHeading(fix,compass,n.compass,fix?.heading!==undefined&&valid?forwardHeading(null,undefined,fix):{heading:trailHeading??0,source:'Travel direction'},now,`${metadata.id}-${active}`).heading;

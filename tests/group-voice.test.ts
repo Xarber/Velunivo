@@ -33,3 +33,8 @@ test('legacy peers still receive ICE when their offers have no session ID',async
  const factory:VoiceFactory={media:async()=>({attach(){},muteSelf(){},stop(){}}),connection:(_id,send)=>{emit=send;return {offer:async()=> 'audio',answer:async()=> 'audio',remote:async()=>{},ice:async()=>{},mute(){},close(){}};},stop:async()=>{}};
  const call=new GroupVoice('b',factory,(_id,s)=>sent.push(s),()=>{});await call.start();call.sync(['a']);await call.signal('a',{type:'offer',sdp:'audio'});emit({type:'ice',candidate:{candidate:'legacy',sdpMid:null,sdpMLineIndex:0}});assert.equal(sent.at(-1).candidate.candidate,'legacy');assert.equal(sent.at(-1).session,undefined);await call.close();
 });
+test('a muted participant still acquires the system call/audio session for receiving peers',async()=>{
+ let state:(s:string)=>void=()=>{};const counts:number[]=[];let capture=0;
+ const factory:VoiceFactory={media:async()=>({attach(){},connected:async(n,muted)=>{counts.push(n);assert.equal(muted,true);},muteSelf:async m=>{if(!m)capture++;},stop(){}}),connection:(_id,_emit,change)=>{state=change;return {offer:async()=> 'audio',answer:async()=> 'audio',remote:async()=>{},ice:async()=>{},mute(){},close(){}};},stop:async()=>{}};
+ const call=new GroupVoice('b',factory,()=>{},()=>{});await call.start(true);call.sync(['a']);state('connected');await flush();assert.equal(counts.at(-1),1);assert.equal(capture,0);await call.close();
+});

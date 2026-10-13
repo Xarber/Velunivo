@@ -11,3 +11,7 @@ export async function startTestLiveActivity():Promise<ActivityReport> {throw new
 export async function stopTestLiveActivity() {}
 
 export function useSpectatorActivity(_active:boolean,_props:NavigationActivity,_link:string){return {status:'Live Activities require a native build.'};}
+
+export function useRecordingActivity(_active:boolean,_props:NavigationActivity){return {status:'Live Activities require a native build.'};}
+
+export async function updateRecordingActivity(_props:NavigationActivity){}

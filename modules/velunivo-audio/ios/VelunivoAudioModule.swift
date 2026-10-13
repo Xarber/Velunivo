@@ -42,8 +42,11 @@ private final class NavigationSpeech: NSObject, AVSpeechSynthesizerDelegate {
     stop()
     let session = AVAudioSession.sharedInstance()
     do {
-      if GroupVoiceAudio.active { try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .allowBluetoothA2DP, .defaultToSpeaker, .mixWithOthers]) } else { try session.setCategory(.playback, mode: .voicePrompt, options: [.duckOthers, .mixWithOthers]) }
-      try session.setActive(true); ownsSession = true
+      if !GroupVoiceAudio.active {
+        try session.setCategory(.playback, mode: .voicePrompt, options: [.duckOthers, .mixWithOthers])
+        try session.setActive(true); ownsSession = true
+      }
+      // An active group call owns category/activation; announcements share it.
       let utterance = AVSpeechUtterance(string: text)
       let family = language.components(separatedBy: "-").first ?? language
       let voices = AVSpeechSynthesisVoice.speechVoices().filter { $0.language.components(separatedBy: "-").first == family }
@@ -77,8 +80,11 @@ public final class VelunivoAudioModule: Module {
     AsyncFunction("setGroupVoiceActive") { (active: Bool, owner: String) in
       let session = AVAudioSession.sharedInstance()
       if active {
+        if GroupVoiceAudio.active && GroupVoiceAudio.owner == owner { return }
+        self.speech?.stop()
         try session.setCategory(.playAndRecord, mode: .voiceChat, options: [.allowBluetooth, .allowBluetoothA2DP, .defaultToSpeaker, .mixWithOthers])
-        try session.setActive(true)
+        // CallKit activates the session after the start action succeeds.
+        // Pre-activating it can prevent the didActivate callback and leave RTC muted.
         GroupVoiceAudio.owner = owner
         GroupVoiceAudio.active = true
         VelunivoGroupCall.shared.ended = { [weak self] in self?.sendEvent("voiceCallEnded", [:]) }

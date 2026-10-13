@@ -14,6 +14,7 @@ test('installed widget renders all Velunivo factories directly before touching s
  for(const key of ['turn','symbol','distance','arrival','minutes','remaining'])assert.ok(views.includes(`values["${key}"]`));
  const widget=fs.readFileSync('node_modules/expo-widgets/ios/Widgets/WidgetLiveActivity.swift','utf8');
  assert.match(widget,/VelunivoActivitySection\(context: context/);
+ assert.equal(widget.split('context.state.name.hasPrefix("Velunivo")').length,3,'both banner and island bypass shared storage directly');
  assert.match(widget,/VelunivoActivityBanner\(context: context\)/);
  assert.match(widget,/else if #available\(iOS 18.0/,'normal Expo rendering remains for other factories');
  assert.match(widget,/banner.widgetURL\(url\)/,'deep links are preserved');

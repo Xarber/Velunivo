@@ -1,6 +1,6 @@
 import {VoiceSignal} from './model';
 export interface VideoFeed {stream?:MediaStream;url?:string;}
-export interface VoiceMedia {idle?():Promise<void>;setVideo?(enabled:boolean,peers:string[]):Promise<void>;attach(connection:VoiceConnection):void;muteSelf(muted:boolean):void|Promise<void>;stop():void;}
+export interface VoiceMedia {connected?(count:number,muted:boolean):Promise<void>;idle?():Promise<void>;setVideo?(enabled:boolean,peers:string[]):Promise<void>;attach(connection:VoiceConnection):void;muteSelf(muted:boolean):void|Promise<void>;stop():void;}
 export interface VoiceConnection {offer(restart:boolean):Promise<string>;answer():Promise<string>;remote(type:'offer'|'answer',sdp:string):Promise<void>;ice(candidate:Extract<VoiceSignal,{type:'ice'}>['candidate']):Promise<void>;mute(muted:boolean):void;close():void;}
 export interface VoiceFactory {media(muted?:boolean):Promise<VoiceMedia>;connection(id:string,emit:(signal:VoiceSignal)=>void,state:(state:string)=>void,video?:boolean):VoiceConnection;stop():Promise<void>;}
 interface VoicePeer {connection:VoiceConnection;ready:boolean;ice:Extract<VoiceSignal,{type:'ice'}>['candidate'][];retry?:ReturnType<typeof setTimeout>;busy:boolean;state:string;attempts:number;session?:string;queue:Promise<void>;retired:Set<string>;incoming:Map<string,Extract<VoiceSignal,{type:'ice'}>['candidate'][]>;}
@@ -46,7 +46,7 @@ export class GroupVoice {
  }
 
  async mute(id:string,muted:boolean){if(muted)this.muted.add(id);else this.muted.delete(id);if(id===this.id){this.selfMuted=muted;if(!muted)this.microphoneBlocked=false;await this.refreshMicrophone();}else this.peers.get(id)?.connection.mute(this.allMuted||muted);}
- private refreshMicrophone(){const count=[...this.peers.values()].filter(p=>p.state==='connected').length;this.peersChanged(count);if(!count&&!this.peers.size)void this.media?.idle?.().catch(()=>{});const wanted=count>0&&!this.selfMuted&&!this.stopped&&!this.microphoneBlocked;if(wanted===this.microphoneWanted)return Promise.resolve();this.microphoneWanted=wanted;return Promise.resolve(this.media?.muteSelf(!wanted)).catch(()=>{this.microphoneWanted=false;this.microphoneBlocked=true;this.status('Voice chat unavailable. Check microphone permission.');});}
+ private refreshMicrophone(){const count=[...this.peers.values()].filter(p=>p.state==='connected').length;this.peersChanged(count);void this.media?.connected?.(count,!count||this.selfMuted||this.microphoneBlocked).catch(()=>this.status('Voice chat unavailable. Check microphone permission.'));if(!count&&!this.peers.size)void this.media?.idle?.().catch(()=>{});const wanted=count>0&&!this.selfMuted&&!this.stopped&&!this.microphoneBlocked;if(wanted===this.microphoneWanted)return Promise.resolve();this.microphoneWanted=wanted;return Promise.resolve(this.media?.muteSelf(!wanted)).catch(()=>{this.microphoneWanted=false;this.microphoneBlocked=true;this.status('Voice chat unavailable. Check microphone permission.');});}
  async camera(enabled:boolean,peers:string[]){await this.media?.setVideo?.(enabled,peers);}
  muteAll(muted:boolean){this.allMuted=muted;for(const [id,p] of this.peers)p.connection.mute(muted||this.muted.has(id));}
  resume(){this.microphoneBlocked=false;this.refreshMicrophone();for(const id of this.peers.keys())if(this.id<id&&this.peers.get(id)?.state!=='connected')void this.offer(id,true);}

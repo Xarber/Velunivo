@@ -6,6 +6,10 @@ private struct VelunivoActivityData {
   init(_ props: String) {
     values = props.data(using: .utf8).flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] } ?? [:]
   }
+  var pausedLabel: String { values["pausedLabel"] as? String ?? "Waiting for a navigation update" }
+  var arrivalLabel: String { values["arrivalLabel"] as? String ?? "Arrival" }
+  var recording: Bool { values["recording"] as? Bool ?? false }
+  var groups: Int? { guard let count = values["groupCount"] as? Double, count.isFinite, (1...8).contains(count) else { return nil }; return Int(count) }
   var turn: String { values["turn"] as? String ?? "Open Velunivo for directions" }
   var distance: String { values["distance"] as? String ?? "—" }
   var arrival: String { values["arrival"] as? String ?? "—" }
@@ -49,13 +53,13 @@ private struct VelunivoActivityBanner: View {
         }
       }
       HStack {
-        Text("\(data.arrival) arrival")
+        Text(data.recording ? data.arrival : "\(data.arrival) \(data.arrivalLabel)")
         Spacer(minLength: 8)
         Text("\(data.minutes) · \(data.remaining)")
       }.font(.caption)
       VelunivoActivityBadges(data: data, stale: velunivoActivityIsStale(context))
       if #available(iOS 16.2, *) {
-        if context.isStale { Text("Waiting for a navigation update").font(.caption).foregroundStyle(.secondary) }
+        if context.isStale { Text(data.pausedLabel).font(.caption).foregroundStyle(.secondary) }
       }
     }
     .padding(16)
@@ -79,7 +83,7 @@ private struct VelunivoActivitySection: View {
     case "expandedBottom":
       VStack(alignment: .leading, spacing: 6) {
         Text(data.turn).font(.headline).lineLimit(2)
-        Text("\(data.arrival) arrival · \(data.minutes) · \(data.remaining)").font(.caption)
+        Text(data.recording ? "\(data.arrival) · \(data.minutes) · \(data.remaining)" : "\(data.arrival) \(data.arrivalLabel) · \(data.minutes) · \(data.remaining)").font(.caption)
         VelunivoActivityBadges(data: data, stale: velunivoActivityIsStale(context))
       }
     default:
@@ -112,11 +116,12 @@ private struct VelunivoActivityBadges: View {
       }
       if let viewers = data.viewers {
         HStack(spacing: 5) {
-          Image(systemName: "person.fill")
+          Image(systemName: "eye.fill")
           Text("\(viewers)")
           if stale { Image(systemName: "clock").foregroundStyle(Color.orange) }
         }
       }
+      if let count = data.groups { HStack(spacing: 5) { Image(systemName: "person.2.fill"); Text("\(count)") } }
     }.font(.caption)
   }
 }

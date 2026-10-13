@@ -8,7 +8,17 @@ function once(source,needle,replacement) {
  if(source.split(needle).length!==2)throw new Error('Expo Widgets source changed; review native activity patch.');
  return source.replace(needle,replacement);
 }
+function protectActivityNodes(widget){
+ const needle='let nodes = getLiveActivityNodes(';
+ if(widget.includes(needle)){
+  if(widget.split(needle).length!==3)throw new Error('Review activity configuration render branches.');
+  return widget.replaceAll(needle,'let nodes: [String: Any] = context.state.name.hasPrefix("Velunivo") ? ["__velunivo_native": true] : getLiveActivityNodes(');
+ }
+ if(widget.split('context.state.name.hasPrefix("Velunivo")').length!==3)throw new Error('Expo Widgets source changed: missing native activity configuration guard.');
+ return widget;
+}
 export function patchSources(widget,utils,views) {
+ widget=protectActivityNodes(widget);
  widget=once(widget,'    if let node = nodes[sectionName] as? [String: Any] {','    if nodes["__velunivo_native"] as? Bool == true {\n      VelunivoActivitySection(context: context, sectionName: sectionName)\n    } else if let node = nodes[sectionName] as? [String: Any] {');
  widget=once(widget,'    if #available(iOS 18.0, *) {','    if nodes["__velunivo_native"] as? Bool == true {\n      VelunivoActivityBanner(context: context)\n    } else if #available(iOS 18.0, *) {');
  utils=once(utils,'  let layout = WidgetsStorage.getString(forKey: "__expo_widgets_live_activity_\\(name)_layout") ?? ""',`${marker}\n  if name == "VelunivoNavigation" || name == "VelunivoNavigationTest" || name == "VelunivoSharedTrip" {\n    return ["__velunivo_native": true]\n  }\n  let layout = WidgetsStorage.getString(forKey: "__expo_widgets_live_activity_\\(name)_layout") ?? ""`);
@@ -23,6 +33,7 @@ export function applyPatch(directory=root) {
  let widget=fs.readFileSync(widgetPath,'utf8'),utils=fs.readFileSync(utilsPath,'utf8');
  if(widget.includes(marker)&&utils.includes(marker)) {
   // Refresh checked-in views on repeated installation without duplicating helpers.
+  widget=protectActivityNodes(widget);
   widget=widget.replace("VelunivoActivitySection(props: context.state.props, sectionName: sectionName)","VelunivoActivitySection(context: context, sectionName: sectionName)");
   widget=widget.split(`\n${marker}\n`)[0]+`\n${marker}\n`+views;
   utils=utils.replace('name == "VelunivoNavigation" || name == "VelunivoNavigationTest" {','name == "VelunivoNavigation" || name == "VelunivoNavigationTest" || name == "VelunivoSharedTrip" {');
