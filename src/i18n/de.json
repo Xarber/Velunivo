@@ -1591,5 +1591,15 @@
   "Transit on your map": "Öffentlicher Verkehr auf der Karte",
   "See mapped rail, metro and tram lines below your ride route.": "Sieh Bahn-, U-Bahn- und Straßenbahnlinien unter deiner Route.",
   "Brighter scratch borders, correct route layering and bicycle-friendly defaults.": "Hellere Erkundungsränder, Routen im Vordergrund und fahrradfreundliche Voreinstellungen.",
-  "Prefer exploration detours with more new areas: up to 35% extra distance, or up to 60% when time stays similar. Ordinary routes remain available.": "Bevorzuge Umwege durch neue Gebiete: bis zu 35 % mehr Entfernung, oder 60 % bei ähnlicher Fahrzeit. Gewöhnliche Routen bleiben verfügbar."
+  "Prefer exploration detours with more new areas: up to 35% extra distance, or up to 60% when time stays similar. Ordinary routes remain available.": "Bevorzuge Umwege durch neue Gebiete: bis zu 35 % mehr Entfernung, oder 60 % bei ähnlicher Fahrzeit. Gewöhnliche Routen bleiben verfügbar.",
+  "Open external maps": "Andere Karten-App öffnen",
+  "Record this trip in Velunivo?": "Diese Fahrt in Velunivo aufzeichnen?",
+  "Record & open maps": "Aufzeichnen und Karten öffnen",
+  "Open without recording": "Ohne Aufzeichnung öffnen",
+  "Web recording needs this page to stay visible. Background recording requires the native app.": "Zum Aufzeichnen im Web muss diese Seite sichtbar bleiben. Hintergrundaufzeichnung erfordert die native App.",
+  "Recording will start before opening maps. Background location permission is required.": "Die Aufzeichnung beginnt vor dem Öffnen der Karten. Standortzugriff im Hintergrund ist erforderlich.",
+  "Preparing recording before opening maps…": "Aufzeichnung wird vor dem Öffnen der Karten vorbereitet…",
+  "This loop reuses explored roads. Try a different distance to explore further.": "Diese Rundfahrt nutzt bereits erkundete Wege. Versuche eine andere Entfernung, um neue Gebiete zu entdecken.",
+  "Could not save the current ride": "Die aktuelle Fahrt konnte nicht gespeichert werden",
+  "More reliable exploration and clearer transit lines, with optional trip recording when opening another map app.": "Zuverlässigere Erkundung, klarere Verkehrslinien und optionale Aufzeichnung beim Öffnen einer anderen Karten-App."
 }

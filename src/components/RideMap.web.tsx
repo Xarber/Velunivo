@@ -1,3 +1,4 @@
+import {transitPaint} from '../core/transitLines';
 import {scratchBorders} from '../core/scratchBorders';
 import {useScratchViewport} from '../services/useScratchViewport';
 import {useScratchLayer} from '../services/useScratchLayer';
@@ -91,7 +92,7 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraTarget]);
   useEffect(() => { const m=map.current; if (!m || !loaded || !m.getSource('openmaptiles')) return;
-    if (transit && !m.getLayer('velunivo-transit')) m.addLayer({id:'velunivo-transit',type:'line',source:'openmaptiles','source-layer':'transportation',filter:['match',['get','class'],['rail','transit'],true,false],paint:{'line-color':'#A478E8','line-width':3,'line-opacity':.85}},m.getStyle().layers?.find(l=>l.id.startsWith('ride-'))?.id);
+    if (transit && !m.getLayer('velunivo-transit')) m.addLayer({id:'velunivo-transit',type:'line',source:'openmaptiles','source-layer':'transportation',filter:['match',['get','class'],['rail','transit'],true,false],paint:transitPaint},m.getStyle().layers?.find(l=>l.id.startsWith('ride-'))?.id);
     if (!transit && m.getLayer('velunivo-transit')) m.removeLayer('velunivo-transit');
   },[transit,loaded]);
   useEffect(() => {

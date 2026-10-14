@@ -1591,5 +1591,15 @@
   "Transit on your map": "Transporte público no mapa",
   "See mapped rail, metro and tram lines below your ride route.": "Veja linhas de trem, metrô e bonde abaixo da sua rota.",
   "Brighter scratch borders, correct route layering and bicycle-friendly defaults.": "Bordas de exploração mais claras, rotas em primeiro plano e preferências iniciais para bicicleta.",
-  "Prefer exploration detours with more new areas: up to 35% extra distance, or up to 60% when time stays similar. Ordinary routes remain available.": "Prefira desvios por áreas novas: até 35% mais distância, ou 60% se o tempo for parecido. As rotas normais continuam disponíveis."
+  "Prefer exploration detours with more new areas: up to 35% extra distance, or up to 60% when time stays similar. Ordinary routes remain available.": "Prefira desvios por áreas novas: até 35% mais distância, ou 60% se o tempo for parecido. As rotas normais continuam disponíveis.",
+  "Open external maps": "Abrir outro aplicativo de mapas",
+  "Record this trip in Velunivo?": "Registrar esta viagem no Velunivo?",
+  "Record & open maps": "Registrar e abrir mapas",
+  "Open without recording": "Abrir sem registrar",
+  "Web recording needs this page to stay visible. Background recording requires the native app.": "Para registrar na web, esta página deve permanecer visível. O registro em segundo plano exige o aplicativo nativo.",
+  "Recording will start before opening maps. Background location permission is required.": "O registro começa antes de abrir os mapas. É necessária permissão de localização em segundo plano.",
+  "Preparing recording before opening maps…": "Preparando o registro antes de abrir os mapas…",
+  "This loop reuses explored roads. Try a different distance to explore further.": "Este circuito reutiliza caminhos explorados. Tente outra distância para descobrir novas áreas.",
+  "Could not save the current ride": "Não foi possível salvar a viagem atual",
+  "More reliable exploration and clearer transit lines, with optional trip recording when opening another map app.": "Exploração mais confiável, linhas de transporte mais claras e registro opcional ao abrir outro aplicativo de mapas."
 }

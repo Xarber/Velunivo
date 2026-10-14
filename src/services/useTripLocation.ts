@@ -13,9 +13,10 @@ import { beginBackgroundLocation, locationFix } from './backgroundLocation';
 export function useTripLocation(active: boolean, background: boolean, accept: (fix: Fix) => Promise<unknown> | void) {
   const scratch=useScratchSession(active),scratchRef=useRef(scratch);useEffect(()=>{scratchRef.current=scratch;},[scratch]);
   const callback = useRef(accept); useEffect(()=>{callback.current=accept;},[accept]);
-  const [fix, setFix] = useState<Fix | null>(null), [status, setStatus] = useState('Waiting for GPS'), [error, setError] = useState('');
+  const [fix, setFix] = useState<Fix | null>(null), [status, setStatus] = useState('Waiting for GPS'), [error, setError] = useState(''),[backgroundReady,setBackgroundReady]=useState(false);
   useEffect(() => {
     if (!active) return;
+    queueMicrotask(()=>setBackgroundReady(false));
     let cancelled = false, previous = 0, watch: Location.LocationSubscription | undefined, stopBackground: (() => Promise<void>) | undefined;
     const movement = new MovementTracker(),speedTracker=new GPSSpeedTracker();
     async function receive(incoming: Fix) {
@@ -33,7 +34,7 @@ export function useTripLocation(active: boolean, background: boolean, accept: (f
         if (background && Platform.OS !== 'web') {
           try {
             const stop = await beginBackgroundLocation(receive,setError,()=>cancelled);
-            if (cancelled) {await stop();return;} stopBackground=stop; watch?.remove(); watch=undefined; setStatus('Recording · background GPS enabled');
+            if (cancelled) {await stop();return;} stopBackground=stop; watch?.remove(); watch=undefined; setBackgroundReady(true);setStatus('Recording · background GPS enabled');
           } catch(e) {if(!cancelled)setError(`${e instanceof Error ? e.message : 'Background GPS unavailable'} Recording continues while the app is open.`);}
         }
       } catch(e) {if(!cancelled){setStatus('GPS unavailable');setError(e instanceof Error ? e.message : 'GPS unavailable');}}
@@ -41,5 +42,5 @@ export function useTripLocation(active: boolean, background: boolean, accept: (f
     void start();
     return ()=>{cancelled=true;watch?.remove();void stopBackground?.();};
   },[active,background]);
-  return {fix,status,error};
+  return {fix,status,error,backgroundReady:active&&backgroundReady};
 }

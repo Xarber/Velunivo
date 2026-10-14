@@ -15,5 +15,7 @@ export function routeLayers(routes: Route[], selected: Route | null, completedMe
     behind = [...selected.coordinates.slice(0, Math.max(1, i)), cut];
     ahead = meters >= total ? [] : [cut, ...selected.coordinates.slice(Math.max(1, i))];
   }
-  return [...alternatives, ...(behind.length > 1 ? [{ id: `${selected.id}-completed`, coordinates: behind, color: ROUTE_GRAY, outline: '#56616E' }] : []), ...(ahead.length > 1 ? [{ id: `${selected.id}-selected`, coordinates: ahead, color: ROUTE_GREEN, outline: '#155E52' }] : [])];
+  const split=selected.returnStartIndex;let returning:Coord[]=[];
+  if(Number.isInteger(split)&&split!>0&&split!<selected.coordinates.length-1){const distance=cumulative(selected.coordinates)[split!];if(completedMeters===undefined||completedMeters<distance){returning=selected.coordinates.slice(split!);const remaining=selected.coordinates.slice(0,split!+1);ahead=completedMeters&&completedMeters>0?[pointAt(selected.coordinates,completedMeters),...remaining.slice(Math.max(1,cumulative(selected.coordinates).findIndex(d=>d>=completedMeters)))]:remaining;}}
+  return [...alternatives,...(returning.length>1?[{id:`${selected.id}-return`,coordinates:returning,color:ROUTE_GRAY,outline:'#56616E'}]:[]), ...(behind.length > 1 ? [{ id: `${selected.id}-completed`, coordinates: behind, color: ROUTE_GRAY, outline: '#56616E' }] : []), ...(ahead.length > 1 ? [{ id: `${selected.id}-selected`, coordinates: ahead, color: ROUTE_GREEN, outline: '#155E52' }] : [])];
 }

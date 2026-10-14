@@ -1591,5 +1591,15 @@
   "Transit on your map": "Les transports sur votre carte",
   "See mapped rail, metro and tram lines below your ride route.": "Voyez les lignes de train, métro et tram sous votre parcours.",
   "Brighter scratch borders, correct route layering and bicycle-friendly defaults.": "Bordures d’exploration plus nettes, itinéraires au premier plan et préférences adaptées au vélo.",
-  "Prefer exploration detours with more new areas: up to 35% extra distance, or up to 60% when time stays similar. Ordinary routes remain available.": "Privilégiez les détours vers de nouvelles zones : jusqu’à 35 % de distance en plus, ou 60 % si la durée reste proche. Les parcours habituels restent disponibles."
+  "Prefer exploration detours with more new areas: up to 35% extra distance, or up to 60% when time stays similar. Ordinary routes remain available.": "Privilégiez les détours vers de nouvelles zones : jusqu’à 35 % de distance en plus, ou 60 % si la durée reste proche. Les parcours habituels restent disponibles.",
+  "Open external maps": "Ouvrir une autre application de cartes",
+  "Record this trip in Velunivo?": "Enregistrer ce trajet dans Velunivo ?",
+  "Record & open maps": "Enregistrer et ouvrir les cartes",
+  "Open without recording": "Ouvrir sans enregistrer",
+  "Web recording needs this page to stay visible. Background recording requires the native app.": "Sur le web, cette page doit rester visible pour enregistrer. L’enregistrement en arrière-plan nécessite l’application native.",
+  "Recording will start before opening maps. Background location permission is required.": "L’enregistrement commencera avant l’ouverture des cartes. L’accès à la position en arrière-plan est nécessaire.",
+  "Preparing recording before opening maps…": "Préparation de l’enregistrement avant d’ouvrir les cartes…",
+  "This loop reuses explored roads. Try a different distance to explore further.": "Cette boucle reprend des routes déjà explorées. Essayez une autre distance pour découvrir de nouvelles zones.",
+  "Could not save the current ride": "Impossible d’enregistrer le trajet actuel",
+  "More reliable exploration and clearer transit lines, with optional trip recording when opening another map app.": "Exploration plus fiable, lignes de transport plus lisibles et enregistrement facultatif lors de l’ouverture d’une autre application de cartes."
 }
