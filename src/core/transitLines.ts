@@ -4,3 +4,6 @@ export function transitGeometry(elements:{id:number;type:string;tags?:Record<str
 
 export const transitColor=(kind:string|undefined)=>kind==='rail'||kind==='monorail'?'#1E90FF':'#B184A4';
 export const transitPaint:NonNullable<LineLayerSpecification['paint']>={'line-color':['case',['match',['get','subclass'],['rail','monorail'],true,false],'#1E90FF','#B184A4'],'line-width':['interpolate',['linear'],['zoom'],8,.6,14,1.5,18,2],'line-opacity':.9};
+/** Quantization prevents per-frame queries. City overviews remain supported; continental views use tiles. */
+export function transitQueryBounds(bounds:[number,number,number,number]):[number,number,number,number]|undefined{const [w,s,e,n]=bounds;if(!bounds.every(Number.isFinite)||e<=w||n<=s||e-w>1.5||n-s>1.5)return;const step=Math.max(e-w,n-s)>.4?.1:.02;return [Math.floor(w/step)*step,Math.floor(s/step)*step,Math.ceil(e/step)*step,Math.ceil(n/step)*step];}
+export const transitGeometryPaint:NonNullable<LineLayerSpecification['paint']>={...transitPaint,'line-color':['case',['match',['get','kind'],['rail','monorail'],true,false],'#1E90FF','#B184A4']};

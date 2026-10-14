@@ -54,9 +54,9 @@ export async function enrichElevation(route:Route):Promise<Route>{try{const coun
 export async function reverseAreaName(bounds:import('../core/mapArea').AreaBounds):Promise<string|undefined>{const lon=(bounds[0]+bounds[2])/2,lat=(bounds[1]+bounds[3])/2;const data=await publicJson(`https://photon.komoot.io/reverse?lon=${lon.toFixed(5)}&lat=${lat.toFixed(5)}&limit=1`);return mapAreaName(data,bounds);}
 
 /** One provider request chooses consistent snapped junctions for every leg of a loop. */
-export async function fetchExplorationItinerary(start:Coord,stops:import('../core/itinerary').RouteStop[],profile:Profile,current:()=>boolean=()=>true):Promise<Route>{
+export async function fetchExplorationItinerary(start:Coord,stops:import('../core/itinerary').RouteStop[],profile:Profile,current:()=>boolean=()=>true,end:Coord=start):Promise<Route>{
  const raw=await AsyncStorage.getItem('navigation-v1');let prefs=routePreferences(undefined);try{prefs=routePreferences(JSON.parse(raw||'{}'));}catch{}
- const q=valhallaRequest(start,start,'bike',profile,getLanguage(),prefs);q.locations=[start,...stops.map(s=>s.coordinate),start].map(([lon,lat])=>({lon,lat}));
+ const q=valhallaRequest(start,end,'bike',profile,getLanguage(),prefs);q.locations=[start,...stops.map(s=>s.coordinate),end].map(([lon,lat])=>({lon,lat}));
  const data=await publicJson('https://valhalla1.openstreetmap.de/route',q);
  if(!current())throw new Error('Selection cancelled');if(data?.trip?.legs?.length!==stops.length+1)throw new Error('Incomplete itinerary');
  const legs:Route[]=[];for(const leg of data.trip.legs){if(!current())throw new Error('Selection cancelled');legs.push(fromValhalla({trip:{legs:[leg]}},{verificationError:'Road verification unavailable'},'bike',Math.min(profile.maxSpeed,profile.ridingLimit)));}

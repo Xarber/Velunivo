@@ -1601,5 +1601,11 @@
   "Preparing recording before opening maps…": "Preparando o registro antes de abrir os mapas…",
   "This loop reuses explored roads. Try a different distance to explore further.": "Este circuito reutiliza caminhos explorados. Tente outra distância para descobrir novas áreas.",
   "Could not save the current ride": "Não foi possível salvar a viagem atual",
-  "More reliable exploration and clearer transit lines, with optional trip recording when opening another map app.": "Exploração mais confiável, linhas de transporte mais claras e registro opcional ao abrir outro aplicativo de mapas."
+  "More reliable exploration and clearer transit lines, with optional trip recording when opening another map app.": "Exploração mais confiável, linhas de transporte mais claras e registro opcional ao abrir outro aplicativo de mapas.",
+  "Smoother data sync, safer Bluetooth reconnects and better exploration alternatives.": "Sincronização mais fluida, reconexões Bluetooth mais confiáveis e melhores rotas de exploração.",
+  "Transit coverage": "Cobertura de transporte público",
+  "Transit lines refresh as you pan and zoom, with city-scale coverage.": "As linhas se atualizam ao mover e ampliar o mapa, inclusive na visão da cidade.",
+  "External route planning": "Rotas em outros aplicativos",
+  "Open another map app from the route sharing menu and optionally record your trip.": "Abra outro aplicativo de mapas pelo menu de compartilhamento e escolha se quer gravar o trajeto.",
+  "Transit map service unavailable": "O serviço do mapa de transporte está indisponível"
 }

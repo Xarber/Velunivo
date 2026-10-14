@@ -8,6 +8,7 @@ export function createRideArchive(AsyncStorage: ArchiveStorage) {
 const indexKey = 'ride-history-ids-v1';
 const summaryKey = (id: string) => `ride-summary-v1:${id}`;
 const chunkKey = (id: string, n: number) => `ride-samples-v1:${id}:${n}`;
+const summaries=new Map<string,{raw:string;live:boolean;value:RecordedRide}>();
 const liveSessions = new Set<string>();
 const listeners = new Set<() => void>();
 function subscribeRides(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; }
@@ -17,10 +18,11 @@ let pending: Promise<unknown> = Promise.resolve();
 function queue<T>(task: () => Promise<T>): Promise<T> { const next = pending.then(task, task); pending = next.catch(() => {}); return next; }
 async function readIds(): Promise<string[]> { const raw = await AsyncStorage.getItem(indexKey); return raw ? JSON.parse(raw) : []; }
 function recordedRides(): Promise<RecordedRide[]> { return queue(async () => {
-  const ids = await readIds(), all: RecordedRide[] = [];
+  const ids = await readIds(), all: RecordedRide[] = [],known=new Set(ids);for(const id of summaries.keys())if(!known.has(id))summaries.delete(id);
   for (let offset = 0; offset < ids.length; offset += 50) {
     const values = await AsyncStorage.multiGet(ids.slice(offset, offset + 50).map(summaryKey));
-    for (const [, value] of values) if (value) {
+    for (const [key, value] of values) if (value) {
+      const id=key.slice('ride-summary-v1:'.length),live=liveSessions.has(id),cached=summaries.get(id);if(cached?.raw===value&&cached.live===live){all.push(cached.value);continue;}
       let r: RecordedRide = JSON.parse(value);
       if(r.status === 'recording' && !liveSessions.has(r.id))r={...r,status:'interrupted',endedAt:r.lastFixAt||r.startedAt};
       if(r.status!=='recording' && (r.energyAnalysisVersion!==2||r.pathCleanupVersion!==2||r.reliability?.schema!==1)){
@@ -30,7 +32,7 @@ function recordedRides(): Promise<RecordedRide[]> { return queue(async () => {
         await AsyncStorage.multiSet(Array.from({length:r.chunks},(_,i)=>[chunkKey(r.id,i),JSON.stringify(repaired.samples.slice(i*100,(i+1)*100))]));
         await AsyncStorage.setItem(summaryKey(r.id),JSON.stringify(r));
       }
-      all.push(r);
+      summaries.set(r.id,{raw:value,live,value:r});all.push(r);
     }
   }
   return all;

@@ -1,0 +1,4 @@
+export type Manifest=readonly (readonly [string,string|null])[];
+export function sameManifest(a:Manifest|undefined,b:Manifest){return !!a&&a.length===b.length&&a.every(([key,value],i)=>key===b[i][0]&&value===b[i][1]);}
+/** Keep only the inexpensive source manifest and digest, never a second full ride archive. */
+export function createDigestCache(read:()=>Promise<Manifest>,compute:()=>Promise<string>){let manifest:Manifest|undefined,digest='',pending:Promise<string>|undefined,epoch=0;return {reset(){epoch++;manifest=undefined;digest='';},get():Promise<string>{if(pending)return pending;const generation=epoch;pending=(async()=>{const next=await read();if(sameManifest(manifest,next))return digest;const calculated=await compute(),after=await read();if(generation===epoch&&sameManifest(next,after)){manifest=after;digest=calculated;}return calculated;})().finally(()=>{pending=undefined;});return pending;}};}

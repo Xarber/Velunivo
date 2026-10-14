@@ -7,3 +7,8 @@ test('train lines are DodgerBlue; subway, tram and unknown classes use muted ros
 
 import {recordingRedirectReady} from '../src/core/recordingRedirect';
 test('external maps waits for the new recording GPS and native background task, never stale prior-session GPS',()=>{const now=Date.now(),fix={coordinate:[12.49,41.89] as [number,number],timestamp:now,accuracy:3,speed:0};assert(recordingRedirectReady(true,now,fix,true,false));assert(!recordingRedirectReady(true,now,fix,false,false));assert(recordingRedirectReady(true,now,fix,false,true));assert(!recordingRedirectReady(true,now,{...fix,timestamp:now-1},true,false));assert(!recordingRedirectReady(false,now,fix,true,false));});
+
+import {worthwhileExploration} from '../src/core/explorationRouting';
+import {transitQueryBounds} from '../src/core/transitLines';
+test('different exploration corridor is offered with advisory warnings, identical geometry is not',()=>{const base={...loop,coordinates:[[12.49,41.89],[12.52,41.89]] as [number,number][]},alternative={...base,coordinates:[[12.49,41.89],[12.505,41.894],[12.52,41.89]] as [number,number][]};assert(worthwhileExploration(base,alternative,emptyScratch()));assert(!worthwhileExploration(base,base,emptyScratch()));});
+test('transit query changes with panning and zooming, supports city overview and bounds continental requests',()=>{const a=transitQueryBounds([12.49,41.89,12.52,41.91])!;assert.notDeepEqual(a,transitQueryBounds([12.6,41.89,12.63,41.91]));assert(transitQueryBounds([12.1,41.5,12.9,42.1]));assert.equal(transitQueryBounds([-10,20,20,50]),undefined);assert.equal(transitQueryBounds([NaN,0,1,1]),undefined);});

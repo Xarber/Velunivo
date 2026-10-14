@@ -27,7 +27,7 @@ import MapControls from '../../../components/MapControls';
 import GlassSurface from '../../../components/GlassSurface';
 import SwipeArea from '../../../components/SwipeArea';
 import React, {useEffect,useMemo,useState,useRef} from 'react';
-import {router,useNavigation} from 'expo-router';
+import {router,useNavigation,useIsFocused} from 'expo-router';
 import {View, ScrollView, Pressable, useWindowDimensions, Platform} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useScreenWake} from '../../../services/useScreenWake';
@@ -48,6 +48,7 @@ import {tripDuration,tripAverage} from '../../../core/tripDashboard';
 import {batteryLabel} from '../../../core/vehicles';
 function KeepAwake(){useScreenWake();return null;}
 export default function RecordTrip(){
+  const focused=useIsFocused();
   const [startRequested]=useState(consumeRecordingStart),autoStarted=useRef(false);
   const [externalLink,setExternalLink]=useState(takeRecordingRedirect),[externalBackground,setExternalBackground]=useState(!!externalLink),[reviewRoute,setReviewRoute]=useState(false),[externalError,setExternalError]=useState(''),externalOpening=useRef<string|null>(null);
   const p=usePalette(),insets=useSafeAreaInsets(),{width,height}=useWindowDimensions(),navigation=useNavigation();
@@ -63,7 +64,7 @@ export default function RecordTrip(){
   const motion=useMotion(active),compass=useHeading(active),recorder=useRideRecorder(active,true,false,metadata,profile,motion,compass,n.askBatteryUsage);
   const recordFix=recorder.accept,recordSnapshot=recorder.snapshot;
   const accept=React.useCallback(async (fix:import('../../../core/types').Fix)=>{if(fix.speed!==null)setPeak(v=>Math.max(v,fix.speed!*3.6));await recordFix(fix);const summary=recordSnapshot();if(n.liveActivities&&summary)await updateRecordingActivity({...recordingActivity(fix,summary.meters,summary.startedAt,n.unit,fix.timestamp),...currentActivityExtras(profile.id,fix.timestamp)});},[recordFix,recordSnapshot,n.liveActivities,n.unit,profile.id]);
-  const location=useTripLocation(active,n.backgroundNavigation||externalBackground,accept),preview=useLocation(!active);
+  const location=useTripLocation(active,n.backgroundNavigation||externalBackground,accept),preview=useLocation(focused&&!active);
   const fix=active ? location.fix : preview.fix,valid=freshFix(fix,now),position=fix?.coordinate;
   useBluetoothLease(profile.id,active);
   const bluetooth=useBluetoothVehicle(profile.id),{preferences:bluetoothPreferences}=useBluetoothPreferences();
@@ -78,7 +79,7 @@ export default function RecordTrip(){
   const trail=recorder.record?.trace;
   const trailHeading=useMemo(()=>{const segment=trail?.at(-1);return segment && segment.length>1?bearing(segment[segment.length-2],segment.at(-1)!):null;},[trail]);
   const heading=useRideHeading(fix,compass,n.compass,fix?.heading!==undefined&&valid?forwardHeading(null,undefined,fix):{heading:trailHeading??0,source:'Travel direction'},now,`${metadata.id}-${active}`).heading;
-  useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer);},[]);
+  useEffect(()=>{if(!focused&&!active)return;const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer);},[focused,active]);
   useEffect(()=>{if(active){lockVehicle(true);return()=>lockVehicle(false);}},[active,lockVehicle]);
   // Returning to another tab leaves the dashboard mounted; going back ends and checkpoints the recording.
   useEffect(()=>navigation.addListener('beforeRemove',event=>{if(active && !leaving.current){event.preventDefault();void finish();}}),[navigation,active]); // eslint-disable-line react-hooks/exhaustive-deps

@@ -64,7 +64,7 @@ test('checkpoint writes survive restart, preserve full chunks, and cannot resurr
   const archive = createRideArchive(storage), running = { ...r, status: 'recording' as const, endedAt: undefined, lastFixAt: 30000, samples: 102, chunks: 2 };
   archive.liveRecording(r.id, true);
   await archive.persistRide(running, [{ index: 0, samples: Array.from({ length: 100 }, (_, i) => sample(1000 + i * 1000)) }, { index: 1, samples: [sample(101000), sample(102000)] }]);
-  assert.equal((await archive.recordedRides())[0].status, 'recording');
+  const first=(await archive.recordedRides())[0];assert.equal(first.status,'recording');assert.equal((await archive.recordedRides())[0],first);await archive.persistRide({...running,name:'Updated title'},[]);const edited=(await archive.recordedRides())[0];assert.notEqual(edited,first);assert.equal(edited.name,'Updated title');
   const reboot = createRideArchive(storage), recovered = (await reboot.recordedRides())[0]; assert.equal(recovered.status, 'interrupted'); assert.equal(recovered.endedAt, 30000); assert.equal((await reboot.rideSamples(recovered)).length, 102);
   const finishing = archive.persistRide({ ...running, status: 'finished', endedAt: 103000 }, []), deletion = archive.deleteRecordedRide(running);
   await Promise.all([finishing, deletion]); assert.deepEqual(await archive.recordedRides(), []); assert.equal([...data.keys()].some(k => k.startsWith('ride-samples-v1:')), false);

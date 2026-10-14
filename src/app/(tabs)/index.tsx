@@ -26,7 +26,7 @@ import TripSharing from '../../components/TripSharing';
 import {routeLink} from '../../sharing/model';
 import {shareLink} from '../../sharing/shareLink';
 import MapControls from '../../components/MapControls';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useIsFocused } from 'expo-router';
 import screenshotRoute from '../../../scripts/screenshot-route.json';
 import { useNavigationActivity } from '../../services/useNavigationActivity';
 import { maneuverDistance, arrivalTime , forwardHeading, freshFix, distanceLeft, displaySpeed , displayableFix} from '../../core/rideView';
@@ -75,6 +75,7 @@ import {remainingStops,RouteStop,reorderPoints} from '../../core/itinerary';
 import { Coord, Fix, Route } from '../../core/types';
 function Awake() { useScreenWake(); return null; }
 export default function Explore() {
+  const focused=useIsFocused();
   const p = usePalette(), { height, width } = useWindowDimensions();
 
   const wide = width >= 700, insets = useSafeAreaInsets();
@@ -137,7 +138,7 @@ export default function Explore() {
 
   const expandedPanel = planner || panelOpen || (wide && !active);
   const panelP = expandedPanel ? { ...p, dark: true, bg: '#071118', card: '#15222C', text: '#F6FAFC', muted: '#ADBCC6', line: '#30434B', accent: '#64DCC5' } : p;
-  const live = useLocation(ride.mode === 'idle');
+  const live = useLocation(focused&&ride.mode === 'idle');
   const mapFix = active ? ride.fix : live.fix;
   const mapPosition = displayableFix(mapFix,now) ? mapFix!.coordinate : undefined;
   const visibleRoutes = useMemo(() => active && selected ? [selected] : routes, [active, selected, routes]);
@@ -154,7 +155,7 @@ export default function Explore() {
   const resolvedHeading=useRideHeading(mapFix,compass,navigationOptions.compass,direction,now,`${selected?.id||'map'}-${ride.mode}`);
   const heading=resolvedHeading.heading,headingSource=ride.mode==='simulation'?'Demo travel direction':resolvedHeading.source;
   const precise = freshFix(ride.fix, now);
-  useEffect(() => { const clock = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(clock); }, []);
+  useEffect(() => {if(!focused&&!active)return; const clock = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(clock); }, [focused,active]);
   useEffect(() => () => { if (overviewTimer.current) clearTimeout(overviewTimer.current); }, []);
   useEffect(() => { lockVehicle(active); return () => lockVehicle(false); }, [active, lockVehicle]);
   const fitPadding = useMemo(() => {
@@ -199,7 +200,7 @@ export default function Explore() {
     // Explicit endpoints are carried by the queued journey, not render-time input state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingJourney, active]);
-  function shareRoute() { if (!selected) return; const r=selected; setActions([{title:'Save to Library',icon:'bookmark-outline',onPress:()=>void run(async()=>{await save(r);setNotice('Saved to your Library.');})},{title:'Share route link',icon:'link-outline',onPress:()=>void run(()=>shareLink(routeLink(r),'Plan this Velunivo route'))},{title:'Export GPX',icon:'share-outline',onPress:()=>void run(()=>shareTrack(r.coordinates))}]); }
+  function shareRoute() { if (!selected) return; const r=selected; setActions([{title:'Save to Library',icon:'bookmark-outline',onPress:()=>void run(async()=>{await save(r);setNotice('Saved to your Library.');})},{title:'Share route link',icon:'link-outline',onPress:()=>void run(()=>shareLink(routeLink(r),'Plan this Velunivo route'))},{title:'Open external maps',icon:'open-outline',onPress:()=>{setActions(null);setExternalJourney({start:r.coordinates[0],end:r.coordinates.at(-1)!,errors:[]});}},{title:'Export GPX',icon:'share-outline',onPress:()=>void run(()=>shareTrack(r.coordinates))}]); }
   async function resolveCurrentLocation() {
     const request = ++locationRequest.current;
     if (ride.mode === 'simulation' && freshFix(ride.fix, Date.now())) { const coordinate = ride.fix!.coordinate; setStart('Simulation location'); setStartPoint(coordinate); setGpsStart(false); return coordinate; }

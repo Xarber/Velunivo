@@ -7,6 +7,7 @@ export const welcomePages=[
  {icon:'shield-checkmark-outline',title:'You stay in control',text:'Check road signs and local rules. Your records stay on your device until you export or share them.'},
 ] as const;
 export const releaseDetails=[
+ {version:'2.2.2',items:[{icon:'construct-outline',title:'Fixes & Improvements',text:'Smoother data sync, safer Bluetooth reconnects and better exploration alternatives.'},{icon:'map-outline',title:'Transit coverage',text:'Transit lines refresh as you pan and zoom, with city-scale coverage.'},{icon:'share-outline',title:'External route planning',text:'Open another map app from the route sharing menu and optionally record your trip.'}]},
  {version:'2.2.1',items:[{icon:'construct-outline',title:'Fixes & Improvements',text:'More reliable exploration and clearer transit lines, with optional trip recording when opening another map app.'}]},
  {version:'2.2.0',items:[
  {icon:'compass-outline',title:'Explore a new way home',text:'Create bicycle round trips through unexplored areas, with a different return corridor.'},

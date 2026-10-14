@@ -16,7 +16,9 @@ export class ScratchFixGate {private previous?:Fix;private candidate?:{id:string
 export function scratchVisible(display:ScratchDisplay,navigating:boolean,viewer=false){return viewer||display==='always'||display==='home'&&!navigating;}
 export interface ScratchGeometry {resolution?:number;type:'FeatureCollection';features:{type:'Feature';id:string;properties:{cell:string;opacity:number;highlight:boolean};geometry:{type:'Polygon';coordinates:Coord[][]}}[];}
 /** Render continuous fog, keeping H3 indexing separate from its rounded presentation. */
-let unionCache:{key:string;polygons:Coord[][][]}={key:'__initial__',polygons:[]};
+const unionCache=new Map<string,Coord[][][]>(),projections=new Map<string,{center:[number,number];parents:Map<number,string>}>();
+function projection(id:string){let item=projections.get(id);if(!item){item={center:cellToLatLng(id),parents:new Map()};if(projections.size>=50000)projections.delete(projections.keys().next().value!);projections.set(id,item);}return item;}
+function displayCell(id:string,resolution:number){if(resolution===10)return id;const item=projection(id);let parent=item.parents.get(resolution);if(!parent){parent=cellToParent(id,resolution);item.parents.set(resolution,parent);}return parent;}
 function roundedRing(ring:Coord[]):Coord[]{let points=ring.length>1&&ring[0][0]===ring.at(-1)![0]&&ring[0][1]===ring.at(-1)![1]?ring.slice(0,-1):ring;for(let pass=0;pass<2;pass++){const next:Coord[]=[];for(let i=0;i<points.length;i++){const a=points[i],b=points[(i+1)%points.length];next.push([a[0]*.83+b[0]*.17,a[1]*.83+b[1]*.17],[a[0]*.17+b[0]*.83,a[1]*.17+b[1]*.83]);}points=next;}return [...points,points[0]];}
 /** Display aggregation only. Stored GPS cells always remain at resolution 10. */
 export function scratchDisplayResolution(bounds:[number,number,number,number]){const [w,s,e,n]=bounds,span=Math.max((e-w)*111320*Math.cos((s+n)*Math.PI/360),(n-s)*111320);return span>=18000?8:span>=5000?9:10;}
@@ -25,14 +27,14 @@ export function scratchGeometry(index:ScratchIndex,bounds:[number,number,number,
  const [west,south,east,north]=bounds;if(!bounds.every(Number.isFinite)||east<west||north<south)return {type:'FeatureCollection',features:[]};
  const resolution=scratchDisplayResolution(bounds),cellPad=resolution===8?.02:resolution===9?.008:.004;
  const pad=Math.max(cellPad,Math.min(1,(east-west+north-south)*.05));
- const ids=Object.keys(index.tiles).filter(id=>{const [lat,lon]=cellToLatLng(id);return lat>=south-pad&&lat<=north+pad&&lon>=west-pad&&lon<=east+pad;});
- const displayIds=[...new Set(ids.map(id=>resolution===10?id:cellToParent(id,resolution)))];
- const key=resolution+':'+displayIds.join(',');if(key!==unionCache.key)unionCache={key,polygons:displayIds.length?(cellsToMultiPolygon(displayIds,true) as Coord[][][]).map(p=>p.map(roundedRing)):[]};
+ const ids=Object.keys(index.tiles).filter(id=>{const [lat,lon]=projection(id).center;return lat>=south-pad&&lat<=north+pad&&lon>=west-pad&&lon<=east+pad;});
+ const displayIds=[...new Set(ids.map(id=>displayCell(id,resolution)))];
+ const key=resolution+':'+displayIds.join(',');let polygons=unionCache.get(key);if(!polygons){polygons=displayIds.length?(cellsToMultiPolygon(displayIds,true) as Coord[][][]).map(p=>p.map(roundedRing)):[];if(unionCache.size>=8)unionCache.delete(unionCache.keys().next().value!);unionCache.set(key,polygons);}
  const w=Math.max(-180,west-pad*2),e=Math.min(180,east+pad*2),s=Math.max(-90,south-pad*2),n=Math.min(90,north+pad*2),outer:Coord[]=[[w,s],[e,s],[e,n],[w,n],[w,s]];
  const feature=(id:string,rings:Coord[][],highlighted=false)=>({type:'Feature' as const,id,properties:{cell:id,opacity:1,highlight:highlighted},geometry:{type:'Polygon' as const,coordinates:rings}});
- const features=[feature('unexplored',[outer,...unionCache.polygons.map(p=>p[0])])];
+ const features=[feature('unexplored',[outer,...polygons.map(p=>p[0])])];
  // Islands inside explored loops stay covered; never silently mark the middle of a loop explored.
- for(const [i,polygon] of unionCache.polygons.entries())for(let j=1;j<polygon.length;j++)features.push(feature(`island-${i}-${j}`,[polygon[j]]));
- const marked=[...new Set(highlight.filter(id=>index.tiles[id]).map(id=>resolution===10?id:cellToParent(id,resolution)))];if(marked.length)for(const [i,polygon] of (cellsToMultiPolygon(marked,true) as Coord[][][]).entries())features.push(feature(`new-${i}`,polygon.map(roundedRing),true));
+ for(const [i,polygon] of polygons.entries())for(let j=1;j<polygon.length;j++)features.push(feature(`island-${i}-${j}`,[polygon[j]]));
+ const marked=[...new Set(highlight.filter(id=>index.tiles[id]).map(id=>displayCell(id,resolution)))];if(marked.length)for(const [i,polygon] of (cellsToMultiPolygon(marked,true) as Coord[][][]).entries())features.push(feature(`new-${i}`,polygon.map(roundedRing),true));
  return {type:'FeatureCollection',resolution,features};
 }
