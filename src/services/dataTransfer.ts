@@ -33,7 +33,7 @@ export async function exportAppData():Promise<AppBackup>{
  await scratchMap.load();await scratchMap.flush();
  const values=Object.fromEntries(await AsyncStorage.multiGet(['vehicles-v1','profile-v1','places-v1','navigation-v1','ui-language-v1','bluetooth-preferences-v1','routes-v1'])),garage=restoreGarage(values['vehicles-v1'],values['profile-v1']);
  const vehicles=await Promise.all(garage.vehicles.map(async v=>{const photos=await Promise.all((v.photos||[]).map(portablePhoto));return{...v,photo:v.photo?await portablePhoto(v.photo):null,photos};}));
- const rides=await recordedRides();const archive=await Promise.all(rides.map(async summary=>({summary,samples:await rideSamples(summary)})));
+ const rides=await recordedRides(),archive:AppBackup['rides']=[];for(const summary of rides){archive.push({summary,samples:await rideSamples(summary)});await new Promise(resolve=>setTimeout(resolve,0));}
  return portableVehicleIds(parseBackup(JSON.stringify({format:'velunivo',schema:1,exploration:await readExplorationProgress(),scratch:scratchMap.getSnapshot().index,createdAt:Date.now(),garage:{...garage,vehicles},places:restorePlaces(values['places-v1']),routes:await loadSavedRoutes(values['routes-v1']),rides:archive,navigation:restorePreferences(values['navigation-v1'],garage.vehicles[0]),language:['system',...languages].includes(values['ui-language-v1']||'')?values['ui-language-v1']:'system',bluetooth:restoreBluetoothPreferences(values['bluetooth-preferences-v1'])})),await installationId());
 }
 let applying=false;

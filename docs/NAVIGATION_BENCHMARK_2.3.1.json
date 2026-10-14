@@ -1,0 +1,23 @@
+{
+  "points": 20000,
+  "guidance": {
+    "before": {
+      "medianMs": 0.669,
+      "p95Ms": 0.928
+    },
+    "after": {
+      "medianMs": 0.019,
+      "p95Ms": 0.114
+    }
+  },
+  "eta": {
+    "before": {
+      "medianMs": 741.418,
+      "p95Ms": 771
+    },
+    "after": {
+      "medianMs": 0.192,
+      "p95Ms": 0.63
+    }
+  }
+}

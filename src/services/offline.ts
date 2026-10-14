@@ -20,13 +20,13 @@ export async function downloadArea(bounds:AreaBounds,name:string,onProgress:(p:O
   const mapStyle = downloadStyle(); if (!mapStyle) throw new Error('Set up a downloadable map provider in Settings.');
   const regions = await packs(); const existingBytes=regions.reduce((s,p)=>s+p.bytes,0); if (existingBytes >= 80_000_000) throw new Error('Remove unused regions before downloading. Stadia caching is limited to 100 MB per device.');
   if (regions.some(p=>p.state === 'active' && p.percentage < 100)) throw new Error('Pause the current download before creating another region.');
-  const created = await OfflineManager.createPack({ mapStyle, bounds, minZoom: 10, maxZoom: 14, metadata: { styleURL: mapStyle, name, createdAt: Date.now() } }, (pack,status)=>{ onProgress(pack,status); if (existingBytes + status.completedResourceSize > 90_000_000) { void pack.pause().catch(()=>{}); onError('Download paused near the 100 MB cache limit. Remove unused regions before resuming.'); } }, (_, error) => onError(error.message));
+  const created = await OfflineManager.createPack({ mapStyle, bounds, minZoom: 10, maxZoom: 14, metadata: { styleURL: mapStyle, name, createdAt: Date.now() } }, (pack,status)=>{ onProgress(pack,status);if(status.percentage>=100)notifyMapDownloads(); if (existingBytes + status.completedResourceSize > 90_000_000) { void pack.pause().catch(()=>{}); onError('Download paused near the 100 MB cache limit. Remove unused regions before resuming.'); } }, (_, error) => onError(error.message));
   notifyMapDownloads();return created;
 }
 export const deletePack = async (id: string) => { await OfflineManager.deletePack(id);notifyMapDownloads(); };
 let budgetCheck=0;
 async function enforceBudget(pack: OfflinePack, onError:(msg:string)=>void) { if (Date.now()-budgetCheck<1000) return; budgetCheck=Date.now(); try { const all=await packs(); if (all.reduce((s,p)=>s+p.bytes,0)>90_000_000) {await pack.pause();onError('Download paused near cache limit. Remove unused regions.');} } catch { /* Normal native errors are reported by its listener. */ } }
-export const listen = (id: string, onProgress: (p: OfflinePack, s: OfflinePackStatus) => void, onError: (msg: string) => void) => OfflineManager.addListener(id, (pack,status)=>{onProgress(pack,status);void enforceBudget(pack,onError);}, (_, e) => onError(e.message));
+export const listen = (id: string, onProgress: (p: OfflinePack, s: OfflinePackStatus) => void, onError: (msg: string) => void) => OfflineManager.addListener(id, (pack,status)=>{onProgress(pack,status);if(status.percentage>=100)notifyMapDownloads();void enforceBudget(pack,onError);}, (_, e) => onError(e.message));
 export const unlisten = (id: string) => OfflineManager.removeListener(id);
 
 export async function resumePack(id: string) {
@@ -38,4 +38,4 @@ export async function resumePack(id: string) {
 }
 
 /** Pack creation starts background work. Wait for actual native resource status. */
-export async function waitForMapDownload(pack:OfflinePack,onProgress:(percentage:number)=>void,signal?:AbortSignal){while(true){if(signal?.aborted){await pack.pause();throw new Error('Download cancelled.');}const status=await pack.status();onProgress(status.percentage);if(status.percentage>=100)return;if(status.state==='inactive')throw new Error('Download paused. Resume it from Downloaded Maps.');await new Promise(resolve=>setTimeout(resolve,750));}}
+export async function waitForMapDownload(pack:OfflinePack,onProgress:(percentage:number)=>void,signal?:AbortSignal){while(true){if(signal?.aborted){await pack.pause();throw new Error('Download cancelled.');}const status=await pack.status();onProgress(status.percentage);if(status.percentage>=100){notifyMapDownloads();return;}if(status.state==='inactive')throw new Error('Download paused. Resume it from Downloaded Maps.');await new Promise(resolve=>setTimeout(resolve,750));}}

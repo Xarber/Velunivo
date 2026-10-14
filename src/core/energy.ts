@@ -1,8 +1,8 @@
 import {Vehicle,Route} from './types';
-import {cumulative} from './geo';
+import {routeLengths} from './geo';
 /** Transparent range-calibrated model; terrain is used only with actual elevation samples. */
 export function routeEnergy(route:Route,vehicle:Vehicle,along=0){
- const lengths=cumulative(route.coordinates),total=lengths.at(-1)||0,meters=Math.max(0,total-along),range=vehicle.learnedRangeKm||vehicle.rangeKm||(vehicle.energyCalibration?100/vehicle.energyCalibration.percentPerKm:null);
+ const lengths=routeLengths(route.coordinates),total=lengths.at(-1)||0,meters=Math.max(0,total-along),range=vehicle.learnedRangeKm||vehicle.rangeKm||(vehicle.energyCalibration?100/vehicle.energyCalibration.percentPerKm:null);
  if(!range||!meters)return range?{percent:0,climb:0,terrain:false,exceedsRange:false}:null;
  const speed=Math.min(vehicle.maxSpeed,vehicle.ridingLimit)*vehicle.cruiseFactor,reference=vehicle.energyReferenceSpeedKmh||20;
  const speedFactor=Math.max(.65,Math.min(2,.65+.35*(speed/reference)**2));

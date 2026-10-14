@@ -1634,5 +1634,14 @@
   "Export seven days of private diagnostic logs for troubleshooting.": "Exporte sete dias de registros de diagnóstico locais para solucionar problemas.",
   "Find settings faster": "Encontre as configurações mais rápido",
   "Search settings and jump to the right control.": "Busque uma configuração e vá direto ao controle.",
-  "Bluetooth recovery, reusable exploration routes, clearer menus and reliable back navigation.": "Recuperação Bluetooth, rotas de exploração reutilizáveis, menus mais claros e navegação de retorno confiável."
+  "Bluetooth recovery, reusable exploration routes, clearer menus and reliable back navigation.": "Recuperação Bluetooth, rotas de exploração reutilizáveis, menus mais claros e navegação de retorno confiável.",
+  "Invalid ride summary": "Dados da viagem inválidos",
+  "Viewport request cancelled": "Pedido do mapa cancelado",
+  "Faster navigation and lighter map updates, with more resilient ride storage.": "Navegação mais fluida, atualizações do mapa mais leves e armazenamento de viagens mais fiável.",
+  "Scratch replay": "Repetição da exploração",
+  "Watch explored tiles appear during recorded rides, with a subtle reveal glow.": "Revê as viagens e vê surgir as zonas exploradas com um brilho discreto.",
+  "Ride data": "Dados das viagens",
+  "Damaged local records no longer hide other rides or overwrite saved places.": "Os registos locais danificados já não ocultam outras viagens nem substituem os locais guardados.",
+  "Clearer telemetry cards with independently removable visual refinements.": "Cartões de telemetria mais claros, com melhorias visuais reversíveis separadamente.",
+  "Vehicle telemetry": "Telemetria do veículo"
 }

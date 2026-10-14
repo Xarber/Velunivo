@@ -1,3 +1,4 @@
+import {diagnostic} from './diagnosticEvents';
 import {rideReliability} from './rideReliability';
 import { analyzeRideEnergy } from './rideEnergy';
 import {repairRecordedRide} from './repairRide';
@@ -23,16 +24,20 @@ function recordedRides(): Promise<RecordedRide[]> { return queue(async () => {
     const values = await AsyncStorage.multiGet(ids.slice(offset, offset + 50).map(summaryKey));
     for (const [key, value] of values) if (value) {
       const id=key.slice('ride-summary-v1:'.length),live=liveSessions.has(id),cached=summaries.get(id);if(cached?.raw===value&&cached.live===live){all.push(cached.value);continue;}
+      try {
       let r: RecordedRide = JSON.parse(value);
+      if(!r||r.id!==id||!Array.isArray(r.preview)||!r.vehicle||!Number.isInteger(r.chunks)||r.chunks<0||r.chunks>10000)throw new Error('Invalid ride summary');
+      let stored=value;
       if(r.status === 'recording' && !liveSessions.has(r.id))r={...r,status:'interrupted',endedAt:r.lastFixAt||r.startedAt};
       if(r.status!=='recording' && (r.energyAnalysisVersion!==2||r.pathCleanupVersion!==2||r.reliability?.schema!==1)){
         const raw=await AsyncStorage.multiGet(Array.from({length:r.chunks},(_,i)=>chunkKey(r.id,i)));
         const repaired=repairRecordedRide(r,raw.flatMap(([,v])=>v?JSON.parse(v):[]));
         r={...analyzeRideEnergy(repaired.summary,repaired.samples),reliability:rideReliability(repaired.samples,r.reliability?.peerReconnects)};
         await AsyncStorage.multiSet(Array.from({length:r.chunks},(_,i)=>[chunkKey(r.id,i),JSON.stringify(repaired.samples.slice(i*100,(i+1)*100))]));
-        await AsyncStorage.setItem(summaryKey(r.id),JSON.stringify(r));
+        stored=JSON.stringify(r);await AsyncStorage.setItem(summaryKey(r.id),stored);
       }
-      summaries.set(r.id,{raw:value,live,value:r});all.push(r);
+      summaries.set(r.id,{raw:stored,live,value:r});all.push(r);
+      }catch(error){diagnostic('storage','ride-read-error',{message:error instanceof Error?error.message:'Ride could not be read'});} // Preserve damaged records for backup/recovery; other rides stay usable.
     }
   }
   return all;

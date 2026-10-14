@@ -4,7 +4,7 @@ import { Route } from '../core/types';
 const indexKey = 'route-library-ids-v2', key = (id: string) => `route-library-v2:${id}`;
 let pending: Promise<unknown> = Promise.resolve();
 const valid = (v: unknown): v is Route => !!v && typeof v === 'object' && typeof (v as Route).id === 'string' && Array.isArray((v as Route).coordinates) && (v as Route).coordinates.length >= 2 && Array.isArray((v as Route).steps);
-async function read(): Promise<Route[]> { const ids: string[] = JSON.parse(await AsyncStorage.getItem(indexKey) || '[]'); const values = await AsyncStorage.multiGet(ids.map(key)); return values.flatMap(([, value]) => { if (!value) return []; const r = JSON.parse(value); return valid(r) && r.id !== 'illustrative-track' ? [withStopInstructions(r)] : []; }); }
+async function read(): Promise<Route[]> { const ids: string[] = JSON.parse(await AsyncStorage.getItem(indexKey) || '[]'); const values = await AsyncStorage.multiGet(ids.map(key)); return values.flatMap(([, value]) => { if (!value) return []; let r:unknown;try{r=JSON.parse(value);}catch{return [];}return valid(r) && r.id !== 'illustrative-track' ? [withStopInstructions(r)] : []; }); }
 export async function loadSavedRoutes(legacy: string | null): Promise<Route[]> {
   await pending;
   if (await AsyncStorage.getItem(indexKey) !== null) return read();

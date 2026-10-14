@@ -15,6 +15,7 @@ test('requests work and cancel real HTTP with React Native’s controller', asyn
       response.on('end', () => resolve(new Response(text, { status: response.statusCode || 200 })));
     });
     const abort = () => request.destroy(new Error('Aborted'));
+    if(options.signal?.aborted)abort();
     options.signal?.addEventListener('abort', abort);
     request.on('error', reject); request.on('close', () => options.signal?.removeEventListener('abort', abort));
   })) as typeof fetch;
@@ -29,5 +30,7 @@ test('requests work and cancel real HTTP with React Native’s controller', asyn
     const { body, response } = await requestJson(`http://127.0.0.1:${address.port}/search`, {}, 1000);
     assert.equal(response.status, 200); assert.equal(body.results[0].label, 'Public test place');
     await assert.rejects(requestJson(`http://127.0.0.1:${address.port}/slow`, {}, 25), /Aborted/);
+    const external=new NativeAbortController();const cancelled=requestJson(`http://127.0.0.1:${address.port}/slow`,{signal:external.signal as unknown as AbortSignal},1000);setTimeout(()=>external.abort(),10);await assert.rejects(cancelled,/Aborted/);
+    await assert.rejects(requestJson(`http://127.0.0.1:${address.port}/slow`,{signal:external.signal as unknown as AbortSignal},1000),/Aborted/);
   } finally { globalThis.AbortController = original; globalThis.fetch = originalFetch; server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); }
 });

@@ -8,14 +8,14 @@ import InfoButton from './InfoButton';
 import {useBluetoothPreferences} from '../bluetooth/react';
 import {metricVisible} from '../bluetooth/preferences';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {View, SectionList, Platform, Alert, Modal, KeyboardAvoidingView} from 'react-native';
+import {View, SectionList, Platform, AppState, Alert, Modal, KeyboardAvoidingView} from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import RideInsights from '../components/RideInsights';
 import RoutePreview from '../components/RoutePreview';
 import { pickTrack, shareTrack, shareRideData } from '../services/files';
 import { RecordedRide } from '../core/recordings';
-import { recordedRides, rideSamples, deleteRecordedRide } from '../services/rideHistory';
+import { recordedRides, rideSamples, deleteRecordedRide, subscribeRides } from '../services/rideHistory';
 import { Route , Coord } from '../core/types';
 import { Button, Field, IconButton, styles, usePalette } from '../components/ui';
 import { useStore } from '../services/store';
@@ -37,14 +37,14 @@ export default function Library({ section }: { section: string }) {
   const [placeMap,setPlaceMap]=useState(false), [rename,setRename]=useState<{id:string;name:string}|null>(null);
   const [actions, setActions] = useState<MenuAction[] | null>(null), [placeName, setPlaceName] = useState(''), [address, setAddress] = useState(''), [placePoint, setPlacePoint] = useState<Coord | null>(null);
   const [history, setHistory] = useState<RecordedRide[]>([]);
-  useFocusEffect(useCallback(() => { let cancelled = false; const refresh = () => { void recordedRides().then(r => { if (!cancelled) setHistory(r); }).catch(e => { if (!cancelled) setError(e.message); }); }; refresh(); const timer = setInterval(refresh, 5000); return () => { cancelled = true; clearInterval(timer); }; }, []));
+  useFocusEffect(useCallback(() => { if(section!=='rides')return;let cancelled = false; const refresh = () => { void recordedRides().then(r => { if (!cancelled) setHistory(r); }).catch(e => { if (!cancelled) setError(e.message); }); }; refresh(); const unsubscribe=subscribeRides(refresh),app=AppState.addEventListener('change',state=>{if(state==='active')refresh();});const changed=(event:StorageEvent)=>{if(event.key?.startsWith('ride-'))refresh();};if(Platform.OS==='web')window.addEventListener('storage',changed);return () => { cancelled = true; unsubscribe();app.remove();if(Platform.OS==='web')window.removeEventListener('storage',changed); }; }, [section]));
 
   const attached = useRef<string[]>([]), mounted = useRef(true);
   const refresh = useCallback(async () => {
     const all = await packs(); if (!mounted.current) return; setRegions(all);
     for (const r of all) if (!attached.current.includes(r.id)) { attached.current.push(r.id); await listen(r.id, (_, status) => { if (mounted.current) setRegions(v => v.map(x => x.id === status.id ? { ...x, percentage: status.percentage, bytes: status.completedResourceSize, state: status.state } : x)); }, msg => { if (mounted.current) setError(msg); }); }
   }, []);
-  useFocusEffect(useCallback(() => { const update=()=>void refresh().catch(e => setError(e.message));update();return subscribeMapDownloads(update); }, [refresh]));
+  useFocusEffect(useCallback(() => { if(section!=='maps')return;const update=()=>void refresh().catch(e => setError(e.message));update();return subscribeMapDownloads(update); }, [refresh,section]));
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; attached.current.forEach(unlisten); }; }, []);
   async function run(fn: () => Promise<unknown>) { setError(''); try { await fn(); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } }
   function deleteRegion(id: string) {

@@ -8,6 +8,7 @@ export function useCameraTarget(position: Coord | undefined, heading: number, en
   const reduced = useReducedMotion();
   useEffect(() => { latest.current = { position, heading, enabled, mode }; }, [position, heading, enabled, mode]);
   useEffect(() => {
+    if(!enabled)return;
     const tracker = new CameraTracker();
     const tick = () => {
       const input = latest.current;
@@ -15,8 +16,8 @@ export function useCameraTarget(position: Coord | undefined, heading: number, en
       const next = tracker.next({ position: input.position, heading: input.heading }, input.mode, Date.now(), reduced);
       if (next) setTarget(next);
     };
-    const timer = setInterval(tick, 100);
+    tick();const timer = setInterval(tick, 100);
     return () => clearInterval(timer);
-  }, [reduced]);
-  return target;
+  }, [reduced,enabled]);
+  return enabled?target:null;
 }
