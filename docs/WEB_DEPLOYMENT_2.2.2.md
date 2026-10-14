@@ -1,0 +1,7 @@
+# Hosted web — 2.2.2
+
+Deployed the successful web artifact from GitHub Actions run 38606741463, source revision `8040b2dbbd5826a86cf46660157bf676540ddb2e`. Checked embedded commit, index, manifest and service-worker stamp, then activated the matching release directory under the updater lock with rollback armed. `rollback-2.2.2-web-target.txt` retains the published 2.2.1 comparison baseline.
+
+Served HTML matches the artifact. Local web/peer health is healthy and the existing service remains active. A fresh isolated headless Chrome confirmed public Settings version 2.2.2 and Developer Options commit 8040b2d without JavaScript errors. Public WSS returned PeerServer OPEN. No server source update or signaling restart was required; existing source edits and native runtime selector were preserved. iOS, simulator and Android builds are still in progress at this check.
+
+Live transit-provider probes also exposed a service limitation: overpass-api.de returned HTTP 504 and Private.coffee timed out after 18 seconds on a central Rome rail query. Browser viewport tests used deterministic geometry responses and real map tiles; they do not establish live provider availability. Vector overlays and cached geometry remain usable when detail services fail. The configured endpoint can override the public providers. See the [OSM public instance documentation](https://wiki.openstreetmap.org/wiki/Overpass_API#Public_Overpass_API_instances). Physical Bluetooth reconnect validation remains outstanding.
