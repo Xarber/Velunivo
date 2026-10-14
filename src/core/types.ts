@@ -2,7 +2,7 @@ export type Coord = [number, number]; // longitude, latitude
 export type RouteKind = 'bike' | 'car' | 'track';
 export type Detail = [number, number, number | string];
 export interface Step { text: string; sign: number; index: number; distance: number; }
-export interface Route {
+export interface Route {explorationBaseId?:string;
   returnStartIndex?:number;exploration?:boolean;id: string; name: string; kind: RouteKind; coordinates: Coord[];
   steps: Step[]; details: Record<string, Detail[]>; source: 'graphhopper' | 'valhalla' | 'gpx' | 'local-osm';
   waypoints?: import('./itinerary').RouteStop[]; elevation?:number[];

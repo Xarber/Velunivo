@@ -1,3 +1,4 @@
+import VehiclePerformance from '../../../../components/VehiclePerformance';
 import VehicleMaintenance from '../../../../components/VehicleMaintenance';
 import { goBack } from '../../../../services/navigation';
 import {t} from '../../../../i18n/core';
@@ -23,6 +24,7 @@ export default function VehicleOptions() {
   const unit = navigationOptions.unit, factor = unit === 'mi' ? 1.609344 : 1, speedUnit = unit === 'mi' ? 'MPH' : 'KM/H';
   const title = ({ identity: id==='sharing-scooter'?'Speed Limits':'Name & speed limits', range: 'Range & battery', appearance: 'Icon & pictures', tuning: 'ETA tuning' } as Record<string, string>)[section] || 'Vehicle options';
   const update = (changes: Parameters<typeof updateProfile>[0]) => updateProfile(changes, id);
+  if(section==='analytics')return <VehiclePerformance id={id}/>;
   if(section==='maintenance')return <VehicleMaintenance id={id}/>;
   if(section === 'bluetooth') return <VehicleBluetooth id={id} />;
   return <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}><ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 24, gap: 18, width: '100%', maxWidth: 700, alignSelf: 'center', paddingBottom: 90 }}><View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}><IconButton label={t("Back to vehicle")} icon="chevron-back" onPress={() => goBack(`/scooter/${id}`)} /><Text style={{ color: p.text, fontSize: 25, fontWeight: '800', flex: 1 }}>{title}</Text></View>{v && <View pointerEvents={vehicleLocked ? 'none' : 'auto'} style={{ gap: 18, opacity: vehicleLocked ? .5 : 1 }}>
