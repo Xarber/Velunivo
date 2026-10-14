@@ -1127,3 +1127,5 @@ Object.assign(italian,{"Invalid ride summary": "Dati del viaggio non validi", "V
 Object.assign(italian,{"Scratch replay": "Rivedi le aree esplorate", "Watch explored tiles appear during recorded rides, with a subtle reveal glow.": "Riguarda i viaggi e vedi comparire le aree esplorate, con un leggero effetto luminoso.", "Ride data": "Dati dei viaggi", "Damaged local records no longer hide other rides or overwrite saved places.": "Un file locale danneggiato non nasconde più gli altri viaggi e non sovrascrive i luoghi salvati.", "Clearer telemetry cards with independently removable visual refinements.": "Schede della telemetria più leggibili, con ritocchi grafici rimovibili separatamente."});
 
 Object.assign(italian,{"Vehicle telemetry": "Telemetria del veicolo"});
+
+Object.assign(italian,{"Map direction": "Orientamento della mappa", "Map rotation follows your actual turn rather than anticipating the next corner.": "La mappa ruota quando svolti davvero, senza anticipare la curva successiva."});

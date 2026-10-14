@@ -1643,5 +1643,7 @@
   "Ride data": "Données des trajets",
   "Damaged local records no longer hide other rides or overwrite saved places.": "Les données locales endommagées ne masquent plus les autres trajets et n’écrasent plus les lieux enregistrés.",
   "Clearer telemetry cards with independently removable visual refinements.": "Des cartes de télémétrie plus lisibles, avec des retouches visuelles réversibles séparément.",
-  "Vehicle telemetry": "Télémétrie du véhicule"
+  "Vehicle telemetry": "Télémétrie du véhicule",
+  "Map direction": "Orientation de la carte",
+  "Map rotation follows your actual turn rather than anticipating the next corner.": "La carte pivote lorsque vous tournez réellement, sans anticiper le prochain virage."
 }
