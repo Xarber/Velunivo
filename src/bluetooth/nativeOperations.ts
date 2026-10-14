@@ -1,3 +1,4 @@
+import {diagnostic} from '../core/diagnosticEvents';
 /** BLE-PLX adapter operations, kept independent of React Native for failure-path tests. */
 export interface NativeCharacteristicInfo {
  uuid:string; isNotifying:boolean; isWritableWithResponse:boolean; isWritableWithoutResponse:boolean;
@@ -10,11 +11,11 @@ export interface NativeWriteDevice {
 let transactionSequence=0;
 export function nativeOperations(device:NativeWriteDevice,cancel:(id:string)=>Promise<unknown>,confirmNotifications:boolean,timing={timeout:5000,poll:80}){
  let ended=false,writes:Promise<void>=Promise.resolve(),notificationReady:Promise<void>=Promise.resolve();
- const transactions=new Set<string>();
+ const transactions=new Set<string>(),closeWaiters=new Set<()=>void>();
  const bounded=async<T>(operation:Promise<T>,message:string,onTimeout?:()=>void):Promise<T>=>{
-  let timer:ReturnType<typeof setTimeout>|undefined;
-  try{return await Promise.race([operation,new Promise<never>((_,reject)=>{timer=setTimeout(()=>{onTimeout?.();reject(new Error(message));},timing.timeout);})]);}
-  finally{clearTimeout(timer);}
+  let timer:ReturnType<typeof setTimeout>|undefined;let stop:()=>void=()=>{};
+  try{return await Promise.race([operation,new Promise<never>((_,reject)=>{stop=()=>reject(new Error('Bluetooth session closed'));closeWaiters.add(stop);if(ended){stop();return;}timer=setTimeout(()=>{onTimeout?.();reject(new Error(message));},timing.timeout);})]);}
+  finally{clearTimeout(timer);closeWaiters.delete(stop);}
  };
  const characteristic=async(service:string,id:string)=>{
   const found=(await bounded(device.characteristicsForService(service),'Bluetooth service discovery timed out.')).find(c=>c.uuid.toLowerCase()===id.toLowerCase());
@@ -35,7 +36,7 @@ export function nativeOperations(device:NativeWriteDevice,cancel:(id:string)=>Pr
    void notificationReady.catch(()=>{});
   },
   write(service:string,id:string,bytes:Uint8Array){
-   const copy=bytes.slice();const operation=writes.then(async()=>{
+   diagnostic('bluetooth','write-queued',{service,characteristic:id,bytes:bytes.length});const copy=bytes.slice();const operation=writes.then(async()=>{
     await notificationReady;if(ended)throw new Error('Bluetooth session closed');
     const c=await characteristic(service,id);
     if(!c.isWritableWithoutResponse&&!c.isWritableWithResponse)throw new Error('This device does not support writing to the vehicle data service.');
@@ -43,11 +44,11 @@ export function nativeOperations(device:NativeWriteDevice,cancel:(id:string)=>Pr
      if(ended)throw new Error('Bluetooth session closed');
      const transaction=`velunivo-write-${++transactionSequence}`;transactions.add(transaction);
      const value=btoa(String.fromCharCode(...copy.slice(offset,offset+20)));
-     try{await bounded(c.isWritableWithoutResponse?device.writeCharacteristicWithoutResponseForService(service,id,value,transaction):device.writeCharacteristicWithResponseForService(service,id,value,transaction),'Bluetooth write timed out.',()=>{void cancel(transaction).catch(()=>{});});}
+     try{await bounded(c.isWritableWithoutResponse?device.writeCharacteristicWithoutResponseForService(service,id,value,transaction):device.writeCharacteristicWithResponseForService(service,id,value,transaction),'Bluetooth write timed out.',()=>{ended=true;diagnostic('bluetooth','error',{message:'Native write timeout',service,characteristic:id});void cancel(transaction).catch(()=>{});});}
      finally{transactions.delete(transaction);}
     }
    });writes=operation.catch(()=>{});return operation;
   },
-  close(){ended=true;for(const id of transactions)void cancel(id).catch(()=>{});transactions.clear();}
+  close(){ended=true;for(const stop of closeWaiters)stop();closeWaiters.clear();for(const id of transactions)void cancel(id).catch(()=>{});transactions.clear();}
  };
 }

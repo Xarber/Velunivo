@@ -1,0 +1,5 @@
+export interface DiagnosticEvent {at:number;area:string;event:string;details?:Record<string,unknown>;}
+let sink:((event:DiagnosticEvent)=>void)|undefined;
+export function setDiagnosticSink(value:(event:DiagnosticEvent)=>void){sink=value;}
+export function diagnostic(area:string,event:string,details?:Record<string,unknown>){try{sink?.({at:Date.now(),area,event,details});}catch{/* Diagnostics must never stop a ride. */}}
+export function redactDiagnostic(value:unknown,key=''):unknown{if(/token|secret|password|credential|key|coordinate|latitude|longitude|serial|deviceid|address|photo|sdp|pin|code/i.test(key))return '[redacted]';if(typeof value==='string')return value.slice(0,1500).replace(/https?:\/\/[^\s)]+/g,'[url]').replace(/[a-f0-9]{24,}/gi,'[redacted]').replace(/\b-?\d{1,3}\.\d{4,}\b/g,'[coordinate]').replace(/\/(Users|home)\/[^/]+/g,'/$1/[user]');if(Array.isArray(value))return value.slice(0,30).map(v=>redactDiagnostic(v));if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).slice(0,30).map(([k,v])=>[k,redactDiagnostic(v,k)]));return value;}
