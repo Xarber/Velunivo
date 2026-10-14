@@ -1081,3 +1081,33 @@ Object.assign(italian, {
   "Observed overall pace": "Velocità media complessiva",
   "observed overall pace": "velocità media complessiva"
 });
+
+Object.assign(italian,{
+  "Exploration mode": "Modalità esplorazione",
+  "Exploration destination distance · km": "Distanza della meta da esplorare · km",
+  "Exploration destination distance · miles": "Distanza della meta da esplorare · miglia",
+  "Creates a bicycle round trip through unexplored areas. The return seeks a different route.": "Crea un percorso ciclabile di andata e ritorno attraverso zone inesplorate, cercando una strada diversa per il ritorno.",
+  "Generate exploration route": "Genera percorso di esplorazione",
+  "Find another exploration route": "Cerca un altro percorso",
+  "Clear exploration route": "Rimuovi percorso di esplorazione",
+  "Choose an exploration distance between 0.5 and 30 km.": "Scegli una distanza di esplorazione tra 0,5 e 30 km.",
+  "No usable exploration loop found. Try another distance or area.": "Nessun percorso di esplorazione disponibile. Prova un’altra distanza o zona.",
+  "Exploration destination": "Meta di esplorazione",
+  "Exploration round trip": "Giro di esplorazione",
+  "Assumed charge when disconnected · %": "Carica stimata senza connessione · %",
+  "Assuming {percent}% battery": "Carica ipotizzata: {percent}%",
+  "learned battery consumption": "consumo rilevato dai tuoi viaggi",
+  "Transit lines": "Linee del trasporto pubblico",
+  "Show mapped rail, metro and tram lines below your route. iOS uses OpenStreetMap data; other maps use OpenFreeMap. No live timetables or scooter boarding guarantees.": "Mostra le linee ferroviarie, della metro e dei tram sotto il percorso. Su iOS usa OpenStreetMap, sulle altre mappe OpenFreeMap. Non include orari in tempo reale né informazioni sul trasporto dei monopattini a bordo.",
+  "Fresh Bluetooth charge takes priority. Otherwise the configured assumed charge is used. Consumption learns from recorded battery usage; weather and load can still change it.": "La carica Bluetooth aggiornata ha la precedenza. Altrimenti viene usata quella ipotizzata nelle impostazioni. Il consumo viene stimato dai viaggi registrati, ma meteo e carico possono modificarlo.",
+  "Exploration alternatives are ready. Compare distance and estimated time before starting.": "I percorsi di esplorazione sono pronti. Confronta distanza e tempo stimato prima di partire.",
+  "Explore a new way home": "Esplora una strada nuova",
+  "Create bicycle round trips through unexplored areas, with a different return corridor.": "Crea giri ciclabili attraverso zone inesplorate, cercando un percorso diverso al ritorno.",
+  "Battery estimates that learn": "Stime della batteria più accurate",
+  "Recorded battery usage improves planning, including older rides and disconnected vehicles.": "Il consumo registrato migliora le stime, anche usando i vecchi viaggi e con il veicolo disconnesso.",
+  "Transit on your map": "Trasporto pubblico sulla mappa",
+  "See mapped rail, metro and tram lines below your ride route.": "Visualizza le linee ferroviarie, della metro e dei tram sotto il tuo percorso.",
+  "Brighter scratch borders, correct route layering and bicycle-friendly defaults.": "Bordi della mappa esplorata più luminosi, percorsi in primo piano e preferenze iniziali per strade ciclabili."
+});
+
+Object.assign(italian,{"Prefer exploration detours with more new areas: up to 35% extra distance, or up to 60% when time stays similar. Ordinary routes remain available.": "Preferisci deviazioni attraverso zone inesplorate: fino al 35% di distanza in più, o al 60% se il tempo resta simile. I percorsi normali restano disponibili."});

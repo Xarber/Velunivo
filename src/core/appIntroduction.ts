@@ -7,6 +7,12 @@ export const welcomePages=[
  {icon:'shield-checkmark-outline',title:'You stay in control',text:'Check road signs and local rules. Your records stay on your device until you export or share them.'},
 ] as const;
 export const releaseDetails=[
+ {version:'2.2.0',items:[
+ {icon:'compass-outline',title:'Explore a new way home',text:'Create bicycle round trips through unexplored areas, with a different return corridor.'},
+ {icon:'battery-half-outline',title:'Battery estimates that learn',text:'Recorded battery usage improves planning, including older rides and disconnected vehicles.'},
+ {icon:'train-outline',title:'Transit on your map',text:'See mapped rail, metro and tram lines below your ride route.'},
+ {icon:'construct-outline',title:'Fixes & Improvements',text:'Brighter scratch borders, correct route layering and bicycle-friendly defaults.'},
+ ]},
  {version:'2.1.1',items:[
  {icon:'language-outline',title:'More natural translations',text:'Clearer navigation, battery, group and recording language.'},
  {icon:'map-outline',title:'Scratch map follows your view',text:'Exploration coverage updates while moving and resizing the map.'},

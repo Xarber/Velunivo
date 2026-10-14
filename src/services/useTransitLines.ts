@@ -1,0 +1,7 @@
+import {useEffect,useState} from 'react';import {transitGeometry} from '../core/transitLines';import {requestJson} from './request';
+/** Bounded, cached mapped rail/metro/tram infrastructure. Not a timetable or service guarantee. */
+const cache=new Map<string,ReturnType<typeof transitGeometry>>();
+export function useTransitLines(enabled:boolean,bounds:[number,number,number,number]){const [data,setData]=useState(()=>transitGeometry([])),[w,s,e,n]=bounds,key=[Math.floor(w*50)/50,Math.floor(s*50)/50,Math.ceil(e*50)/50,Math.ceil(n*50)/50].join(',');
+ useEffect(()=>{if(!enabled)return;let cancelled=false;const timer=setTimeout(()=>{const old=cache.get(key);if(old){setData(old);return;}const [west,south,east,north]=key.split(',').map(Number);if(east-west>.3||north-south>.3)return;const query=`[out:json][timeout:15];way[railway~"^(rail|subway|light_rail|tram|monorail)$"](${south},${west},${north},${east});out tags geom;`;void requestJson(process.env.EXPO_PUBLIC_OVERPASS_URL||'https://overpass-api.de/api/interpreter',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:`data=${encodeURIComponent(query)}`},18000).then(({response,body})=>{if(!cancelled&&response.ok&&Array.isArray(body.elements)){const next=transitGeometry(body.elements);cache.set(key,next);if(cache.size>20)cache.delete(cache.keys().next().value!);setData(next);}}).catch(()=>{});},1000);return()=>{cancelled=true;clearTimeout(timer);};},[enabled,key]);
+ return enabled?data:transitGeometry([]);
+}

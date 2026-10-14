@@ -192,3 +192,5 @@ See [RIDING_2.1.md](RIDING_2.1.md) for battery-aware planning, bookmarks, explor
 ## 2.1.1 comparison baseline
 
 The first release for the translation, group controls, scratch viewport and developer build identity changes is documented in [UPDATE_2.1.1.md](UPDATE_2.1.1.md). All four app build jobs embed `EXPO_PUBLIC_COMMIT_SHA` from the exact Actions source revision. App-wide performance review and cleanup are deferred until user testing; preserve this version as the rollback/comparison baseline.
+
+Every application release must also update the hosted web app at https://velunivo.xcenter.it to that release's validated web artifact. Verify its displayed version/commit, PWA worker, HTTP health and PeerServer handshake, and preserve the previous static release for rollback. GitHub publication alone is not completion. Static-only updates should retain the running PeerServer.

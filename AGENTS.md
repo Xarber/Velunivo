@@ -40,3 +40,7 @@ All commits and tags must remain unsigned, including when global Git signing is 
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Hosted web updates
+
+For every Velunivo application update, also deploy the matching validated web build to https://velunivo.xcenter.it. Updating GitHub/native artifacts alone does not complete a release. Preserve rollback and verify the public version/commit, web health and PeerServer handshake. Prefer changing static release selectors without restarting healthy signaling. See docs/WEB_DEPLOYMENT_2.1.1.md for the current deployment procedure; inspect the live host before applying it.

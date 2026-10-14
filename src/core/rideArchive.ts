@@ -23,7 +23,7 @@ function recordedRides(): Promise<RecordedRide[]> { return queue(async () => {
     for (const [, value] of values) if (value) {
       let r: RecordedRide = JSON.parse(value);
       if(r.status === 'recording' && !liveSessions.has(r.id))r={...r,status:'interrupted',endedAt:r.lastFixAt||r.startedAt};
-      if(r.status!=='recording' && (r.energyAnalysisVersion!==1||r.pathCleanupVersion!==2||r.reliability?.schema!==1)){
+      if(r.status!=='recording' && (r.energyAnalysisVersion!==2||r.pathCleanupVersion!==2||r.reliability?.schema!==1)){
         const raw=await AsyncStorage.multiGet(Array.from({length:r.chunks},(_,i)=>chunkKey(r.id,i)));
         const repaired=repairRecordedRide(r,raw.flatMap(([,v])=>v?JSON.parse(v):[]));
         r={...analyzeRideEnergy(repaired.summary,repaired.samples),reliability:rideReliability(repaired.samples,r.reliability?.peerReconnects)};

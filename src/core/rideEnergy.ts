@@ -58,7 +58,7 @@ export function analyzeRideEnergy(ride:RecordedRide,samples:RideSample[]):Record
  bluetooth??=ride.bluetooth;
  const used=automaticBatteryUsage(bluetooth,ride.endedAt??ride.lastFixAt??ride.startedAt);
  const realBluetooth=ride.bluetoothConnected||(!!bluetooth&&!bluetooth.simulated);
- const result:RecordedRide={...ride,bluetooth,energy,energyAnalysisVersion:1};
+ const result:RecordedRide={...ride,bluetooth,energy,energyAnalysisVersion:2};
  if(used!==null){result.batteryUsagePercent=used;result.batteryUsageSource='bluetooth';result.batteryFeedback='answered';}
  else if(realBluetooth){if(result.batteryUsageSource==='bluetooth'){delete result.batteryUsagePercent;delete result.batteryUsageSource;result.batteryFeedback='skipped';}else if(result.batteryFeedback==='pending')result.batteryFeedback='skipped';}
  if(result.batteryFeedback==='answered'&&Number.isFinite(result.batteryUsagePercent)&&ride.meters>0)energy.batteryPercentPerKm=result.batteryUsagePercent!/(ride.meters/1000);
