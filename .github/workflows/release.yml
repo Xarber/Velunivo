@@ -15,6 +15,7 @@ concurrency:
   cancel-in-progress: true
 env:
   EXPO_PUBLIC_UPDATE_REPOSITORY: ${{ github.repository }}
+  EXPO_PUBLIC_UI_REFINEMENTS: ${{ vars.VELUNIVO_UI_REFINEMENTS || '1' }}
 jobs:
   prepare:
     permissions:
