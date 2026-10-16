@@ -17,3 +17,5 @@ test('memory persistence saves received media and removes an opted-out rider bef
 });
 
 test('neighbourhood challenges can reach beyond 4 km and never exceed 10 km',async()=>{const {areaChallenge,NEIGHBOURHOOD_MAX_METERS}=await import('../src/core/explorationChallenges');const {emptyScratch}=await import('../src/core/scratchMap');const {distance}=await import('../src/core/geo');const origin:[number,number]=[12.49,41.89],distances=Array.from({length:31},(_,i)=>{const area=areaChallenge(origin,emptyScratch(),new Date(2026,9,i+1).getTime());assert.ok(area);return distance(origin,area.coordinate);});assert.equal(NEIGHBOURHOOD_MAX_METERS,10000);assert.ok(distances.every(d=>d>=800&&d<=10000));assert.ok(distances.some(d=>d>4000));});
+
+test('controller speed is polled between optional readings at the same bounded request rate',async()=>{const {scheduledRead,reads}=await import('../src/bluetooth/plugins/m365Packets');const cycle=Array.from({length:10},(_,i)=>scheduledRead(i));assert.ok(cycle.every((r,i)=>i%2!==0||r.reg===0xb4));assert.deepEqual(new Set(cycle.filter((_,i)=>i%2===1).map(r=>r.reg)),new Set(reads.filter(r=>r.reg!==0xb4).map(r=>r.reg)));});

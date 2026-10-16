@@ -3,6 +3,9 @@ import { TelemetryUpdate, Reading, Metric } from '../types';
 import { units } from '../telemetry';
 export const NUS='6e400001-b5a3-f393-e0a9-e50e24dcca9e',TX='6e400002-b5a3-f393-e0a9-e50e24dcca9e',RX='6e400003-b5a3-f393-e0a9-e50e24dcca9e';
 export const reads=[{target:0x22,reg:0x30,size:2},{target:0x20,reg:0xb4,size:16},{target:0x22,reg:0x31,size:10},{target:0x20,reg:0xb9,size:2},{target:0x20,reg:0xb2,size:2},{target:0x20,reg:0x75,size:2}];
+const controllerRead=reads.find(r=>r.reg===0xb4)!,secondaryReads=reads.filter(r=>r.reg!==0xb4);
+/** Keep speed fresh between slower optional register reads without increasing the request rate. */
+export const scheduledRead=(tick:number)=>tick%2===0?controllerRead:secondaryReads[Math.floor(tick/2)%secondaryReads.length];
 export function readPacket(target:number,reg:number,size:number){if(![...reads,{target:0x20,reg:0x10,size:14},{target:0x20,reg:0x1a,size:2}].some(r=>r.target===target && r.reg===reg && r.size===size))throw new Error('Read register not allowlisted');const body=[3,target,1,reg,size],crc=(body.reduce((n,b)=>n+b,0)^0xffff)&0xffff;return Uint8Array.from([0x55,0xaa,...body,crc&255,crc>>8]);}
 // The only vehicle writes exposed by Velunivo: ESC lock/unlock, uint16(1).
 export function lockPacket(locked:boolean){const body=[4,0x20,3,locked?0x70:0x71,1,0],crc=(body.reduce((n,b)=>n+b,0)^0xffff)&0xffff;return Uint8Array.from([0x55,0xaa,...body,crc&255,crc>>8]);}
