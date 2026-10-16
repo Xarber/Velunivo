@@ -1,0 +1,40 @@
+{
+  "iphone": {
+    "runtime": "iOS 27.0",
+    "device": "iPhone 18 Pro",
+    "appVersion": "2.3.2",
+    "source": "Existing CI-built ARM Simulator binary, local simctl framebuffer; no local native compilation",
+    "dimensions": [
+      1206,
+      2622
+    ]
+  },
+  "ipad": {
+    "runtime": "iPadOS 27.0",
+    "device": "iPad Pro 11-inch (M5)",
+    "appVersion": "2.3.2",
+    "source": "Existing CI-built ARM Simulator binary, Device Hub landscape orientation, native simctl framebuffer",
+    "dimensions": [
+      2420,
+      1668
+    ]
+  },
+  "android": {
+    "runtime": "Android 16 / API 36",
+    "sourceRun": 38887506493,
+    "appVersion": "2.3.2",
+    "status": "Provisional; Android 17 capture pending, do not relabel"
+  },
+  "web": {
+    "appVersion": "2.4.0",
+    "source": "Responsive native web export captured with isolated Playwright browser",
+    "mobileDimensions": [
+      402,
+      874
+    ],
+    "desktopDimensions": [
+      1194,
+      834
+    ]
+  }
+}

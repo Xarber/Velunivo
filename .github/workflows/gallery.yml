@@ -1,8 +1,5 @@
 name: Refresh native AltSource gallery
 on:
-  workflow_run:
-    workflows: ['Build and release']
-    types: [completed]
   workflow_dispatch:
     inputs:
       build_run:

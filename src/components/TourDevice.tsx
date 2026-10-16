@@ -1,4 +1,13 @@
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import React from 'react';
-import {Image,View,useWindowDimensions} from 'react-native';
-/** Actual responsive app captures, framed as regular Pro devices. */
-export default function TourDevice({page}:{page:number}){const {width,height}=useWindowDimensions(),tablet=width>=760;const shots=tablet?[require('../../assets/onboarding/ipad-explore.png'),require('../../assets/onboarding/ipad-vehicles.png'),require('../../assets/onboarding/ipad-library.png'),require('../../assets/onboarding/ipad-settings.png')]:[require('../../assets/onboarding/iphone-explore.png'),require('../../assets/onboarding/iphone-vehicles.png'),require('../../assets/onboarding/iphone-library.png'),require('../../assets/onboarding/iphone-settings.png')];const frameWidth=tablet?Math.min(650,width-100):Math.min(236,(height-320)*.46);return <View accessibilityLabel={tablet?'iPad Pro app preview':'iPhone Pro app preview'} style={{alignSelf:'center',width:Math.max(150,frameWidth),aspectRatio:tablet?1194/834:402/874,borderRadius:tablet?25:35,borderWidth:7,borderColor:'#182027',overflow:'hidden',backgroundColor:'#182027',boxShadow:'0 10px 24px #00000025'}}><Image source={shots[page%shots.length]} resizeMode="cover" style={{width:'100%',height:'100%'}}/>{!tablet&&<View style={{position:'absolute',top:7,left:'36%',width:'28%',height:14,borderRadius:12,backgroundColor:'#101010'}}/>}</View>;}
+import {Image,View,Platform,useWindowDimensions} from 'react-native';
+import {nativeTourScreens} from './tourNativeScreens';
+import {usePalette} from './ui';
+/** Matching native captures: iPhone 18 Pro, iPad Pro 11-inch, Pixel 11 Pro, neutral Android tablet. */
+export default function TourDevice({page}:{page:number}){
+ const {width,height}=useWindowDimensions(),insets=useSafeAreaInsets(),p=usePalette(),android=Platform.OS==='android',tablet=android?Math.min(width,height)>=600:Platform.OS==='ios'&&Platform.isPad;
+ const shots=android?(tablet?nativeTourScreens.androidTablet:nativeTourScreens.android):tablet?nativeTourScreens.ipad:nativeTourScreens.iphone,source=shots[page%Math.max(1,shots.length)];
+ const image=source?Image.resolveAssetSource(source):null,aspect=image?image.width/image.height:tablet?(android?2560/1600:2420/1668):android?1280/2856:1206/2622,availableHeight=Math.max(150,height-insets.top-insets.bottom-420),frameWidth=tablet?Math.max(160,Math.min(600,width-96,availableHeight*aspect)):Math.max(130,Math.min(216,availableHeight*aspect));
+ if(!source)return null;
+ return <View style={{alignSelf:'center',width:frameWidth,height:(frameWidth-12)/aspect+12,borderRadius:tablet?24:34,borderWidth:6,borderColor:android?'#323638':'#44433F',overflow:'hidden',backgroundColor:p.card,boxShadow:'0 8px 22px #00000025'}}><Image source={source} resizeMode="contain" style={{width:'100%',height:'100%'}}/>{!tablet&&<View pointerEvents="none" style={{position:'absolute',top:android?12:10,left:android?'48.5%':'37%',width:android?'3%':'26%',aspectRatio:android?1:3.4,borderRadius:12,backgroundColor:'#101010'}}/>}</View>;
+}
