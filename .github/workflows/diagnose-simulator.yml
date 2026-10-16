@@ -31,8 +31,9 @@ jobs:
           python3 - <<'PY' >> "$GITHUB_ENV"
           from pathlib import Path
           import re
-          candidates=[p for p in Path('/Applications').glob('Xcode*.app') if 'beta' in p.name.lower() and not p.is_symlink()]
-          chosen=max(candidates,key=lambda p:tuple(map(int,re.findall(r'\d+',p.name))))
+          # Capture the installed iOS 27.0 runtime with its matching tools.
+          chosen=Path('/Applications/Xcode_27.app')
+          if not chosen.is_dir(): raise SystemExit('Matching installed Xcode 27 runtime tools are unavailable')
           print(f'DEVELOPER_DIR={chosen}/Contents/Developer')
           PY
           mkdir -p artifacts
@@ -43,6 +44,7 @@ jobs:
             gh release download "$RELEASE_TAG" --pattern Velunivo-simulator.app.zip --dir artifacts
           fi
           ditto -x -k artifacts/Velunivo-simulator.app.zip artifacts
+      - run: sudo mdutil -a -i off || true
       - run: python3 scripts/simulator-screenshots.py --gallery --family "${{ matrix.family }}"
       - uses: actions/upload-artifact@v4
         if: always()

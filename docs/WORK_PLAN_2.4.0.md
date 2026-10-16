@@ -16,3 +16,5 @@ Priority order:
 - [ ] Localizations, regressions, responsive/low-end browser checks, CI, hosted deployment, concise feature suggestions.
 
 Baseline: 2.3.2 / 11a0301. Native build 38625449873 succeeded. Gallery 38628316560 reused iPhone images and produced no fresh iPad images: simctl bootstatus timed out, install timed out, then clone/create/shutdown/delete all stalled. Investigate runner CoreSimulator boot health rather than blaming iPad layout. Benchmark tooling fix from prior turn is uncommitted and must be preserved.
+
+Capture diagnostic 38859249274: clean Pro devices + Device Hub still stall in installation on the 7 GB hosted runner. Test matching installed Xcode 27.0 runtime tools next; native compilation remains on beta. No local runtime or compilation.
