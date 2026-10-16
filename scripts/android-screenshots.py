@@ -51,11 +51,26 @@ def screenshot(name):
     xml,elements=nodes();ROOT.joinpath(PREFIX+'-'+name+'.xml').write_text(xml)
     if not page_matches(name,elements):raise RuntimeError('Wrong Android page: '+name)
     return {'screen':name,'width':width,'height':height}
+def launch_page(path):
+    # API 37 can briefly drop its package service when display metrics change.
+    # Verify the installed package and wait for ActivityManager to resolve it.
+    for attempt in range(12):
+        try:
+            package=adb('shell','dumpsys','package',APP)
+            if 'versionName=' not in package:
+                if attempt==11:raise RuntimeError('Installed app not registered: '+package[-2000:])
+                time.sleep(2);continue
+            adb('shell','am','start','-W','-n',APP+'/.MainActivity','-a','android.intent.action.VIEW','-d','velunivo://'+path,APP)
+            return
+        except subprocess.CalledProcessError:
+            if attempt==11:raise
+            time.sleep(2)
+
 def main():
     ROOT.mkdir(exist_ok=True)
     # sys.boot_completed can precede the package service settling on API 37.
     for attempt in range(3):
-        try:adb('install','-r','-g',str(ROOT/'Velunivo.apk'),timeout=120);break
+        try:adb('install','--no-streaming','-r','-g',str(ROOT/'Velunivo.apk'),timeout=120);break
         except subprocess.CalledProcessError as error:
             output=str(error.output)
             if attempt==2 or 'INSTALL_FAILED' in output or 'not enough space' in output:raise
@@ -65,7 +80,7 @@ def main():
     adb('shell','settings','put','system','accelerometer_rotation','0');adb('shell','settings','put','system','user_rotation','0')
     adb('emu','geo','fix','9.1900','45.4642');adb('logcat','-c');screens=[]
     for name,path in [('explore','/'),('library','/offline'),('vehicles','/scooter'),('settings','/settings')]:
-        adb('shell','am','start','-W','-n',APP+'/.MainActivity','-a','android.intent.action.VIEW','-d','velunivo://'+path,APP)
+        launch_page(path)
         time.sleep(15 if name=='explore' else 3);wait_for_page(name)
         if name=='explore':
             # Deliver fixes after permissions and the app's watcher are ready.
@@ -73,8 +88,10 @@ def main():
         time.sleep(5)
         screens.append(screenshot(name))
     api=adb('shell','getprop','ro.build.version.sdk').strip()
+    package=adb('shell','dumpsys','package',APP);version=re.search(r'versionName=([^\s]+)',package)
+    if not version:raise RuntimeError('Installed app version could not be verified')
     if api!='37':raise RuntimeError('Android 17/API 37 is required; got '+api)
-    ROOT.joinpath(PREFIX+'-capture.json').write_text(json.dumps({'platform':'android','status':'fresh','api':int(api),'family':FAMILY,'profile':os.environ.get('CAPTURE_PROFILE'),'screens':screens}))
+    ROOT.joinpath(PREFIX+'-capture.json').write_text(json.dumps({'platform':'android','status':'fresh','api':int(api),'appVersion':version.group(1),'family':FAMILY,'profile':os.environ.get('CAPTURE_PROFILE'),'screens':screens}))
 if __name__=='__main__':
     try:main()
     finally:

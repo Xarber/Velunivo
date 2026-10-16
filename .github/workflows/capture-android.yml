@@ -1,5 +1,8 @@
 name: Capture native Android onboarding
 on:
+  workflow_run:
+    workflows: ['Build and release']
+    types: [completed]
   workflow_dispatch:
     inputs:
       build_run:
@@ -12,7 +15,29 @@ concurrency:
   group: android-onboarding-capture
   cancel-in-progress: true
 jobs:
+  identify:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    outputs:
+      run: ${{ steps.run.outputs.run }}
+      ready: ${{ steps.run.outputs.ready }}
+    steps:
+      - id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_RUN: ${{ inputs.build_run || github.event.workflow_run.id }}
+          MANUAL: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          [[ "$BUILD_RUN" =~ ^[0-9]+$ ]] || exit 1
+          echo "run=$BUILD_RUN" >> "$GITHUB_OUTPUT"
+          if [[ "$MANUAL" == 'true' ]]; then
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          else
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN/jobs?per_page=100" --jq 'any(.jobs[]; .name == "publish" and .conclusion == "success")' | sed 's/^/ready=/' >> "$GITHUB_OUTPUT"
+          fi
   capture:
+    needs: identify
+    if: needs.identify.outputs.ready == 'true' 
     strategy:
       fail-fast: false
       matrix:
@@ -30,7 +55,7 @@ jobs:
     env:
       ANDROID_USER_HOME: ${{ github.workspace }}/.android-capture
       GH_TOKEN: ${{ github.token }}
-      BUILD_RUN: ${{ inputs.build_run }}
+      BUILD_RUN: ${{ needs.identify.outputs.run }}
       CAPTURE_FAMILY: ${{ matrix.family }}
       CAPTURE_SIZE: ${{ matrix.size }}
       CAPTURE_DENSITY: ${{ matrix.density }}
@@ -71,6 +96,10 @@ jobs:
           [[ "$BUILD_RUN" =~ ^[0-9]+$ ]] || exit 1
           mkdir -p artifacts
           gh run download "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --name android --dir artifacts
+      - name: Verify existing APK identity before starting Android
+        run: |
+          "$ANDROID_HOME/build-tools/37.0.0/aapt2" dump badging artifacts/Velunivo.apk > artifacts/android-apk.log
+          head -1 artifacts/android-apk.log
       - name: Enable hosted emulator acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -97,3 +126,45 @@ jobs:
             artifacts/android-*.json
             artifacts/android-*.xml
             artifacts/android-*.log
+
+  publish:
+    needs: capture
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    concurrency:
+      group: android-gallery-publication
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: onboarding-native-android-*
+          path: artifacts
+          merge-multiple: true
+      - name: Validate both native galleries before staging distribution metadata
+        run: python3 scripts/stage-android-screenshots.py artifacts > artifacts/android-gallery.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-distribution-screenshots
+          path: |
+            fastlane/metadata/android/*/images/phoneScreenshots
+            fastlane/metadata/android/*/images/tenInchScreenshots
+            artifacts/android-gallery.json
+      - name: Refresh repository metadata only for its current app version
+        run: |
+          VERSION=$(python3 -c "import json;print(json.load(open('artifacts/android-capture.json'))['appVersion'])")
+          CURRENT=$(python3 -c "import json;print(json.load(open('package.json'))['version'])")
+          if [[ "$VERSION" != "$CURRENT" ]]; then
+            echo '::notice::Historical build captured; metadata artifact retained without replacing current previews.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add fastlane/metadata/android assets/onboarding/android-*.png assets/onboarding/provenance.json
+          if git diff --cached --quiet; then exit 0; fi
+          git -c commit.gpgsign=false commit --no-gpg-sign -m "docs: Refresh Android native previews for $VERSION"
+          git push origin HEAD:main
