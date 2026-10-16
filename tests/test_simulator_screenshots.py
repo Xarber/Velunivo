@@ -13,6 +13,12 @@ spec.loader.exec_module(sim)
 
 
 class SimulatorVerificationTests(unittest.TestCase):
+    def test_legacy_ui_always_selects_the_owned_device(self):
+        with patch.object(sim,'simulator_app',return_value=Path('/Applications/Simulator.app')),patch.object(sim,'run') as run:
+            sim.open_simulator('owned-device')
+            self.assertIn('owned-device',run.call_args.args)
+            self.assertIn('-CurrentDeviceUDID',run.call_args.args)
+
     def test_ocr_parses_only_real_text_arrays_after_framework_diagnostics(self):
         self.assertEqual(sim.parse_screenshot_text('Vision: model loaded\n["Library", "Saved Places"]\n'),['Library','Saved Places'])
         with self.assertRaises(RuntimeError):sim.parse_screenshot_text('Vision: model loaded\nundefined')
@@ -56,7 +62,7 @@ class SimulatorVerificationTests(unittest.TestCase):
             (app / 'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier': 'com.apple.iphonesimulator'}))
             with patch.dict(sim.os.environ, {'DEVELOPER_DIR': str(developer)}), patch.object(sim, 'run') as commands, patch.object(sim.time, 'sleep'), patch.object(sim, 'best_effort', return_value=None):
                 sim.landscape('owned-device')
-                self.assertEqual(commands.call_args_list[0].args, ('open', '-a', str(app)))
+                self.assertEqual(commands.call_args_list[0].args, ('open', '-a', str(app), '--args', '-CurrentDeviceUDID', 'owned-device'))
 
     def test_missing_simulator_gui_does_not_block_headless_install(self):
         with patch.dict(sim.os.environ, {'DEVELOPER_DIR': '/missing/beta/Developer'}), patch.object(Path, 'is_dir', return_value=False), patch.object(sim, 'best_effort', return_value=None):

@@ -34,8 +34,11 @@ def run(*args, timeout=60):
             # killing only its parent. Kill our owned process group, then bound draining.
             try:
                 os.killpg(process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
+            except (ProcessLookupError, PermissionError):
+                # CoreSimulator can attach protected helper children. Still kill
+                # our own command and bound draining instead of aborting cleanup.
+                try: process.kill()
+                except (ProcessLookupError, PermissionError): pass
             try:
                 process.communicate(timeout=2)
             except subprocess.TimeoutExpired:
@@ -140,10 +143,9 @@ def open_simulator(udid, select=False):
         print('::warning::No installed Device Hub or Simulator UI found; using headless capture.', flush=True)
         return False
     if app.name == 'Simulator.app':
-        # The device is already booted; the legacy argument attempts to boot
-        # it again and can display a blocking Simulator alert.
-        if select: run('open','-a',str(app),'--args','-CurrentDeviceUDID',udid,timeout=30)
-        else: run('open','-a',str(app),timeout=30)
+        # Always select the owned UUID. Opening without it can boot another
+        # default device, rotate the wrong window and exhaust runner memory.
+        run('open','-a',str(app),'--args','-CurrentDeviceUDID',udid,timeout=30)
     else:
         # Device Hub ignores the legacy launch argument. Target the owned
         # simulated device window using its registered devices URL scheme.
@@ -266,7 +268,21 @@ def dismiss_owned_url_prompt(udid, family):
         run('xcrun','simctl','io',udid,'screenshot',str(probe),timeout=20)
         if not any(re.search(r'Open in.+Velunivo', value, re.I) for value in screenshot_text(probe)):return
         open_simulator(udid)
-        run('osascript','-e','tell application "Simulator" to activate','-e','tell application "System Events" to tell process "Simulator" to key code 36',timeout=20)
+        run('osascript','-e','tell application "Simulator" to activate','-e','''tell application "System Events"
+            tell process "Simulator"
+                set buttons to entire contents of front window
+                repeat with element in buttons
+                    try
+                        if role of element is "AXButton" and name of element is "Open" then
+                            perform action "AXPress" of element
+                            return
+                        end if
+                    end try
+                end repeat
+                key code 48
+                key code 36
+            end tell
+        end tell''',timeout=20)
     finally:
         probe.unlink(missing_ok=True)
 
