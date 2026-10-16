@@ -9,6 +9,8 @@ class NativeCaptureTests(unittest.TestCase):
         self.assertTrue(capture.page_matches('library',[header,bottom]))
         overlay=ET.Element('node',{'package':'com.google.android.permissioncontroller'})
         self.assertFalse(capture.page_matches('library',[header,overlay]))
+        accuracy=ET.Element('node',{'package':'com.google.android.gms'})
+        self.assertFalse(capture.page_matches('library',[header,accuracy]))
     def test_launcher_text_never_counts_as_native_app_content(self):
         home=ET.Element('node',{'package':'com.google.android.apps.nexuslauncher','text':'Your ride','bounds':'[0,0][100,100]'})
         self.assertFalse(capture.page_matches('explore',[home]))

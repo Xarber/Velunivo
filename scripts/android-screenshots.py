@@ -18,7 +18,7 @@ def nodes():
     text=adb('shell','cat','/sdcard/velunivo-qa.xml');return text,list(ET.fromstring(text).iter('node'))
 def page_matches(name,elements):
     expected={'explore':'Your ride','library':'Library','vehicles':'Vehicles','settings':'Settings'}[name]
-    if any(e.get('package')=='com.google.android.permissioncontroller' for e in elements):return False
+    if any(e.get('package') in ('com.google.android.permissioncontroller','com.google.android.gms') for e in elements):return False
     for e in elements:
         label=e.get('text') or e.get('content-desc','');bounds=list(map(int,re.findall(r'\d+',e.get('bounds',''))))
         if e.get('package')==APP and expected in label and (name=='explore' or len(bounds)==4 and bounds[1]<700):return True
@@ -31,8 +31,9 @@ def wait_for_page(name):
             # UIAutomator can be killed during initial OS/permission settling. Retry within the same deadline.
             time.sleep(3);continue
         ROOT.joinpath(PREFIX+'-intro.xml').write_text(text)
+        accuracy=any(e.get('resource-id')=='com.google.android.gms:id/message' and 'Location Accuracy' in e.get('text','') for e in elements)
         system=any(e.get('package')=='com.google.android.permissioncontroller' for e in elements)
-        choices=['While using the app','Only this time','Allow','Continue'] if system else ['Skip tour','Let’s ride',"Let's ride",'Continue']
+        choices=['No thanks'] if accuracy else ['While using the app','Only this time','Allow','Continue'] if system else ['Skip tour','Let’s ride',"Let's ride",'Continue']
         button=next((e for e in elements if (e.get('text') or e.get('content-desc','')).strip() in choices and e.get('clickable')=='true'),None)
         if button is not None:
             values=list(map(int,re.findall(r'\d+',button.get('bounds',''))))
