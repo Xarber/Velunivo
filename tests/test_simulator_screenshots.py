@@ -206,7 +206,7 @@ class SimulatorVerificationTests(unittest.TestCase):
             if args[2] == 'create': return 'owned-fresh'
             if args[2] == 'launch': return 'app.velunivo.mobile: 1234'
             return ''
-        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'run', side_effect=command), patch.object(sim, 'boot_and_install'), patch.object(sim, 'diagnostics'), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill'):
+        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'run', side_effect=command), patch.object(sim, 'boot_and_install'), patch.object(sim,'screenshot_text',return_value=['Your ride']), patch.object(sim, 'diagnostics'), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill'):
             sim.capture_once(devices, 'iphone')
         self.assertFalse(any(c[2] == 'clone' for c in calls))
         self.assertTrue(any(c[2] == 'create' for c in calls))
@@ -219,7 +219,7 @@ class SimulatorVerificationTests(unittest.TestCase):
             if args[2] == 'create': return 'owned-device'
             if args[2] == 'launch': return 'app.velunivo.mobile: 1234'
             return ''
-        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'open_simulator'), patch.object(sim, 'simulator_app', return_value=None), patch.object(sim, 'run', side_effect=command), patch.object(sim, 'diagnostics'), patch.object(sim, 'landscape'), patch.object(sim, 'verify_landscape'), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill', side_effect=ProcessLookupError):
+        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'open_simulator'), patch.object(sim, 'simulator_app', return_value=None), patch.object(sim, 'run', side_effect=command), patch.object(sim, 'diagnostics'), patch.object(sim, 'landscape'), patch.object(sim, 'verify_landscape'), patch.object(sim,'screenshot_text',return_value=['Your ride']), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill', side_effect=ProcessLookupError):
             with self.assertRaises(ProcessLookupError):
                 sim.capture_once(self.devices(), 'ipad')
         self.assertNotIn('io', [c[2] for c in calls])
@@ -231,7 +231,7 @@ class SimulatorVerificationTests(unittest.TestCase):
             if args[2] == 'status_bar': raise subprocess.TimeoutExpired(args, 10)
             if args[2] == 'launch': return 'app.velunivo.mobile: 1234'
             return ''
-        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'run', side_effect=command) as commands, patch.object(sim, 'boot_and_install'), patch.object(sim, 'diagnostics'), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill'):
+        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'run', side_effect=command) as commands, patch.object(sim, 'boot_and_install'), patch.object(sim,'screenshot_text',return_value=['Your ride']), patch.object(sim, 'diagnostics'), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill'):
             sim.capture_once(self.devices(), 'iphone')
             self.assertTrue(any(c.args[2] == 'io' for c in commands.call_args_list))
 
@@ -240,7 +240,7 @@ class SimulatorVerificationTests(unittest.TestCase):
             if args[2] == 'create': return 'owned-device'
             if args[2] == 'launch': return 'app.velunivo.mobile: 1234'
             return ''
-        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'open_simulator'), patch.object(sim, 'simulator_app', return_value=None), patch.object(sim, 'run', side_effect=command) as commands, patch.object(sim, 'diagnostics'), patch.object(sim, 'landscape'), patch.object(sim, 'verify_landscape'), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill') as survival:
+        with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'open_simulator'), patch.object(sim, 'simulator_app', return_value=None), patch.object(sim, 'run', side_effect=command) as commands, patch.object(sim, 'diagnostics'), patch.object(sim, 'landscape'), patch.object(sim, 'verify_landscape'), patch.object(sim,'screenshot_text',return_value=['Your ride']), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill') as survival:
             sim.capture_once(self.devices(), 'iphone')
             self.assertEqual(survival.call_args_list, [unittest.mock.call(1234, 0), unittest.mock.call(1234, 0)])
             self.assertTrue(any(c.args[2] == 'io' for c in commands.call_args_list))
