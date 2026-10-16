@@ -58,7 +58,7 @@ jobs:
           cp scripts/pixel-11-pro-device.xml "$ANDROID_USER_HOME/devices.xml"
           cp scripts/pixel-11-pro-device.xml "$HOME/.android/devices.xml"
           avdmanager list device > artifacts/android-device-profiles.log
-          if ! grep -q 'system-images;android-37.0;google_apis;x86_64' artifacts/android-sdk-packages.log; then
+          if ! grep -Eq 'system-images[/;]android-37[.]0[/;]google_apis[/;]x86_64' artifacts/android-sdk-packages.log; then
             echo '::error::The configured Android SDK repository does not supply the Android 17 emulator image. Refusing an older runtime with a new label.'
             exit 1
           fi

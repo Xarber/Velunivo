@@ -37,3 +37,5 @@ User-profile loading is explicitly scoped to a disposable CI `ANDROID_USER_HOME`
 Pixel profile validation uses the schema's `xxhdpi` density name (480 dpi) rather than the invalid literal `480dpi`. CI selects the explicit 23.0 tools directory, avoiding a pre-existing `latest` directory that caused SDK Manager to install refreshed tools into `latest-2` while the command path still selected older tools.
 
 Android 17's initial tablet attempt booted but could not install the existing APK: PackageInstaller reported “Requested internal only, but not enough space”. The capture AVD now has an explicit 8 GB data partition rather than the old tablet profile's small default. This is CI storage only and does not consume the Mac's disk. Such permanent installation failures are logged without pointless retries.
+
+Tools 23.0's compatibility wrapper delegates to the new Android CLI, whose package inventory uses slash-separated IDs rather than semicolons. Runtime preflight accepts both official formats. The custom Pixel 11 Pro display profile was positively listed by the refreshed toolchain after correcting the density schema.
