@@ -13,6 +13,10 @@ spec.loader.exec_module(sim)
 
 
 class SimulatorVerificationTests(unittest.TestCase):
+    def test_permission_dialog_is_never_accepted_as_gallery_proof(self):
+        for screen in ['explore','library','vehicles','navigation']:
+            with self.assertRaises(RuntimeError):sim.verify_screen_text(['Library','Vehicles','Simulation','Allow Once','Allow While Using App'],screen)
+
     def test_requested_installed_type_does_not_need_a_precreated_template(self):
         import json,os
         outputs=[json.dumps({'devicetypes':[{'name':'iPhone 17 Pro','identifier':'type17'}]}),json.dumps({'runtimes':[{'identifier':'com.apple.CoreSimulator.SimRuntime.iOS-27-0','isAvailable':True}]})]

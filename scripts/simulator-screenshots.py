@@ -270,6 +270,8 @@ def screenshot_text(path):
 
 
 def verify_screen_text(text, screen):
+    if any(value.strip() in ('Allow Once','Allow While Using App','Don’t Allow',"Don't Allow") for value in text):
+        raise RuntimeError('Screenshot captured a system permission dialog, not a clean app page')
     if any(re.search(r'Open in.+Velunivo', value, re.I) for value in text):
         raise RuntimeError('Screenshot captured the system Open URL dialog, not an app page')
     if screen == 'library' and 'Library' not in text[:8]:
@@ -326,7 +328,7 @@ def capture_gallery(udid, family, pid):
 
 def capture_once(devices, family, gallery=False):
     global ATTEMPT_DEADLINE
-    ATTEMPT_DEADLINE=time.monotonic()+max(240,int(os.environ.get('VELUNIVO_CAPTURE_BOOT_TIMEOUT','30'))+240)
+    ATTEMPT_DEADLINE=time.monotonic()+max(480,int(os.environ.get('VELUNIVO_CAPTURE_BOOT_TIMEOUT','30'))+480)
     runtime, template = select_device(devices, family)
     device_type = template.get('deviceTypeIdentifier')
     if not device_type:
@@ -345,8 +347,8 @@ def capture_once(devices, family, gallery=False):
         boot_and_install(udid, family)
         if gallery: seed_gallery(udid)
         # Public fixture, on this run's disposable Simulator only.
-        best_effort('xcrun', 'simctl', 'privacy', udid, 'grant', 'location', BUNDLE, timeout=10)
-        best_effort('xcrun', 'simctl', 'location', udid, 'set', '45.4642,9.1900', timeout=10)
+        run('xcrun', 'simctl', 'privacy', udid, 'grant', 'location', BUNDLE, timeout=60)
+        best_effort('xcrun', 'simctl', 'location', udid, 'set', '45.4642,9.1900', timeout=60)
         if family == 'ipad':
             landscape(udid)
         launch = run('xcrun', 'simctl', 'launch', udid, BUNDLE, timeout=90)
@@ -365,6 +367,7 @@ def capture_once(devices, family, gallery=False):
         run('xcrun', 'simctl', 'io', udid, 'screenshot', str(ARTIFACTS / f'{family}.png'), timeout=30)
         if family == 'ipad':
             verify_landscape(ARTIFACTS / 'ipad.png')
+        verify_screen_text(screenshot_text(ARTIFACTS/f'{family}.png'),'explore')
         startup=ARTIFACTS/f'{family}.png'
         if startup.exists():
             shutil.copy(startup,ARTIFACTS/f'proof-startup-{family}.png')
