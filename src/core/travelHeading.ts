@@ -49,7 +49,7 @@ export class TravelHeadingTracker {
   const compassValid=enabled&&compass.heading!==null&&Number.isFinite(compass.heading)&&now>=compass.timestamp-1000&&now-compass.timestamp<3000;
   if(!compassValid){this.mismatchSince=null;this.alignedSince=null;return this.confirm({heading:freshCourse?this.course!:fallback.heading,source:freshCourse?'GPS direction':fallback.source,travelOverride:false},moving,now);}
   const disagreement=freshCourse?Math.abs(headingDelta(compass.heading!,this.course!)):0;
-  if(moving&&freshCourse&&disagreement>=50){this.alignedSince=null;this.stoppedSince=null;this.mismatchSince??=now;if(now-this.mismatchSince>=8000&&!this.override){this.override=true;this.compassOffset=headingDelta(compass.heading!,this.course!);}}
+  if(moving&&freshCourse&&disagreement>=40){this.alignedSince=null;this.stoppedSince=null;this.mismatchSince??=now;if(now-this.mismatchSince>=8000&&!this.override){this.override=true;this.compassOffset=headingDelta(compass.heading!,this.course!);}}
   else{
    this.mismatchSince=null;
    if(this.override){

@@ -1,3 +1,4 @@
+import {canonicalJson} from './canonicalJson';
 import {mergeSettingEdits,applySettingEdits,legacySettingEdits} from './syncSettings';
 import {SyncEnvelope} from './syncPrivateData';
 import {combineBackups,AppBackup} from './dataTransfer';
@@ -19,6 +20,6 @@ export function automaticMerge(local:AutomaticEnvelope,incoming:AutomaticEnvelop
  const settings=mergeSettingEdits(legacySettingEdits(local.backup,local.settings),legacySettingEdits(incoming.backup,incoming.settings));
  const backup:AppBackup={...combineBackups(local.backup,incoming.backup,'merge'),createdAt:Math.max(local.backup.createdAt,incoming.backup.createdAt),garage:{...local.backup.garage,vehicles:combine(local.backup.garage.vehicles,incoming.backup.garage.vehicles,v=>'vehicle:'+v.id)},places:combine(local.backup.places,incoming.backup.places,v=>'place:'+v.id),routes:combine(local.backup.routes,incoming.backup.routes,v=>'route:'+v.id),rides:combine(local.backup.rides,incoming.backup.rides,v=>'ride:'+v.summary.id)};
  if(!backup.garage.vehicles.some(v=>v.id===backup.garage.activeId))backup.garage.activeId=backup.garage.vehicles[0].id;
- const existing=local.privateData?.associations||[],received=incoming.privateData?.associations||[];
- return {...local,backup:applySettingEdits(backup,settings),settings,revisions,privateData:{...mergePrivateMapKey(local.privateData,incoming.privateData),associations:[...existing,...received.filter(a=>!existing.some(v=>v.vehicleId===a.vehicleId))].filter(a=>backup.garage.vehicles.some(v=>v.id===a.vehicleId))}};
+ const existing=local.privateData?.associations||[],received=incoming.privateData?.associations||[],associations=new Map<string,typeof existing[number]>();for(const association of [...existing,...received]){const old=associations.get(association.vehicleId);if(!old||association.associatedAt>old.associatedAt||association.associatedAt===old.associatedAt&&canonicalJson(association)>canonicalJson(old))associations.set(association.vehicleId,association);}
+ return {...local,backup:applySettingEdits(backup,settings),settings,revisions,privateData:{...mergePrivateMapKey(local.privateData,incoming.privateData),associations:[...associations.values()].filter(a=>backup.garage.vehicles.some(v=>v.id===a.vehicleId))}};
 }

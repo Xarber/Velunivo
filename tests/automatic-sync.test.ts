@@ -13,3 +13,5 @@ test('deletion tombstones prevent resurrection and remove paired vehicle credent
  assert.equal(merged.revisions['vehicle:v'].modifiedAt,150);
  assert.deepEqual(automaticMerge(merged,remote).backup.garage.vehicles,merged.backup.garage.vehicles);
 });
+
+test('private Bluetooth re-pairing syncs the actual latest credentials without timestamp inflation',()=>{const a=envelope('A',1,'a'),b=envelope('B',1,'a');const vehicleId=a.backup.garage.vehicles.find(v=>v.id!=='sharing-scooter')!.id,association={schema:1 as const,vehicleId,vehicleType:'electric_scooter' as const,device:{id:'device',name:'Scooter',rssi:-50,services:[]},pluginId:'xiaomi-m365-v1',identity:{model:'Pro 2'},associatedAt:10,credentials:{key:'old'}};a.privateData!.associations=[association];b.privateData!.associations=[{...association,associatedAt:20,credentials:{key:'new'}}];for(const merged of [automaticMerge(a,b),automaticMerge(b,a)]){assert.equal(merged.privateData!.associations[0].credentials?.key,'new');assert.equal(merged.privateData!.associations[0].associatedAt,20);}});
