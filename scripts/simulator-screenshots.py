@@ -343,7 +343,8 @@ def capture_once(devices, family, gallery=False):
     # A shutdown template is not a clean OS image. Its cloned launchd/service
     # state stalled installation on the hosted beta image. Create owned data
     # from the installed runtime instead; never alter a runner template.
-    udid = run('xcrun', 'simctl', 'create', name, device_type, runtime)
+    reuse_template=os.environ.get('VELUNIVO_CAPTURE_USE_TEMPLATE')=='1' and os.environ.get('GITHUB_ACTIONS')=='true' and template.get('udid')
+    udid=template['udid'] if reuse_template else run('xcrun', 'simctl', 'create', name, device_type, runtime)
     append_log(family, f'Owned fresh Simulator {udid}; type {device_type}; runtime {runtime}')
     try:
         boot_and_install(udid, family)
