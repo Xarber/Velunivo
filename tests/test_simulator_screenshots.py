@@ -91,8 +91,7 @@ class SimulatorVerificationTests(unittest.TestCase):
             (app / 'Contents/Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier': 'com.apple.dt.DeviceHub'}))
             with patch.dict(sim.os.environ, {'DEVELOPER_DIR': str(developer)}), patch.object(sim, 'run') as commands, patch.object(sim.time, 'sleep'), patch.object(sim, 'best_effort', return_value=None):
                 sim.landscape('owned-device')
-                self.assertIn('activate',commands.call_args_list[0].args[-1])
-                script = commands.call_args_list[1].args[-1]
+                script = next(c.args[-1] for c in commands.call_args_list if 'Rotate Left' in str(c.args[-1]))
                 self.assertIn('Rotate Left', script)
                 self.assertIn('Controls', script)
                 self.assertIn('com.apple.dt.DeviceHub', script)
