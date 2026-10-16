@@ -47,7 +47,7 @@ Choose your installed sideloading app on AltDirect, or copy the source URL below
 https://github.com/Xarber/Velunivo/releases/download/1.0/apps.json
 ```
 
-The special **1.0** release hosts the mutable source feed and app icon. Actual app versions use `v`-prefixed tags. Builds run on GitHub using Xcode beta and the latest stable Android SDK available to SDK Manager, without EAS. Native app branding changes require a new binary.
+The special **1.0** release hosts the mutable source feed and app icon. Actual app versions use `v`-prefixed tags. Builds run on GitHub using Xcode beta and the latest stable Android SDK available to SDK Manager, without EAS. Native app branding changes require a new binary. Push `testing` for a prerelease or `main` for a stable release; `development` has no push workflows. Successful stable builds automatically refresh AltSource and native screenshot galleries. See the [branch pipeline](docs/WORKFLOW_BRANCHES.md).
 
 ## Run the web planner
 
