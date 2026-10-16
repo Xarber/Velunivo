@@ -71,6 +71,20 @@ def select_device(devices, family):
     return max(candidates, key=rank)
 
 
+def ensure_requested_device(devices):
+    """Installed device type is sufficient; runners need not precreate its template."""
+    requested=os.environ.get('VELUNIVO_CAPTURE_IPHONE_NAME')
+    if not requested or any(d['name']==requested for values in devices.values() for d in values):return devices
+    types=json.loads(run('xcrun','simctl','list','devicetypes','--json'))['devicetypes']
+    kind=next((d for d in types if d['name']==requested),None)
+    if not kind:raise RuntimeError(f'Requested device type is not installed: {requested}')
+    runtimes=json.loads(run('xcrun','simctl','list','runtimes','--json'))['runtimes']
+    eligible=[r for r in runtimes if r.get('isAvailable') and '.iOS-' in r['identifier'] and int(re.findall(r'\d+',r['identifier'])[0])>=int(os.environ.get('VELUNIVO_CAPTURE_MIN_IOS','0'))]
+    if not eligible:raise RuntimeError('No installed compatible iOS runtime')
+    runtime=max(eligible,key=lambda r:tuple(map(int,re.findall(r'\d+',r['identifier']))))['identifier']
+    return {**devices,runtime:[*devices.get(runtime,[]),{'name':requested,'isAvailable':True,'deviceTypeIdentifier':kind['identifier']}]}
+
+
 def append_log(family, message):
     with (ARTIFACTS / f'{family}-simulator.log').open('a') as log:
         log.write(message + '\n')
@@ -108,7 +122,10 @@ def boot_and_install(udid, family):
     # A timeout here does not prove the app is unusable: install, launch, PID
     # survival and framebuffer capture provide the required verification.
     best_effort('xcrun', 'simctl', 'bootstatus', udid, '-b', timeout=int(os.environ.get('VELUNIVO_CAPTURE_BOOT_TIMEOUT','30')))
-    run('xcrun', 'simctl', 'install', udid, 'artifacts/Velunivo-simulator.app', timeout=90)
+    if os.environ.get('VELUNIVO_CAPTURE_INSTALLER')=='devicehub':
+        run('xcrun','devicectl','--timeout','90','device','install','app','--device',udid,'artifacts/Velunivo-simulator.app',timeout=95)
+    else:
+        run('xcrun', 'simctl', 'install', udid, 'artifacts/Velunivo-simulator.app', timeout=90)
 
 
 def diagnostics(udid, family):
@@ -401,6 +418,7 @@ def main(argv=None):
         host[label] = best_effort(*command, timeout=15)
     (ARTIFACTS/'capture-host.json').write_text(json.dumps(host, indent=2))
     devices = json.loads(run('xcrun', 'simctl', 'list', 'devices', 'available', '--json'))['devices']
+    if args.family!='ipad': devices=ensure_requested_device(devices)
     for family in ([args.family] if args.family else ['iphone', 'ipad']):
         if args.gallery: capture(devices,family,gallery=True)
         else: capture(devices,family)

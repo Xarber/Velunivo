@@ -49,7 +49,8 @@ jobs:
       VELUNIVO_CAPTURE_IPHONE_NAME: 'iPhone 17 Pro'
       GH_TOKEN: ${{ github.token }}
       BUILD_RUN: ${{ needs.identify.outputs.run }}
-      VELUNIVO_CAPTURE_HEADLESS: '1'
+      VELUNIVO_CAPTURE_HEADLESS: '0'
+      VELUNIVO_CAPTURE_INSTALLER: devicehub
       VELUNIVO_CAPTURE_BOOT_TIMEOUT: '120'
     steps:
       - uses: actions/checkout@v4
@@ -90,6 +91,7 @@ jobs:
             artifacts/*-screenshot.json
             artifacts/*-*.log
             artifacts/*.ips
+            artifacts/capture-host.json
   publish:
     needs: [identify, capture]
     runs-on: ubuntu-latest

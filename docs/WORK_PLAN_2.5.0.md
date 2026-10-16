@@ -15,3 +15,5 @@ Screenshot reliability is the first priority. User authorizes one local developm
 - [ ] Developer-only complete changelog and historical entries; all locales, tests, native QA, matching hosted web update.
 
 2.4.0 native/web release succeeded in run38893167584. Root Android17 finding: reactivecircus action prepends cmdline-tools/latest/bin after our PATH update, so actual avdmanager was still preinstalled and wrote invalid Major.Minor AVD metadata. Explicit tools22 replaced in disposable runner only. Reference https://github.com/actions/runner-images/issues/14484.
+
+Screenshot progress: local existing 2.4.0 ARM CI binary verified on real iPhone17Pro/iOS27 Simulator, four native screens pass OCR. iFrames assets downloaded from user catalog; aperture dimensions verified. CI iPhone immediate fallback was template-name selection, fixed to synthesize selection from an installed device type/runtime. Testing Device Hub GUI initialization and its supported app installer on hosted beta instead of stalled legacy simctl installation. No local native compile performed.

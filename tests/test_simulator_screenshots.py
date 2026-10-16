@@ -13,6 +13,13 @@ spec.loader.exec_module(sim)
 
 
 class SimulatorVerificationTests(unittest.TestCase):
+    def test_requested_installed_type_does_not_need_a_precreated_template(self):
+        import json,os
+        outputs=[json.dumps({'devicetypes':[{'name':'iPhone 17 Pro','identifier':'type17'}]}),json.dumps({'runtimes':[{'identifier':'com.apple.CoreSimulator.SimRuntime.iOS-27-0','isAvailable':True}]})]
+        with patch.dict(os.environ,{'VELUNIVO_CAPTURE_IPHONE_NAME':'iPhone 17 Pro','VELUNIVO_CAPTURE_MIN_IOS':'27'}),patch.object(sim,'run',side_effect=outputs):
+            devices=sim.ensure_requested_device({})
+            self.assertEqual(sim.select_device(devices,'iphone')[1]['deviceTypeIdentifier'],'type17')
+
     def test_legacy_ui_always_selects_the_owned_device(self):
         with patch.object(sim,'simulator_app',return_value=Path('/Applications/Simulator.app')),patch.object(sim,'run') as run:
             sim.open_simulator('owned-device')
