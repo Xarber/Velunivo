@@ -169,7 +169,9 @@ def open_simulator(udid, select=False):
     else:
         # Device Hub ignores the legacy launch argument. Target the owned
         # simulated device window using its registered devices URL scheme.
-        run('open', '-a', str(app), f'devices://device/open?id={udid}', timeout=30)
+        # Launch Services may wait for Device Hub's first window on small hosts.
+        # Its timeout must not abort boot before readiness/install can be tested.
+        best_effort('open', '-a', str(app), f'devices://device/open?id={udid}', timeout=30)
     return True
 
 
