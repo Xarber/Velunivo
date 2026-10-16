@@ -3,7 +3,9 @@ import json,re,struct,subprocess,time,xml.etree.ElementTree as ET
 from pathlib import Path
 ROOT=Path('artifacts');APP='app.velunivo.mobile'
 def adb(*args,timeout=45,binary=False):
-    return subprocess.check_output(['adb',*args],timeout=timeout,text=not binary,stderr=subprocess.DEVNULL)
+    result=subprocess.check_output(['adb',*args],timeout=timeout,text=not binary,stderr=subprocess.STDOUT if not binary else subprocess.DEVNULL)
+    if not binary and args[:2]!=('shell','cat'):print('adb '+' '.join(args)+'\n'+result[-2000:],flush=True)
+    return result
 def nodes():
     adb('shell','uiautomator','dump','/sdcard/velunivo-qa.xml')
     text=adb('shell','cat','/sdcard/velunivo-qa.xml');return text,list(ET.fromstring(text).iter('node'))
@@ -29,14 +31,14 @@ def main():
     # Latest regular Pixel Pro canvas, captured natively rather than stretching a web view.
     adb('shell','wm','size','1280x2856');adb('shell','wm','density','480')
     adb('shell','settings','put','system','accelerometer_rotation','0');adb('shell','settings','put','system','user_rotation','0')
-    adb('emu','geo','fix','9.1900','45.4642');screens=[]
+    adb('emu','geo','fix','9.1900','45.4642');adb('logcat','-c');screens=[]
     for name,path in [('explore','/'),('library','/offline'),('vehicles','/scooter'),('settings','/settings')]:
-        adb('shell','am','start','-W','-a','android.intent.action.VIEW','-d','velunivo://'+path,APP)
+        adb('shell','am','start','-W','-n',APP+'/.MainActivity','-a','android.intent.action.VIEW','-d','velunivo://'+path,APP)
         time.sleep(30 if name=='explore' else 5);dismiss_intro();time.sleep(3)
         screens.append(screenshot(name))
     ROOT.joinpath('android-capture.json').write_text(json.dumps({'platform':'android','status':'fresh','canvas':'Pixel 11 Pro','screens':screens}))
 if __name__=='__main__':
     try:main()
     finally:
-        try:ROOT.joinpath('android-logcat.log').write_text(adb('logcat','-d','-t','1500',timeout=20))
+        try:ROOT.joinpath('android-logcat.log').write_text(adb('logcat','-d',timeout=20))
         except (OSError,subprocess.SubprocessError):pass
