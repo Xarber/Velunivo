@@ -14,7 +14,7 @@ permissions:
   actions: read
 jobs:
   diagnose:
-    runs-on: xcode-27-xlarge
+    runs-on: xcode-27
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -24,6 +24,8 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       RELEASE_TAG: ${{ inputs.tag }}
       BINARY_RUN_ID: ${{ inputs.run_id }}
+      VELUNIVO_CAPTURE_HEADLESS: '1'
+      VELUNIVO_CAPTURE_BOOT_TIMEOUT: '240'
     steps:
       - uses: actions/checkout@v4
       - name: Select installed beta and fetch existing Simulator build
@@ -44,6 +46,13 @@ jobs:
             gh release download "$RELEASE_TAG" --pattern Velunivo-simulator.app.zip --dir artifacts
           fi
           ditto -x -k artifacts/Velunivo-simulator.app.zip artifacts
+      - name: Stop prebooted hosted devices before the owned capture
+        run: |
+          python3 - <<'PY'
+          import subprocess
+          print(subprocess.check_output(['xcrun','simctl','list','devices','booted','--json'],text=True))
+          subprocess.run(['xcrun','simctl','shutdown','all'],timeout=60,check=False)
+          PY
       - run: sudo mdutil -a -i off || true
       - run: python3 scripts/simulator-screenshots.py --gallery --family "${{ matrix.family }}"
       - uses: actions/upload-artifact@v4

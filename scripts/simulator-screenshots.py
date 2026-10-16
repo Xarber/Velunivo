@@ -87,7 +87,9 @@ def orientation_supported():
 
 def boot_and_install(udid, family):
     app = simulator_app()
-    if app is not None and app.name == 'Simulator.app':
+    if os.environ.get('VELUNIVO_CAPTURE_HEADLESS')=='1':
+        run('xcrun','simctl','boot',udid,timeout=60)
+    elif app is not None and app.name == 'Simulator.app':
         # Select our fresh device before it boots, so the GUI neither shows a
         # different default device nor re-boots an already-running device.
         open_simulator(udid, select=True)
@@ -99,7 +101,7 @@ def boot_and_install(udid, family):
     # bootstatus waits for *all* system apps, which can stall on small hosts.
     # A timeout here does not prove the app is unusable: install, launch, PID
     # survival and framebuffer capture provide the required verification.
-    best_effort('xcrun', 'simctl', 'bootstatus', udid, '-b', timeout=30)
+    best_effort('xcrun', 'simctl', 'bootstatus', udid, '-b', timeout=int(os.environ.get('VELUNIVO_CAPTURE_BOOT_TIMEOUT','30')))
     run('xcrun', 'simctl', 'install', udid, 'artifacts/Velunivo-simulator.app', timeout=90)
 
 
@@ -273,7 +275,7 @@ def capture_gallery(udid, family, pid):
 
 def capture_once(devices, family, gallery=False):
     global ATTEMPT_DEADLINE
-    ATTEMPT_DEADLINE=time.monotonic()+240
+    ATTEMPT_DEADLINE=time.monotonic()+max(240,int(os.environ.get('VELUNIVO_CAPTURE_BOOT_TIMEOUT','30'))+240)
     runtime, template = select_device(devices, family)
     device_type = template.get('deviceTypeIdentifier')
     if not device_type:
