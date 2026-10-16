@@ -1257,6 +1257,41 @@
       "sha": "f605d333b94f9092208d8c08907f2437ff786bd2",
       "title": "fix: Reduce hosted iOS capture overhead and reuse initialized CI devices",
       "body": ""
+    },
+    {
+      "sha": "c853e0c6e9c8f96dc963be0c8b2fdf8a8c7c40d2",
+      "title": "feat: Add private group memories, complete themes and reliable device sync",
+      "body": "Add storage reporting, developer-only debug logs and historical release notes, native icon variants, profile rewards, and neighborhood challenges up to 10 km. Automate stable and testing release branches and preserve native screenshot fallback."
+    },
+    {
+      "sha": "033604f9fc326bbcdec522770718b0ea7ccf505d",
+      "title": "docs: Clarify charging validation and automatic release branches",
+      "body": ""
+    },
+    {
+      "sha": "e05467860528a855212d076c66aa77ee12d5fe6a",
+      "title": "fix: Lock iPad QA capture in landscape without Device Hub menus",
+      "body": ""
+    },
+    {
+      "sha": "2825329eb6deb12df2b2494996a5a3144012c494",
+      "title": "fix: Prepare memory consent before capture and load playback on demand",
+      "body": ""
+    },
+    {
+      "sha": "3879633a6fca777297f1b0b42a29fa6ec0bbb6a8",
+      "title": "perf: Keep vehicle speed fresh between optional telemetry reads",
+      "body": ""
+    },
+    {
+      "sha": "9e79816f26f08ae43c3f95ebef52be632ff76c9e",
+      "title": "feat: Include downloaded map resources in storage reports",
+      "body": ""
+    },
+    {
+      "sha": "2047c3a77ee6b43b1e96888b51b6b2fb628077ba",
+      "title": "perf: Reduce hosted gallery rendering and record native build validation",
+      "body": ""
     }
   ]
 }
