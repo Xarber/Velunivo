@@ -1,0 +1,2 @@
+import {Platform} from 'react-native';import {requireOptionalNativeModule} from 'expo-modules-core';import {CosmeticTheme} from '../core/explorationChallenges';
+export async function applyAppIcon(theme:CosmeticTheme){if(Platform.OS==='web')return false;const native=requireOptionalNativeModule<{setIcon(theme:string):Promise<boolean>}>('VelunivoAppearance');return native?native.setIcon(theme):false;}

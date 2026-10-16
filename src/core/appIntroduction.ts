@@ -7,6 +7,13 @@ export const welcomePages=[
  {icon:'shield-checkmark-outline',title:'You stay in control',text:'Check road signs and local rules. Your records stay on your device until you export or share them.'},
 ] as const;
 export const releaseDetails=[
+ {version:'2.5.0',items:[
+ {icon:'film-outline',title:'Memories together',text:'Keep received group audio, optional video and consenting riders’ shared locations on your device.'},
+ {icon:'color-palette-outline',title:'Make every map yours',text:'Themes reach map routes, scratch tiles, buttons and the original Velunivo logo, with new cosmetic rewards.'},
+ {icon:'git-network-outline',title:'Devices that stay connected',text:'Rename trusted devices and synchronize over existing connections without interrupting slower handshakes.'},
+ {icon:'construct-outline',title:'Fixes & Improvements',text:'More reliable native screenshots, charging status, cached telemetry, responsive safe areas and light-mode panels.'},
+ {icon:'code-slash-outline',title:'Developer release notes',text:'Complete historical commit details, opt-in Debug Logs and storage usage are available in Settings.'},
+ ]},
  {version:'2.4.1',items:[{icon:'construct-outline',title:'Fixes & Improvements',text:'Native maps wait until ready before updating the viewport. Welcome previews use genuine iPhone 17 Pro and landscape iPad captures.'}]},
  {version:'2.4.0',items:[
  {icon:'git-network-outline',title:'Your devices, together',text:'Sync up to five trusted devices, including deletions and original edit dates.'},

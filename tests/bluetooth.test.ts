@@ -125,7 +125,7 @@ test('simulator survives navigation/recording leases, populates dashboard readin
  await f.bridge.stopSimulation();assert.equal(f.bridge.getSnapshot().simulated,undefined);assert.equal(f.bridge.getSnapshot().state,'connected');assert.equal(f.connects,2);release();await f.bridge.disconnect();
 });
 test('Bluetooth display and simulation preferences are global and old preferences migrate safely',()=>{
- const fields=globalTelemetryMetrics(registry());assert.ok(fields.includes('batteryPercent'));assert.ok(fields.includes('speed'));assert.equal(fields.includes('charging'),false);assert.ok(globalTelemetryMetrics(registry(),true).includes('charging'));
+ const fields=globalTelemetryMetrics(registry());assert.ok(fields.includes('batteryPercent'));assert.ok(fields.includes('speed'));assert.equal(fields.includes('charging'),true);assert.ok(globalTelemetryMetrics(registry(),true).includes('charging'));
  assert.equal(restoreBluetoothPreferences('{"schema":1,"autoReconnect":false}').simulateTelemetry,false);const preferences=restoreBluetoothPreferences(JSON.stringify({...restoreBluetoothPreferences(null),simulateTelemetry:true,visible:{batteryPercent:false}}));assert.equal(preferences.simulateTelemetry,true);assert.equal(metricVisible(preferences,'batteryPercent'),false);
 });
 

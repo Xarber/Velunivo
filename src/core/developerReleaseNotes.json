@@ -1,0 +1,1262 @@
+{
+  "0.1.0": [
+    {
+      "sha": "4be1d03022a8068ab18dcbfe0e52f5bce6e0796a",
+      "title": "chore: Bootstrap Velunivo with Expo 57 and unsigned Git history",
+      "body": ""
+    },
+    {
+      "sha": "429f1228f2a1ce55d4a082179a6a01fed5e395b4",
+      "title": "feat: Model scooter ETAs and validate road candidates and GPX tracks",
+      "body": ""
+    },
+    {
+      "sha": "cc622bc336c6ac9410f527ba12ab0584075fe109",
+      "title": "feat: Add responsive navigation and traffic-free scheduled trips",
+      "body": ""
+    },
+    {
+      "sha": "5176b972b1e608dc22ce49b794ae4995fa84164f",
+      "title": "ci: Build native releases and maintain the AltStore source feed",
+      "body": ""
+    },
+    {
+      "sha": "d6c4b517d21f02af134f0a8ab422d3be4003c7cc",
+      "title": "docs: Record architecture setup and verified MVP boundaries",
+      "body": ""
+    },
+    {
+      "sha": "d5bbf89d68ea77c85ab2f4f05d029e18f5e8c350",
+      "title": "fix: Avoid obsolete Android SDK packages and support web route reloads",
+      "body": ""
+    },
+    {
+      "sha": "8e8be683b0babb7965bc5fec21c66a10bcc6581f",
+      "title": "feat: Search addresses and choose both endpoints on native device maps",
+      "body": ""
+    },
+    {
+      "sha": "e8126bbb982ce46e6d7b354165308b8e1b15f4e5",
+      "title": "fix: Keep address actions readable on phones and preserve preview reloads",
+      "body": ""
+    }
+  ],
+  "0.1.2": [
+    {
+      "sha": "7cc88e26caa5a682c65c088a6683d3d595606474",
+      "title": "ci: Serialize source publication and refresh existing app descriptions",
+      "body": ""
+    },
+    {
+      "sha": "b88194611d57b71f57113928973e0ca05c1a3197",
+      "title": "fix: Use native-compatible request cancellation and detect Simulator launch failures",
+      "body": ""
+    },
+    {
+      "sha": "9f9e1c9c791566a1a36daa18c606693954448779",
+      "title": "feat: Add date-time pickers and scheduling phrases with key-free Android maps",
+      "body": "Remove invalid illustrative GPX and start with an empty route planner. Preserve traffic-free scheduled ETA and document provider and runtime limits."
+    },
+    {
+      "sha": "4de5336838244a859091cffcc363b3e0a06b28a8",
+      "title": "fix: Import GraphHopper tracks alongside their sparse route waypoints",
+      "body": ""
+    },
+    {
+      "sha": "08dce3a2a0d1053825a07fdff13a6568de1abb70",
+      "title": "fix: Enable Expo scene lifecycle for Xcode beta builds and gate launch survival",
+      "body": ""
+    },
+    {
+      "sha": "982c02dfe3312cec4bc215df029d8e10b654f2e3",
+      "title": "feat: Place ride controls over a fullscreen map on phones tablets and desktop",
+      "body": ""
+    },
+    {
+      "sha": "21e945359d680ad5a85fd62ed69a5ba7e55dbf5f",
+      "title": "fix: Keep map credits visible above floating ride controls",
+      "body": ""
+    },
+    {
+      "sha": "323ebfe3735c718093aa39f5942539fdf43ca39c",
+      "title": "docs: Record overlay validation and corrected native release status",
+      "body": ""
+    },
+    {
+      "sha": "2f8d261cc5563bf916bff7ea7869d0d482dcd6c1",
+      "title": "feat: Animate web ride controls and planner with reduced-motion support",
+      "body": ""
+    },
+    {
+      "sha": "f78a76394ce67bc36c97d7267a65bbb83033dd91",
+      "title": "fix: Hide incomplete schedule expressions and retain date-time pickers",
+      "body": ""
+    },
+    {
+      "sha": "1597e263d130250c0d78666b391eef4e36b33d50",
+      "title": "feat: Save multiple vehicles with custom icons, pictures and trip battery estimates",
+      "body": ""
+    },
+    {
+      "sha": "9fb12a2145fe72b4334fcc9e25a999a1844f008d",
+      "title": "chore: Prepare version 0.1.2 for vehicle profiles and polished planning controls",
+      "body": ""
+    },
+    {
+      "sha": "4a5dc985409275d34a76d82a6b92513652f9f8ac",
+      "title": "feat: Add compass navigation, tilted maps and a live ride dashboard",
+      "body": "Default to current GPS and immediate departure, hide scheduling under ride options, and allow clearing the plan. Follow travel direction on web and restore navigation after a temporary route overview."
+    },
+    {
+      "sha": "37e1a3a776ccc36832af9aebc107511bc005d8de",
+      "title": "fix: Keep optional Simulator log timeouts from blocking release screenshots",
+      "body": ""
+    },
+    {
+      "sha": "2c48d75f2450653250fc590a0bfaff261cdac8ba",
+      "title": "fix: Preserve the GPS start when map selection is cancelled",
+      "body": ""
+    },
+    {
+      "sha": "292a8e4f6cfaa25130eb83d8052a1865915488fc",
+      "title": "fix: Keep the full arrival clock readable in the ride dashboard",
+      "body": ""
+    }
+  ],
+  "0.1.5": [
+    {
+      "sha": "320f6dc9f1f7d9aec364a4b9314971db88e63950",
+      "title": "feat: Connect public address search and scooter route providers",
+      "body": "Validate Valhalla road geometry and limits, reject excluded roads, disclose snapped endpoints, and keep scheduled estimates free of predicted traffic."
+    },
+    {
+      "sha": "1ec2c0aac376e9a490577c2aa0c67832a058bd91",
+      "title": "feat: Refine navigation camera and persistent ride indicators",
+      "body": "Increase tilt, lower the navigation arrow above routes, fix overview padding, add global units, GPX route export and endpoint comparisons, and ignore cancelled planner responses."
+    },
+    {
+      "sha": "9bd556ddd3e8b29e13da4835606622887edca8eb",
+      "title": "chore: Prepare version 0.1.3 and document navigation verification",
+      "body": ""
+    },
+    {
+      "sha": "b1a99e90b9cd3c8a3f56857a1973179350ab4d6e",
+      "title": "docs: Record native baseline startup and version 0.1.3 build",
+      "body": ""
+    },
+    {
+      "sha": "e8b65b05344682b6ab5ef5a6dc096611d456dcc4",
+      "title": "feat: Add Velunivo branding and native app icon appearances",
+      "body": "Share original route-arrow artwork across app icons, Android adaptive/themed icons, favicon, in-app wordmark and light/dark launch screens. Prepare native version 0.1.4."
+    },
+    {
+      "sha": "78d2c76d8f860cb998928e0414a762d4a77e4f4a",
+      "title": "docs: Refresh GitHub presentation with banners and product guides",
+      "body": "Add real screenshots, downloads, privacy and contribution guidance, editable brand assets, and source-feed artwork publication. Record verified repository metadata and social preview."
+    },
+    {
+      "sha": "912170a9e0b9d3879fe8fd4f413fd076f70a0a7d",
+      "title": "docs: Add AltDirect source links and branding build evidence",
+      "body": ""
+    },
+    {
+      "sha": "7cb693b7b038d1cf5809d753f485a7ccbef7e373",
+      "title": "docs: Record refreshed AltSource release presentation",
+      "body": ""
+    },
+    {
+      "sha": "ae1f65393ef81afa1b2d38da6eb5c03e04fb17f3",
+      "title": "fix: Recover stalled Simulator installs with isolated QA devices",
+      "body": "Use fresh installed iPhone and iPad Simulators, retry boot/install once after a clean reset, preserve diagnostics and retain required app survival and screenshot gates."
+    },
+    {
+      "sha": "6691d136ff9f6239df7eecc137436132fa1b8f33",
+      "title": "fix: Isolate iPhone and iPad runtime checks on separate runners",
+      "body": "Reuse the compiled Simulator app in independent verification jobs and require both before publishing binaries and AltSource screenshots."
+    },
+    {
+      "sha": "874094a73ff48d651724a4bd8ad5b7a310b5cd8c",
+      "title": "fix: Pin release revisions and capture landscape iPad screenshots",
+      "body": ""
+    },
+    {
+      "sha": "079f42070aa1ff7f249018e29dbba4ec95a0f8bb",
+      "title": "feat: Add Liquid Glass surfaces and native interface animations",
+      "body": ""
+    },
+    {
+      "sha": "e1433150d102a5b2bee4171aac9957dcc35634c1",
+      "title": "feat: Follow live location with smooth heading and camera updates",
+      "body": ""
+    },
+    {
+      "sha": "71dafc36c410337fd7642c22d03ac73a560829ae",
+      "title": "feat: Select vehicle pictures from the native photo library",
+      "body": ""
+    }
+  ],
+  "0.1.6": [
+    {
+      "sha": "a54e2234ec4a08c180f44da8bb53ad45e53efdba",
+      "title": "fix: Verify bicycle and car roads with consistent routing options",
+      "body": ""
+    },
+    {
+      "sha": "c2ed53eacc7468795f46aaf006866b7d2c44cf66",
+      "title": "fix: Handle delayed location access and prepare unobstructed Simulator captures",
+      "body": ""
+    }
+  ],
+  "0.1.7": [
+    {
+      "sha": "9af5654aa208cb3dee20d35f748c033635a1af93",
+      "title": "ci: Upload unsigned IPA early and discard temporary artifact after completion",
+      "body": ""
+    }
+  ],
+  "0.1.8": [
+    {
+      "sha": "ef6558a7f2db1e75ebd1142a9866f9994fe656be",
+      "title": "feat: Keep restricted route candidates available with explicit road warnings",
+      "body": ""
+    },
+    {
+      "sha": "6a1c199d5a7ec95306872ea18558e390a010557a",
+      "title": "feat: Confirm flagged rides and add swipe panels with native iOS glass tabs",
+      "body": ""
+    },
+    {
+      "sha": "2ec11addb8f834c414e001cc9bb5c67eba420607",
+      "title": "fix: Launch the iPad Simulator from the selected beta Xcode",
+      "body": ""
+    }
+  ],
+  "0.1.9": [
+    {
+      "sha": "6bee0fdcfdafcac4179f47a857fc76a99353602a",
+      "title": "fix: Preserve usable routes when road verification or turn metadata fails",
+      "body": ""
+    },
+    {
+      "sha": "e0e982bfbb2b1feb01aae6ec7dfda39bc6afe3fd",
+      "title": "feat: Offer Apple Maps and Google Maps when no usable route is returned",
+      "body": ""
+    }
+  ],
+  "0.1.10": [
+    {
+      "sha": "8879923ace2576ba40b4d28b022a64737c5b1d2f",
+      "title": "fix: Keep ride controls above the Liquid Glass native tab safe area",
+      "body": ""
+    }
+  ],
+  "0.1.11": [
+    {
+      "sha": "c8d72dd5e8fe300b131f87141ff8166cb175e57f",
+      "title": "fix: Initialize the beta Simulator UI before installation and improve stall diagnostics",
+      "body": ""
+    },
+    {
+      "sha": "c48fa03993269891b878b2d2209ac93087a05aa3",
+      "title": "fix: Keep releases available after screenshot failures and cache native builds",
+      "body": ""
+    },
+    {
+      "sha": "b10830385ed1bc3470cb1b1a369461979d8fad73",
+      "title": "fix: Use an allowed context for the iOS compiler cache directory",
+      "body": ""
+    }
+  ],
+  "0.1.12": [
+    {
+      "sha": "d4b64afd2fb2f8effc3f3166932aed511be73dc0",
+      "title": "fix: Restore Android build caches after generating Gradle files",
+      "body": ""
+    },
+    {
+      "sha": "85bb6cb7566cf94b2cf168f574c3ca0634122f24",
+      "title": "fix: Bound simulator cleanup and keep screenshot timeouts from blocking release; fix: Parse all conventional release-note clauses",
+      "body": ""
+    },
+    {
+      "sha": "a018db17d083d04b2078a86315375b7eb0923fad",
+      "title": "feat: Record rides and add garage menus, Library cards and compact planning; fix: Duck music and render remaining guidance above gray alternatives",
+      "body": ""
+    }
+  ],
+  "0.1.13": [
+    {
+      "sha": "8cce130c1887f86edba77114ce4338ad436573ff",
+      "title": "docs: Record background UI verification and native build progress",
+      "body": ""
+    },
+    {
+      "sha": "33cec58462c58f41e9008975a6bc5806681e439e",
+      "title": "feat: Learn vehicle pace and add saved places; feat: Refine Library and navigation controls; feat: Add downloadable maps and Live Activities; fix: Release music ducking; fix: Preserve Sharing E-Scooter",
+      "body": ""
+    },
+    {
+      "sha": "67ec528281e1aa4729f1e749b3655f2b4268a854",
+      "title": "chore: Clean Library formatting and record source verification",
+      "body": ""
+    }
+  ],
+  "0.1.14": [
+    {
+      "sha": "54721f25012206f46879aa290901cf5700b8b120",
+      "title": "fix: Refresh AltSource icons and expose iPad screenshots on phones",
+      "body": ""
+    },
+    {
+      "sha": "db201e18bd7cdf103a9d4d82cc6d4dacdeaa99cc",
+      "title": "ci: Automatically refresh release source branding and metadata",
+      "body": ""
+    },
+    {
+      "sha": "e6c99a11b0277ac27fbfc4290a51aae29a1d48c9",
+      "title": "feat: Continue native GPS guidance in background; feat: Rename saved places; feat: Add installable PWA with complete branding and metadata",
+      "body": ""
+    }
+  ],
+  "0.1.15": [
+    {
+      "sha": "4154a4da55e125c9a09362638ea70ff78a3e5207",
+      "title": "feat: Enable voice, Live Activities and ride controls during simulation without recording",
+      "body": ""
+    }
+  ],
+  "0.1.16": [
+    {
+      "sha": "dbce6e3177f2a08849da65027e285950739cff0a",
+      "title": "fix: Preserve Live Activity startup errors for device troubleshooting",
+      "body": ""
+    },
+    {
+      "sha": "2cf59ccb30553ad3abeb32acc64f5c11f696e966",
+      "title": "fix: Diagnose silent Live Activity installation and shared storage failures",
+      "body": ""
+    }
+  ],
+  "0.1.17": [
+    {
+      "sha": "d9fe23aa27a2d207cc6ba8421e1575e23428e2c5",
+      "title": "feat: Add temporary Live Activity test controls; fix: Use native iOS navigation position arrow",
+      "body": ""
+    }
+  ],
+  "0.1.18": [
+    {
+      "sha": "7ff9856a2a35cd3cc9a6512ca908a93f36366349",
+      "title": "fix: Resolve native iOS Live Activity service before platform fallback",
+      "body": ""
+    }
+  ],
+  "0.1.19": [
+    {
+      "sha": "ec82801f1f13e96a1506a8da5dd857961828aca6",
+      "title": "fix: Render navigation Live Activities without shared widget storage",
+      "body": ""
+    }
+  ],
+  "0.1.20": [
+    {
+      "sha": "ae0d53a2f2569b01cce897b9d3a6c67de1ac470f",
+      "title": "feat: Record trips without a destination; fix: Hide Live Activity checks behind three-tap Developer Options",
+      "body": ""
+    }
+  ],
+  "0.1.21": [
+    {
+      "sha": "a589122ef4538f2fc814f3a24f772f2f36e43046",
+      "title": "docs: Record Mac cleanup and prebuilt iPhone simulator validation",
+      "body": ""
+    },
+    {
+      "sha": "c0ba4f91779b8286c12eff0b0088f66c29357208",
+      "title": "fix: Keep trip dashboard metrics on one line; docs: Verify Live Activities on iPhone 18 Pro",
+      "body": ""
+    },
+    {
+      "sha": "71755a7d2d971e6cdfc2b9a54ccab8e8d65b434f",
+      "title": "feat: Match trip recording to navigation controls; fix: Filter stationary GPS drift",
+      "body": ""
+    }
+  ],
+  "0.1.22": [
+    {
+      "sha": "f4c8daa5c665638e5c9a7f9a71dd03167ff8648f",
+      "title": "feat: Learn vehicle battery usage and organize settings; fix: Place Explore recording below route planning",
+      "body": ""
+    }
+  ],
+  "0.1.23": [
+    {
+      "sha": "1fe73a1508463f8087246393f9c5c9f78c0acb8d",
+      "title": "feat: connect vehicles through read-only Bluetooth telemetry",
+      "body": ""
+    }
+  ],
+  "0.1.24": [
+    {
+      "sha": "8eaa55e02683e4be6c201e36a41a30cae755d7bc",
+      "title": "docs: record Bluetooth validation and native release dispatch",
+      "body": ""
+    },
+    {
+      "sha": "b70c0562a2bb15510f87c3269f07b6d8042332bd",
+      "title": "feat: Share live trips and route links through a self-hosted PeerServer; fix: Global Bluetooth settings and public sharing vehicles",
+      "body": ""
+    }
+  ],
+  "0.1.25": [
+    {
+      "sha": "65fe2e93799acd09f1e20237e142c288ebdff7ed",
+      "title": "fix: Refit shared trip preview when switching between phone and desktop layouts",
+      "body": ""
+    }
+  ],
+  "0.1.26": [
+    {
+      "sha": "4e2da563fb56243e1333e2785c04955da6d985e3",
+      "title": "feat: Connect supported vehicles through Web Bluetooth and Bluefy; fix: Verify browser device identity before association",
+      "body": ""
+    }
+  ],
+  "0.1.27": [
+    {
+      "sha": "ee90818240774b129b7c839328f642fb49d35793",
+      "title": "fix: Persist Web Bluetooth vehicle associations in browser storage",
+      "body": ""
+    }
+  ],
+  "0.1.28": [
+    {
+      "sha": "bae1ef707cd7e7d9014b8fac1c3d35f12d12ca66",
+      "title": "test: Verify browser vehicle pairing and persistent reconnect through real protocol fixtures",
+      "body": ""
+    },
+    {
+      "sha": "adeb4b1e34c5d0f7ac2bbb23e439345bacf03e15",
+      "title": "docs: Record Web Bluetooth deployment and browser validation limits",
+      "body": ""
+    },
+    {
+      "sha": "0ed01cacbdd477fec78e4a3371c90f3ef7b6759b",
+      "title": "fix: Place vehicle battery below the road speed-limit text in ride dashboards",
+      "body": ""
+    },
+    {
+      "sha": "960ed340db46cb297576ad5e67a6789e9459223f",
+      "title": "fix: Verify renamed Bluetooth vehicles without relying on device names; fix: Explain unsupported Firefox discovery",
+      "body": ""
+    }
+  ],
+  "0.1.29": [
+    {
+      "sha": "62de86c722b2d0c846c7d90443320bc7ccd1515f",
+      "title": "fix: Discover Xiaomi family advertisements and reconnect for headlight approval",
+      "body": ""
+    },
+    {
+      "sha": "c4ab39f696440ef4e1feb088725dca3b45234199",
+      "title": "fix: Cancel timed-out Bluetooth radio attempts immediately",
+      "body": ""
+    },
+    {
+      "sha": "5a7aa5d3d260e972b80bef12913b912e47cc73a3",
+      "title": "chore: Prepare 0.1.29 Bluetooth discovery and pairing validation notes",
+      "body": ""
+    },
+    {
+      "sha": "9fd6cf3488e4ac782d9bd31a28e759344e74b37e",
+      "title": "fix: Authenticate Xiaomi FE95 and preserve paired vehicle connections",
+      "body": ""
+    },
+    {
+      "sha": "38079f302e29b6fd5b91bfdaafcec5981323e451",
+      "title": "feat: Localize Velunivo and add recorded ride replay",
+      "body": "Improve Bluetooth reconnection and retained telemetry, GPS denial handling, short-ride thresholds and sharing viewer presence. Add installed voice selection, compact help popovers and responsive Library previews. Keep privacy information expanded and localize long explanations and accessibility controls. Document tested behavior and native validation limits."
+    }
+  ],
+  "0.1.30": [
+    {
+      "sha": "7b51496ec16e00802b2e31f7fc0ad137548b2f0d",
+      "title": "fix: Resolve native startup language safely and preserve default speech voice",
+      "body": "Read native locales through Expo Localization with guarded browser and Intl fallbacks. Keep short guidance visible, anchor help actions inline, and reduce Library previews to 80% width and shorter maps. Add startup and automatic voice regression tests; prepare version 0.1.30."
+    }
+  ],
+  "0.1.31": [
+    {
+      "sha": "f6578ece2a3b19a1b713e48330c93175d047784d",
+      "title": "feat: Add confirmed device transfers and welcome tours; feat: Compact voice selection and recording vehicle picker",
+      "body": ""
+    }
+  ],
+  "0.1.32": [
+    {
+      "sha": "159011949de3b196f60d881dcd6bd235a8a2add0",
+      "title": "docs: Record transfer validation and 0.1.31 build dispatch",
+      "body": ""
+    },
+    {
+      "sha": "c90c59d10444cc1618907b949264d240a7daa42f",
+      "title": "fix: Bound native Bluetooth registration and await iOS notification readiness",
+      "body": ""
+    },
+    {
+      "sha": "bc71d4a4bf70f0245fbc3eef799968c5133f93c8",
+      "title": "fix: Restore native trip hosting and reliable device transfers; fix: Complete Italian localization and simplify ride controls",
+      "body": ""
+    }
+  ],
+  "0.1.33": [
+    {
+      "sha": "7eb89211c34b978d37699c8e93e45209622d1c2a",
+      "title": "docs: Record 0.1.32 validation and GitHub build dispatch",
+      "body": ""
+    },
+    {
+      "sha": "22228a241979fbecf3d21c6b8838beefabaaed96",
+      "title": "feat: Show Bluetooth battery and spectators in Live Activities",
+      "body": "fix: Deduplicate trip viewers across reconnect attempts on web and native clients"
+    },
+    {
+      "sha": "9028be10ca367644cd9722d89fc53ea0b3070d58",
+      "title": "feat: Restore background connections and document every app version",
+      "body": "fix: Recover shared trips with stable viewer identities and render stale Bluetooth data in native Live Activities"
+    },
+    {
+      "sha": "e672ed03ad740d3fac9bb782e90711a5b70b7a5b",
+      "title": "fix: Fit route warnings to content and anchor desktop ride controls at bottom left",
+      "body": ""
+    }
+  ],
+  "1.0.0": [
+    {
+      "sha": "6f765016695e092ea534b1dedcc9aa66d909554e",
+      "title": "docs: Record replacement release build and final validation",
+      "body": ""
+    },
+    {
+      "sha": "11912d1db1c870ff5a5de4e1257067b560b26b39",
+      "title": "feat: Add Spanish, French, German and Portuguese localization",
+      "body": ""
+    },
+    {
+      "sha": "03bc70638ea785cdcdfc9159cac1e05fa22f9e0d",
+      "title": "feat: Add multi-stop planning and automatic rerouting; feat: Calculate offline routes on downloaded roads; feat: Improve energy estimates and trip names",
+      "body": "Keep compass primary with sustained travel-heading override. Add private-only credential sync, disclosed outage fallback, stationary Xiaomi lock controls and dashboard telemetry. Correct planner safe areas and help popovers. Align bundles and CI with 1.0.0 without touching the AltSource 1.0 container."
+    },
+    {
+      "sha": "750f8478ff5413de734ed886c0dc086bb48beec2",
+      "title": "docs: Document 1.0 features, privacy and validation limits",
+      "body": ""
+    }
+  ],
+  "1.0.1": [
+    {
+      "sha": "c7d71ecf7ef0cc0a03ad0469bac80376512688d2",
+      "title": "docs: Record private sync, outage fallback and hosted 1.0 validation",
+      "body": ""
+    },
+    {
+      "sha": "9a79daa1e7f740544bb8d3a832aa3aebc394930f",
+      "title": "fix: Preserve itinerary stops in maps, directions and saved routes; feat: Drag planner locations and search automatically",
+      "body": ""
+    },
+    {
+      "sha": "a471c061d2f5efc7ab2860f0bcdcb74b89521fcc",
+      "title": "docs: Record itinerary fixes and planner validation",
+      "body": ""
+    }
+  ],
+  "1.0.2": [
+    {
+      "sha": "8aa3cb228054f1238b89a186daecc91773fae5b5",
+      "title": "fix: Finish submitted address searches and resolve coordinate labels; feat: Centralize developer simulations and diagnostics",
+      "body": ""
+    },
+    {
+      "sha": "5cd9ec46ff9066c1093a9a0f94f5d18b69d6eb7b",
+      "title": "docs: Explain developer tools, reverse geocoding and search validation",
+      "body": ""
+    }
+  ],
+  "1.0.3": [
+    {
+      "sha": "76b6038f18f1c6cb5367f67352c272af43ee4d8f",
+      "title": "docs: Record hosted developer and address search verification",
+      "body": ""
+    },
+    {
+      "sha": "93b0e73b982e8e728adcb228ba5c291b06f67189",
+      "title": "ci: diagnose iPad screenshots using an existing Simulator build",
+      "body": ""
+    },
+    {
+      "sha": "c17f338b5713b9838c2bce8873050edb750dccf0",
+      "title": "ci: inspect Device Hub before retrying stalled iPad capture",
+      "body": ""
+    },
+    {
+      "sha": "1e48fa58b54cd26c183323e232357f7c3d89798f",
+      "title": "fix: support Device Hub iPad rotation and parallelize native iOS builds",
+      "body": ""
+    },
+    {
+      "sha": "34a94e5a7770c07a427fbffc3d918c5543f6a3ca",
+      "title": "fix: rotate iPad headlessly with Xcode 27 device orientation API",
+      "body": ""
+    },
+    {
+      "sha": "506f3e6b7106dc31de94f3f81df64b4e86437718",
+      "title": "docs: record screenshot root causes and updated build artifact layout",
+      "body": ""
+    },
+    {
+      "sha": "b27d1fa035469d9ddcc39bfd20fd835e31ac5d53",
+      "title": "fix: target Device Hub device windows and reduce iPad capture resource pressure",
+      "body": ""
+    },
+    {
+      "sha": "4906d1419300a9bcefda5b1fbe5138a5edc57760",
+      "title": "ci: isolate Simulator image regressions with a stable-runner comparison",
+      "body": ""
+    },
+    {
+      "sha": "4555aff3cbe757593fb82dda8114f6b0c212d975",
+      "title": "fix: reuse prepared Simulator templates and capture headlessly on both devices",
+      "body": ""
+    },
+    {
+      "sha": "05ad1993fcc413119b8d7c8c00fd807e127a539f",
+      "title": "fix: prevent cosmetic screenshot setup from blocking app capture",
+      "body": ""
+    },
+    {
+      "sha": "84decfb7b894623141e5734a38d3f90beabbf3ee",
+      "title": "fix: verify app startup even when unrelated Simulator system readiness stalls",
+      "body": ""
+    },
+    {
+      "sha": "4ea0dae8e3012148ded2e0abb1823cf6feeecad3",
+      "title": "perf: cache Android CMake compilation while retaining all APK architectures",
+      "body": ""
+    },
+    {
+      "sha": "46bc0ce80a0fd94a3b37eb00969f76e6363ee88c",
+      "title": "fix: avoid legacy Simulator re-boot alerts and document verified iPad landscape capture",
+      "body": ""
+    },
+    {
+      "sha": "b20931abfd6f1a0a7220b707d928a3e86f6dbba4",
+      "title": "feat: publish native screen galleries exclusively through AltSource; fix: anchor iPad ride controls at bottom left",
+      "body": ""
+    },
+    {
+      "sha": "600233b40d90f54c3d2ea461e267bd56a4d9f9c7",
+      "title": "fix: include localized iPad layout highlights in version 1.0.3",
+      "body": ""
+    },
+    {
+      "sha": "9bcd60d7fc6dfbb9c7d1b3b153c8fa276088dfce",
+      "title": "test: extend complete changelog coverage through version 1.0.3",
+      "body": ""
+    }
+  ],
+  "1.0.4": [
+    {
+      "sha": "bfd4600d0922dacae38a0348fab9d92759f988ff",
+      "title": "feat: add library, file and camera vehicle pictures with centered square cropping",
+      "body": "fix: return through screen history; add a minimal shared scooter icon"
+    },
+    {
+      "sha": "6a125f04781892b862e9bbb77726036b2b0b90e8",
+      "title": "fix: consolidate public release assets into three binaries and build information",
+      "body": ""
+    },
+    {
+      "sha": "0920af09d4d1d09a79627bed9063127e93d2ab5a",
+      "title": "feat: download selected map areas and gently clean recorded GPS paths",
+      "body": ""
+    },
+    {
+      "sha": "b1be7039c1eeb72453f5289e023f8d8c2fd44fe4",
+      "title": "feat: pair two devices for encrypted automatic sync and dated backups",
+      "body": ""
+    },
+    {
+      "sha": "53e29390315f2dd29559d31a79691158d8c64935",
+      "title": "feat: suggest trip recording and specialize shared vehicle controls; fix: skip rental battery prompts",
+      "body": ""
+    },
+    {
+      "sha": "a03d760973b5763d5d65e7555c22209d5adecb7e",
+      "title": "feat: add developer Bluetooth diagnostics and shared-trip lock screen displays; chore: prepare version 1.0.4",
+      "body": ""
+    },
+    {
+      "sha": "39e17a286ffa69bea40b0fe9ae8516d9a20bf851",
+      "title": "ci: stabilize Device Hub galleries and reuse native build intermediates; fix: correct iPad native tab obstruction",
+      "body": ""
+    }
+  ],
+  "1.0.5": [
+    {
+      "sha": "d9194fb4b7c58ed3a1f2fe90da758288336ae703",
+      "title": "docs: record version 1.0.4 checks, release cleanup and hosted deployment",
+      "body": ""
+    },
+    {
+      "sha": "e0b6faad4836c595ad1ecfa01b947a0e3f25166b",
+      "title": "feat: request native Android Live Updates for rides and shared arrivals",
+      "body": ""
+    },
+    {
+      "sha": "4585e12c986adbd09cfe15c09445e82f705fe372",
+      "title": "fix: recover device sync and native sharing; feat: merge timestamped settings",
+      "body": ""
+    },
+    {
+      "sha": "adc70c769b33d473b133b61345643cadfc204170",
+      "title": "fix: refresh downloaded maps and resolve area names; feat: show in-button download progress",
+      "body": ""
+    },
+    {
+      "sha": "64c080db12f838fee296aae534b604a9220cbdcc",
+      "title": "feat: configure verified app links for each deployment host",
+      "body": ""
+    },
+    {
+      "sha": "1855e42c8ce7b4120e0da274bb4a826cb51c3be1",
+      "title": "chore: prepare version 1.0.5 and Android distribution metadata; ci: isolate iPad verification",
+      "body": ""
+    }
+  ],
+  "1.0.6": [
+    {
+      "sha": "4489bc42133517c76e533a0d0fdcbc1e89c78749",
+      "title": "fix: keep app-link associations inside the standalone web server",
+      "body": ""
+    },
+    {
+      "sha": "fc63776bff52aa2f07cdd56e38ccbad9b6e2a940",
+      "title": "fix: retain aged Bluetooth battery in Android Live Updates; ci: reuse native caches across versions",
+      "body": ""
+    }
+  ],
+  "1.0.7": [
+    {
+      "sha": "2dc3c2945e3ee699e2a79258de90ddd60e1d28d7",
+      "title": "ci: enforce newest-build-only release concurrency",
+      "body": ""
+    },
+    {
+      "sha": "c03560dd01922bad5a5c5a867d50ae41bbd5b60b",
+      "title": "ci: verify real gallery pages and refresh AltSource without rebuilding apps",
+      "body": ""
+    },
+    {
+      "sha": "6d0c2ed8153bdbcc13c5a78a02d2e6b773735157",
+      "title": "docs: record verified 1.0.6 native gallery publication",
+      "body": ""
+    },
+    {
+      "sha": "2b20b814de7bbfb851316ca284c80a943a322657",
+      "title": "feat: learn Bluetooth ride energy and finish navigation at arrival; fix: repair historical rides and coordinate loading",
+      "body": ""
+    },
+    {
+      "sha": "940c7d30c1a809ade0ae51d18a011fcc478dad01",
+      "title": "chore: prepare version 1.0.7 for battery learning and automatic arrival",
+      "body": ""
+    }
+  ],
+  "1.0.8": [
+    {
+      "sha": "1d514524c3c6637e1cd0029cecde6f3499910af8",
+      "title": "feat: add recoverable group rides and opt-in native audio calls",
+      "body": "Share exact routes and rider locations with eight-member groups, leader recovery and private-server fallback. Release microphone capture when muted, preserve separate audio controls, disable saved voice on system End Call, and offer explicit voice joining from the group roster. Prepare 1.0.8 with localized highlights and documented target-validation limits."
+    },
+    {
+      "sha": "2181ca096e03c200edf7dd54c33b65721ab95151",
+      "title": "ci: bound Android workers and increase heap for native release metadata",
+      "body": ""
+    }
+  ],
+  "1.0.9": [
+    {
+      "sha": "7f601bc605d874ff2a0b27bb5a9fb07f39375f40",
+      "title": "feat: add opt-in map-pin video and automatically adopt group routes",
+      "body": "Replace native hidden-browser peer connections with native WebRTC for groups, trip sharing and data sync. Frame large messages, acknowledge route delivery and immediately publish media availability. Add mutually enabled developer video, camera release on mute/background, and accent-colored photo/initials pins with low-bandwidth video. Prepare 1.0.9 and document browser validation and remaining native checks."
+    }
+  ],
+  "1.0.10": [
+    {
+      "sha": "3481e43e5025190b205a2923fa94ed755dc7bd27",
+      "title": "fix: refresh web GPS and close idle group microphone capture",
+      "body": "Use browser high-accuracy watches with stationary refresh, retain approximate display coordinates without weakening precise guidance or recordings, and show group avatar pins while planning. Gate microphone/camera capture on connected media peers, preserve manual mute across recovery, and publish native background group locations directly. Prepare 1.0.10 with localized highlights and browser validation."
+    }
+  ],
+  "1.0.11": [
+    {
+      "sha": "35b5acf03abcd0cdcba7a8897e64445efbec5a0b",
+      "title": "fix: restore Safari GPS and release group media capture",
+      "body": "feat: enable optional group video in profile settings"
+    }
+  ],
+  "1.0.12": [
+    {
+      "sha": "89ae1b18258463a131c333e4df3e3075bbefe381",
+      "title": "fix: initialize group map pins before attaching to map",
+      "body": ""
+    }
+  ],
+  "1.0.13": [
+    {
+      "sha": "e789da3539785e6e9a672d99239cfcc32c643f4b",
+      "title": "fix: retry and cache iOS dependency downloads",
+      "body": ""
+    }
+  ],
+  "1.0.14": [
+    {
+      "sha": "b8ebb62c1c341e1558963a8c3b49814a309751e0",
+      "title": "feat: default group video sharing on with camera off at join",
+      "body": ""
+    },
+    {
+      "sha": "6c87da9ae250c576a4b217d1c1c34dd0327a5d3d",
+      "title": "fix: stabilize group media and restore shared-trip screens",
+      "body": "fix: render shared-trip Live Activities without shared storage\n\nfix: route shared links through the root stack outside native tabs\n\nfix: isolate media sessions and synchronize CallKit metadata and mute controls"
+    }
+  ],
+  "1.0.15": [
+    {
+      "sha": "623ee56af8e541ad4a393829c9f04dfbe4c7cc26",
+      "title": "fix: retain group ICE compatibility with older clients",
+      "body": "chore: release version 1.0.15 with verified shared-link routing"
+    }
+  ],
+  "1.0.17": [
+    {
+      "sha": "6e49809bebd98350f0bbb5a06a32509241ac3d6c",
+      "title": "fix: stabilize native group media and CallKit session ownership",
+      "body": "feat: start shared group routes and show recording activity dashboards\n\nfix: smooth live recording traces and show shared-link loading states\n\nchore: release version 1.0.16 and document verification limits"
+    },
+    {
+      "sha": "a79fef1731e3c4f71b58e7db640203cf8ba03f2e",
+      "title": "fix: align expanded Dynamic Island turn guidance on the left",
+      "body": "fix: remove duplicate microphone button property blocking CI\n\nchore: release version 1.0.17"
+    }
+  ],
+  "1.0.18": [
+    {
+      "sha": "04e8f66236b464a503f8397651dae7f0c910e279",
+      "title": "fix: place expanded Island distance below the maneuver arrow",
+      "body": "chore: release version 1.0.18"
+    }
+  ],
+  "1.0.19": [
+    {
+      "sha": "3a253dc5d6dc81823853e1630b15896798f2d4f5",
+      "title": "fix: restore valid Android Live Update timeout condition",
+      "body": "chore: release version 1.0.19"
+    }
+  ],
+  "1.0.20": [
+    {
+      "sha": "3a4d7f58792855a1175f8329e8b17826f016db9b",
+      "title": "feat: automatically record when joining recording groups",
+      "body": "fix: show recording icon and timer with safer activity padding\n\nfix: bind negotiated group media senders and report CallKit metadata early\n\nchore: release version 1.0.20"
+    }
+  ],
+  "1.0.21": [
+    {
+      "sha": "728687b2e8bd64845d7bef993926da8a5fc8dad6",
+      "title": "feat: replace the current ride when joining a group activity",
+      "body": "fix: save outgoing sessions and retain group membership during handoff\n\nchore: release version 1.0.21"
+    }
+  ],
+  "1.0.22": [
+    {
+      "sha": "07d3f84ba5610452f73ca6c66f548633265f37d8",
+      "title": "feat: estimate GPS travel speed and label recording accuracy",
+      "body": "fix: recover group rejoining and queue early media signaling\n\nfeat: reuse received video in rider lists and expose call controls\n\nfix: activate native group audio fallback and surface CallKit rejection\n\nchore: release version 1.0.22"
+    }
+  ],
+  "1.0.23": [
+    {
+      "sha": "de8d1913a351b94fd78e04eacb989f71b687a9ed",
+      "title": "fix: retain iOS CallKit registration throughout group voice sessions",
+      "body": "fix: use a red downward handset for ending voice chat\n\nchore: release version 1.0.23"
+    }
+  ],
+  "1.2.0": [
+    {
+      "sha": "5267a885e4d110ff7dde29185d7103a2d5a17c2c",
+      "title": "feat: pin group camera previews with per-viewer video priority",
+      "body": "feat: remember group riders without recording their paths or media\n\nfix: track CallKit connecting and connected participant phases\n\ndocs: explain local storage peer sharing and signaling privacy\n\nchore: release version 1.2.0"
+    }
+  ],
+  "1.2.1": [
+    {
+      "sha": "dfb6dc535802f6eedfb128cd19768ae7c0f851af",
+      "title": "fix: refine ride diagnostics and pairing recovery for 1.2.1",
+      "body": "Preserve native speed provenance and recover rejected Bluetooth credentials with verified re-pairing. Add rider-list camera pins, grouped developer analytics and three activity test modes. Keep release highlights concise with a separate complete changelog; preserve working CallKit and media lifecycle."
+    }
+  ],
+  "2.0.0": [
+    {
+      "sha": "ed7561d82fcbfc89389e54762929d9d08bea623e",
+      "title": "feat: add ride exploration, vehicle care and profile statistics in 2.0.0",
+      "body": "feat: collect a ride-only scratch index with continuous rounded overlays, recovery, reset confirmation and one-time recaps; offer optional short exploration routes.\n\nfeat: add editable personal-vehicle maintenance reminders, profile ride statistics and saved-profile group setup.\n\nfeat: check native app updates against GitHub binary releases with fork-aware configuration.\n\nfix: curate every historical changelog without changing version numbers or discarding full details. Preserve CallKit, media and Bluetooth protocol behavior."
+    }
+  ],
+  "2.0.1": [
+    {
+      "sha": "175398aec3e03cee8ff217587fcd1f751887e3ac",
+      "title": "fix: Guard optional H3 decoder to restore native startup",
+      "body": ""
+    }
+  ],
+  "2.0.2": [
+    {
+      "sha": "d253fed0a8e8bc31e58630035296d42174c1ab00",
+      "title": "fix: Improve scratch map visibility, zoom outlines and location view",
+      "body": ""
+    }
+  ],
+  "2.1.0": [
+    {
+      "sha": "1b0b6457864201371361d5463bc323f5159adf9f",
+      "title": "fix: Isolate screenshot failures and preserve AltSource metadata",
+      "body": ""
+    },
+    {
+      "sha": "7022ee84fcddc9595d3c0a735c029b607d2a5c5c",
+      "title": "feat(riding): add battery-aware returns, exploration rewards and regroup tools",
+      "body": ""
+    }
+  ],
+  "2.1.1": [
+    {
+      "sha": "f964b31d511e6d03ddc1bcc6b63dbeedc4738278",
+      "title": "docs(deploy): record validated 2.1.0 web deployment",
+      "body": ""
+    },
+    {
+      "sha": "d2ff2a19da559cc73d8a3757809655d995e17bcd",
+      "title": "fix(ui): refine translations, group controls and live scratch coverage",
+      "body": ""
+    }
+  ],
+  "2.2.0": [
+    {
+      "sha": "9d6256c7148ae023380e3198884f8807631bba0a",
+      "title": "docs(deploy): record verified 2.1.1 hosted web update",
+      "body": ""
+    },
+    {
+      "sha": "311ca1e2254bd6d581b688cea0b6362d3f13152c",
+      "title": "feat: Add exploratory round trips and learned battery planning",
+      "body": "feat: Show transit lines beneath ride routes\n\nfix: Brighten scratch borders and prioritize bicycle routes"
+    }
+  ],
+  "2.2.1": [
+    {
+      "sha": "01268bc98a7effefd7220893cf5c0f9d8ff73c1c",
+      "title": "docs: Record verified hosted web deployment for 2.2.0",
+      "body": ""
+    },
+    {
+      "sha": "bd3248a73f05e1e94c13c5d425ee03518ba2d056",
+      "title": "fix: Make exploration loops reliable and distinguish their return leg",
+      "body": "feat: Offer trip recording before external planner handoff\n\nfix: Simplify transit styling and preserve native route order"
+    }
+  ],
+  "2.2.2": [
+    {
+      "sha": "7a486da7c35493ecf86191c1a2163c7a1919e9a0",
+      "title": "docs(deploy): Record verified 2.2.1 web baseline",
+      "body": ""
+    },
+    {
+      "sha": "8040b2dbbd5826a86cf46660157bf676540ddb2e",
+      "title": "fix: Restore Bluetooth reconnects and refresh exploration and transit coverage",
+      "body": "Reduce idle sync serialization, reuse immutable geometry and archive summaries, and stop idle watchers on hidden tabs. Add external maps to route sharing, preserve pairing credentials, and coalesce reconnect operations. Document measured performance and hardware validation limits."
+    }
+  ],
+  "2.3.0": [
+    {
+      "sha": "a8e89a3e8b21b9fd635d516d0d5288b5fc867a04",
+      "title": "docs(deploy): Record verified 2.2.2 web deployment and validation limits",
+      "body": ""
+    },
+    {
+      "sha": "c6ebf020d2313e41beb0933842da771e9e49cd6b",
+      "title": "fix(bluetooth): Isolate reply deadlines and cancel stale transport operations",
+      "body": "Keep authenticated Xiaomi sessions out of legacy pairing on write failures. Cancel pending writes immediately on close, prevent late disconnects overwriting new sessions, and distinguish stack history from tab history."
+    },
+    {
+      "sha": "328424065be22f78822ef6252d491358ad198181",
+      "title": "feat: Add launch diagnostics, contextual vehicle analytics and settings search",
+      "body": "Cache exploration candidates with explicit retries, group expanded controls, simplify external-map recording consent and improve maintenance actions. Add seven-day redacted launch logs and ZIP export. Compare Bluetooth performance only across sustained, compatible riding conditions."
+    }
+  ],
+  "2.3.1": [
+    {
+      "sha": "93cd71194fa154541ec7429fea5b24738d3dc1ec",
+      "title": "docs(deploy): Record verified 2.3.0 hosted web update",
+      "body": ""
+    },
+    {
+      "sha": "d72dd8190b4bcfe71eae44b0294deeb856107c9f",
+      "title": "perf: Optimize navigation, storage and lightweight scratch replay",
+      "body": ""
+    },
+    {
+      "sha": "91f2324aeb4f9ee2ae715df1139eeca7ba6df947",
+      "title": "style(ui): Refine telemetry cards with an independent rollback switch",
+      "body": ""
+    }
+  ],
+  "2.3.2": [
+    {
+      "sha": "11a0301ae2d6309ff5dd8e84025d2b1d62dc96f1",
+      "title": "fix(navigation): Rotate after observed turns instead of anticipating corners",
+      "body": ""
+    }
+  ],
+  "2.4.0": [
+    {
+      "sha": "28ebd868deeac49e8053016e80e24f4b22c4fce1",
+      "title": "fix(ci): Diagnose clean Pro simulator startup with Device Hub",
+      "body": ""
+    },
+    {
+      "sha": "f5a6739f3a676bf949226c07d1353b1110b9d6e0",
+      "title": "fix(ci): Isolate screenshot capture with matching runtime tools",
+      "body": ""
+    },
+    {
+      "sha": "9467cc6e9eaa530070af59b492f461f9597145a0",
+      "title": "fix(ci): Test screenshot startup on a higher-memory runner",
+      "body": ""
+    },
+    {
+      "sha": "c343aab7cd5c900cef6c15b0f66b2fdd9dfe502d",
+      "title": "fix(ci): Test bounded headless boot without competing hosted devices",
+      "body": ""
+    },
+    {
+      "sha": "7c1ff7d30eaf75379628d8f3abd8ba6d1ee8cb1c",
+      "title": "fix(ci): Isolate screenshot verification from the beta host OS",
+      "body": ""
+    },
+    {
+      "sha": "a4afeb1c553c01b0b3897a0f2ed10bc3e8da1fbf",
+      "title": "fix(ci): Make iPad rotation idempotent and separate gallery timeouts",
+      "body": ""
+    },
+    {
+      "sha": "0ddee9a05dc32afd2a8b7acd857e73eef548f158",
+      "title": "fix(ci): Parse screenshot OCR independently of Vision diagnostics",
+      "body": ""
+    },
+    {
+      "sha": "086d2ec4359185930bd5f62c9713d0523176ab72",
+      "title": "fix(ci): Give verified app launches an independent capture deadline",
+      "body": ""
+    },
+    {
+      "sha": "f714a4a3252d5af8e818c867fa5dd1b6cec9608e",
+      "title": "fix(ci): Target the capture simulator and handle its URL confirmation",
+      "body": ""
+    },
+    {
+      "sha": "00fb6344842efc72702cae5154984892a68fe8b0",
+      "title": "feat: Add five-device sync, group approvals and daily exploration",
+      "body": "Preserve item edit dates and deletion tombstones; support offline device unpairing and private mesh introductions. Add group locking, approval requests, opt-in local alerts and Live Activity actions. Improve scratch reveals, heading calibration, current-location map pickers, Library previews, frequent rides, charging badges and the full-screen welcome tour. Release version 2.4.0 with localized challenges and cosmetic rewards."
+    },
+    {
+      "sha": "48878917c1b052554ff920a16ac0ee73c08908f1",
+      "title": "build: Capture genuine Android onboarding screens from existing APKs",
+      "body": ""
+    },
+    {
+      "sha": "8525a8a3d8674d68b9c7a63a26899f992b965574",
+      "title": "fix(ci): Launch the native Android activity explicitly and retain crash logs",
+      "body": ""
+    },
+    {
+      "sha": "681ea9e195064f3cc4126d28b2ce80829fdfbf2d",
+      "title": "fix(ci): Isolate native capture on Intel and confirm owned URL prompts",
+      "body": ""
+    },
+    {
+      "sha": "7bc8c72bd26cde0867ce7a24786a46cb15e99f34",
+      "title": "fix(ci): Wait for native Android pages and preserve simulator startup proof",
+      "body": ""
+    },
+    {
+      "sha": "53c7e6bbcf791032545578cb9b5900e36956be03",
+      "title": "fix(ci): Verify native page headers and refresh capture GPS after launch",
+      "body": ""
+    },
+    {
+      "sha": "714a10f02ea4fc54caa650b844ff893f452003c3",
+      "title": "build: Capture Android 17 phone and tablet screens with runtime proof",
+      "body": ""
+    },
+    {
+      "sha": "6bb843dbc2e2518dfb81054510388ef5afb1cbe8",
+      "title": "fix(ci): Refresh Android command-line tools and diagnose unavailable capture targets",
+      "body": ""
+    },
+    {
+      "sha": "f3717d9bf3d36e238512f83cdec50469734f08a6",
+      "title": "fix(ci): Replace obsolete Android tools package with current SDK tools",
+      "body": ""
+    },
+    {
+      "sha": "d54c87f9cd8fc366c1b47d9fb4bf2cfe11b544bb",
+      "title": "fix(ci): Initialize SDK paths without deprecated Android tools",
+      "body": ""
+    },
+    {
+      "sha": "9fae7454fa78ba247916df775ea48a7dcd78c9a7",
+      "title": "fix(ci): Resolve Android 17 package names and isolate simulator diagnostics",
+      "body": ""
+    },
+    {
+      "sha": "158f12e5e3bfe33c17423b1a48d737a12f279f7c",
+      "title": "build: Add a documented Pixel 11 Pro display profile and direct Device Hub captures",
+      "body": ""
+    },
+    {
+      "sha": "3a1b771781f44a6f08385a5e0b59b8f94170c995",
+      "title": "fix(ci): Use explicit Android user profiles and wait for package services",
+      "body": ""
+    },
+    {
+      "sha": "f4b5319516309e93dfc178b55a2d5be9abfaaaf2",
+      "title": "build: Require iOS 27 Pro captures and isolate Android profile storage",
+      "body": ""
+    },
+    {
+      "sha": "f69102c9a96680f99ab6306a1b16c6e60f2746ed",
+      "title": "fix(ci): Validate Pixel display density and select refreshed tools explicitly",
+      "body": ""
+    },
+    {
+      "sha": "032b486189dd88998c7a49f1b1b24dc9fe9feca3",
+      "title": "fix(ci): Give Android 17 capture devices sufficient internal storage",
+      "body": ""
+    },
+    {
+      "sha": "030fdfa5269f8dee57916e408e60622c25039f5f",
+      "title": "fix(ci): Accept current Android CLI package inventory format",
+      "body": ""
+    },
+    {
+      "sha": "9a68bfc657c7c918888fc7c5ab4b8df21c53ba1f",
+      "title": "build: Refresh verified Android phone and tablet galleries after releases",
+      "body": ""
+    },
+    {
+      "sha": "897eeec119c235088d78c12b7a028bd244482c4d",
+      "title": "fix(ci): Use the supported software renderer for Android 17 capture",
+      "body": ""
+    },
+    {
+      "sha": "e1d0c4a8902130efaf5986863e2ed8ba007294af",
+      "title": "fix: Preserve newer Bluetooth associations and stable location calibration",
+      "body": ""
+    },
+    {
+      "sha": "b9087bd3d2c19ff3220a6fe1ffcea3ae9a4cb7b5",
+      "title": "fix: Match welcome previews to native platforms and respect safe areas",
+      "body": ""
+    }
+  ],
+  "2.4.1": [
+    {
+      "sha": "7570e71230f9c4732e9eaece773ec57fc35f7a47",
+      "title": "fix: Use compatible SDK tools for Android 17 screenshot capture",
+      "body": ""
+    },
+    {
+      "sha": "b0b711b1f3b9efad62a2e5841404aaa4471ab3ff",
+      "title": "fix: Capture installed iPhone 17 Pro devices and use actual welcome frames",
+      "body": ""
+    },
+    {
+      "sha": "159600f709029d31afe40232aa4ee25544667ef9",
+      "title": "fix: Wait for native map readiness before querying camera state",
+      "body": ""
+    },
+    {
+      "sha": "66d208b4a1d8212c9447559f1183b76f65c0fbca",
+      "title": "docs: Add native map readiness fix to version 2.4.1 release notes",
+      "body": ""
+    },
+    {
+      "sha": "53b2677b4d37b405c737ccf3b6585c5caebd940d",
+      "title": "fix: Localize native screenshot and map readiness release notes",
+      "body": ""
+    }
+  ],
+  "2.5.0": [
+    {
+      "sha": "28bc2a602241dd7bfb8e87de7bbc63be9afe202c",
+      "title": "fix: Exclude permission dialogs from verified native screenshot galleries",
+      "body": ""
+    },
+    {
+      "sha": "7a4d0d816cae423033a1ea6f50d891f8bacdabaf",
+      "title": "test: Verify clean startup screenshots alongside process survival",
+      "body": ""
+    },
+    {
+      "sha": "a19f2d4692384c2ae31384ae5c97c24274d36800",
+      "title": "fix: Match screenshot capture tools to the installed iOS runtime",
+      "body": ""
+    },
+    {
+      "sha": "c553cdab0e8dfb93ca70714b7737754e4d3d53ea",
+      "title": "fix: Dismiss optional Android accuracy prompt during native capture",
+      "body": ""
+    },
+    {
+      "sha": "918e477a6126bfbca999394c666a6da14ea04f10",
+      "title": "fix: Continue simulator verification after Device Hub window timeout",
+      "body": ""
+    },
+    {
+      "sha": "8629292f4ff7e7eea21282ba14e6ed776f1d6969",
+      "title": "test: Match optional Device Hub window launch in capture checks",
+      "body": ""
+    },
+    {
+      "sha": "f9a5f7efc76418dbe504c505da3ab7ec81a72f5a",
+      "title": "test: Assert Device Hub rotation without optional command ordering",
+      "body": ""
+    },
+    {
+      "sha": "3237e8e3b26978d84ad377fd8aa9ed22ae75ede1",
+      "title": "fix: Complete Android emulator location service initialization",
+      "body": ""
+    },
+    {
+      "sha": "c7c376cc1ff203359579667d566f526270f1c36e",
+      "title": "docs: Refresh Android native previews for 2.4.1",
+      "body": ""
+    },
+    {
+      "sha": "f605d333b94f9092208d8c08907f2437ff786bd2",
+      "title": "fix: Reduce hosted iOS capture overhead and reuse initialized CI devices",
+      "body": ""
+    }
+  ]
+}

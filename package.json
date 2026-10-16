@@ -1,6 +1,6 @@
 {
   "name": "velunivo",
-  "version": "2.4.1",
+  "version": "2.5.0",
   "main": "index.js",
   "dependencies": {
     "@config-plugins/react-native-webrtc": "^15.0.2",
@@ -58,6 +58,7 @@
     "react-native-reanimated": "4.5.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
+    "react-native-svg": "15.15.4",
     "react-native-web": "^0.21.2",
     "react-native-webrtc": "^124.0.8",
     "react-native-webview": "13.16.1",
@@ -80,7 +81,7 @@
     "test": "tsx --test tests/*.test.ts tests/*.test.mjs",
     "server": "tsx server/index.ts",
     "lint": "expo lint",
-    "postinstall": "node scripts/patch-map-overlays.mjs && node scripts/patch-h3.mjs && node scripts/patch-widgets.mjs && node scripts/copy-map-worker.mjs && node scripts/generate-peer-runtime.mjs && node scripts/generate-group-runtime.mjs",
+    "postinstall": "node scripts/patch-map-overlays.mjs && node scripts/patch-h3.mjs && node scripts/patch-widgets.mjs && node scripts/copy-map-worker.mjs && node scripts/generate-peer-runtime.mjs && node scripts/generate-group-runtime.mjs && node scripts/patch-webrtc-memories.mjs",
     "web:preview": "node scripts/generate-pwa.mjs && expo export --platform web --output-dir dist && node scripts/build-pwa.mjs dist && python3 scripts/serve-web.py",
     "brand:generate": "node scripts/generate-brand.mjs",
     "pwa:generate": "node scripts/generate-pwa.mjs",

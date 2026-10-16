@@ -7,7 +7,7 @@ export const explorationAchievements=[
  {id:'tiles-1000',name:'City explorer',icon:'globe-outline',goal:1000,kind:'tiles'},
  {id:'rides-10',name:'Regular rider',icon:'bicycle-outline',goal:10,kind:'rides'},
  {id:'km-100',name:'Beyond the familiar',icon:'trail-sign-outline',goal:100,kind:'km'},
- {id:'week-25',name:'Weekly explorer',icon:'trophy-outline',goal:25,kind:'week'},
+ {id:'week-25',name:'Weekly explorer',icon:'trophy-outline',goal:70,kind:'week'},
  {id:'tiles-10',name:'A new corner',icon:'compass-outline',goal:10,kind:'tiles'},
  {id:'tiles-50',name:'Local explorer',icon:'map-outline',goal:50,kind:'tiles'},
  {id:'tiles-250',name:'Beyond your neighbourhood',icon:'map-outline',goal:250,kind:'tiles'},
@@ -32,5 +32,5 @@ export function explorationProgress(index:ScratchIndex,rides:RecordedRide[],prev
  const valid=rides.filter(r=>r.status!=='recording'),values={tiles:Object.keys(index.tiles).length,rides:valid.length,km:valid.reduce((n,r)=>n+r.meters,0)/1000,week:Object.values(index.tiles).filter(t=>t.firstVisited>=start.getTime()&&t.firstVisited<=now&&!t.approximate).length};
  const earned=explorationAchievements.filter(a=>values[a.kind]>=a.goal).map(a=>a.id),progress=mergeExplorationProgress(previous,{schema:1,xp:values.tiles*5+Math.floor(values.km)*2+values.rides*10+Object.values(previous.quests||{}).reduce((n,q)=>n+q.xp,0),achievements:earned});
  const level=1+Math.floor(Math.sqrt(progress.xp/100)),base=100*(level-1)**2,next=100*level**2;
- return {progress,level,nextXP:next,levelFraction:(progress.xp-base)/(next-base),weeklyTiles:values.week,weeklyGoal:25,values};
+ return {progress,level,nextXP:next,levelFraction:(progress.xp-base)/(next-base),weeklyTiles:values.week,weeklyGoal:70,values};
 }

@@ -4,13 +4,15 @@ import {ScratchIndex} from './scratchMap';
 import {distance} from './geo';
 export interface AreaChallenge {day:string;coordinate:Coord;name:string;createdAt:number;}
 export function localDay(now:number){const d=new Date(now);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
-export function dailyQuest(now:number){const day=localDay(now),seed=[...day].reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0,7);return {id:'daily:'+day,day,goal:4+seed%7,xp:75+(seed%7)*10};}
-/** A modest nearby area, not a route or permission to enter land. Completion needs actual ride GPS. */
+export function dailyQuest(now:number){const day=localDay(now),seed=[...day].reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0,7);return {id:'daily:'+day,day,goal:10+seed%6,xp:75+(seed%7)*10};}
+export const NEIGHBOURHOOD_MAX_METERS=10000;
+/** A nearby area, not a route or permission to enter land. Completion needs actual ride GPS. */
 export function areaChallenge(origin:Coord,index:ScratchIndex,now:number):AreaChallenge|null{
- const seed=[...localDay(now)].reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0,7),cells=gridDisk(latLngToCell(origin[1],origin[0],8),3);
- const candidates=cells.map(c=>{const [lat,lon]=cellToLatLng(c);return [lon,lat] as Coord;}).filter(c=>distance(origin,c)>=800&&distance(origin,c)<=4000);
- const unseen=candidates.filter(c=>!cellToChildren(latLngToCell(c[1],c[0],8),10).some(id=>!!index.tiles[id]));if(!unseen.length)return null;
- return {day:localDay(now),coordinate:unseen[seed%unseen.length],name:'',createdAt:now};
+ const seed=[...localDay(now)].reduce((h,c)=>(h*31+c.charCodeAt(0))>>>0,7),cells=gridDisk(latLngToCell(origin[1],origin[0],8),16);
+ const candidates=cells.map(c=>{const [lat,lon]=cellToLatLng(c);return [lon,lat] as Coord;}).filter(c=>distance(origin,c)>=800&&distance(origin,c)<=NEIGHBOURHOOD_MAX_METERS);
+ // Check the seeded candidate first; avoid expanding every cell into children on low-end devices.
+ for(let offset=0;offset<candidates.length;offset++){const coordinate=candidates[(seed+offset)%candidates.length];if(!cellToChildren(latLngToCell(coordinate[1],coordinate[0],8),10).some(id=>!!index.tiles[id]))return {day:localDay(now),coordinate,name:'',createdAt:now};}
+ return null;
 }
 export function completedChallenges(index:ScratchIndex,area:AreaChallenge|null,now:number){const quest=dailyQuest(now),dayStart=new Date(now);dayStart.setHours(0,0,0,0);const today=Object.entries(index.tiles).filter(([,v])=>!v.approximate&&v.firstVisited>=dayStart.getTime()&&v.firstVisited<=now),earned:Record<string,{xp:number;completedAt:number}>={};
  if(today.length>=quest.goal)earned[quest.id]={xp:quest.xp,completedAt:now};

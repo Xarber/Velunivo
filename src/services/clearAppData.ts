@@ -1,3 +1,4 @@
+import {savedMemories,removeMemory,stopMemory} from './memories';
 import {scratchMap} from './scratchMap';
 import {saveDevicePair} from './devicePairState';
 import {resetRoadPackCache} from './offlineRouting';
@@ -14,6 +15,7 @@ import {refreshAppData} from './dataChange';
 import {setLanguageChoice} from '../i18n/core';
 /** Only Velunivo-owned storage and downloads. Call only after explicit in-app confirmation, outside a ride. */
 export async function clearAppData(){
+ await stopMemory();for(const memory of await savedMemories())await removeMemory(memory);
  await saveDevicePair(null);
  const garage=restoreGarage(await AsyncStorage.getItem('vehicles-v1'),null);
  await bluetoothBridge.disconnect();for(const a of await associationStorage.load())await bluetoothBridge.forget(a.vehicleId);await associationStorage.save([]);await setMapKey('');

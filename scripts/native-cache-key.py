@@ -20,7 +20,7 @@ if __name__ == '__main__':
     for folder in ['native', 'plugins']:
         for p in sorted((root / folder).rglob('*')):
             if p.is_file(): modules[str(p.relative_to(root))] = hashlib.sha256(p.read_bytes()).hexdigest()
-    for name in ['patch-widgets.mjs', 'patch-map-overlays.mjs']:
+    for name in ['patch-widgets.mjs', 'patch-map-overlays.mjs','patch-webrtc-memories.mjs']:
         patch = root / 'scripts' / name
         modules[str(patch.relative_to(root))] = hashlib.sha256(patch.read_bytes()).hexdigest()
     print('NATIVE_DEPENDENCY_KEY=' + cache_key(json.loads((root / 'package-lock.json').read_text()), json.loads((root / 'app.json').read_text()), modules))

@@ -13,7 +13,7 @@ Optional Android signing secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_P
 
 ## Run a release
 
-Either push an unsigned lightweight tag `v1.0.0`, or dispatch **Build and release** with version `1.0.0`. Never use `1.0` for a binary release; it is reserved for AltSource. The first successful run creates the matching binary release and updates the `1.0` feed release. Every build validates lint/types/tests first. APP_VERSION is injected from the validated version; BUILD_NUMBER is the Actions run number. The IPA's actual Info.plist is checked against the tag before its source entry is created.
+Push or merge an updated semantic version to `main` for a stable release, or `testing` for a prerelease. `development` has no automatic push workflows. Manual **Build and release** dispatch remains available for recovery. See [branch pipeline](WORKFLOW_BRANCHES.md). Never use `1.0` for a binary release; it is reserved for AltSource. The first successful run creates the matching binary release and updates the `1.0` feed release. Every build validates lint/types/tests first. APP_VERSION is injected from the validated version; BUILD_NUMBER is the Actions run number. The IPA's actual Info.plist is checked against the tag before its source entry is created.
 
 The workflow builds:
 

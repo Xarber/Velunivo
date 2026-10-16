@@ -1,6 +1,10 @@
+import Svg,{Path} from 'react-native-svg';
+import {useStore} from '../services/store';
+import {arrowPath} from '../core/cosmeticRewards';
 import {t} from '../i18n/core';
 import React from 'react';
 import { Animated,View } from 'react-native';
 export default function PositionArrow({ navigating, rotation = 0 }: { navigating: boolean; rotation?: number|Animated.Value }) {
-  return <Animated.View accessibilityLabel={t(navigating ? 'Navigation position arrow' : 'Current position')} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: typeof rotation==='number'?`${rotation}deg`:rotation.interpolate({inputRange:[-3600,3600],outputRange:['-3600deg','3600deg']}) }] }}>{navigating ? <View style={{ width: 36, height: 40, alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 4px #00000025' }}><View style={{ position: 'absolute', top: 0, borderLeftWidth: 18, borderRightWidth: 18, borderBottomWidth: 38, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: 'white' }} /><View style={{ position: 'absolute', top: 4, borderLeftWidth: 14, borderRightWidth: 14, borderBottomWidth: 30, borderLeftColor: 'transparent', borderRightColor: 'transparent', borderBottomColor: '#287CF5' }} /></View> : <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#287CF5', borderWidth: 3, borderColor: 'white', boxShadow: '0 2px 6px #00000025' }} />}</Animated.View>;
+  const {navigationOptions:n}=useStore();
+  return <Animated.View accessibilityLabel={t(navigating ? 'Navigation position arrow' : 'Current position')} style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', transform: [{ rotate: typeof rotation==='number'?`${rotation}deg`:rotation.interpolate({inputRange:[-3600,3600],outputRange:['-3600deg','3600deg']}) }] }}>{navigating ? <Svg width={40} height={44} viewBox="0 0 40 42"><Path d={arrowPath(n.navigationArrow)} fill="#287CF5" stroke="white" strokeWidth="3" strokeLinejoin="round"/></Svg> : <View style={{ width: 22, height: 22, borderRadius: 11, backgroundColor: '#287CF5', borderWidth: 3, borderColor: 'white', boxShadow: '0 2px 6px #00000025' }} />}</Animated.View>;
 }

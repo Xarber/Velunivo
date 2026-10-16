@@ -18,7 +18,7 @@ import {distanceLeft} from '../../core/rideView';
 import {useStore} from '../../services/store';
 export default function SharedTrip(){
  const {pin,cloud}=useLocalSearchParams<{pin:string;cloud?:string}>(),system=usePalette(),insets=useSafeAreaInsets(),{width}=useWindowDimensions(),{navigationOptions}=useStore();
- const p={...system,dark:true,text:'#F6FAFC',muted:'#ADBCC6',line:'#30434B',accent:'#64DCC5'};
+ const p={...system,dark:true,text:'#F6FAFC',muted:'#ADBCC6',line:'#30434B',accent:system.accentDark};
  const valid=typeof pin==='string'&&PIN_PATTERN.test(pin),[connected,setConnected]=useState(false),[retry,setRetry]=useState(0),[status,setStatus]=useState(''),[route,setRoute]=useState<SharedRoute|null>(null),[progress,setProgress]=useState<SharedProgress|null>(null),[ended,setEnded]=useState(false),[now,setNow]=useState(()=>Date.now());
  const viewing=usePathname()==='/share/trip';
  useEffect(()=>{const t=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(t);},[]);

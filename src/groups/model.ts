@@ -2,7 +2,7 @@ import {RegroupRequest,readRegroup} from './regroup';
 import {Coord,Route} from '../core/types';
 import {validCoordinate} from '../sharing/model';
 export const GROUP_LIMIT=8, MEMBER_LEASE=60000;
-export interface RiderProfile {id:string;name:string;photo?:string;video?:boolean;camera?:boolean;voice:boolean;joinApproval?:boolean;}
+export interface RiderProfile {memoriesAllowed?:boolean;memoriesRecording?:boolean;profileBadge?:import('../core/cosmeticRewards').ProfileBadge;id:string;name:string;photo?:string;video?:boolean;camera?:boolean;voice:boolean;joinApproval?:boolean;}
 export interface GroupMember extends RiderProfile {order:number;position:Coord|null;updatedAt:number;}
 export interface GroupSnapshot {locked?:boolean;approval?:boolean;requests?:RiderProfile[];regroup?:RegroupRequest;code:string;leader:string;revision:number;members:GroupMember[];banned:string[];route:Route|null;}
 export type VoiceSignal=({type:'video-priority';enabled:boolean}|{type:'offer'|'answer';sdp:string}|{type:'ice';candidate:{candidate:string;sdpMid:string|null;sdpMLineIndex:number|null}})&{session?:string};
@@ -12,7 +12,7 @@ export const RIDER_ID=/^[a-f0-9]{32}$/;
 export function formatGroupCode(value:string){const code=value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,8);return code.length>4?code.slice(0,4)+'-'+code.slice(4):code;}
 export const compactGroupCode=(value:string)=>value.toUpperCase().replace(/-/g,'');
 export const riderInitials=(name:string)=>name.trim().split(/\s+/).slice(0,2).map(s=>Array.from(s)[0]).join('').toUpperCase()||'?';
-export function readProfile(raw:unknown):RiderProfile|null{const p=raw as RiderProfile;if(!p||!RIDER_ID.test(p.id)||typeof p.name!=='string'||!p.name.trim()||p.name.length>40||typeof p.voice!=='boolean'||p.photo!=null&&(typeof p.photo!=='string'||!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(p.photo)||p.photo.length>40000))return null;return {id:p.id,name:p.name.trim(),voice:p.voice,joinApproval:p.joinApproval===true,video:p.video===true,camera:p.camera===true,...(p.photo?{photo:p.photo}:{})};}
+export function readProfile(raw:unknown):RiderProfile|null{const p=raw as RiderProfile;if(!p||!RIDER_ID.test(p.id)||typeof p.name!=='string'||!p.name.trim()||p.name.length>40||typeof p.voice!=='boolean'||p.photo!=null&&(typeof p.photo!=='string'||!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(p.photo)||p.photo.length>40000))return null;return {id:p.id,name:p.name.trim(),voice:p.voice,memoriesAllowed:p.memoriesAllowed===true,memoriesRecording:p.memoriesRecording===true,profileBadge:['leaf','spark','crown'].includes(p.profileBadge||'')?p.profileBadge:'none',joinApproval:p.joinApproval===true,video:p.video===true,camera:p.camera===true,...(p.photo?{photo:p.photo}:{})};}
 export function groupRoute(route:Route):Route|null{
  if(!route||typeof route!=='object'||!Array.isArray(route.coordinates)||route.coordinates.length<2||route.coordinates.length>20000||!route.coordinates.every(validCoordinate)||!Array.isArray(route.steps)||route.steps.length>2000)return null;
  const steps=route.steps.filter(s=>s&&typeof s.text==='string'&&Number.isInteger(s.index)&&s.index>=0&&s.index<route.coordinates.length&&Number.isFinite(s.distance)&&s.distance>=0&&Number.isFinite(s.sign)).map(s=>({text:s.text.slice(0,300),index:s.index,distance:s.distance,sign:s.sign}));

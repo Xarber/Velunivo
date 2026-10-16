@@ -8,5 +8,6 @@ export const settingsGroups = [
   {id:'maps',title:'Maps & downloads',icon:'map-outline',description:'Transit, traffic, offline regions and provider key',keys:['preferOfflineRouting','transit','traffic','downloadedMaps']},
   {id:'recording',title:'Recording & battery',icon:'recording-outline',description:'Ride history, learned ETA and battery feedback',keys:['recordRides','learnedEta','askBatteryUsage']},
  {id:'bluetooth',title:'Bluetooth',icon:'bluetooth-outline',description:'Vehicle connection and telemetry visibility',keys:[]},
+  {id:'storage',title:'Storage',icon:'server-outline',description:'Space used by saved data, memories and downloads',keys:[]},
   {id:'privacy',title:'Privacy & data',icon:'shield-checkmark-outline',description:'Local storage, search providers and permissions',keys:[]},
 ] as const;

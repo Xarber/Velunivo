@@ -1,5 +1,6 @@
 /** Historical versions stay unchanged; only their overview is curated. Everything stays in full details. */
 export const featureTitles:Record<string,readonly string[]>={
+ '2.5.0':['Memories together','Make every map yours','Devices that stay connected'],
  '2.3.0':['Vehicle performance','Launch logs','Find settings faster'],
  '2.2.0':['Explore a new way home','Battery estimates that learn','Transit on your map'],
  '2.1.0':['Ride with confidence','Explore and level up','Stay together'],

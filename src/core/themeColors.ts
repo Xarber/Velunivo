@@ -1,0 +1,3 @@
+/** Shared accents for native maps, SVG branding, panels and browser paint layers. */
+export function rgba(hex:string,alpha:number){const color=hex.replace('#','');if(!/^[0-9a-f]{6}$/i.test(color))return hex;return `rgba(${parseInt(color.slice(0,2),16)},${parseInt(color.slice(2,4),16)},${parseInt(color.slice(4,6),16)},${Math.max(0,Math.min(1,alpha))})`;}
+export function mixColor(hex:string,other:string,fraction:number){const a=hex.replace('#',''),b=other.replace('#','');return '#'+[0,2,4].map(i=>Math.round(parseInt(a.slice(i,i+2),16)*(1-fraction)+parseInt(b.slice(i,i+2),16)*fraction).toString(16).padStart(2,'0')).join('');}

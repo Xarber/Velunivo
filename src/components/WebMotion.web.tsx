@@ -1,3 +1,4 @@
+import {usePalette} from './ui';
 import React, { useSyncExternalStore } from 'react';
 const query = '(prefers-reduced-motion: reduce)';
 const subscribe = (notify: () => void) => {
@@ -11,6 +12,7 @@ export function motionProps(kind: string, state?: string) {
   return { dataSet: { velunivoMotion: kind, ...(state ? { motionState: state } : {}) } };
 }
 export default function WebMotion() {
+  const p=usePalette();
   return <style>{`
     @keyframes velunivo-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes velunivo-sidebar { from { opacity: 0; transform: translateX(-16px); } to { opacity: 1; transform: translateX(0); } }
@@ -29,7 +31,7 @@ export default function WebMotion() {
     }
     [data-velunivo-motion="button"]:not([aria-disabled="true"]):active { transform: scale(.98); }
     [data-velunivo-motion="field"] { transition: border-color 180ms ease, box-shadow 180ms ease; }
-    [data-velunivo-motion="field"]:focus-visible { outline: 2px solid #007F6D; outline-offset: 2px; }
+    [data-velunivo-motion="field"]:focus-visible { outline: 2px solid ${p.accent}; outline-offset: 2px; }
     @media (prefers-reduced-motion: reduce) {
       [data-velunivo-motion] { animation: none !important; transition: none !important; }
       [data-velunivo-motion="button"], [data-velunivo-motion="route"] { transform: none !important; }

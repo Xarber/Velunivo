@@ -1,7 +1,7 @@
 name: Build and release
 on:
   push:
-    tags: ['v*']
+    branches: [main, testing]
   workflow_dispatch:
     inputs:
       version:
@@ -11,7 +11,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: velunivo-release
+  group: velunivo-release-${{ github.ref_name }}
   cancel-in-progress: true
 env:
   EXPO_PUBLIC_UPDATE_REPOSITORY: ${{ github.repository }}
@@ -24,6 +24,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -32,10 +33,16 @@ jobs:
         env:
           INPUT_VERSION: ${{ inputs.version }}
         run: |
-          version="${INPUT_VERSION:-${GITHUB_REF_NAME#v}}"
+          version="${INPUT_VERSION:-$(node -p 'require("./package.json").version')}"
           [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Use major.minor.patch'; exit 1; }
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "tag=v$version" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_REF_NAME" == 'testing' ]]; then
+            echo "tag=v$version-testing.$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
+            echo 'prerelease=true' >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=v$version" >> "$GITHUB_OUTPUT"
+            echo 'prerelease=false' >> "$GITHUB_OUTPUT"
+          fi
       - name: Compute version-independent native dependency cache key
         run: python3 scripts/native-cache-key.py >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
@@ -49,13 +56,18 @@ jobs:
         env:
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: bash scripts/pin-release-tag.sh
+      - run: node scripts/generate-developer-changelog.mjs
+        env:
+          APP_VERSION: ${{ steps.version.outputs.version }}
       - run: node scripts/release-notes.mjs
         env:
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
       - uses: actions/upload-artifact@v4
         with:
           name: notes
-          path: release-notes.md
+          path: |
+            release-notes.md
+            src/core/developerReleaseNotes.json
   web:
     needs: prepare
     runs-on: ubuntu-latest
@@ -77,6 +89,11 @@ jobs:
       EXPO_PUBLIC_PEER_ICE_SERVERS: ${{ vars.PEER_ICE_SERVERS }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: notes
+          path: .release-metadata
+      - run: cp .release-metadata/src/core/developerReleaseNotes.json src/core/developerReleaseNotes.json
       - name: Compute version-independent native dependency cache key
         run: python3 scripts/native-cache-key.py >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
@@ -116,6 +133,11 @@ jobs:
       EXPO_PUBLIC_PEER_ICE_SERVERS: ${{ vars.PEER_ICE_SERVERS }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: notes
+          path: .release-metadata
+      - run: cp .release-metadata/src/core/developerReleaseNotes.json src/core/developerReleaseNotes.json
       - name: Compute version-independent native dependency cache key
         run: python3 scripts/native-cache-key.py >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
@@ -231,6 +253,11 @@ jobs:
       EXPO_PUBLIC_PEER_ICE_SERVERS: ${{ vars.PEER_ICE_SERVERS }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: notes
+          path: .release-metadata
+      - run: cp .release-metadata/src/core/developerReleaseNotes.json src/core/developerReleaseNotes.json
       - name: Compute version-independent native dependency cache key
         run: python3 scripts/native-cache-key.py >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
@@ -353,6 +380,11 @@ jobs:
       EXPO_PUBLIC_PEER_ICE_SERVERS: ${{ vars.PEER_ICE_SERVERS }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: notes
+          path: .release-metadata
+      - run: cp .release-metadata/src/core/developerReleaseNotes.json src/core/developerReleaseNotes.json
       - name: Compute version-independent native dependency cache key
         run: python3 scripts/native-cache-key.py >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
@@ -443,6 +475,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+      PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -453,13 +486,16 @@ jobs:
         run: |
           python3 scripts/screenshot-notes.py --assets artifacts --notes artifacts/release-notes.md
           python3 scripts/build-info.py --repo "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG"
+          flags=(--prerelease=false --latest=true)
+          if [[ "$PRERELEASE" == 'true' ]]; then flags=(--prerelease=true --latest=false); fi
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release edit "$RELEASE_TAG" --notes-file artifacts/release-notes.md
+            gh release edit "$RELEASE_TAG" "${flags[@]}" --notes-file artifacts/release-notes.md
           else
-            gh release create "$RELEASE_TAG" --verify-tag --title "Velunivo ${{ needs.prepare.outputs.version }}" --notes-file artifacts/release-notes.md
+            gh release create "$RELEASE_TAG" "${flags[@]}" --verify-tag --title "Velunivo ${{ needs.prepare.outputs.version }}" --notes-file artifacts/release-notes.md
           fi
           gh release upload "$RELEASE_TAG" artifacts/Velunivo.ipa artifacts/Velunivo.apk artifacts/Velunivo-simulator.app.zip artifacts/web.zip artifacts/build_info.json --clobber
       - name: Update mutable AltSource release at fixed 1.0 URL
+        if: needs.prepare.outputs.prerelease != 'true'
         run: |
           if ! gh release view 1.0 >/dev/null 2>&1; then
             gh release create 1.0 --target "$GITHUB_SHA" --title 'Velunivo AltSource' --notes 'Mutable source feed. Add apps.json to AltStore Classic or SideStore. Binary releases use v-prefixed version tags.' --latest=false

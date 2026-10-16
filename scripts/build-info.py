@@ -4,13 +4,14 @@ import datetime
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 
 BINARIES = ('Velunivo.ipa', 'Velunivo.apk', 'Velunivo-simulator.app.zip')
 
 def build_info(folder, repo, tag, sha, run_id):
     metadata = json.loads((folder / 'ios-metadata.json').read_text())
-    if tag != 'v' + metadata['version']:
+    if not re.fullmatch(re.escape('v'+metadata['version'])+r'(?:-testing\.[0-9]+)?',tag):
         raise ValueError('Release tag does not match the compiled IPA version')
     binaries = []
     for name in BINARIES:

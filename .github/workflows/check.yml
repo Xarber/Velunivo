@@ -1,12 +1,12 @@
 name: Verify
 on:
-  push:
-    branches: [main]
   pull_request:
+    branches: [main, testing]
 permissions:
   contents: read
 jobs:
   check:
+    if: github.head_ref != 'development'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

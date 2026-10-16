@@ -11,7 +11,7 @@ const PaletteContext = createContext<ReturnType<typeof useSystemPalette> | null>
 export const PaletteProvider = PaletteContext.Provider;
 function useSystemPalette() {
   const dark = useColorScheme() === 'dark';
-  return { dark, bg: dark ? '#101B21' : '#F4F7F8', card: dark ? '#1A2930' : '#FFFFFF', text: dark ? '#F6FAFC' : '#162C35', muted: dark ? '#9BAEB6' : '#647B86', line: dark ? '#30434B' : '#E6ECEF', accent: dark ? '#64DCC5' : '#007F6D' };
+  return { dark, bg: dark ? '#101B21' : '#F4F7F8', card: dark ? '#1A2930' : '#FFFFFF', text: dark ? '#F6FAFC' : '#162C35', muted: dark ? '#9BAEB6' : '#647B86', line: dark ? '#30434B' : '#E6ECEF', accent: dark ? '#64DCC5' : '#007F6D', accentLight:'#007F6D',accentDark:'#64DCC5' };
 }
 export const usePalette = () => { useLanguage(); const inherited = useContext(PaletteContext); const system = useSystemPalette(); return inherited ?? system; };
 export function Button({ title, onPress, secondary = false, disabled = false, loading = false, progress, icon = 'chevron-forward' }: { title: string; onPress(): void; secondary?: boolean; disabled?: boolean; loading?: boolean; progress?: number | null; icon?: keyof typeof Ionicons.glyphMap }) {

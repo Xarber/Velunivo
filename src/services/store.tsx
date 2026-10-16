@@ -1,3 +1,4 @@
+import {configureDiagnostics} from './diagnostics';
 import {noteEntityEdit} from './entityEdits';
 import {AppState,Platform} from 'react-native';
 import {calibrateEnergy} from '../core/energyCalibration';
@@ -34,6 +35,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [vehicleLocked, setVehicleLocked] = useState(false);
   const lockVehicle=useCallback((value:boolean)=>{setRideLock(value);setVehicleLocked(value);},[]);
   const [selected, select] = useState<Route | null>(null), [saved, setSaved] = useState<Route[]>([]), [ready, setReady] = useState(false);
+  useEffect(()=>{configureDiagnostics(ready&&navigationOptions.developerMode&&navigationOptions.debugLogs);},[ready,navigationOptions.developerMode,navigationOptions.debugLogs]);
   useEffect(() => { (async () => {
     try {
       const [p, r, g, n, edits] = await Promise.all([AsyncStorage.getItem('profile-v1'), AsyncStorage.getItem('routes-v1'), AsyncStorage.getItem('vehicles-v1'), AsyncStorage.getItem('navigation-v1'),readSettingEdits()]);

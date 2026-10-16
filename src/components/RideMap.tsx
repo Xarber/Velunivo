@@ -1,3 +1,4 @@
+import {usePalette} from './ui';
 import {nativeCoordinates} from '../core/nativeCoordinates';
 import TransitOverlay from './TransitOverlay';
 import {useTransitLines} from '../services/useTransitLines';
@@ -25,6 +26,7 @@ export default function RideMap(props: MapProps & { offlineMap?: string }) {
   return <DeviceMap {...props} />;
 }
 function DeviceMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit,positionLabel,planningStops,areaSelection,groupRiders=[],bookmarks=[],scratchContext,scratchHighlight,onScratchTile,mapBounds,scratchIndexOverride }: MapProps) {
+  const p=usePalette();
   const group=useGroupRide(),{bounds:scratchBounds,update:setScratchBounds}=useScratchViewport(),scratch=useScratchLayer(scratchContext,scratchBounds,scratchHighlight,scratchIndexOverride);
   const transitLines=useTransitLines(!!transit,scratchBounds);
   const map = useRef<MapView>(null);
@@ -44,15 +46,15 @@ function DeviceMap({ routes, selected, position, follow, onPick, traffic, startP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraTarget]);
   const [w, s, e, n] = useMemo(()=>selected ? routeBounds(selected.coordinates) : [9.18, 45.46, 9.20, 45.48],[selected]);
-  const paths=useMemo(()=>routeLayers(routes,selected,completedMeters,trace),[routes,selected,completedMeters,trace]);
+  const paths=useMemo(()=>routeLayers(routes,selected,completedMeters,trace,p.accentDark),[routes,selected,completedMeters,trace,p.accentDark]);
   return <MapView onRegionChange={region=>{updateBearing();if(scratchContext||transit)setScratchBounds([region.longitude-region.longitudeDelta/2,region.latitude-region.latitudeDelta/2,region.longitude+region.longitudeDelta/2,region.latitude+region.latitudeDelta/2]);}} onLayout={()=>{if(scratchContext||transit)void map.current?.getMapBoundaries().then(b=>setScratchBounds([b.southWest.longitude,b.southWest.latitude,b.northEast.longitude,b.northEast.latitude])).catch(()=>{});}} onRegionChangeComplete={region=>{setScratchBounds([region.longitude-region.longitudeDelta/2,region.latitude-region.latitudeDelta/2,region.longitude+region.longitudeDelta/2,region.latitude+region.latitudeDelta/2]);reportArea();updateBearing();}} onPanDrag={onPan} onTouchStart={onPan} onTouchMove={onPan} onTouchEnd={onPan} ref={map} style={{ flex: 1 }} mapPadding={follow ? followPadding || fitPadding : { top: 0, bottom: 0, left: 0, right: 0 }} showsTraffic={traffic} mapType={transit ? 'standard' : 'mutedStandard'} showsPointsOfInterests showsBuildings pitchEnabled={!areaSelection} rotateEnabled={!follow&&!areaSelection} onMapReady={() => { setReady(true); fit(); }} legalLabelInsets={{ top: 120, left: 12, right: 12, bottom: fitPadding?.bottom || 45 }} initialRegion={{ latitude: (s + n) / 2, longitude: (w + e) / 2, latitudeDelta: Math.max(.005, (n - s) * 1.5), longitudeDelta: Math.max(.005, (e - w) * 1.5) }} onPress={ev => onPick?.([ev.nativeEvent.coordinate.longitude, ev.nativeEvent.coordinate.latitude],scratch.geometry.resolution)}>
     {transit&&<TransitOverlay data={transitLines}/> }
     <NativeScratchOverlay geometry={scratch.geometry} opacity={scratch.opacity} loop={scratch.glowLoop} onPick={onScratchTile}/>
     {/* Apple traffic uses the native road layer. A duplicate raster tile sits above MapKit polylines regardless of zIndex. */}
     {paths.flatMap((r,i) => [<Polyline key={`${r.id}-outline`} zIndex={100+i*2} coordinates={nativeCoordinates(r.coordinates)} strokeColor={r.outline} strokeWidth={ROUTE_WIDTH + 3} />, <Polyline key={r.id} zIndex={101+i*2} coordinates={nativeCoordinates(r.coordinates)} strokeColor={r.color} strokeWidth={ROUTE_WIDTH} />])}
-    {(startPoint || selected?.coordinates[0]) && <Marker coordinate={point(startPoint || selected!.coordinates[0])} title={t("Start")} pinColor="#007F6D" />}
+    {(startPoint || selected?.coordinates[0]) && <Marker coordinate={point(startPoint || selected!.coordinates[0])} title={t("Start")} pinColor={p.accentLight} />}
     {(endPoint || selected?.coordinates.at(-1)) && <Marker coordinate={point(endPoint || selected!.coordinates.at(-1)!)} title={t("Destination")} />}
-    {(planningStops??selected?.waypoints??[]).filter(s=>s.coordinate.every(Number.isFinite)).map((stop,i)=><Marker key={`stop-${i}`} coordinate={point(stop.coordinate)} title={`${t(`Stop ${i+1}`)} · ${stop.label}`} zIndex={100}><View style={{width:30,height:30,alignItems:'center',justifyContent:'center',backgroundColor:'#007F6D',borderWidth:3,borderColor:'#FFFFFF',borderRadius:15}}><Text style={{color:'#FFFFFF',fontWeight:'800'}}>{i+1}</Text></View></Marker>)}
+    {(planningStops??selected?.waypoints??[]).filter(s=>s.coordinate.every(Number.isFinite)).map((stop,i)=><Marker key={`stop-${i}`} coordinate={point(stop.coordinate)} title={`${t(`Stop ${i+1}`)} · ${stop.label}`} zIndex={100}><View style={{width:30,height:30,alignItems:'center',justifyContent:'center',backgroundColor:p.accentLight,borderWidth:3,borderColor:'#FFFFFF',borderRadius:15}}><Text style={{color:'#FFFFFF',fontWeight:'800'}}>{i+1}</Text></View></Marker>)}
     {bookmarks.map(b=><Marker key={b.id} coordinate={point(b.coordinate)} title={b.name} zIndex={800} anchor={{x:.5,y:1}}><BookmarkPin/></Marker>)}
     {groupRiders.filter(r=>r.position).map(r=><Marker key={r.id} coordinate={point(r.position!)} title={r.name} onPress={e=>{e.stopPropagation();if(navigating)group.pinVideo(r.id);}} zIndex={900} anchor={{x:.5,y:1}}><GroupPin rider={r} interactive={false}/></Marker>)}
     {position && <Marker coordinate={point(position)} title={t(positionLabel || "Your position")} zIndex={1000} flat anchor={{ x: .5, y: .5 }}><PositionArrow navigating={navigating} rotation={rotation} /></Marker>}
