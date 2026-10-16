@@ -327,6 +327,8 @@ def capture_once(devices, family, gallery=False):
         if not match:
             raise RuntimeError(f'Launch did not report an app PID: {launch}')
         pid = int(match.group(1))
+        # A successful slow first boot must not expire the app's own startup budget.
+        ATTEMPT_DEADLINE=time.monotonic()+180
         time.sleep(55)
         os.kill(pid, 0)
         best_effort('xcrun', 'simctl', 'status_bar', udid, 'override', '--time', '9:41',
