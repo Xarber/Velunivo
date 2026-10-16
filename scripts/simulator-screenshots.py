@@ -262,7 +262,7 @@ def seed_gallery(udid):
               dict(id='screenshot-theatre', name='Teatro alla Scala', address='Piazza della Scala, Milano, Italia', coordinate=[9.1895,45.4675])]
     entries = {'ui-language-v1':'en','welcome-seen-v1':'true', 'release-seen-v1':json.dumps([info['CFBundleShortVersionString']]),
                'vehicles-v1':json.dumps(dict(vehicles=[profile,bike],activeId=profile['id'])),
-               'navigation-v1':json.dumps(dict(voice=False,volume='off',liveActivities=False,recordRides=False,tilted=True)),
+               'navigation-v1':json.dumps(dict(voice=False,volume='off',liveActivities=False,recordRides=False,tilted=os.environ.get('GITHUB_ACTIONS')!='true')),
                'places-v1':json.dumps(places),'route-library-ids-v2':json.dumps([route['id']]),
                'route-library-v2:'+route['id']:json.dumps(route)}
     # Only this run's disposable device. No existing app/user data is read.

@@ -53,4 +53,4 @@ The developer changelog includes commit titles, bodies and revision IDs for all 
 - 49 Python capture/release tooling tests passed using Python 3.12.
 - Isolated Expo prebuild generated both native projects: four iOS alternate asset sets/build settings and five Android launcher aliases, with deep links retained. No local SDK download or local native compilation was used for this check.
 - Web export and actual two-browser private-server sync; real browser media capture/playback.
-- New native compilation and physical Bluetooth charging / Memories validation remain required before claiming those targets verified.
+- Testing-branch run 38962190175 successfully compiled and published iPhone, Apple Silicon Simulator, Android and web as v2.5.0-testing.89. The compiled IPA exposes all four alternate icons for both iPhone and iPad. Later consent-initialization and playback changes passed browser/TypeScript/regression checks; the stable pipeline rebuilds their exact revision. Physical Bluetooth charger behavior and native Memories capture/playback still require device validation.
