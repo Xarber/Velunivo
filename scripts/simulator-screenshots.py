@@ -268,21 +268,11 @@ def dismiss_owned_url_prompt(udid, family):
         run('xcrun','simctl','io',udid,'screenshot',str(probe),timeout=20)
         if not any(re.search(r'Open in.+Velunivo', value, re.I) for value in screenshot_text(probe)):return
         open_simulator(udid)
-        run('osascript','-e','tell application "Simulator" to activate','-e','''tell application "System Events"
-            tell process "Simulator"
-                set buttons to entire contents of front window
-                repeat with element in buttons
-                    try
-                        if role of element is "AXButton" and name of element is "Open" then
-                            perform action "AXPress" of element
-                            return
-                        end if
-                    end try
-                end repeat
-                key code 48
-                key code 36
-            end tell
-        end tell''',timeout=20)
+        run('osascript','-e','tell application "Simulator" to activate',timeout=20)
+        # System Events cannot reliably enumerate the embedded iOS alert. Use
+        # its visible host-frame Open label, only on the disposable CI machine.
+        run('xcrun','swift',str(Path(__file__).parent/'confirm-simulator-url.swift'),str(ARTIFACTS/f'{family}-url-host.png'),timeout=45)
+        time.sleep(2)
     finally:
         probe.unlink(missing_ok=True)
 

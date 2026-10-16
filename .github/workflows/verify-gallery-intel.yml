@@ -1,0 +1,135 @@
+name: Verify native gallery on Intel
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: intel-gallery-verification
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: macos-26-intel
+    env:
+      EXPO_PUBLIC_CAPTURE_FIXTURES: '1'
+      CCACHE_DIR: ${{ github.workspace }}/.velunivo-ccache
+      CCACHE_MAXSIZE: 2G
+      CCACHE_COMPILERCHECK: content
+      CCACHE_BASEDIR: ${{ github.workspace }}
+      APP_VERSION: 2.4.0
+      EXPO_PUBLIC_OVERPASS_URL: ${{ vars.OVERPASS_URL }}
+      EXPO_PUBLIC_APP_VERSION: 2.4.0
+      EXPO_PUBLIC_COMMIT_SHA: ${{ github.sha }}
+      BUILD_NUMBER: ${{ github.run_number }}
+      EXPO_PUBLIC_ROUTING_URL: ${{ vars.ROUTING_URL }}
+      EXPO_PUBLIC_MAP_STYLE_URL: ${{ vars.MAP_STYLE_URL }}
+      EXPO_PUBLIC_ALLOW_OFFLINE_DOWNLOADS: ${{ vars.ALLOW_OFFLINE_DOWNLOADS }}
+      EXPO_PUBLIC_SHARE_ORIGIN: ${{ vars.SHARE_ORIGIN }}
+      EXPO_PUBLIC_PEER_HOST: ${{ vars.PEER_HOST }}
+      EXPO_PUBLIC_PEER_PORT: ${{ vars.PEER_PORT }}
+      EXPO_PUBLIC_PEER_PATH: ${{ vars.PEER_PATH }}
+      EXPO_PUBLIC_PEER_SECURE: ${{ vars.PEER_SECURE }}
+      EXPO_PUBLIC_PEER_ICE_SERVERS: ${{ vars.PEER_ICE_SERVERS }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compute version-independent native dependency cache key
+        run: python3 scripts/native-cache-key.py >> "$GITHUB_ENV"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Select installed capture compiler; no SDK downloads
+        run: |
+          echo "DEVELOPER_DIR=$(xcode-select -p)" >> "$GITHUB_ENV"
+          echo "XCODE_CACHE_ID=intel-capture-$(xcodebuild -version | head -1 | tr ' ' '-')" >> "$GITHUB_ENV"
+      - name: Restore incremental Simulator build products
+        uses: actions/cache@v4
+        continue-on-error: true
+        with:
+          path: work/simulator
+          key: sim-derived-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-${{ env.NATIVE_DEPENDENCY_KEY }}-${{ github.sha }}
+          restore-keys: |
+            sim-derived-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-${{ env.NATIVE_DEPENDENCY_KEY }}-
+            sim-derived-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-
+      - name: Restore iOS C++ compiler cache
+        uses: actions/cache@v4
+        continue-on-error: true
+        with:
+          path: ${{ env.CCACHE_DIR }}
+          key: simulator-ccache-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-${{ github.sha }}
+          restore-keys: simulator-ccache-${{ runner.arch }}-${{ env.XCODE_CACHE_ID }}-
+      - name: Enable C++ cache when available on the runner
+        run: |
+          if ! command -v ccache >/dev/null; then
+            brew install ccache || true
+          fi
+          if command -v ccache >/dev/null; then
+            echo 'VELUNIVO_CCACHE=1' >> "$GITHUB_ENV"
+          else
+            echo '::warning::ccache unavailable; continue with a normal native build.'
+          fi
+      - run: xcodebuild -version && xcodebuild -showsdks
+      - run: npm ci
+      - run: npx expo prebuild --platform ios --no-install
+      - name: Cache verified React Native downloads
+        uses: actions/cache@v4
+        continue-on-error: true
+        with:
+          path: ~/Library/Caches/ReactNative
+          key: rn-download-${{ runner.arch }}-${{ env.NATIVE_DEPENDENCY_KEY }}-${{ github.run_id }}-${{ github.job }}
+          restore-keys: rn-download-${{ runner.arch }}-${{ env.NATIVE_DEPENDENCY_KEY }}-
+      - name: Configure bounded dependency download retries
+        run: bash scripts/configure-ios-downloads.sh
+      - name: Install iOS dependencies with retry
+        timeout-minutes: 15
+        run: |
+          for attempt in 1 2; do
+            if (cd ios && pod install); then exit 0; fi
+            if [ "$attempt" -eq 2 ]; then exit 1; fi
+            echo '::warning::Dependency installation failed; retrying once.'
+            sleep 5
+          done
+      - run: mkdir -p artifacts
+      - name: Build Intel Simulator app for memory-isolated capture
+        run: |
+          xcodebuild -workspace ios/Velunivo.xcworkspace -scheme Velunivo -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath "$PWD/work/simulator" build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO ARCHS=x86_64 ONLY_ACTIVE_ARCH=NO CCACHE_DIR="$CCACHE_DIR" CCACHE_MAXSIZE="$CCACHE_MAXSIZE" CCACHE_BASEDIR="$CCACHE_BASEDIR" CCACHE_COMPILERCHECK="$CCACHE_COMPILERCHECK"
+          cp -R work/simulator/Build/Products/Release-iphonesimulator/Velunivo.app artifacts/Velunivo-simulator.app
+          ditto -c -k --keepParent artifacts/Velunivo-simulator.app artifacts/Velunivo-simulator.app.zip
+      - name: Report compiler cache statistics
+        if: always()
+        run: if command -v ccache >/dev/null; then ccache --show-stats; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gallery-intel-app
+          path: artifacts/Velunivo-simulator.app.zip
+          if-no-files-found: error
+  capture:
+    needs: build
+    runs-on: macos-26-intel
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        family: [iphone, ipad]
+    env:
+      VELUNIVO_CAPTURE_HEADLESS: '1'
+      VELUNIVO_CAPTURE_BOOT_TIMEOUT: '120'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: gallery-intel-app
+          path: artifacts
+      - run: ditto -x -k artifacts/Velunivo-simulator.app.zip artifacts
+      - run: xcrun simctl shutdown all
+      - run: sudo mdutil -a -i off || true
+      - run: python3 scripts/simulator-screenshots.py --family "${{ matrix.family }}" --gallery
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: intel-gallery-${{ matrix.family }}
+          path: |
+            artifacts/*.png
+            artifacts/*.json
+            artifacts/*.log
+            artifacts/*.ips
