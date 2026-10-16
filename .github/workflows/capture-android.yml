@@ -84,6 +84,7 @@ jobs:
           profile: ${{ matrix.profile }}
           ram-size: 4096M
           heap-size: 512M
+          disk-size: 8192M
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -camera-back none
           script: python3 scripts/android-screenshots.py

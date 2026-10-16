@@ -58,7 +58,7 @@ def main():
         try:adb('install','-r','-g',str(ROOT/'Velunivo.apk'),timeout=120);break
         except subprocess.CalledProcessError as error:
             output=str(error.output)
-            if attempt==2 or 'INSTALL_FAILED' in output:raise
+            if attempt==2 or 'INSTALL_FAILED' in output or 'not enough space' in output:raise
             time.sleep(5)
     # Latest regular Pixel Pro canvas, captured natively rather than stretching a web view.
     adb('shell','wm','size',os.environ.get('CAPTURE_SIZE','1280x2856'));adb('shell','wm','density',os.environ.get('CAPTURE_DENSITY','480'))
