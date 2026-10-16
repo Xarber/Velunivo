@@ -5,7 +5,12 @@ ROOT=Path('artifacts');APP='app.velunivo.mobile'
 FAMILY=os.environ.get('CAPTURE_FAMILY','phone')
 PREFIX='android-tablet' if FAMILY=='tablet' else 'android'
 def adb(*args,timeout=45,binary=False):
-    result=subprocess.check_output(['adb',*args],timeout=timeout,text=not binary,stderr=subprocess.STDOUT if not binary else subprocess.DEVNULL)
+    try:result=subprocess.check_output(['adb',*args],timeout=timeout,text=not binary,stderr=subprocess.STDOUT if not binary else subprocess.DEVNULL)
+    except subprocess.CalledProcessError as error:
+        message=error.output.decode(errors='replace') if isinstance(error.output,bytes) else error.output or ''
+        print('adb failed: '+' '.join(args)+'\n'+message,flush=True)
+        ROOT.mkdir(exist_ok=True);ROOT.joinpath(PREFIX+'-command-error.log').write_text(message)
+        raise
     if not binary and args[:2]!=('shell','cat'):print('adb '+' '.join(args)+'\n'+result[-2000:],flush=True)
     return result
 def nodes():
@@ -47,7 +52,14 @@ def screenshot(name):
     if not page_matches(name,elements):raise RuntimeError('Wrong Android page: '+name)
     return {'screen':name,'width':width,'height':height}
 def main():
-    ROOT.mkdir(exist_ok=True);adb('install','-r','-g',str(ROOT/'Velunivo.apk'),timeout=120)
+    ROOT.mkdir(exist_ok=True)
+    # sys.boot_completed can precede the package service settling on API 37.
+    for attempt in range(3):
+        try:adb('install','-r','-g',str(ROOT/'Velunivo.apk'),timeout=120);break
+        except subprocess.CalledProcessError as error:
+            output=str(error.output)
+            if attempt==2 or 'INSTALL_FAILED' in output:raise
+            time.sleep(5)
     # Latest regular Pixel Pro canvas, captured natively rather than stretching a web view.
     adb('shell','wm','size',os.environ.get('CAPTURE_SIZE','1280x2856'));adb('shell','wm','density',os.environ.get('CAPTURE_DENSITY','480'))
     adb('shell','settings','put','system','accelerometer_rotation','0');adb('shell','settings','put','system','user_rotation','0')

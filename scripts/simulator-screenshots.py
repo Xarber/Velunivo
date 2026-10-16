@@ -85,7 +85,7 @@ def best_effort(*args, timeout=30):
 def orientation_supported():
     global ORIENTATION_HELP
     if ORIENTATION_HELP is None:
-        ORIENTATION_HELP = '' if os.environ.get('VELUNIVO_CAPTURE_HEADLESS')=='1' else best_effort('xcrun','devicectl','help','device','orientation','set',timeout=20) or ''
+        ORIENTATION_HELP = best_effort('xcrun','devicectl','help','device','orientation','set',timeout=20) or ''
     return 'landscapeLeft' in ORIENTATION_HELP
 
 

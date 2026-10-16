@@ -28,6 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
+      ANDROID_USER_HOME: ${{ runner.temp }}/velunivo-android-user
       GH_TOKEN: ${{ github.token }}
       BUILD_RUN: ${{ inputs.build_run }}
       CAPTURE_FAMILY: ${{ matrix.family }}
@@ -53,7 +54,8 @@ jobs:
           sdkmanager --list > artifacts/android-sdk-packages.log
           # SDK hardware lists lag behind phone releases. Install our documented
           # display-only Pixel 11 Pro profile rather than relabel an older Pixel.
-          mkdir -p "$HOME/.android"
+          mkdir -p "$ANDROID_USER_HOME" "$HOME/.android"
+          cp scripts/pixel-11-pro-device.xml "$ANDROID_USER_HOME/devices.xml"
           cp scripts/pixel-11-pro-device.xml "$HOME/.android/devices.xml"
           avdmanager list device > artifacts/android-device-profiles.log
           if ! grep -q 'system-images;android-37.0;google_apis;x86_64' artifacts/android-sdk-packages.log; then
