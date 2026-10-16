@@ -46,7 +46,7 @@ jobs:
         family: [iphone, ipad]
     env:
       VELUNIVO_CAPTURE_MIN_IOS: '27'
-      VELUNIVO_CAPTURE_IPHONE_NAME: 'iPhone 18 Pro'
+      VELUNIVO_CAPTURE_IPHONE_NAME: 'iPhone 17 Pro'
       GH_TOKEN: ${{ github.token }}
       BUILD_RUN: ${{ needs.identify.outputs.run }}
       VELUNIVO_CAPTURE_HEADLESS: '1'
