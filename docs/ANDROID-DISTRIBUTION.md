@@ -27,3 +27,5 @@ The independent screenshot workflow now requests API 37 (Android 17), a Pixel 11
 Obtainium uses the GitHub release APK and does not accept a separate store screenshot upload. The repository's Fastlane/F-Droid metadata provides the requested phone/tablet image collection. Android 16 diagnostic images are provisional and must not be represented as Android 17 captures. The native welcome tour uses matching-platform images and a generic tablet shell; web images remain unframed responsive web previews.
 
 Reference: https://developer.android.com/studio/releases/emulator — API 37 requires at least 4 GB of AVD memory.
+
+Capture troubleshooting: the SDK repository names the Android 17 image `android-37.0`, not `android-37`. The workflow explicitly refreshes command-line tools (23.0 in the inspected repository) before checking hardware profiles; older preinstalled 16.0 tools only list phones through Pixel 8. Captures still assert runtime API 37 from the booted emulator itself.

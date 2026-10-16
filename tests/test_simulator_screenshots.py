@@ -291,3 +291,9 @@ class IdempotentOrientationTests(unittest.TestCase):
         with patch.object(sim,'device_is_landscape',return_value=True),patch.object(sim,'run') as run:
             sim.landscape('owned-device')
             run.assert_not_called()
+
+class CommandOutputTests(unittest.TestCase):
+    def test_framework_warnings_do_not_corrupt_container_paths(self):
+        import sys
+        value=sim.run(sys.executable,'-c',"import sys;sys.stderr.write('Framework warning\\n');print('/tmp/owned-container')")
+        self.assertEqual(value,'/tmp/owned-container')

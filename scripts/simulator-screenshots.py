@@ -25,10 +25,11 @@ def run(*args, timeout=60):
         timeout=min(timeout,remaining)
     print('+ ' + ' '.join(args), flush=True)
     started = time.monotonic()
-    process = subprocess.Popen(args, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True)
+    process = subprocess.Popen(args, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
     try:
         try:
-            output, _ = process.communicate(timeout=timeout)
+            output, diagnostics = process.communicate(timeout=timeout)
+            if diagnostics: print(diagnostics[-6000:], flush=True)
         except subprocess.TimeoutExpired:
             # simctl children can inherit stdout, keeping communicate blocked after
             # killing only its parent. Kill our owned process group, then bound draining.
