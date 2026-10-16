@@ -40,10 +40,9 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - name: Refresh command-line tools on the hosted runner
-        run: |
-          sdkmanager --install 'cmdline-tools;latest'
-          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - name: Inventory requested runtime and hardware before boot
         run: |
           mkdir -p artifacts
