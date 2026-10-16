@@ -1,0 +1,5 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {frequentRides} from '../src/core/frequentRides';import {RecordedRide} from '../src/core/recordings';import {defaultProfile,Fix} from '../src/core/types';
+const now=1800000000000,fix:Fix={coordinate:[12,42],accuracy:5,speed:0,timestamp:now};
+const ride=(n:number):RecordedRide=>({id:String(n),vehicle:{...defaultProfile,id:'test',kind:'escooter'},name:'Ride',start:[12,42],end:[12.01,42],startLabel:'School',endLabel:'Home',meters:1500,startedAt:now-n*86400000,status:'finished',samples:100,chunks:1,preview:[]});
+test('three repeated completed rides suggest destination only near their start and with fresh GPS',()=>{assert.equal(frequentRides([ride(1),ride(2)],fix,now).length,0);const rides=[ride(1),ride(2),ride(3)];assert.equal(frequentRides(rides,fix,now)[0].endLabel,'Home');assert.equal(frequentRides(rides,{...fix,coordinate:[12.01,42]},now).length,0);assert.equal(frequentRides(rides,{...fix,timestamp:now-61000},now).length,0);assert.equal(frequentRides(rides,{...fix,accuracy:100},now).length,0);assert.equal(frequentRides(rides.map(r=>({...r,status:'recording'})),fix,now).length,0);});

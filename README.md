@@ -136,3 +136,11 @@ Device backup and account-free transfers are available in Settings → General �
 Share the same route and rider locations with up to eight participants. Optional audio-only calls include microphone and incoming-audio mute controls; recording groups save only your own path. Voice remains off until enabled, and the system End Call action disables the saved voice preference. Native calls require a new build and physical-device validation. See [Group riding and validation](docs/GROUP-RIDING.md).
 
 Group routes are selected automatically on joining. Version 1.0.9 uses native WebRTC for mobile peer connections. Optional map-pin video is available under Settings → Profile & Group Riding and requires mutual opt-in; capture targets 96×96 at 6 fps. Physical-device video rendering and native recovery still need validation.
+
+### Exploration and trusted devices
+
+Daily discovery goals, nearby-area challenges and additional achievements unlock cosmetic accent themes; navigation features stay available to everyone. Frequent rides appear near their usual starting location after at least three qualifying trips. Map pickers open around your current location without interrupting a map gesture.
+
+Group leaders can lock invitations or approve new participants. Existing members can reconnect while a group is locked. Optional native local notifications and Live Activity request indicators help you notice regroup and admission requests.
+
+Private device pairing supports up to five devices. Paired devices introduce each other, synchronize original edit dates and deletions, and deliver offline unpair requests when the other device reconnects. See [2.4.0 implementation and validation](docs/UPDATE_2.4.0.md) for migration, testing and native-build requirements.

@@ -1,3 +1,4 @@
+import {noteEntityEdit} from './entityEdits';
 import {withStopInstructions} from '../core/itinerary';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Route } from '../core/types';
@@ -14,5 +15,5 @@ export async function loadSavedRoutes(legacy: string | null): Promise<Route[]> {
   await AsyncStorage.setItem(indexKey, JSON.stringify(routes.map(r => r.id))); return routes;
 }
 function queue(task: () => Promise<Route[]>): Promise<Route[]> { const next = pending.then(task, task); pending = next.catch(() => {}); return next; }
-export function saveRoute(route: Route): Promise<Route[]> { return queue(async () => { const all = await read();route=withStopInstructions(route); await AsyncStorage.setItem(key(route.id), JSON.stringify({ ...route, savedAt: Date.now() })); await AsyncStorage.setItem(indexKey, JSON.stringify([route.id, ...all.filter(r => r.id !== route.id).map(r => r.id)])); return read(); }); }
-export function removeRoute(id: string): Promise<Route[]> { return queue(async () => { const all = await read(); await AsyncStorage.setItem(indexKey, JSON.stringify(all.filter(r => r.id !== id).map(r => r.id))); await AsyncStorage.removeItem(key(id)); return read(); }); }
+export function saveRoute(route: Route): Promise<Route[]> { return queue(async () => { const all = await read();await noteEntityEdit('route:'+route.id);route=withStopInstructions(route); await AsyncStorage.setItem(key(route.id), JSON.stringify({ ...route, savedAt: Date.now() })); await AsyncStorage.setItem(indexKey, JSON.stringify([route.id, ...all.filter(r => r.id !== route.id).map(r => r.id)])); return read(); }); }
+export function removeRoute(id: string): Promise<Route[]> { return queue(async () => { const all = await read();await noteEntityEdit('route:'+id,true); await AsyncStorage.setItem(indexKey, JSON.stringify(all.filter(r => r.id !== id).map(r => r.id))); await AsyncStorage.removeItem(key(id)); return read(); }); }

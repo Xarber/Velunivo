@@ -8,3 +8,7 @@ export const getGroupActivityRiders=()=>riders;
 export function setGroupActivityRiders(value:readonly RecordedRider[]){const next=riderRoster(value);if(JSON.stringify(next)===JSON.stringify(riders))return;riders=next;for(const listener of rosterListeners)listener(riders);}
 
 export function subscribeGroupActivityRiders(listener:(riders:RecordedRider[])=>void){rosterListeners.add(listener);return()=>{rosterListeners.delete(listener);};}
+
+let joinRequest:string|undefined;
+export const getGroupJoinRequest=()=>joinRequest;
+export function setGroupJoinRequest(value:string|undefined){joinRequest=value;}

@@ -35,6 +35,6 @@ export function scratchGeometry(index:ScratchIndex,bounds:[number,number,number,
  const features=[feature('unexplored',[outer,...polygons.map(p=>p[0])])];
  // Islands inside explored loops stay covered; never silently mark the middle of a loop explored.
  for(const [i,polygon] of polygons.entries())for(let j=1;j<polygon.length;j++)features.push(feature(`island-${i}-${j}`,[polygon[j]]));
- const marked=[...new Set(highlight.filter(id=>index.tiles[id]).map(id=>displayCell(id,resolution)))];if(marked.length)for(const [i,polygon] of (cellsToMultiPolygon(marked,true) as Coord[][][]).entries())features.push(feature(`new-${i}`,polygon.map(roundedRing),true));
+ const marked=[...new Set(highlight.filter(id=>index.tiles[id]).map(id=>displayCell(id,resolution)))];if(marked.length)for(const [i,polygon] of (cellsToMultiPolygon(marked,true) as Coord[][][]).entries())features.push(feature(`new-${marked[0]}-${marked.at(-1)}-${marked.length}-${i}`,polygon.map(roundedRing),true));
  return {type:'FeatureCollection',resolution,features};
 }

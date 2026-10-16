@@ -2,17 +2,17 @@ import {RegroupRequest,readRegroup} from './regroup';
 import {Coord,Route} from '../core/types';
 import {validCoordinate} from '../sharing/model';
 export const GROUP_LIMIT=8, MEMBER_LEASE=60000;
-export interface RiderProfile {id:string;name:string;photo?:string;video?:boolean;camera?:boolean;voice:boolean;}
+export interface RiderProfile {id:string;name:string;photo?:string;video?:boolean;camera?:boolean;voice:boolean;joinApproval?:boolean;}
 export interface GroupMember extends RiderProfile {order:number;position:Coord|null;updatedAt:number;}
-export interface GroupSnapshot {regroup?:RegroupRequest;code:string;leader:string;revision:number;members:GroupMember[];banned:string[];route:Route|null;}
+export interface GroupSnapshot {locked?:boolean;approval?:boolean;requests?:RiderProfile[];regroup?:RegroupRequest;code:string;leader:string;revision:number;members:GroupMember[];banned:string[];route:Route|null;}
 export type VoiceSignal=({type:'video-priority';enabled:boolean}|{type:'offer'|'answer';sdp:string}|{type:'ice';candidate:{candidate:string;sdpMid:string|null;sdpMLineIndex:number|null}})&{session?:string};
-export type GroupMessage={type:'regroup';request:RegroupRequest}|{type:'hello';profile:RiderProfile}|{type:'snapshot';snapshot:GroupSnapshot}|{type:'presence';profile:RiderProfile;position:Coord|null;at:number}|{type:'admitted';id:string}|{type:'leave';id:string}|{type:'kick';id:string}|{type:'signal';signal:VoiceSignal};
+export type GroupMessage={type:'waiting'}|{type:'regroup';request:RegroupRequest}|{type:'hello';profile:RiderProfile}|{type:'snapshot';snapshot:GroupSnapshot}|{type:'presence';profile:RiderProfile;position:Coord|null;at:number}|{type:'admitted';id:string}|{type:'leave';id:string}|{type:'kick';id:string}|{type:'signal';signal:VoiceSignal};
 export const GROUP_CODE=/^[A-Z0-9]{8}$/;
 export const RIDER_ID=/^[a-f0-9]{32}$/;
 export function formatGroupCode(value:string){const code=value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,8);return code.length>4?code.slice(0,4)+'-'+code.slice(4):code;}
 export const compactGroupCode=(value:string)=>value.toUpperCase().replace(/-/g,'');
 export const riderInitials=(name:string)=>name.trim().split(/\s+/).slice(0,2).map(s=>Array.from(s)[0]).join('').toUpperCase()||'?';
-export function readProfile(raw:unknown):RiderProfile|null{const p=raw as RiderProfile;if(!p||!RIDER_ID.test(p.id)||typeof p.name!=='string'||!p.name.trim()||p.name.length>40||typeof p.voice!=='boolean'||p.photo!=null&&(typeof p.photo!=='string'||!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(p.photo)||p.photo.length>40000))return null;return {id:p.id,name:p.name.trim(),voice:p.voice,video:p.video===true,camera:p.camera===true,...(p.photo?{photo:p.photo}:{})};}
+export function readProfile(raw:unknown):RiderProfile|null{const p=raw as RiderProfile;if(!p||!RIDER_ID.test(p.id)||typeof p.name!=='string'||!p.name.trim()||p.name.length>40||typeof p.voice!=='boolean'||p.photo!=null&&(typeof p.photo!=='string'||!/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(p.photo)||p.photo.length>40000))return null;return {id:p.id,name:p.name.trim(),voice:p.voice,joinApproval:p.joinApproval===true,video:p.video===true,camera:p.camera===true,...(p.photo?{photo:p.photo}:{})};}
 export function groupRoute(route:Route):Route|null{
  if(!route||typeof route!=='object'||!Array.isArray(route.coordinates)||route.coordinates.length<2||route.coordinates.length>20000||!route.coordinates.every(validCoordinate)||!Array.isArray(route.steps)||route.steps.length>2000)return null;
  const steps=route.steps.filter(s=>s&&typeof s.text==='string'&&Number.isInteger(s.index)&&s.index>=0&&s.index<route.coordinates.length&&Number.isFinite(s.distance)&&s.distance>=0&&Number.isFinite(s.sign)).map(s=>({text:s.text.slice(0,300),index:s.index,distance:s.distance,sign:s.sign}));
@@ -24,10 +24,12 @@ export function readSnapshot(raw:unknown):GroupSnapshot|null{
  if(new Set(members.map(m=>m.id)).size!==members.length||new Set(members.map(m=>m.order)).size!==members.length||!members.some(m=>m.id===s.leader)||members.some(m=>s.banned.includes(m.id)))return null;
  const regroup=s.regroup===undefined?undefined:readRegroup(s.regroup);if(s.regroup!==undefined&&!regroup)return null;
  const route=s.route===null?null:groupRoute(s.route);if(s.route!==null&&!route)return null;
- return {code:s.code,leader:s.leader,revision:s.revision,members:members.sort((a,b)=>a.order-b.order),banned:[...s.banned],route,...(regroup?{regroup}:{})};
+ const requests=Array.isArray(s.requests)?s.requests.slice(0,16).map(readProfile):[];if(requests.some(p=>!p))return null;
+ return {locked:s.locked===true,approval:s.approval===true,requests:requests as RiderProfile[],code:s.code,leader:s.leader,revision:s.revision,members:members.sort((a,b)=>a.order-b.order),banned:[...s.banned],route,...(regroup?{regroup}:{})};
 }
 export function readGroupMessage(raw:unknown):GroupMessage|null{
  if(!raw||typeof raw!=='object')return null;const m=raw as GroupMessage;
+ if(m.type==='waiting')return {type:'waiting'};
  if(m.type==='regroup'){const request=readRegroup(m.request);return request?{type:'regroup',request}:null;}
  if(m.type==='hello'){const profile=readProfile(m.profile);return profile?{type:'hello',profile}:null;}
  if(m.type==='snapshot'){const snapshot=readSnapshot(m.snapshot);return snapshot?{type:'snapshot',snapshot}:null;}

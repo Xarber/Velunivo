@@ -6,7 +6,7 @@ import {useScratchLayer} from '../services/useScratchLayer';
 import GroupPin from './GroupPin';
 import {MapAreaSelection} from '../core/mapArea';
 import {useMapArea} from '../services/useMapArea';
-import {View} from 'react-native';
+import {Animated,View} from 'react-native';
 import Text from './LocalizedText';
 import {t} from '../i18n/core';
 import { routeLayers, ROUTE_WIDTH } from '../core/routeLayers';
@@ -26,8 +26,10 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
   const map = useRef<MapRef>(null);
   const [ready, setReady] = useState(false);
   const reportArea=useMapArea(areaSelection,ready,async(x,y)=>{if(!map.current)throw new Error('Map unavailable');return map.current.unproject([x,y]);});
-  useEffect(()=>{if(mapBounds&&ready)camera.current?.fitBounds(mapBounds,{padding:{top:120,bottom:120,left:60,right:60},duration:400});},[mapBounds,ready]);
+  useEffect(()=>{if(mapBounds&&ready)camera.current?.fitBounds(mapBounds,{padding:fitPadding||{top:120,bottom:120,left:60,right:60},duration:400});},[mapBounds,ready,fitPadding]);
   const hasPosition = !!position;
+  const [rotation]=useState(()=>new Animated.Value(heading)),bearingRef=useRef(0);
+  useEffect(()=>rotation.setValue(heading-bearingRef.current),[heading,rotation]);
   const cameraTarget = useCameraTarget(position, heading, !!follow && ready, JSON.stringify([tilted, followPadding || fitPadding]));
   const previousTilt=useRef(tilted);
   useEffect(() => { const changed=previousTilt.current!==tilted;previousTilt.current=tilted;let cancelled = false; if ((!navigating||changed) && ready && !mapBounds && !selected && (!follow || !hasPosition)) void map.current?.getCenter().then(center => { if (!cancelled) camera.current?.easeTo({ center, pitch: tilted ? 50 : 0, duration: 350 }); }).catch(() => {}); return () => { cancelled = true; }; }, [ready, tilted, selected, follow, hasPosition,mapBounds,navigating]);
@@ -38,7 +40,7 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraTarget]);
   const paths=useMemo(()=>routeLayers(routes,selected,completedMeters,trace).map(r=>({...r,data:{type:'Feature' as const,properties:{},geometry:{type:'LineString' as const,coordinates:r.coordinates}}})),[routes,selected,completedMeters,trace]);
-  return <Map onRegionIsChanging={e=>{if(scratchContext||transit)setScratchBounds(e.nativeEvent.bounds);if(e.nativeEvent.userInteraction)onPan?.();}} onLayout={()=>{if(scratchContext||transit)void map.current?.getBounds().then(setScratchBounds).catch(()=>{});}} onRegionDidChange={e=>{if(e.nativeEvent.userInteraction)onPan?.();reportArea();if(scratchContext||transit)void map.current?.getBounds().then(b=>setScratchBounds(b)).catch(()=>{});}} ref={map} onDidFinishLoadingMap={() => setReady(true)} onRegionWillChange={e => { if (e.nativeEvent.userInteraction) onPan?.(); }} style={{ flex: 1 }} mapStyle={offlineStyle || mapStyle} touchRotate={!follow&&!areaSelection} touchPitch={!areaSelection} attributionPosition={{ top: 130, right: 16 }} logoPosition={{ top: 170, right: 16 }} onPress={e => onPick?.(e.nativeEvent.lngLat,scratch.geometry.resolution)}>
+  return <Map onRegionIsChanging={e=>{bearingRef.current=e.nativeEvent.bearing;rotation.setValue(heading-e.nativeEvent.bearing);if(scratchContext||transit)setScratchBounds(e.nativeEvent.bounds);if(e.nativeEvent.userInteraction)onPan?.();}} onLayout={()=>{if(scratchContext||transit)void map.current?.getBounds().then(setScratchBounds).catch(()=>{});}} onRegionDidChange={e=>{bearingRef.current=e.nativeEvent.bearing;rotation.setValue(heading-e.nativeEvent.bearing);if(e.nativeEvent.userInteraction)onPan?.();reportArea();if(scratchContext||transit)void map.current?.getBounds().then(b=>setScratchBounds(b)).catch(()=>{});}} ref={map} onDidFinishLoadingMap={() => setReady(true)} onRegionWillChange={e => { if (e.nativeEvent.userInteraction) onPan?.(); }} style={{ flex: 1 }} mapStyle={offlineStyle || mapStyle} touchRotate={!follow&&!areaSelection} touchPitch={!areaSelection} attributionPosition={{ top: 130, right: 16 }} logoPosition={{ top: 170, right: 16 }} onPress={e => onPick?.(e.nativeEvent.lngLat,scratch.geometry.resolution)}>
     <Camera ref={camera} initialViewState={{ bounds: selected ? routeBounds(selected.coordinates) : [12.50, 41.84, 12.61, 41.89], padding: { top: 40, bottom: 40, left: 40, right: 40 } }} />
     <VectorScratchOverlay geometry={scratch.geometry} opacity={scratch.opacity} loop={scratch.glowLoop} onPick={onScratchTile}/>
     {ready && transit && !offlineStyle && mapStyle.includes('openfreemap.org') && <Layer beforeId={paths[0]?.id ? `${paths[0].id}-outline` : undefined} id="velunivo-transit" source="openmaptiles" source-layer="transportation" type="line" filter={['match',['get','class'],['rail','transit'],true,false]} paint={transitPaint} />}
@@ -50,6 +52,6 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
     {(startPoint || endPoint) && <GeoJSONSource id="planning" data={{ type: 'FeatureCollection', features: [startPoint, endPoint].filter((p): p is Coord => !!p).map(p => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: p } })) }}><Layer type="circle" paint={{ 'circle-radius': 7, 'circle-color': '#007F6D', 'circle-stroke-width': 3, 'circle-stroke-color': '#FFFFFF' }} /></GeoJSONSource>}
     {(planningStops??selected?.waypoints??[]).filter(s=>s.coordinate.every(Number.isFinite)).map((stop,i)=><Marker key={`stop-${i}`} id={`stop-${i}`} lngLat={stop.coordinate} accessibilityLabel={`${t(`Stop ${i+1}`)} · ${stop.label}`}><View style={{width:30,height:30,alignItems:'center',justifyContent:'center',backgroundColor:'#007F6D',borderWidth:3,borderColor:'#FFFFFF',borderRadius:15}}><Text style={{color:'#FFFFFF',fontWeight:'800'}}>{i+1}</Text></View></Marker>)}
     {groupRiders.filter(r=>r.position).map(r=><Marker key={r.id} id={`group-${r.id}`} lngLat={r.position!} anchor="bottom" accessibilityLabel={r.name}><GroupPin rider={r} interactive={navigating}/></Marker>)}
-    {position && <Marker id="navigation-position" lngLat={position} accessibilityLabel={t(positionLabel || 'Current position')}><PositionArrow navigating={navigating} rotation={follow ? 0 : heading} /></Marker>}
+    {position && <Marker id="navigation-position" lngLat={position} accessibilityLabel={t(positionLabel || 'Current position')}><PositionArrow navigating={navigating} rotation={rotation} /></Marker>}
   </Map>;
 }

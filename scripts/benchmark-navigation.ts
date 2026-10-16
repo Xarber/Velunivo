@@ -7,6 +7,7 @@ import {pathToFileURL} from 'node:url';
 import {estimate} from '../src/core/eta';
 import {guidance} from '../src/core/navigation';
 import {defaultProfile,Route,Fix} from '../src/core/types';
+async function run(){
 const directory=mkdtempSync(join(tmpdir(),'velunivo-nav-bench-'));
 try{
  for(const name of ['geo','eta','navigation'])writeFileSync(join(directory,name+'.ts'),execFileSync('git',['show',`${process.argv[2]||'93cd711'}:src/core/${name}.ts`]));
@@ -15,3 +16,6 @@ try{
  function bench(fn:()=>unknown){fn();const values=Array.from({length:15},()=>{const t=performance.now();fn();return performance.now()-t;}).sort((a,b)=>a-b);return {medianMs:+values[7].toFixed(3),p95Ms:+values[14].toFixed(3)};}
  console.log(JSON.stringify({points,guidance:{before:bench(()=>beforeGuidance(route,fix,8250)),after:bench(()=>guidance(route,fix,8250))},eta:{before:bench(()=>beforeETA(route,profile,5000)),after:bench(()=>estimate(route,profile,5000))}},null,2));
 }finally{rmSync(directory,{recursive:true,force:true});}
+
+}
+void run().catch(error=>{console.error(error);process.exitCode=1;});

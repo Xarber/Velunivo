@@ -27,3 +27,23 @@ test('regroup requests travel through the real mesh, survive snapshots and only 
  assert.equal(readGroupMessage({type:'regroup',request:{id:'x',by:'not-a-rider',at:1,active:true}}),null);
  groups.forEach(g=>g.close());t.mock.timers.tick(500);await flush();
 });
+
+test('locked admission preserves code, permits existing recovery and refuses strangers or kicked members',async t=>{
+ t.mock.timers.enable({apis:['setTimeout','setInterval','Date'],now:100000});const network=new Map<string,Radio>(),snapshots=new Map<number,GroupSnapshot>(),ended:number[]=[],sessions:GroupSession[]=[];
+ const make=(i:number,seed:GroupSnapshot|null=null)=>{const g=new GroupSession('ABCD1234',profile(i),id=>new Radio(id,network),{snapshot:s=>snapshots.set(i,s),status:()=>{},signal:()=>{},ended:()=>ended.push(i)},seed,i===1);sessions.push(g);return g;};
+ const leader=make(1);await flush();const second=make(2);await flush();leader.setLocked(true);await flush();assert.equal(snapshots.get(1)?.code,'ABCD1234');assert.equal(snapshots.get(2)?.locked,true);
+ make(3);await flush();assert.ok(ended.includes(3));assert.equal(snapshots.get(1)?.members.length,2);
+ second.resume();await flush();assert.equal(snapshots.get(2)?.members.length,2);
+ leader.kick(profile(2).id);await flush();t.mock.timers.tick(500);await flush();make(2);await flush();assert.equal(snapshots.get(1)?.members.length,1);
+ leader.setLocked(false);await flush();make(4);await flush();assert.equal(snapshots.get(1)?.members.length,2);
+ sessions.forEach(s=>s.close());t.mock.timers.tick(1000);await flush();
+});
+
+test('leader approval admits only the selected applicant, including when locked',async t=>{
+ t.mock.timers.enable({apis:['setTimeout','setInterval','Date'],now:100000});const network=new Map<string,Radio>(),snapshots=new Map<number,GroupSnapshot>(),status:string[]=[],sessions:GroupSession[]=[];
+ const make=(i:number)=>{const g=new GroupSession('ABCD1234',{...profile(i),joinApproval:i===1},id=>new Radio(id,network),{snapshot:s=>snapshots.set(i,s),status:s=>status.push(s),signal:()=>{},ended:()=>{}},null,i===1);sessions.push(g);return g;};
+ const leader=make(1);await flush();leader.setLocked(true);make(2);await flush();assert.equal(snapshots.get(1)?.members.length,1);assert.equal(snapshots.get(1)?.requests?.[0].id,profile(2).id);assert.ok(status.includes('Waiting for the leader to approve your request.'));
+ leader.approve(profile(2).id,true);await flush();assert.equal(snapshots.get(2)?.members.length,2);assert.equal(snapshots.get(1)?.requests?.length,0);
+ make(3);await flush();leader.approve(profile(3).id,false);await flush();assert.equal(snapshots.get(1)?.members.length,2);
+ sessions.forEach(s=>s.close());t.mock.timers.tick(1000);await flush();
+});

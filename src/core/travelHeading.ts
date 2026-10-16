@@ -7,7 +7,7 @@ export interface HeadingResult {heading:number;source:string;travelOverride:bool
 export class TravelHeadingTracker {
  private anchor:Fix|null=null;private course:number|null=null;private courseAt=0;private inferredSpeed:number|null=null;
  private displayed:HeadingResult|null=null;private confirmedHeading:number|null=null;private confirmedCourse:number|null=null;private lastCompassEnabled:boolean|undefined;private motionAnchor:Fix|null=null;private observedCourse:number|null=null;private observedAt=0;
- private mismatchSince:number|null=null;private alignedSince:number|null=null;private stoppedSince:number|null=null;private override=false;
+ private compassOffset=0;private offsetMismatchSince:number|null=null;private mismatchSince:number|null=null;private alignedSince:number|null=null;private stoppedSince:number|null=null;private override=false;
  /** A route tangent can initialize direction, but cannot anticipate the next corner. */
  private confirm(result:HeadingResult,moving:boolean,now:number):HeadingResult{
   const previous=this.displayed;
@@ -49,16 +49,16 @@ export class TravelHeadingTracker {
   const compassValid=enabled&&compass.heading!==null&&Number.isFinite(compass.heading)&&now>=compass.timestamp-1000&&now-compass.timestamp<3000;
   if(!compassValid){this.mismatchSince=null;this.alignedSince=null;return this.confirm({heading:freshCourse?this.course!:fallback.heading,source:freshCourse?'GPS direction':fallback.source,travelOverride:false},moving,now);}
   const disagreement=freshCourse?Math.abs(headingDelta(compass.heading!,this.course!)):0;
-  if(moving&&freshCourse&&disagreement>=50){this.alignedSince=null;this.stoppedSince=null;this.mismatchSince??=now;if(now-this.mismatchSince>=8000)this.override=true;}
+  if(moving&&freshCourse&&disagreement>=50){this.alignedSince=null;this.stoppedSince=null;this.mismatchSince??=now;if(now-this.mismatchSince>=8000&&!this.override){this.override=true;this.compassOffset=headingDelta(compass.heading!,this.course!);}}
   else{
    this.mismatchSince=null;
    if(this.override){
     const stopped=precise&&(fix!.speed??Infinity)<.8;
-    if(stopped){this.stoppedSince??=now;if(now-this.stoppedSince>=5000)this.override=false;}else this.stoppedSince=null;
-    if(moving&&freshCourse&&disagreement<=25){this.alignedSince??=now;if(now-this.alignedSince>=5000)this.override=false;}else this.alignedSince=null;
+    if(stopped){this.stoppedSince??=now;if(now-this.stoppedSince>=5000){this.override=false;this.compassOffset=0;}}else this.stoppedSince=null;
+    if(moving&&freshCourse&&disagreement<=25){this.alignedSince??=now;if(now-this.alignedSince>=5000){this.override=false;this.compassOffset=0;}}else this.alignedSince=null;
    }
   }
-  if(this.override&&freshCourse)return this.confirm({heading:normalizeHeading(this.course!),source:'Travel direction · compass misaligned',travelOverride:true},moving,now);
+  if(this.override&&freshCourse){let corrected=normalizeHeading(compass.heading!+this.compassOffset);const error=Math.abs(headingDelta(corrected,this.course!));if(error>30&&moving){this.offsetMismatchSince??=now;if(now-this.offsetMismatchSince>=5000){this.compassOffset=headingDelta(compass.heading!,this.course!);corrected=normalizeHeading(this.course!);this.offsetMismatchSince=null;}}else this.offsetMismatchSince=null;if(this.displayed&&Math.abs(headingDelta(this.displayed.heading,corrected))<5)corrected=this.displayed.heading;return this.confirm({heading:corrected,source:'Travel direction · compass misaligned',travelOverride:true},moving,now);}
   // If GPS temporarily goes stale, keep the last travel heading until reliable data resolves the mismatch.
   if(this.override&&this.course!==null&&now-this.courseAt<=15000)return this.confirm({heading:this.course,source:'Travel direction · compass misaligned',travelOverride:true},moving,now);
   return this.confirm({heading:normalizeHeading(compass.heading!),source:'Device compass',travelOverride:false},moving,now);

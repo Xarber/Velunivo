@@ -28,7 +28,7 @@ import {portablePhoto,importPhoto,deletePhoto} from './vehiclePhotos';
 import {commitDataEntries,transferableKey} from '../core/dataStorage';
 let identity:Promise<string>|undefined;
 export function resetTransferIdentity(){identity=undefined;}
-function installationId(){return identity??=(async()=>{const key='portable-installation-id-v1';const old=await AsyncStorage.getItem(key);if(old&&/^[a-f0-9]{32}$/.test(old))return old;const value=Array.from(Crypto.getRandomBytes(16),b=>b.toString(16).padStart(2,'0')).join('');await AsyncStorage.setItem(key,value);return value;})();}
+export function installationId(){return identity??=(async()=>{const key='portable-installation-id-v1';const old=await AsyncStorage.getItem(key);if(old&&/^[a-f0-9]{32}$/.test(old))return old;const value=Array.from(Crypto.getRandomBytes(16),b=>b.toString(16).padStart(2,'0')).join('');await AsyncStorage.setItem(key,value);return value;})();}
 export async function exportAppData():Promise<AppBackup>{
  await scratchMap.load();await scratchMap.flush();
  const values=Object.fromEntries(await AsyncStorage.multiGet(['vehicles-v1','profile-v1','places-v1','navigation-v1','ui-language-v1','bluetooth-preferences-v1','routes-v1'])),garage=restoreGarage(values['vehicles-v1'],values['profile-v1']);
