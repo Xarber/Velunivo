@@ -283,12 +283,13 @@ def capture_gallery(udid, family, pid):
     screens = ['explore']
     for name, url in [('library','velunivo:///offline'),('vehicles','velunivo:///scooter'),('navigation','velunivo:///?capture=navigation')]:
         launched=False
-        if orientation_supported():
-            try:
-                run('xcrun','devicectl','device','process','launch','--device',udid,'--payload-url',url,BUNDLE,timeout=30)
-                launched=True
-            except (subprocess.SubprocessError,OSError) as error:
-                print(f'::warning::Device URL API unavailable; using simctl: {error}',flush=True)
+        # URL launch is independent of orientation API availability. Device Hub
+        # supports it for Simulators even when orientation commands are absent.
+        try:
+            run('xcrun','devicectl','--timeout','15','device','process','launch','--device',udid,'--payload-url',url,BUNDLE,timeout=20)
+            launched=True
+        except (subprocess.SubprocessError,OSError) as error:
+            print(f'::warning::Device URL API unavailable; using simctl: {error}',flush=True)
         if not launched:
             run('xcrun','simctl','openurl',udid,url,timeout=20)
             time.sleep(2)

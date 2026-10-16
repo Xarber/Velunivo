@@ -107,7 +107,8 @@ class SimulatorVerificationTests(unittest.TestCase):
             root=Path(folder);(root/'iphone.png').write_bytes(b'baseline')
             with patch.object(sim,'ARTIFACTS',root),patch.object(sim,'run') as command,patch.object(sim.time,'sleep'),patch.object(sim.os,'kill') as alive,patch.object(sim,'screenshot_text',return_value=['Library','Vehicles','Simulation']),patch.object(sim,'dismiss_owned_url_prompt'):
                 self.assertEqual(sim.capture_gallery('owned-device','iphone',1234),['explore','library','vehicles','navigation'])
-                urls=[c.args[-1] for c in command.call_args_list if c.args[2]=='openurl']
+                urls=[c.args[c.args.index('--payload-url')+1] for c in command.call_args_list if '--payload-url' in c.args]
+                self.assertFalse(any(c.args[1:3]==('simctl','openurl') for c in command.call_args_list))
                 self.assertEqual(urls,['velunivo:///offline','velunivo:///scooter','velunivo:///?capture=navigation'])
                 self.assertEqual(alive.call_count,6)
 

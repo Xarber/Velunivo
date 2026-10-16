@@ -29,3 +29,5 @@ Obtainium uses the GitHub release APK and does not accept a separate store scree
 Reference: https://developer.android.com/studio/releases/emulator — API 37 requires at least 4 GB of AVD memory.
 
 Capture troubleshooting: the SDK repository names the Android 17 image `android-37.0`, not `android-37`. The workflow explicitly refreshes command-line tools (23.0 in the inspected repository) before checking hardware profiles; older preinstalled 16.0 tools only list phones through Pixel 8. Captures still assert runtime API 37 from the booted emulator itself.
+
+The current SDK's bundled hardware list still lacks Pixel 11 Pro even after refreshing tools. CI therefore registers a display-only custom AVD profile using Google's published 6.3-inch, 1280×2856 screen, named explicitly “Pixel 11 Pro (display profile)”. This is an Android 17 emulator capture at the requested screen size, not physical Pixel hardware validation. The tablet remains an unbranded landscape 10-inch profile. The profile schema/data derives from AOSP's Apache-2.0 generic phone definition; source attribution is in the XML. No camera/back-of-device artwork or dated Pixel Tablet branding is used.

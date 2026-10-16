@@ -51,6 +51,10 @@ jobs:
         run: |
           mkdir -p artifacts
           sdkmanager --list > artifacts/android-sdk-packages.log
+          # SDK hardware lists lag behind phone releases. Install our documented
+          # display-only Pixel 11 Pro profile rather than relabel an older Pixel.
+          mkdir -p "$HOME/.android"
+          cp scripts/pixel-11-pro-device.xml "$HOME/.android/devices.xml"
           avdmanager list device > artifacts/android-device-profiles.log
           if ! grep -q 'system-images;android-37.0;google_apis;x86_64' artifacts/android-sdk-packages.log; then
             echo '::error::The configured Android SDK repository does not supply the Android 17 emulator image. Refusing an older runtime with a new label.'
