@@ -55,15 +55,13 @@ def select_device(devices, family):
                   if device.get('isAvailable') and family in device['name'].lower()]
     if not candidates:
         raise RuntimeError(f'No installed {family} Simulator. This workflow does not download runtimes.')
-    # Stay on the newest installed runtime, but prefer a regular/Air/mini iPad
-    # over the first (often large Pro) template returned by CoreSimulator.
+    # Use regular Pro devices for consistent gallery and onboarding frames.
     def rank(item):
         runtime, device = item
         name = device['name'].lower()
         return (tuple(map(int, re.findall(r'\d+', runtime))),
-                1 if family == 'ipad' and 'pro' not in name else 0,
-                1 if family == 'ipad' and '13-inch' not in name else 0,
-                1 if family == 'ipad' and name.startswith('ipad (') else 0)
+                1 if 'pro' in name and ('11-inch' in name if family == 'ipad' else 'max' not in name) else 0,
+                1 if '13-inch' not in name and 'max' not in name else 0)
     return max(candidates, key=rank)
 
 
@@ -97,7 +95,7 @@ def boot_and_install(udid, family):
     else:
         run('xcrun','simctl','boot',udid,timeout=30)
         if app is None: open_simulator(udid)
-        else: print('Using headless Device Hub capture.',flush=True)
+        else: open_simulator(udid)
     # bootstatus waits for *all* system apps, which can stall on small hosts.
     # A timeout here does not prove the app is unusable: install, launch, PID
     # survival and framebuffer capture provide the required verification.
@@ -285,12 +283,10 @@ def capture_once(devices, family, gallery=False):
         raise RuntimeError(f'Cannot resolve installed device type for {template["name"]}')
     name = f'Velunivo-QA-{family}-{uuid.uuid4().hex[:8]}'
     udid = None
-    # Hosted templates may already contain initialized OS data. Clone only
-    # shutdown templates; cleanup always targets the new owned identifier.
-    if template.get('state') == 'Shutdown' and template.get('udid'):
-        udid = best_effort('xcrun', 'simctl', 'clone', template['udid'], name, timeout=60)
-    if not udid:
-        udid = run('xcrun', 'simctl', 'create', name, device_type, runtime)
+    # A shutdown template is not a clean OS image. Its cloned launchd/service
+    # state stalled installation on the hosted beta image. Create owned data
+    # from the installed runtime instead; never alter a runner template.
+    udid = run('xcrun', 'simctl', 'create', name, device_type, runtime)
     append_log(family, f'Owned fresh Simulator {udid}; type {device_type}; runtime {runtime}')
     try:
         boot_and_install(udid, family)
@@ -355,6 +351,10 @@ def main(argv=None):
     ARTIFACTS.mkdir(exist_ok=True)
     if not (ARTIFACTS/'Velunivo-simulator.app').is_dir(): raise SystemExit('Compiled Simulator app is missing; download the ios-simulator workflow artifact first.')
     orientation_supported() # Every family: probe before boot/memory pressure, including phone galleries.
+    host = {}
+    for label, command in [('disk', ('df', '-h')), ('memory', ('vm_stat',)), ('tools', ('xcodebuild', '-version')), ('runtimes', ('xcrun', 'simctl', 'list', 'runtimes', '--json'))]:
+        host[label] = best_effort(*command, timeout=15)
+    (ARTIFACTS/'capture-host.json').write_text(json.dumps(host, indent=2))
     devices = json.loads(run('xcrun', 'simctl', 'list', 'devices', 'available', '--json'))['devices']
     for family in ([args.family] if args.family else ['iphone', 'ipad']):
         if args.gallery: capture(devices,family,gallery=True)

@@ -118,20 +118,20 @@ class SimulatorVerificationTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'does not download'):
             sim.select_device({}, 'iphone')
 
-    def test_prefers_regular_ipad_on_same_newest_runtime(self):
+    def test_prefers_pro_ipad_on_same_newest_runtime(self):
         devices = self.devices()
         devices['com.apple.CoreSimulator.SimRuntime.iOS-27-2'].append(
             {'name': 'iPad Air', 'isAvailable': True, 'deviceTypeIdentifier': 'air-type'})
         runtime, device = sim.select_device(devices, 'ipad')
         self.assertTrue(runtime.endswith('iOS-27-2'))
-        self.assertEqual(device['deviceTypeIdentifier'], 'air-type')
+        self.assertEqual(device['deviceTypeIdentifier'], 'ipad-type')
 
     def test_avoids_large_ipad_on_memory_limited_runner(self):
         devices = {'com.apple.CoreSimulator.SimRuntime.iOS-27-0': [
             {'name': 'iPad Air 13-inch', 'isAvailable': True},
             {'name': 'iPad (A16)', 'isAvailable': True},
             {'name': 'iPad Air 11-inch', 'isAvailable': True}]}
-        self.assertEqual(sim.select_device(devices, 'ipad')[1]['name'], 'iPad (A16)')
+        self.assertNotIn('13-inch', sim.select_device(devices, 'ipad')[1]['name'])
 
     def test_full_capture_retries_once_and_removes_failed_frame(self):
         calls = []
@@ -172,21 +172,21 @@ class SimulatorVerificationTests(unittest.TestCase):
             sim.boot_and_install('owned-device', 'ipad')
             self.assertEqual(commands.call_args_list[-1].args[2], 'install')
 
-    def test_shutdown_template_is_cloned_without_touching_template(self):
+    def test_shutdown_template_is_never_cloned(self):
         devices = self.devices()
         template = devices['com.apple.CoreSimulator.SimRuntime.iOS-27-2'][1]
         template['state'] = 'Shutdown'
         calls = []
         def command(*args, **kwargs):
             calls.append(args)
-            if args[2] == 'clone': return 'owned-clone'
+            if args[2] == 'create': return 'owned-fresh'
             if args[2] == 'launch': return 'app.velunivo.mobile: 1234'
             return ''
         with tempfile.TemporaryDirectory() as folder, patch.object(sim, 'ARTIFACTS', Path(folder)), patch.object(sim, 'run', side_effect=command), patch.object(sim, 'boot_and_install'), patch.object(sim, 'diagnostics'), patch.object(sim.time, 'sleep'), patch.object(sim.os, 'kill'):
             sim.capture_once(devices, 'iphone')
-        self.assertTrue(any(c[2] == 'clone' and c[3] == 'existing-phone' for c in calls))
-        self.assertFalse(any(c[2] == 'create' for c in calls))
-        self.assertEqual(calls[-2:], [('xcrun', 'simctl', 'shutdown', 'owned-clone'), ('xcrun', 'simctl', 'delete', 'owned-clone')])
+        self.assertFalse(any(c[2] == 'clone' for c in calls))
+        self.assertTrue(any(c[2] == 'create' for c in calls))
+        self.assertEqual(calls[-2:], [('xcrun', 'simctl', 'shutdown', 'owned-fresh'), ('xcrun', 'simctl', 'delete', 'owned-fresh')])
 
     def test_process_exit_blocks_screenshot_and_cleans_only_fresh_device(self):
         calls = []
