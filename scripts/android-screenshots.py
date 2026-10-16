@@ -33,7 +33,7 @@ def wait_for_page(name):
         ROOT.joinpath(PREFIX+'-intro.xml').write_text(text)
         accuracy=any(e.get('resource-id')=='com.google.android.gms:id/message' and 'Location Accuracy' in e.get('text','') for e in elements)
         system=any(e.get('package')=='com.google.android.permissioncontroller' for e in elements)
-        choices=['No thanks'] if accuracy else ['While using the app','Only this time','Allow','Continue'] if system else ['Skip tour','Let’s ride',"Let's ride",'Continue']
+        choices=['Turn on'] if accuracy else ['While using the app','Only this time','Allow','Continue'] if system else ['Skip tour','Let’s ride',"Let's ride",'Continue']
         button=next((e for e in elements if (e.get('text') or e.get('content-desc','')).strip() in choices and e.get('clickable')=='true'),None)
         if button is not None:
             values=list(map(int,re.findall(r'\d+',button.get('bounds',''))))

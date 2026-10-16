@@ -6,3 +6,5 @@ Run 38928468213 installed the fixed 2.4.1 APK and stayed alive, but UIAutomator 
 ## 16 October: Device Hub window launch is not app readiness
 
 Matching Xcode 27.0 runner logs showed that creating the first iPad took 0.5 seconds and boot took 3.6 seconds. Launch Services then blocked opening Device Hub for 30 seconds; that optional window timeout aborted the whole attempt before bootstatus/install. The second create stalled after that interruption. Opening the Device Hub window is now best-effort, like bootstatus; app installation, process survival, page OCR and orientation remain required checks. This avoids treating window readiness as application failure.
+
+Follow-up 38929713469: declining Location Accuracy leaves the Android navigation request unresolved and the OS presents the sheet again. The disposable emulator capture now enables that OS service once, then supplies the same public Milan GPS fixture. Captures still reject any dialog, and no actual user location is supplied. The earlier decline-only approach did not resolve this blocker.
