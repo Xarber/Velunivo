@@ -13,6 +13,11 @@ spec.loader.exec_module(sim)
 
 
 class SimulatorVerificationTests(unittest.TestCase):
+    def test_ocr_parses_only_real_text_arrays_after_framework_diagnostics(self):
+        self.assertEqual(sim.parse_screenshot_text('Vision: model loaded\n["Library", "Saved Places"]\n'),['Library','Saved Places'])
+        with self.assertRaises(RuntimeError):sim.parse_screenshot_text('Vision: model loaded\nundefined')
+        with self.assertRaises(RuntimeError):sim.parse_screenshot_text('{"screen":"Library"}')
+
     def test_gallery_uses_device_hub_payload_without_open_url_alert(self):
         with tempfile.TemporaryDirectory() as folder:
             artifacts = Path(folder)

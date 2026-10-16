@@ -231,8 +231,20 @@ def seed_gallery(udid):
     (directory / 'manifest.json').write_text(json.dumps(entries))
 
 
+def parse_screenshot_text(output):
+    # Vision/CoreML can print framework diagnostics before osascript's result.
+    # Accept only an actual bounded JSON string array, never a log as page proof.
+    for line in reversed(output.splitlines()):
+        try: value=json.loads(line)
+        except ValueError: continue
+        if isinstance(value,list) and len(value)<=1000 and all(isinstance(v,str) for v in value):return value
+    raise RuntimeError('Screenshot OCR returned no text array: '+output[-2000:])
+
+
 def screenshot_text(path):
-    return json.loads(run('osascript','-l','JavaScript',str(Path(__file__).parent/'screenshot-text.js'),str(path),timeout=20))
+    output=run('osascript','-l','JavaScript',str(Path(__file__).parent/'screenshot-text.js'),str(path),timeout=20)
+    (ARTIFACTS / (path.stem+'-ocr.log')).write_text(output)
+    return parse_screenshot_text(output)
 
 
 def verify_screen_text(text, screen):
