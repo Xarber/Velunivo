@@ -115,7 +115,7 @@ jobs:
           heap-size: 512M
           disk-size: 8192M
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot -camera-back none
+          emulator-options: -no-window -gpu software -noaudio -no-boot-anim -no-snapshot -camera-back none
           script: python3 scripts/android-screenshots.py
       - uses: actions/upload-artifact@v4
         if: always()
