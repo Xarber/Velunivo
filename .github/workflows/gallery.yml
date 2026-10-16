@@ -1,5 +1,9 @@
 name: Refresh native AltSource gallery
 on:
+  workflow_run:
+    workflows: ['Build and release']
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       build_run:
@@ -13,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   identify:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.head_repository.full_name == github.repository
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
     outputs:
       run: ${{ steps.run.outputs.run }}
@@ -54,14 +58,15 @@ jobs:
       VELUNIVO_CAPTURE_BOOT_TIMEOUT: '120'
     steps:
       - uses: actions/checkout@v4
-      - name: Select installed Xcode beta for iOS 27 capture
+      - name: Select installed capture tools matching the iOS 27.0 runtime
         run: |
           python3 - <<'PYCODE' >> "$GITHUB_ENV"
           from pathlib import Path
           import re
-          apps=[p for p in Path('/Applications').glob('Xcode*.app') if 'beta' in p.name.lower() and not p.is_symlink()]
-          if not apps: raise SystemExit('No installed Xcode beta; no runtime will be downloaded')
-          app=max(apps,key=lambda p:tuple(map(int,re.findall(r'\d+',p.name))))
+          # Compilation stays on newest beta. Capture uses the installed 27.0
+          # toolchain matching the only hosted iOS runtime, avoiding 27.2 beta skew.
+          app=Path('/Applications/Xcode_27.app')
+          if not app.is_dir(): raise SystemExit('Matching Xcode 27.0 capture tools are missing; no downloads')
           print(f'DEVELOPER_DIR={app}/Contents/Developer')
           PYCODE
       - name: Download the already compiled Simulator app
