@@ -40,6 +40,20 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+      - uses: android-actions/setup-android@v3
+      - name: Inventory requested runtime and hardware before boot
+        run: |
+          mkdir -p artifacts
+          sdkmanager --list > artifacts/android-sdk-packages.log
+          avdmanager list device > artifacts/android-device-profiles.log
+          if ! grep -q 'system-images;android-37;google_apis;x86_64' artifacts/android-sdk-packages.log; then
+            echo '::error::The configured Android SDK repository does not supply the Android 17 emulator image. Refusing an older runtime with a new label.'
+            exit 1
+          fi
+          if ! grep -Fq '"${{ matrix.profile }}"' artifacts/android-device-profiles.log; then
+            echo '::error::The requested hardware profile is not installed. See the captured SDK inventory.'
+            exit 1
+          fi
       - name: Download existing APK; never compile for a screenshot
         run: |
           [[ "$BUILD_RUN" =~ ^[0-9]+$ ]] || exit 1
