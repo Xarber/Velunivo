@@ -18,7 +18,7 @@ Profile badges unlock at 20/100/500 XP; navigation arrow cosmetics at 40/200 XP.
 
 ## Bluetooth and device sync
 
-Partial or invalid telemetry updates retain the previous correctly timestamped reading. A different physical device and simulator session have separate caches. Presentation marks readings orange after a minute; live-speed and analytics freshness rules still apply. Charging is decoded from M365 BMS register 0x30, bit 6, not inferred from regeneration current. Physical charger validation is pending; no unsupported charging readings are invented.
+Partial or invalid telemetry updates retain the previous correctly timestamped reading. A different physical device and simulator session have separate caches. Controller speed is read between optional registers at the same bounded overall request rate. Presentation marks readings orange after a minute; live-speed and analytics freshness rules still apply. Charging is decoded from M365 BMS register 0x30, bit 6, not inferred from regeneration current. Physical charger validation is pending; no unsupported charging readings are invented.
 
 Paired devices support local aliases. Connection setup gets 45 seconds before retry, instead of interrupting native ICE every 10 seconds. Heartbeats run every 3 seconds; established channels have a 60-second liveness window. Sync now requests an exchange on the live channel instead of destroying it. The existing merge/timestamp/tombstone format is preserved.
 
@@ -28,11 +28,11 @@ Two isolated Chrome contexts using the hosted private PeerServer merged separate
 
 Group rides expose optional Memories recording of already received audio, optional received video and permitted riders' location updates. No extra microphone, camera or GPS watcher opens. Video recording defaults off. A visible red Recording memories label appears in the rider list even if a video avatar replaces the profile picture. Profile & Group Riding includes Hide me from Memories. Missing consent from older clients is treated as denial. Opt-out stops inclusion and removes that rider's data from the current recording. Compatible clients cannot prevent a recipient using external screen-recording software.
 
-Media and location chunks stay on the recorder's device. Memories media is intentionally not included in sync or backup files, to avoid silently broadcasting large private recordings or exceeding archive limits. Library → Memories browses, plays and deletes local memories. Settings → Storage measures persisted UTF-8 records, media bytes, native files and cache; filesystem/database overhead can differ from system Storage totals.
+Media and location chunks stay on the recorder's device. Memories media is intentionally not included in sync or backup files, to avoid silently broadcasting large private recordings or exceeding archive limits. Library → Memories browses, plays and deletes local memories. Settings → Storage measures persisted UTF-8 records, media bytes, native files, cache and SDK-reported downloaded map resources; filesystem/database overhead can differ from system Storage totals.
 
 Native recording uses an isolated receiver-only WebView MediaRecorder and a local WebRTC connection, forwarding only already received, consent-filtered tracks. A narrowly scoped react-native-webrtc patch resolves received track IDs on their original peer connection; it does not change capture, firmware or CallKit. Native media forwarding requires a fresh build and device validation. OS suspension can pause recording; continuous background Memories recording is not promised.
 
-The real browser loopback test uses generated audio/video, checks saved bytes and verifies playable video metadata. It produced two chunks (~49 KB) without page errors. Persistence tests verify exclusion, opt-out cleanup, timestamps and file identifier validation. A failed save reports failure and permits retry rather than claiming it succeeded.
+The real browser loopback test uses generated audio/video, checks saved bytes and verifies playable video metadata. It produced two chunks (~49 KB) without page errors. A full application test also created a two-browser recording group, enabled both cameras, verified the other rider’s Recording memories indicator, and saved an eight-second received audio/video recording (~37 KB) with a location update. Persistence tests verify exclusion, opt-out cleanup, timestamps and file identifier validation. Playback mounts only the selected clip, and long lists paginate instead of opening many media players. A failed save reports failure rather than claiming success; previous checkpoints remain available. Storage authorization is prepared before a received stream starts recording, including newly opted-in riders.
 
 ## Notifications and diagnostics
 
@@ -49,8 +49,8 @@ The developer changelog includes commit titles, bodies and revision IDs for all 
 ## Validation
 
 - TypeScript and Expo lint checks passed with no warnings.
-- 424 JavaScript regression tests passed, including memory persistence/consent, charging, retained telemetry, storage and 10-km challenge bounds.
-- 48 Python capture/release tooling tests passed using Python 3.12.
+- 425 JavaScript regression tests passed, including memory persistence/consent, charging, retained telemetry, storage and 10-km challenge bounds.
+- 49 Python capture/release tooling tests passed using Python 3.12.
 - Isolated Expo prebuild generated both native projects: four iOS alternate asset sets/build settings and five Android launcher aliases, with deep links retained. No local SDK download or local native compilation was used for this check.
 - Web export and actual two-browser private-server sync; real browser media capture/playback.
 - New native compilation and physical Bluetooth charging / Memories validation remain required before claiming those targets verified.
