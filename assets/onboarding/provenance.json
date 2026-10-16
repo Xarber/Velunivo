@@ -15,10 +15,34 @@
     "source": "CI binary 38893167584, fresh local isolated Simulator capture"
   },
   "android": {
-    "runtime": "Android 16 / API 36",
-    "sourceRun": 38887506493,
-    "appVersion": "2.3.2",
-    "status": "Provisional; Android 17 capture pending, do not relabel"
+    "platform": "android",
+    "status": "fresh",
+    "api": 37,
+    "appVersion": "2.4.1",
+    "family": "phone",
+    "profile": "pixel_11_pro",
+    "screens": [
+      {
+        "screen": "explore",
+        "width": 1280,
+        "height": 2856
+      },
+      {
+        "screen": "library",
+        "width": 1280,
+        "height": 2856
+      },
+      {
+        "screen": "vehicles",
+        "width": 1280,
+        "height": 2856
+      },
+      {
+        "screen": "settings",
+        "width": 1280,
+        "height": 2856
+      }
+    ]
   },
   "web": {
     "appVersion": "2.4.0",
@@ -30,6 +54,36 @@
     "desktopDimensions": [
       1194,
       834
+    ]
+  },
+  "androidTablet": {
+    "platform": "android",
+    "status": "fresh",
+    "api": 37,
+    "appVersion": "2.4.1",
+    "family": "tablet",
+    "profile": "10.1in WXGA (Tablet)",
+    "screens": [
+      {
+        "screen": "explore",
+        "width": 2560,
+        "height": 1600
+      },
+      {
+        "screen": "library",
+        "width": 2560,
+        "height": 1600
+      },
+      {
+        "screen": "vehicles",
+        "width": 2560,
+        "height": 1600
+      },
+      {
+        "screen": "settings",
+        "width": 2560,
+        "height": 1600
+      }
     ]
   }
 }
