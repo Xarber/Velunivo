@@ -1705,5 +1705,6 @@
   "Sync up to five trusted devices, including deletions and original edit dates.": "Synchronisez jusqu’à cinq appareils de confiance en conservant les suppressions et les dates de modification.",
   "You control the group": "Vous contrôlez le groupe",
   "Your devices, together": "Vos appareils, ensemble",
-  "Could not save the device change. Try again.": "Impossible d’enregistrer la modification de l’appareil. Réessayez."
+  "Could not save the device change. Try again.": "Impossible d’enregistrer la modification de l’appareil. Réessayez.",
+  "Native maps wait until ready before updating the viewport. Welcome previews use genuine iPhone 17 Pro and landscape iPad captures.": "Les cartes natives attendent leur chargement avant de modifier la vue. La présentation utilise de vraies captures sur iPhone 17 Pro et iPad en paysage."
 }
