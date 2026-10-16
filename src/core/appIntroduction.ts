@@ -7,6 +7,7 @@ export const welcomePages=[
  {icon:'shield-checkmark-outline',title:'You stay in control',text:'Check road signs and local rules. Your records stay on your device until you export or share them.'},
 ] as const;
 export const releaseDetails=[
+ {version:'2.4.1',items:[{icon:'construct-outline',title:'Fixes & Improvements',text:'Native maps wait until ready before updating the viewport. Welcome previews use genuine iPhone 17 Pro and landscape iPad captures.'}]},
  {version:'2.4.0',items:[
  {icon:'git-network-outline',title:'Your devices, together',text:'Sync up to five trusted devices, including deletions and original edit dates.'},
  {icon:'people-outline',title:'You control the group',text:'Lock invitations, review join requests and keep returning riders connected.'},
