@@ -18,3 +18,5 @@ Priority order:
 Baseline: 2.3.2 / 11a0301. Native build 38625449873 succeeded. Gallery 38628316560 reused iPhone images and produced no fresh iPad images: simctl bootstatus timed out, install timed out, then clone/create/shutdown/delete all stalled. Investigate runner CoreSimulator boot health rather than blaming iPad layout. Benchmark tooling fix from prior turn is uncommitted and must be preserved.
 
 Capture diagnostic 38859249274: clean Pro devices + Device Hub still stall in installation on the 7 GB hosted runner. Test matching installed Xcode 27.0 runtime tools next; native compilation remains on beta. No local runtime or compilation.
+
+Higher-memory capture 38860575731 could not start (GitHub account spending limit); no billing changes. Headless extended-boot test 38860724633 still pending. Test existing ARM Simulator binary on the stable macOS 26 capture image next; release compilation stays Xcode beta. This separates Simulator OS startup from compilation and downloads no runtime.
