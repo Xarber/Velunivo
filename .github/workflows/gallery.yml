@@ -42,40 +42,51 @@ jobs:
     needs: identify
     if: needs.identify.outputs.ready == 'true'
     runs-on: xcode-27
-    timeout-minutes: 30
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        family: [iphone, ipad]
     env:
+      VELUNIVO_CAPTURE_MIN_IOS: '27'
+      VELUNIVO_CAPTURE_IPHONE_NAME: 'iPhone 18 Pro'
       GH_TOKEN: ${{ github.token }}
       BUILD_RUN: ${{ needs.identify.outputs.run }}
+      VELUNIVO_CAPTURE_HEADLESS: '1'
+      VELUNIVO_CAPTURE_BOOT_TIMEOUT: '120'
     steps:
       - uses: actions/checkout@v4
-      - name: Select installed verification tools without downloading runtimes
+      - name: Select installed Xcode beta for iOS 27 capture
         run: |
-          python3 - <<'PY' >> "$GITHUB_ENV"
+          python3 - <<'PYCODE' >> "$GITHUB_ENV"
           from pathlib import Path
-          import re, subprocess
-          choices=[p for p in Path('/Applications').glob('Xcode*.app') if 'beta' in p.name.lower() and not p.is_symlink()]
-          developer=str(max(choices,key=lambda p:tuple(map(int,re.findall(r'\d+',p.name))))/'Contents/Developer') if choices else subprocess.check_output(['xcode-select','-p'],text=True).strip()
-          print('DEVELOPER_DIR='+developer)
-          PY
+          import re
+          apps=[p for p in Path('/Applications').glob('Xcode*.app') if 'beta' in p.name.lower() and not p.is_symlink()]
+          if not apps: raise SystemExit('No installed Xcode beta; no runtime will be downloaded')
+          app=max(apps,key=lambda p:tuple(map(int,re.findall(r'\d+',p.name))))
+          print(f'DEVELOPER_DIR={app}/Contents/Developer')
+          PYCODE
       - name: Download the already compiled Simulator app
         run: |
           mkdir -p artifacts
           gh run download "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --name ios-simulator --dir artifacts
           ditto -x -k artifacts/Velunivo-simulator.app.zip artifacts
           sudo mdutil -a -i off || true
-      - name: Capture iPhone then landscape iPad; preserve old screenshots on failure
-        timeout-minutes: 24
+      - name: Stop prebooted devices on this disposable hosted runner
+        run: xcrun simctl shutdown all
+      - name: Capture fresh Pro gallery; preserve published screenshots after two failures
+        timeout-minutes: 22
+        env:
+          FAMILY: ${{ matrix.family }}
         run: |
-          for family in iphone ipad; do
-            if ! python3 scripts/simulator-screenshots.py --family "$family" --gallery; then
-              echo "::warning::$family fresh capture failed twice; retaining the published gallery."
-              python3 scripts/screenshot-fallback.py --repo "$GITHUB_REPOSITORY" --family "$family"
-            fi
-          done
+          if ! python3 scripts/simulator-screenshots.py --family "$FAMILY" --gallery; then
+            echo "::warning::$FAMILY fresh capture failed twice; retaining the published gallery."
+            python3 scripts/screenshot-fallback.py --repo "$GITHUB_REPOSITORY" --family "$FAMILY"
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: gallery-native
+          name: gallery-native-${{ matrix.family }}
           path: |
             artifacts/iphone*.png
             artifacts/ipad*.png

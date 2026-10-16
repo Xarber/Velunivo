@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      ANDROID_USER_HOME: ${{ runner.temp }}/velunivo-android-user
+      ANDROID_USER_HOME: ${{ github.workspace }}/.android-capture
       GH_TOKEN: ${{ github.token }}
       BUILD_RUN: ${{ inputs.build_run }}
       CAPTURE_FAMILY: ${{ matrix.family }}

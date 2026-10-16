@@ -56,7 +56,9 @@ def run(*args, timeout=60):
 def select_device(devices, family):
     candidates = [(runtime, device) for runtime, values in devices.items()
                   if 'SimRuntime.iOS-' in runtime for device in values
-                  if device.get('isAvailable') and family in device['name'].lower()]
+                  if device.get('isAvailable') and family in device['name'].lower()
+                  and int(re.findall(r'\d+',runtime)[0])>=int(os.environ.get('VELUNIVO_CAPTURE_MIN_IOS','0'))
+                  and (family!='iphone' or not os.environ.get('VELUNIVO_CAPTURE_IPHONE_NAME') or device['name']==os.environ['VELUNIVO_CAPTURE_IPHONE_NAME'])]
     if not candidates:
         raise RuntimeError(f'No installed {family} Simulator. This workflow does not download runtimes.')
     # Use regular Pro devices for consistent gallery and onboarding frames.

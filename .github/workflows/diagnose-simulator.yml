@@ -5,8 +5,8 @@ on:
       runner:
         description: Installed runtime architecture (must match downloaded app)
         type: choice
-        options: [macos-26, macos-26-intel]
-        default: macos-26
+        options: [xcode-27, macos-26, macos-26-intel]
+        default: xcode-27
       tag:
         description: Existing binary release
         default: v0.1.0
@@ -19,7 +19,7 @@ permissions:
   actions: read
 jobs:
   diagnose:
-    runs-on: ${{ inputs.runner || 'macos-26' }}
+    runs-on: ${{ inputs.runner || 'xcode-27' }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -30,6 +30,8 @@ jobs:
       RELEASE_TAG: ${{ inputs.tag }}
       BINARY_RUN_ID: ${{ inputs.run_id }}
       VELUNIVO_CAPTURE_HEADLESS: '1'
+      VELUNIVO_CAPTURE_MIN_IOS: ${{ inputs.runner == 'xcode-27' && '27' || '0' }}
+      VELUNIVO_CAPTURE_IPHONE_NAME: ${{ inputs.runner == 'xcode-27' && 'iPhone 18 Pro' || '' }}
       VELUNIVO_CAPTURE_BOOT_TIMEOUT: '120'
     steps:
       - uses: actions/checkout@v4
@@ -39,7 +41,9 @@ jobs:
           from pathlib import Path
           import re
           import subprocess
-          print('DEVELOPER_DIR='+subprocess.check_output(['xcode-select','-p'],text=True).strip())
+          candidates=[p for p in Path('/Applications').glob('Xcode*.app') if 'beta' in p.name.lower() and not p.is_symlink()]
+          chosen=max(candidates,key=lambda p:tuple(map(int,re.findall(r'\d+',p.name)))) if candidates else None
+          print('DEVELOPER_DIR='+str(chosen/'Contents/Developer') if chosen else 'DEVELOPER_DIR='+subprocess.check_output(['xcode-select','-p'],text=True).strip())
           PY
           mkdir -p artifacts
           if [[ -n "$BINARY_RUN_ID" ]]; then
