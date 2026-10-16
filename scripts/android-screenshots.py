@@ -1,7 +1,9 @@
 """Capture real Android app pages from an existing APK on a disposable CI emulator."""
-import json,re,struct,subprocess,time,xml.etree.ElementTree as ET
+import json,os,re,struct,subprocess,time,xml.etree.ElementTree as ET
 from pathlib import Path
 ROOT=Path('artifacts');APP='app.velunivo.mobile'
+FAMILY=os.environ.get('CAPTURE_FAMILY','phone')
+PREFIX='android-tablet' if FAMILY=='tablet' else 'android'
 def adb(*args,timeout=45,binary=False):
     result=subprocess.check_output(['adb',*args],timeout=timeout,text=not binary,stderr=subprocess.STDOUT if not binary else subprocess.DEVNULL)
     if not binary and args[:2]!=('shell','cat'):print('adb '+' '.join(args)+'\n'+result[-2000:],flush=True)
@@ -19,7 +21,11 @@ def page_matches(name,elements):
 def wait_for_page(name):
     deadline=time.monotonic()+150;returned=False
     while time.monotonic()<deadline:
-        text,elements=nodes();ROOT.joinpath('android-intro.xml').write_text(text)
+        try:text,elements=nodes()
+        except (subprocess.SubprocessError,ET.ParseError):
+            # UIAutomator can be killed during initial OS/permission settling. Retry within the same deadline.
+            time.sleep(3);continue
+        ROOT.joinpath(PREFIX+'-intro.xml').write_text(text)
         system=any(e.get('package')=='com.google.android.permissioncontroller' for e in elements)
         choices=['While using the app','Only this time','Allow','Continue'] if system else ['Skip tour','Let’s ride',"Let's ride",'Continue']
         button=next((e for e in elements if (e.get('text') or e.get('content-desc','')).strip() in choices and e.get('clickable')=='true'),None)
@@ -35,15 +41,15 @@ def wait_for_page(name):
     raise RuntimeError('Android page did not finish loading: '+name)
 def screenshot(name):
     raw=adb('exec-out','screencap','-p',binary=True);width,height=struct.unpack('>II',raw[16:24])
-    if raw[:8]!=b'\x89PNG\r\n\x1a\n' or width>=height:raise RuntimeError('Expected portrait native Android framebuffer')
-    ROOT.joinpath('android-'+name+'.png').write_bytes(raw)
-    xml,elements=nodes();ROOT.joinpath('android-'+name+'.xml').write_text(xml)
+    if raw[:8]!=b'\x89PNG\r\n\x1a\n' or (width>height)!=(FAMILY=='tablet'):raise RuntimeError('Wrong native Android framebuffer orientation')
+    ROOT.joinpath(PREFIX+'-'+name+'.png').write_bytes(raw)
+    xml,elements=nodes();ROOT.joinpath(PREFIX+'-'+name+'.xml').write_text(xml)
     if not page_matches(name,elements):raise RuntimeError('Wrong Android page: '+name)
     return {'screen':name,'width':width,'height':height}
 def main():
     ROOT.mkdir(exist_ok=True);adb('install','-r','-g',str(ROOT/'Velunivo.apk'),timeout=120)
     # Latest regular Pixel Pro canvas, captured natively rather than stretching a web view.
-    adb('shell','wm','size','1280x2856');adb('shell','wm','density','480')
+    adb('shell','wm','size',os.environ.get('CAPTURE_SIZE','1280x2856'));adb('shell','wm','density',os.environ.get('CAPTURE_DENSITY','480'))
     adb('shell','settings','put','system','accelerometer_rotation','0');adb('shell','settings','put','system','user_rotation','0')
     adb('emu','geo','fix','9.1900','45.4642');adb('logcat','-c');screens=[]
     for name,path in [('explore','/'),('library','/offline'),('vehicles','/scooter'),('settings','/settings')]:
@@ -54,7 +60,9 @@ def main():
             for _ in range(3):adb('emu','geo','fix','9.1900','45.4642');time.sleep(2)
         time.sleep(5)
         screens.append(screenshot(name))
-    ROOT.joinpath('android-capture.json').write_text(json.dumps({'platform':'android','status':'fresh','canvas':'Pixel 11 Pro','screens':screens}))
+    api=adb('shell','getprop','ro.build.version.sdk').strip()
+    if api!='37':raise RuntimeError('Android 17/API 37 is required; got '+api)
+    ROOT.joinpath(PREFIX+'-capture.json').write_text(json.dumps({'platform':'android','status':'fresh','api':int(api),'family':FAMILY,'profile':os.environ.get('CAPTURE_PROFILE'),'screens':screens}))
 if __name__=='__main__':
     try:main()
     finally:

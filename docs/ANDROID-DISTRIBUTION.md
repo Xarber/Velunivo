@@ -19,3 +19,11 @@ References:
 - https://f-droid.org/docs/Submitting_to_F-Droid_Quick_Start_Guide/
 - https://f-droid.org/docs/Inclusion_Policy/
 - https://f-droid.org/docs/Build_Metadata_Reference/
+
+## Android 17 capture targets (2.4.0)
+
+The independent screenshot workflow now requests API 37 (Android 17), a Pixel 11 Pro hardware profile for phone captures, and a neutral 10-inch tablet profile at 2560×1600 for landscape tablet captures. Both run on CI with at least 4 GB emulator RAM; no Android SDK is downloaded to the developer's Mac. A missing Pixel 11 Pro profile must fail explicitly rather than relabel an older Pixel as a new model. Each capture manifest records the runtime API and hardware profile. Only verified native framebuffers may populate `fastlane/metadata/android/<locale>/images/phoneScreenshots` and `tenInchScreenshots`; raw log/proof images are not distribution screenshots.
+
+Obtainium uses the GitHub release APK and does not accept a separate store screenshot upload. The repository's Fastlane/F-Droid metadata provides the requested phone/tablet image collection. Android 16 diagnostic images are provisional and must not be represented as Android 17 captures. The native welcome tour uses matching-platform images and a generic tablet shell; web images remain unframed responsive web previews.
+
+Reference: https://developer.android.com/studio/releases/emulator — API 37 requires at least 4 GB of AVD memory.
