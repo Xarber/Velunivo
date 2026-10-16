@@ -344,6 +344,10 @@ def capture_once(devices, family, gallery=False):
         run('xcrun', 'simctl', 'io', udid, 'screenshot', str(ARTIFACTS / f'{family}.png'), timeout=30)
         if family == 'ipad':
             verify_landscape(ARTIFACTS / 'ipad.png')
+        startup=ARTIFACTS/f'{family}.png'
+        if startup.exists():
+            shutil.copy(startup,ARTIFACTS/f'proof-startup-{family}.png')
+            (ARTIFACTS/f'proof-startup-{family}.json').write_text(json.dumps({'status':'fresh-startup','device':template['name'],'runtime':runtime,'pid':pid}))
         # Startup and gallery have separate budgets: first-boot indexing must
         # not consume the verified app's entire screen-navigation allowance.
         if gallery: ATTEMPT_DEADLINE=time.monotonic()+240

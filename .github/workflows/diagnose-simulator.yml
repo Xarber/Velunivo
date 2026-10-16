@@ -2,6 +2,11 @@ name: Diagnose Simulator launch
 on:
   workflow_dispatch:
     inputs:
+      runner:
+        description: Installed runtime architecture (must match downloaded app)
+        type: choice
+        options: [macos-26, macos-26-intel]
+        default: macos-26
       tag:
         description: Existing binary release
         default: v0.1.0
@@ -14,7 +19,7 @@ permissions:
   actions: read
 jobs:
   diagnose:
-    runs-on: macos-26
+    runs-on: ${{ inputs.runner || 'macos-26' }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -28,7 +33,7 @@ jobs:
       VELUNIVO_CAPTURE_BOOT_TIMEOUT: '120'
     steps:
       - uses: actions/checkout@v4
-      - name: Select installed beta and fetch existing Simulator build
+      - name: Select installed capture tools and fetch existing Simulator build
         run: |
           python3 - <<'PY' >> "$GITHUB_ENV"
           from pathlib import Path
@@ -39,7 +44,7 @@ jobs:
           mkdir -p artifacts
           if [[ -n "$BINARY_RUN_ID" ]]; then
             [[ "$BINARY_RUN_ID" =~ ^[0-9]+$ ]] || { echo 'Use a numeric workflow run ID'; exit 1; }
-            gh run download "$BINARY_RUN_ID" --repo "$GITHUB_REPOSITORY" --name ios-simulator --dir artifacts || gh run download "$BINARY_RUN_ID" --repo "$GITHUB_REPOSITORY" --name ios --dir artifacts
+            gh run download "$BINARY_RUN_ID" --repo "$GITHUB_REPOSITORY" --name ios-simulator --dir artifacts || gh run download "$BINARY_RUN_ID" --repo "$GITHUB_REPOSITORY" --name ios --dir artifacts || gh run download "$BINARY_RUN_ID" --repo "$GITHUB_REPOSITORY" --name gallery-intel-app --dir artifacts
           else
             gh release download "$RELEASE_TAG" --pattern Velunivo-simulator.app.zip --dir artifacts
           fi
