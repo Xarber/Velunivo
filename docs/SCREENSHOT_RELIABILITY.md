@@ -12,3 +12,9 @@ Follow-up 38929713469: declining Location Accuracy leaves the Android navigation
 ## Hosted iOS resource isolation
 
 Run 38929822521 completed by retaining both galleries, not by capturing fresh screenshots. Its first-boot system readiness and native install operations still stalled on the 7 GB hosted Mac. The next capture avoids loading Device Hub's window and uses simctl installation with matching 27.0 tools. On disposable GitHub runners only, an available preinitialized device is reused directly instead of cloning its launchd state or bootstrapping a new OS data tree. iPhone 17 Pro is still created from its installed device type if no template exists. Local captures continue creating and deleting their own devices, never modifying the user's existing simulators. Fresh app-process, OCR and orientation validation remain mandatory, and fallback is explicitly marked reused.
+
+## Landscape without a Device Hub menu
+
+The headless initialized iPad run 38961819783 progressed through install, fixture seeding and app launch. Its failure moved to orientation: after the first device-orientation command returned success, a later framebuffer request stalled and the fallback tried a Device Hub menu bar that did not exist in the headless session (-1719). Retry also referenced the template UUID deleted by attempt one.
+
+Gallery capture now sets the installed expo-screen-orientation module's `EXDefaultScreenOrientationMask` and iPad supported orientations to landscape **in the downloaded Simulator QA app only**. This uses the real app interface orientation, does not rotate image pixels, does not compile again, and never changes the distributed IPA. Any existing Simulator ad-hoc signature is refreshed with `codesign --sign -` (no signing certificate or security key). Final framebuffer dimensions and page OCR still must pass. Retry creates fresh data after an owned hosted template has been deleted.

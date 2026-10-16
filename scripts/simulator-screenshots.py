@@ -105,6 +105,20 @@ def orientation_supported():
     return 'landscapeLeft' in ORIENTATION_HELP
 
 
+def configure_ipad_capture_orientation():
+    """Lock only the downloaded Simulator QA app, never the distributed IPA."""
+    path=ARTIFACTS/'Velunivo-simulator.app/Info.plist'
+    info=plistlib.loads(path.read_bytes())
+    if not info.get('VelunivoCaptureFixtures'):raise RuntimeError('Orientation override requires a Simulator QA build')
+    info['EXDefaultScreenOrientationMask']='UIInterfaceOrientationMaskLandscapeLeft'
+    info['UISupportedInterfaceOrientations~ipad']=['UIInterfaceOrientationLandscapeLeft','UIInterfaceOrientationLandscapeRight']
+    info['UIRequiresFullScreen']=True
+    path.write_bytes(plistlib.dumps(info))
+    # Simulator binaries may be ad-hoc signed. Refresh that local signature after
+    # changing QA metadata; '-' never uses a certificate or the user's key.
+    if (path.parent/'_CodeSignature').exists():run('codesign','--force','--sign','-',str(path.parent),timeout=30)
+
+
 def boot_and_install(udid, family):
     app = simulator_app()
     if os.environ.get('VELUNIVO_CAPTURE_HEADLESS')=='1':
@@ -347,12 +361,14 @@ def capture_once(devices, family, gallery=False):
     udid=template['udid'] if reuse_template else run('xcrun', 'simctl', 'create', name, device_type, runtime)
     append_log(family, f'Owned fresh Simulator {udid}; type {device_type}; runtime {runtime}')
     try:
+        orientation_locked=family=='ipad' and gallery
+        if orientation_locked:configure_ipad_capture_orientation()
         boot_and_install(udid, family)
         if gallery: seed_gallery(udid)
         # Public fixture, on this run's disposable Simulator only.
         run('xcrun', 'simctl', 'privacy', udid, 'grant', 'location', BUNDLE, timeout=60)
         best_effort('xcrun', 'simctl', 'location', udid, 'set', '45.4642,9.1900', timeout=60)
-        if family == 'ipad':
+        if family == 'ipad' and not orientation_locked:
             landscape(udid)
         launch = run('xcrun', 'simctl', 'launch', udid, BUNDLE, timeout=90)
         match = re.search(r':\s*(\d+)', launch)
@@ -365,7 +381,7 @@ def capture_once(devices, family, gallery=False):
         os.kill(pid, 0)
         best_effort('xcrun', 'simctl', 'status_bar', udid, 'override', '--time', '9:41',
                     '--batteryState', 'charged', '--batteryLevel', '100', timeout=10)
-        if family == 'ipad':
+        if family == 'ipad' and not orientation_locked:
             landscape(udid)
         run('xcrun', 'simctl', 'io', udid, 'screenshot', str(ARTIFACTS / f'{family}.png'), timeout=30)
         if family == 'ipad':
@@ -404,6 +420,8 @@ def capture(devices, family, gallery=False):
             (ARTIFACTS / f'{family}-screenshot.json').write_text(json.dumps({'status': 'fresh', 'attempt': attempt, 'screens': screens or [], 'appVersion':plistlib.loads((ARTIFACTS/'Velunivo-simulator.app/Info.plist').read_bytes()).get('CFBundleShortVersionString') if (ARTIFACTS/'Velunivo-simulator.app/Info.plist').exists() else None}))
             return
         except Exception as error:
+            if os.environ.get('VELUNIVO_CAPTURE_USE_TEMPLATE')=='1':
+                devices={runtime:[{**d,'udid':None} for d in values] for runtime,values in devices.items()}
             append_log(family, f'Capture attempt {attempt}/2 failed: {error}')
             if attempt == 2:
                 image.unlink(missing_ok=True)

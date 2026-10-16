@@ -308,3 +308,19 @@ class CommandOutputTests(unittest.TestCase):
         import sys
         value=sim.run(sys.executable,'-c',"import sys;sys.stderr.write('Framework warning\\n');print('/tmp/owned-container')")
         self.assertEqual(value,'/tmp/owned-container')
+
+class CaptureOrientationTests(unittest.TestCase):
+    def test_landscape_lock_only_modifies_the_simulator_qa_metadata(self):
+        import plistlib
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);app=root/'Velunivo-simulator.app';app.mkdir();info=app/'Info.plist'
+            info.write_bytes(plistlib.dumps({'VelunivoCaptureFixtures':True,'CFBundleShortVersionString':'2.4.1'}))
+            with patch.object(sim,'ARTIFACTS',root),patch.object(sim,'run') as commands:
+                sim.configure_ipad_capture_orientation()
+                value=plistlib.loads(info.read_bytes())
+                self.assertEqual(value['EXDefaultScreenOrientationMask'],'UIInterfaceOrientationMaskLandscapeLeft')
+                self.assertEqual(value['CFBundleShortVersionString'],'2.4.1')
+                self.assertTrue(value['UIRequiresFullScreen'])
+                commands.assert_not_called()
+            info.write_bytes(plistlib.dumps({'CFBundleShortVersionString':'2.4.1'}))
+            with patch.object(sim,'ARTIFACTS',root),self.assertRaises(RuntimeError):sim.configure_ipad_capture_orientation()
