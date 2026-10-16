@@ -27,6 +27,7 @@ class SimulatorVerificationTests(unittest.TestCase):
 
     def setUp(self):
         sim.ORIENTATION_HELP=None
+        self.orientation_patch=patch.object(sim,'device_is_landscape',return_value=False);self.orientation_patch.start();self.addCleanup(self.orientation_patch.stop)
 
     def test_landscape_verification_rejects_portrait_framebuffer(self):
         import struct
@@ -273,3 +274,9 @@ class SimulatorAPIFallbackTests(unittest.TestCase):
             with patch.object(sim,'ARTIFACTS',folder),patch.object(sim,'orientation_supported',return_value=True),patch.object(sim,'run',side_effect=command),patch.object(sim,'dismiss_owned_url_prompt'),patch.object(sim,'screenshot_text',return_value=['Library','Vehicles','Simulation']),patch.object(sim.time,'sleep'),patch.object(sim.os,'kill'):
                 self.assertEqual(sim.capture_gallery('owned-device','iphone',123),['explore','library','vehicles','navigation'])
             self.assertEqual(len([c for c in calls if c[1:3]==('simctl','openurl')]),3)
+
+class IdempotentOrientationTests(unittest.TestCase):
+    def test_already_landscape_frame_never_rotates_again(self):
+        with patch.object(sim,'device_is_landscape',return_value=True),patch.object(sim,'run') as run:
+            sim.landscape('owned-device')
+            run.assert_not_called()

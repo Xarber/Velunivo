@@ -81,7 +81,7 @@ def best_effort(*args, timeout=30):
 def orientation_supported():
     global ORIENTATION_HELP
     if ORIENTATION_HELP is None:
-        ORIENTATION_HELP = best_effort('xcrun','devicectl','help','device','orientation','set',timeout=20) or ''
+        ORIENTATION_HELP = '' if os.environ.get('VELUNIVO_CAPTURE_HEADLESS')=='1' else best_effort('xcrun','devicectl','help','device','orientation','set',timeout=20) or ''
     return 'landscapeLeft' in ORIENTATION_HELP
 
 
@@ -151,7 +151,19 @@ def open_simulator(udid, select=False):
     return True
 
 
+def device_is_landscape(udid):
+    image=ARTIFACTS/f'orientation-{udid}.png'
+    try:
+        run('xcrun','simctl','io',udid,'screenshot',str(image),timeout=25)
+        if not image.exists(): return False
+        header=image.read_bytes()[:24]
+        return len(header)==24 and header[:8]==b'\x89PNG\r\n\x1a\n' and struct.unpack('>II',header[16:24])[0]>struct.unpack('>II',header[16:24])[1]
+    except (subprocess.SubprocessError,OSError): return False
+    finally: image.unlink(missing_ok=True)
+
+
 def landscape(udid):
+    if device_is_landscape(udid): return
     # Xcode 27 has a supported headless orientation API. No Accessibility
     # permission, menu traversal or image rotation is necessary on that path.
     if orientation_supported():
@@ -312,6 +324,9 @@ def capture_once(devices, family, gallery=False):
         run('xcrun', 'simctl', 'io', udid, 'screenshot', str(ARTIFACTS / f'{family}.png'), timeout=30)
         if family == 'ipad':
             verify_landscape(ARTIFACTS / 'ipad.png')
+        # Startup and gallery have separate budgets: first-boot indexing must
+        # not consume the verified app's entire screen-navigation allowance.
+        if gallery: ATTEMPT_DEADLINE=time.monotonic()+240
         screens = capture_gallery(udid,family,pid) if gallery else []
         os.kill(pid, 0)
         append_log(family, f'Verified app PID {pid} survived launch and screenshot capture.')
