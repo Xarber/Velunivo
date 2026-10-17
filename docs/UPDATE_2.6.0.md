@@ -42,3 +42,5 @@ No native compilation, SDK installation, simulator boot or interaction with the 
 - Swift syntax parsing passed for the reduced appearance module. No native binary was compiled locally.
 - Fresh isolated Chromium: Search opens the planner; a synthetic two-minute 120 W recording displays 4.0 Wh; chart selection exposes the shared route cursor; scatter charts and narrow viewport render without JS exceptions or horizontal page overflow. Synthetic data is a mathematical/UI fixture, not physical scooter validation.
 - One earlier full run overloaded the standalone test's five-second startup window; its isolated rerun passed and the complete bounded-concurrency run passed unchanged. A new-version changelog fixture was updated to include 2.6.0.
+
+The final release-history check also found that the developer-note generator ignored prerelease tags, which could hide 2.5.1/2.5.2 developer history and repeat those commits under 2.6.0. It now selects the latest testing build per version (or the stable tag), retains untagged historical notes and bounds each version to its preceding release. A temporary-repository regression test covers these cases.
