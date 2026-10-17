@@ -7,7 +7,7 @@ export interface Reading { value:number|boolean|string; timestamp:number; source
 export type Telemetry = Partial<Record<Metric,Reading>>;
 export interface TelemetryUpdate { fields:Telemetry; extensions?:Record<string,Reading>; }
 export interface Detection { compatible:boolean; uncertain?:boolean; model?:string; reason?:string; }
-export interface Capabilities { fields:readonly Metric[]; commands:readonly ('readTelemetry'|'lock'|'unlock')[]; authentication:string; limitations:string[]; }
+export interface Capabilities {electricalSign?:'positive-discharge'|'negative-discharge'; fields:readonly Metric[]; commands:readonly ('readTelemetry'|'lock'|'unlock')[]; authentication:string; limitations:string[]; }
 export interface BLELink {
   device:BLEDeviceInfo;
   hasCharacteristic(service:string,characteristic:string):Promise<boolean>;
@@ -26,7 +26,8 @@ export interface VehicleProtocolPlugin {
  open(link:BLELink,context:{signal?:AbortSignal;approvalDeadline?:number;credentials?:Record<string,string>;emit(update:TelemetryUpdate):void; phase(message:string):void; random(length:number):Uint8Array}):Promise<ProtocolSession>;
 }
 export interface Association { schema:1; vehicleId:string; vehicleType:VehicleType; device:BLEDeviceInfo; pluginId:string; identity:ProtocolSession['identity']; associatedAt:number; credentials?:Record<string,string>; simulated?:boolean; }
-export interface BridgeSnapshot { rePairRequired?:boolean; state:ConnectionState; message:string; vehicleId?:string; device?:BLEDeviceInfo; pluginId?:string; simulated?:boolean; fields:Telemetry; extensions:Record<string,Reading>; capabilities?:Capabilities; connectedAt?:number; }
+export interface ConnectionDiagnostics {attempts:number;failures:number;disconnects:number;}
+export interface BridgeSnapshot {connectionDiagnostics?:ConnectionDiagnostics; rePairRequired?:boolean; state:ConnectionState; message:string; vehicleId?:string; device?:BLEDeviceInfo; pluginId?:string; simulated?:boolean; fields:Telemetry; extensions:Record<string,Reading>; capabilities?:Capabilities; connectedAt?:number; }
 export const vehicleType = (kind:'escooter'|'ebike'):VehicleType => kind==='ebike'?'electric_bike':'electric_scooter';
 
 /** The OS/browser grant is separate from protocol registration; do not retry it silently. */

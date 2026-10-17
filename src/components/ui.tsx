@@ -3,7 +3,7 @@ import Text from './LocalizedText';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import PressMotion from './PressMotion';
 import { motionProps, useReducedMotion } from './WebMotion';
-import {Animated, Easing, ActivityIndicator, StyleSheet, useColorScheme, View, TextInput, TextInputProps} from 'react-native';
+import {Animated, Easing, Keyboard, ActivityIndicator, StyleSheet, useColorScheme, View, TextInput, TextInputProps} from 'react-native';
 import { Ionicons,MaterialCommunityIcons } from '@expo/vector-icons';
 import {t} from '../i18n/core';
 import {useLanguage} from '../i18n/react';
@@ -24,7 +24,7 @@ function ButtonProgress({fraction,color}:{fraction:number|null;color:string}) {
  return <View pointerEvents="none" accessibilityRole="progressbar" accessibilityLabel={t('Progress')} accessibilityValue={fraction===null?undefined:{min:0,max:100,now:Math.round(Math.max(0,Math.min(1,fraction))*100)}} onLayout={event=>setWidth(event.nativeEvent.layout.width)} style={{position:'absolute',inset:0}}>{fraction===null?<Animated.View style={{position:'absolute',top:0,bottom:0,width:reduced?'100%':'35%',backgroundColor:color,opacity:.18,transform:reduced?[]:[{translateX:motion.interpolate({inputRange:[0,1],outputRange:[-width*.35,width]})}]}}/>:<View style={{height:'100%',width:`${Math.max(0,Math.min(1,fraction))*100}%`,backgroundColor:color,opacity:.22}}/>}</View>;
 }
 export function Field({ label, ...props }: TextInputProps & { label: string }) {
-  const p = usePalette(),resolving=useCoordinateActivity(props.value??'');useLanguage(); return <View style={{ gap: 6 }}><Text style={{ color: p.muted, fontSize: 12, fontWeight: '700', letterSpacing: .8 }}>{label}</Text><View style={{flexDirection:'row',alignItems:'center',gap:8}}>{resolving&&<ActivityIndicator size="small" color={p.muted}/>}<TextInput {...motionProps('field')} accessibilityLabel={t(label)} placeholderTextColor={p.muted} {...props} placeholder={props.placeholder?t(props.placeholder):undefined} style={[styles.field, { flex:1, color: resolving?p.muted:p.text, backgroundColor: p.bg, borderColor: p.line }, props.style]} /></View></View>;
+  const p = usePalette(),resolving=useCoordinateActivity(props.value??'');useLanguage(); return <View style={{ gap: 6 }}><Text style={{ color: p.muted, fontSize: 12, fontWeight: '700', letterSpacing: .8 }}>{label}</Text><View style={{flexDirection:'row',alignItems:'center',gap:8}}>{resolving&&<ActivityIndicator size="small" color={p.muted}/>}<TextInput returnKeyType="done" onSubmitEditing={Keyboard.dismiss} {...motionProps('field')} accessibilityLabel={t(label)} placeholderTextColor={p.muted} {...props} placeholder={props.placeholder?t(props.placeholder):undefined} style={[styles.field, { flex:1, color: resolving?p.muted:p.text, backgroundColor: p.bg, borderColor: p.line }, props.style]} /></View></View>;
 }
 export const styles = StyleSheet.create({
   button: { minHeight: 50, borderRadius: 16, paddingHorizontal: 18, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 },

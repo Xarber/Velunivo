@@ -47,3 +47,5 @@ test('leader approval admits only the selected applicant, including when locked'
  make(3);await flush();leader.approve(profile(3).id,false);await flush();assert.equal(snapshots.get(1)?.members.length,2);
  sessions.forEach(s=>s.close());t.mock.timers.tick(1000);await flush();
 });
+
+test('profile refresh without a foreground fix preserves the last published group location',async t=>{t.mock.timers.enable({apis:['setTimeout','setInterval','Date'],now:100000});const network=new Map<string,Radio>();let snapshot:GroupSnapshot|undefined;const events={snapshot:(s:GroupSnapshot)=>{snapshot=s;},status:()=>{},signal:()=>{},ended:()=>{}};const leader=new GroupSession('ABCD1234',profile(1),id=>new Radio(id,network),events,null,true);await flush();leader.update(profile(1),[9,45]);await flush();leader.update({...profile(1),name:'Updated profile'},null);await flush();assert.deepEqual(snapshot?.members.find(m=>m.id===profile(1).id)?.position,[9,45]);leader.close();t.mock.timers.tick(500);await flush();});

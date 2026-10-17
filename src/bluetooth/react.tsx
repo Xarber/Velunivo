@@ -1,3 +1,5 @@
+import {startLiveElectrical} from '../services/liveElectrical';
+import {startBatteryMemory} from '../services/lastBattery';
 import {recordSettingEdits} from '../services/syncSettings';
 import React,{createContext,useContext,useEffect,useState,useSyncExternalStore} from 'react';
 import {AppState} from 'react-native';
@@ -15,7 +17,7 @@ export function BluetoothProvider({children}:{children:React.ReactNode}){
  const associatedDevice=useSyncExternalStore(bluetoothBridge.subscribe,()=>bluetoothBridge.association(profile.id)?.device.id ?? '',()=> '');
  useEffect(()=>{if(ready && garageReady && preferences.autoReconnect && associatedDevice && canPairVehicle(profile.id) && !(n.developerMode && preferences.simulateTelemetry))return bluetoothBridge.acquire(profile.id);},[ready,garageReady,preferences.autoReconnect,preferences.simulateTelemetry,n.developerMode,profile.id,associatedDevice]);
 
- useEffect(()=>{let cancelled=false;void Promise.all([AsyncStorage.getItem('bluetooth-preferences-v1'),bluetoothBridge.initialize()]).then(([raw])=>{if(!cancelled){setPreferences(restoreBluetoothPreferences(raw));setReady(true);}}).catch(()=>{if(!cancelled)setReady(true);});const sub=AppState.addEventListener('change',state=>{if(state==='active')bluetoothBridge.foreground();});return()=>{cancelled=true;sub.remove();};},[]);
+ useEffect(()=>{startBatteryMemory();startLiveElectrical();let cancelled=false;void Promise.all([AsyncStorage.getItem('bluetooth-preferences-v1'),bluetoothBridge.initialize()]).then(([raw])=>{if(!cancelled){setPreferences(restoreBluetoothPreferences(raw));setReady(true);}}).catch(()=>{if(!cancelled)setReady(true);});const sub=AppState.addEventListener('change',state=>{if(state==='active')bluetoothBridge.foreground();});return()=>{cancelled=true;sub.remove();};},[]);
  useEffect(()=>{if(ready && garageReady)void bluetoothBridge.retainVehicles(ids.split('|')).catch(console.warn);},[ids,ready,garageReady]);
  useEffect(()=>{if(!ready || !garageReady)return;let cancelled=false;const run=async()=>{const snapshot=bluetoothBridge.getSnapshot();if(n.developerMode && preferences.simulateTelemetry && canPairVehicle(profile.id)){if(!snapshot.simulated || snapshot.vehicleId!==profile.id){await bluetoothBridge.disconnect();if(!cancelled)await bluetoothBridge.simulate(profile.id,vehicleType(profile.kind));}}else if(snapshot.simulated)await bluetoothBridge.stopSimulation(snapshot.vehicleId===profile.id && canPairVehicle(profile.id));};void run().catch(console.warn);return()=>{cancelled=true;};},[ready,garageReady,n.developerMode,preferences.simulateTelemetry,profile.id,profile.kind]);
  useEffect(()=>{setBluetoothPreferencesSnapshot(preferences);bluetoothBridge.autoReconnect=preferences.autoReconnect;if(ready)void AsyncStorage.setItem('bluetooth-preferences-v1',JSON.stringify(preferences)).catch(()=>{});},[preferences,ready]);

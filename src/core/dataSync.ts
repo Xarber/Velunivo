@@ -1,7 +1,7 @@
 import {ImportMode,MAX_BACKUP} from './dataTransfer';
 export const SYNC_CHUNK=12000;
-export type SyncPacket={type:'offer';session:string;mode:ImportMode;summary:string}|{type:'accept';session:string}|{type:'chunk';session:string;index:number;total:number;value:string}|{type:'ack';session:string;index:number}|{type:'complete';session:string}|{type:'cancel';session:string};
-export function parseSyncPacket(raw:unknown):SyncPacket|null{const x=raw as SyncPacket;if(!x||typeof x!=='object'||typeof x.session!=='string'||!/^\w{16,64}$/.test(x.session))return null;if(x.type==='offer')return ['merge','overwrite'].includes(x.mode)&&typeof x.summary==='string'&&x.summary.length<300?x:null;if(['accept','complete','cancel'].includes(x.type))return x;if(x.type==='ack')return Number.isInteger(x.index)&&x.index>=0?x:null;if(x.type==='chunk')return Number.isInteger(x.index)&&Number.isInteger(x.total)&&x.total>0&&x.total<=Math.ceil(MAX_BACKUP/SYNC_CHUNK)&&x.index>=0&&x.index<x.total&&typeof x.value==='string'&&x.value.length<=SYNC_CHUNK?x:null;return null;}
+export type SyncPacket={type:'offer';session:string;mode:ImportMode;summary:string}|{type:'accept';session:string}|{type:'chunk';session:string;index:number;total:number;value:string}|{type:'ack';session:string;index:number}|{type:'complete';session:string}|{type:'applying';session:string}|{type:'cancel';session:string};
+export function parseSyncPacket(raw:unknown):SyncPacket|null{const x=raw as SyncPacket;if(!x||typeof x!=='object'||typeof x.session!=='string'||!/^\w{16,64}$/.test(x.session))return null;if(x.type==='offer')return ['merge','overwrite'].includes(x.mode)&&typeof x.summary==='string'&&x.summary.length<300?x:null;if(['accept','complete','cancel','applying'].includes(x.type))return x;if(x.type==='ack')return Number.isInteger(x.index)&&x.index>=0?x:null;if(x.type==='chunk')return Number.isInteger(x.index)&&Number.isInteger(x.total)&&x.total>0&&x.total<=Math.ceil(MAX_BACKUP/SYNC_CHUNK)&&x.index>=0&&x.index<x.total&&typeof x.value==='string'&&x.value.length<=SYNC_CHUNK?x:null;return null;}
 /** Payload transfer starts only after independent consent on BOTH devices. Stop-and-wait bounds memory/channel pressure. */
 export class DataSyncSession {
  private local=false;private remote=false;private sent=-1;private awaiting=false;private received:string[]=[];private total=0;private ended=false;private applying=false;
@@ -14,10 +14,11 @@ export class DataSyncSession {
  if(m.type==='cancel'){this.ended=true;this.events.status('Transfer cancelled.');return;}
  if(m.type==='accept'){this.remote=true;this.pump();return;}
  if(m.type==='ack'&&this.role==='sender'&&this.local&&this.remote&&m.index===this.sent){this.awaiting=false;this.pump();return;}
+ if(m.type==='applying'&&this.role==='sender'){this.events.status('Applying settings on the other device…');return;}
  if(m.type==='complete'&&this.role==='sender'&&this.local&&this.remote){this.ended=true;this.events.status('Data transferred.');return;}
  if(m.type!=='chunk'||this.role!=='receiver'||!this.local||!this.remote||this.applying)return;
  if(m.index!==this.received.length||(this.total&&this.total!==m.total)){this.cancel();return;}this.total=m.total;this.received.push(m.value);this.events.progress?.(this.received.length,this.total);if(this.received.reduce((n,s)=>n+s.length,0)>MAX_BACKUP){this.cancel();return;}
- if(this.received.length===this.total){this.applying=true;try{await this.events.received(this.received.join(''),this.offer.mode);this.send({type:'complete',session:m.session});this.ended=true;this.events.status('Data imported.');}catch{this.cancel();this.events.status('Import failed. Check your backup before retrying.');}this.received=[];}else this.send({type:'ack',session:m.session,index:m.index});
+ if(this.received.length===this.total){this.applying=true;this.events.status('Applying settings on this device…');this.send({type:'applying',session:m.session});try{await this.events.received(this.received.join(''),this.offer.mode);this.send({type:'complete',session:m.session});this.ended=true;this.events.status('Data imported.');}catch{this.cancel();this.events.status('Import failed. Check your backup before retrying.');}this.received=[];}else this.send({type:'ack',session:m.session,index:m.index});
  }
  cancel(){if(this.offer&&!this.ended)this.send({type:'cancel',session:this.offer.session});this.ended=true;this.received=[];this.events.status('Transfer cancelled.');}
 }

@@ -1,0 +1,3 @@
+export interface LastBattery {percent:number;timestamp:number;}
+/** Five percentage points per elapsed day, proportional to age; expire after three days. */
+export function recentBatteryCharge(value:LastBattery|undefined,enabled:boolean,fallback:number,now=Date.now()){if(!enabled||!value||!Number.isFinite(value.percent)||value.percent<0||value.percent>100||!Number.isFinite(value.timestamp)||value.timestamp>now+2000||now-value.timestamp>3*86400000)return {percent:fallback,source:'assumed' as const};return {percent:Math.max(0,value.percent-5*Math.max(0,now-value.timestamp)/86400000),source:'last-reading' as const};}

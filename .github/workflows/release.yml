@@ -7,7 +7,7 @@ on:
       version:
         description: 'App version, e.g. 1.0.0 (the 1.0 tag is reserved for the source feed)'
         required: true
-        default: '2.5.2'
+        default: '2.6.0'
       development_build:
         description: 'Development client (Debug), artifacts only; choose any branch above'
         type: boolean

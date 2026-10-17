@@ -8,7 +8,7 @@ export const sharingVehicle: Vehicle = { ...createVehicle('escooter', 'sharing-s
 export const defaultGarage: Garage = { vehicles: [createVehicle('escooter', 'default-scooter'), sharingVehicle], activeId: 'default-scooter', sharingPresetAdded: true };
 function validProfile(v: any) { return v && typeof v.name === 'string' && [['maxSpeed', 1, 60], ['ridingLimit', 1, 60], ['cruiseFactor', .2, 1], ['acceleration', .1, 4], ['stopDelay', 0, 120]].every(([key, min, max]) => Number.isFinite(v[key]) && v[key] >= Number(min) && v[key] <= Number(max)); }
 export function validPhoto(x: unknown): x is string { return typeof x === 'string' && ((/^data:image\/(png|jpeg|webp);base64,/.test(x) && x.length <= 1400000) || /^velunivo-photo:\/\/[a-zA-Z0-9-]+\.(jpg|png|webp)$/.test(x)); }
-function energyOptions(v:Vehicle){const result={...v};for(const [key,min,max] of [['batteryWh',1,10000],['totalMassKg',10,400],['energyReferenceSpeedKmh',1,60]] as const){const n=v[key];if(!Number.isFinite(n)||n!<min||n!>max)delete result[key];}return result;}
+function energyOptions(v:Vehicle){const result={...v};for(const [key,min,max] of [['tireDiameterMm',100,1000],['batteryWh',1,10000],['totalMassKg',10,400],['energyReferenceSpeedKmh',1,60]] as const){const n=v[key];if(!Number.isFinite(n)||n!<min||n!>max)delete result[key];}return result;}
 export function restoreGarage(raw: string | null, legacy: string | null): Garage {
   try {
     const g = raw && JSON.parse(raw);

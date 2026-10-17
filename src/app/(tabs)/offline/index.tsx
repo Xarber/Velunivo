@@ -1,4 +1,4 @@
-import {SafeAreaView as SystemSafeAreaView} from 'react-native-screens/experimental';import {usesLiquidGlassTabs} from '../../../components/NativeTabSafeOverlay';
+
 import {Ionicons} from '@expo/vector-icons';
 import {t} from '../../../i18n/core';
 import Text from '../../../components/LocalizedText';
@@ -34,4 +34,4 @@ export default function Library(){
 }
 function previewRoute(r:RecordedRide):Route{return{id:`library-${r.id}`,name:r.name,kind:'track',source:'gpx',coordinates:r.preview,steps:[],details:{},warnings:[]};}
 
-function LibrarySafeArea({children,backgroundColor}:{children:React.ReactNode;backgroundColor:string}){const style={flex:1,backgroundColor};return usesLiquidGlassTabs()?<SystemSafeAreaView edges={{top:true,bottom:true,left:true,right:true}} insetType="all" style={style}>{children}</SystemSafeAreaView>:<SafeAreaView edges={['top','left','right','bottom']} style={style}>{children}</SafeAreaView>;}
+function LibrarySafeArea({children,backgroundColor}:{children:React.ReactNode;backgroundColor:string}){return <SafeAreaView edges={['top','left','right','bottom']} style={{flex:1,backgroundColor}}>{children}</SafeAreaView>;}

@@ -1,3 +1,4 @@
+import {noteLiveElectricalGps} from './liveElectrical';
 import {peerReconnectCount} from './rideReliabilityEvents';
 import {getGroupActivityRiders,subscribeGroupActivityRiders} from '../groups/activityPresence';
 import {rememberRideRiders} from '../core/groupRideRoster';
@@ -33,7 +34,7 @@ export function useRideRecorder(active: boolean, enabled: boolean, arrived: bool
     if (s.buffer.length >= 100) { s.pending.set(s.chunk, [...s.buffer]); s.chunk++; s.buffer = []; }
     return write;
   }, []);
-  const accept = useCallback((fix: Fix, arrived = false) => {
+  const accept = useCallback((fix: Fix, arrived = false) => {noteLiveElectricalGps(fix);
     const s = session.current; if (!s || s.ride.status !== 'recording' || fix.timestamp <= s.lastTimestamp) return;
     s.lastTimestamp=fix.timestamp;
     const tracked=s.movement.next(fix);
@@ -46,7 +47,7 @@ export function useRideRecorder(active: boolean, enabled: boolean, arrived: bool
   useEffect(() => {
     if (!active || !enabled || !route) return;
     const startedAt = Date.now();
-    session.current = { ride: { id: `${startedAt}-${Math.random().toString(36).slice(2, 9)}`, name: route.name, vehicle: { id: vehicle.id, name: vehicle.name, kind: vehicle.kind, maxSpeed: vehicle.maxSpeed, ridingLimit: vehicle.ridingLimit,cruiseFactor:vehicle.cruiseFactor,batteryWh:vehicle.batteryWh,totalMassKg:vehicle.totalMassKg }, startLabel: route.startLabel || 'Ride start', endLabel: route.endLabel || 'Ride arrival', startedAt, batteryFeedback: canAskBatteryUsage(vehicle,askBatteryUsage) ? 'pending' : undefined, status: 'recording', samples: 0, chunks: 0, meters: 0, preview: [] }, buffer: [], pending: new Map(), chunk: 0, previous: null, movement: new MovementTracker(), displayPath:new LiveRecordedPath(), lastTimestamp: 0, dirty: true,minimumMeters,peerBaseline:peerReconnectCount() };
+    session.current = { ride: { id: `${startedAt}-${Math.random().toString(36).slice(2, 9)}`, name: route.name, vehicle: { id: vehicle.id, name: vehicle.name, kind: vehicle.kind, maxSpeed: vehicle.maxSpeed, ridingLimit: vehicle.ridingLimit,cruiseFactor:vehicle.cruiseFactor,batteryWh:vehicle.batteryWh,tireDiameterMm:vehicle.tireDiameterMm,totalMassKg:vehicle.totalMassKg }, startLabel: route.startLabel || 'Ride start', endLabel: route.endLabel || 'Ride arrival', startedAt, batteryFeedback: canAskBatteryUsage(vehicle,askBatteryUsage) ? 'pending' : undefined, status: 'recording', samples: 0, chunks: 0, meters: 0, preview: [] }, buffer: [], pending: new Map(), chunk: 0, previous: null, movement: new MovementTracker(), displayPath:new LiveRecordedPath(), lastTimestamp: 0, dirty: true,minimumMeters,peerBaseline:peerReconnectCount() };
     const snapshot=bluetoothBridge.getSnapshot(),first=collect.current?sampleBluetooth(snapshot,vehicle.id,startedAt):undefined;
     if(first)session.current.ride={...session.current.ride,bluetooth:updateTripBluetooth(undefined,first,startedAt),bluetoothConnected:snapshot.state==='connected'&&!snapshot.simulated};
     setRecord(session.current.ride); liveRecording(session.current.ride.id, true); flush();

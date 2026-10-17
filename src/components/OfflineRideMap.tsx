@@ -1,3 +1,4 @@
+import {navigationArrowAssets} from './navigationArrowAssets';
 import {useStore} from '../services/store';
 import {usePalette} from './ui';
 import {useTransitLines} from '../services/useTransitLines';
@@ -14,7 +15,7 @@ import {t} from '../i18n/core';
 import { routeLayers, ROUTE_WIDTH } from '../core/routeLayers';
 import { useCameraTarget } from '../services/useCameraTarget';
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { Map, Camera, GeoJSONSource, Layer, CameraRef, MapRef, RasterSource, Marker } from '@maplibre/maplibre-react-native';
+import { Images, Map, Camera, GeoJSONSource, Layer, CameraRef, MapRef, RasterSource, Marker } from '@maplibre/maplibre-react-native';
 import { Coord, Route } from '../core/types';
 import { routeBounds } from '../core/geo';
 import { serverUrl } from '../services/api';
@@ -54,7 +55,9 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
     {!!bookmarks.length&&<GeoJSONSource id="ride-bookmarks" data={{type:'FeatureCollection',features:bookmarks.map(b=>({type:'Feature' as const,properties:{name:b.name},geometry:{type:'Point' as const,coordinates:b.coordinate}}))}}><Layer type="circle" paint={{'circle-radius':8,'circle-color':p.accentLight,'circle-stroke-width':2,'circle-stroke-color':'#FFFFFF'}}/></GeoJSONSource>}
     {(startPoint || endPoint) && <GeoJSONSource id="planning" data={{ type: 'FeatureCollection', features: [startPoint, endPoint].filter((p): p is Coord => !!p).map(p => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: p } })) }}><Layer type="circle" paint={{ 'circle-radius': 7, 'circle-color': p.accentLight, 'circle-stroke-width': 3, 'circle-stroke-color': '#FFFFFF' }} /></GeoJSONSource>}
     {(planningStops??selected?.waypoints??[]).filter(s=>s.coordinate.every(Number.isFinite)).map((stop,i)=><Marker key={`stop-${i}`} id={`stop-${i}`} lngLat={stop.coordinate} accessibilityLabel={`${t(`Stop ${i+1}`)} · ${stop.label}`}><View style={{width:30,height:30,alignItems:'center',justifyContent:'center',backgroundColor:p.accentLight,borderWidth:3,borderColor:'#FFFFFF',borderRadius:15}}><Text style={{color:'#FFFFFF',fontWeight:'800'}}>{i+1}</Text></View></Marker>)}
-    {groupRiders.filter(r=>r.position).map(r=><Marker key={r.id} id={`group-${r.id}`} lngLat={r.position!} anchor="bottom" accessibilityLabel={r.name}><GroupPin rider={r} interactive={navigating}/></Marker>)}
-    {position && <Marker key={cosmetic.navigationArrow+":"+cosmetic.locationPin} id="navigation-position" lngLat={position} accessibilityLabel={t(positionLabel || 'Current position')}><PositionArrow navigating={navigating} rotation={rotation} /></Marker>}
+    {groupRiders.filter(r=>r.position).map(r=><Marker key={r.id} id={`group-${r.id}`} lngLat={r.position!} anchor="bottom" accessibilityLabel={r.name}><View collapsable={false} style={{width:66,height:70,alignItems:'center'}}><GroupPin rider={r} interactive={navigating}/></View></Marker>)}
+        <Images images={{'nav-classic':navigationArrowAssets.classic,'nav-chevron':navigationArrowAssets.chevron,'nav-compass':navigationArrowAssets.compass}}/>
+    {position&&navigating&&<GeoJSONSource id="navigation-symbol" data={{type:'FeatureCollection',features:[{type:'Feature',properties:{},geometry:{type:'Point',coordinates:position}}]}}><Layer type="symbol" layout={{'icon-image':`nav-${cosmetic.navigationArrow}`,'icon-size':1,'icon-rotate':heading,'icon-rotation-alignment':'map','icon-pitch-alignment':'viewport','icon-allow-overlap':true,'icon-ignore-placement':true}}/></GeoJSONSource>}
+    {position&&!navigating&&<Marker id={`position-${cosmetic.locationPin}`} lngLat={position}><PositionArrow navigating={false} rotation={rotation}/></Marker>}
   </Map>;
 }
