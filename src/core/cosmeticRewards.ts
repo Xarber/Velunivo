@@ -1,4 +1,4 @@
-export const profileBadges=[{id:'none',name:'No badge',xp:0,icon:'person-outline'},{id:'leaf',name:'Green rider',xp:1000,icon:'leaf-outline'},{id:'spark',name:'Curious explorer',xp:4000,icon:'sparkles-outline'},{id:'crown',name:'City adventurer',xp:12000,icon:'trophy-outline'}] as const;
+export const profileBadges=[{id:'completion',name:'All achievements',xp:0,icon:'trophy-outline'},{id:'level50',name:'Level 50',xp:240100,icon:'star'},{id:'none',name:'No badge',xp:0,icon:'person-outline'},{id:'leaf',name:'Green rider',xp:1000,icon:'leaf-outline'},{id:'spark',name:'Curious explorer',xp:4000,icon:'sparkles-outline'},{id:'crown',name:'City adventurer',xp:12000,icon:'trophy-outline'}] as const;
 export const navigationArrows=[{id:'classic',name:'Classic arrow',xp:0},{id:'chevron',name:'Trail arrow',xp:2000},{id:'compass',name:'Explorer arrow',xp:6000}] as const;
 export type ProfileBadge=typeof profileBadges[number]['id'];
 export type NavigationArrow=typeof navigationArrows[number]['id'];

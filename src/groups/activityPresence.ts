@@ -9,6 +9,7 @@ export function setGroupActivityRiders(value:readonly RecordedRider[]){const nex
 
 export function subscribeGroupActivityRiders(listener:(riders:RecordedRider[])=>void){rosterListeners.add(listener);return()=>{rosterListeners.delete(listener);};}
 
-let joinRequest:string|undefined;
+let joinRequest:string|undefined;let joinAction:{code:string;id:string}|undefined;
+export const getGroupJoinAction=()=>joinAction;
 export const getGroupJoinRequest=()=>joinRequest;
-export function setGroupJoinRequest(value:string|undefined){joinRequest=value;}
+export function setGroupJoinRequest(value:string|undefined,action?:{code:string;id:string}){joinRequest=value;joinAction=value?action:undefined;}

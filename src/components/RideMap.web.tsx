@@ -1,3 +1,5 @@
+import {readBadges} from '../core/riderBadges';
+import {useDisplayCosmetics} from '../services/rewardTesting';
 import {useStore} from '../services/store';
 import {arrowPath} from '../core/cosmeticRewards';
 import ScratchWebGlow from './ScratchWebGlow';
@@ -27,7 +29,7 @@ interface MapProps {bookmarks?:import('../core/recordings').RideBookmark[];mapBo
 export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit, positionLabel, planningStops, areaSelection,groupRiders=[],bookmarks=[],scratchContext,scratchHighlight,onScratchTile,mapBounds,scratchIndexOverride }: MapProps) {
  const {bounds:scratchBounds,update:setScratchBounds}=useScratchViewport(),scratch=useScratchLayer(scratchContext,scratchBounds,scratchHighlight,scratchIndexOverride);
  const transitLines=useTransitLines(!!transit,scratchBounds);
- const {navigationOptions:mapOptions}=useStore();const groupVideo=useGroupRide(),peoplePalette=usePalette();
+ const {navigationOptions:savedMapOptions}=useStore();const mapOptions=useDisplayCosmetics(savedMapOptions);const groupVideo=useGroupRide(),peoplePalette=usePalette();
   const div = useRef<HTMLDivElement>(null), map = useRef<maplibregl.Map | null>(null);
   const [loaded, setLoaded] = useState(false), [error, setError] = useState(false);
   const reportArea=useMapArea(areaSelection,loaded,async(x,y)=>{if(!map.current)throw new Error('Map unavailable');const c=map.current.unproject([x,y]);return [c.lng,c.lat];});
@@ -119,8 +121,8 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
   }, [startPoint, endPoint, loaded, selected, follow, fitPadding, tilted,scratchContext,peoplePalette.accentLight]);
   useEffect(()=>{const m=map.current;if(!m||!loaded)return;
     people.current??=new PeopleMarkers((element,position)=>new maplibregl.Marker({element,anchor:'bottom'}).setLngLat(position).addTo(m));
-    people.current.update(groupRiders,groupVideo.videoFeeds,groupVideo.videoEnabled,peoplePalette.accent,peoplePalette.dark,navigating?groupVideo.pinVideo:undefined);
-  },[groupRiders,loaded,groupVideo.videoEnabled,groupVideo.videoFeeds,peoplePalette.accent,peoplePalette.dark,groupVideo.pinVideo,navigating]);
+    people.current.update(groupRiders.map(r=>r.id===groupVideo.selfId&&mapOptions!==savedMapOptions?{...r,locationPin:mapOptions.locationPin,profileBadges:readBadges(mapOptions.profileBadges,mapOptions.profileBadge)}:r),groupVideo.videoFeeds,groupVideo.videoEnabled,peoplePalette.accent,peoplePalette.dark,navigating?groupVideo.pinVideo:undefined);
+  },[mapOptions,savedMapOptions,groupVideo.selfId,groupRiders,loaded,groupVideo.videoEnabled,groupVideo.videoFeeds,peoplePalette.accent,peoplePalette.dark,groupVideo.pinVideo,navigating]);
   useEffect(()=>{const m=map.current;if(!m||!loaded)return;const markers=bookmarks.slice(0,1000).map(bookmark=>{const el=document.createElement('div');el.setAttribute('aria-label',bookmark.name);el.title=bookmark.name;el.innerHTML='<svg width="28" height="32" viewBox="0 0 28 32"><path fill-rule="evenodd" d="M5 2H23V29L14 23L5 29Z" fill="'+peoplePalette.accentLight+'" stroke="white" stroke-width="2"/></svg>';return new maplibregl.Marker({element:el,anchor:'bottom'}).setLngLat(bookmark.coordinate).addTo(m);});return()=>markers.forEach(marker=>marker.remove());},[bookmarks,loaded,peoplePalette.accentLight]);
   return <View style={{ flex: 1, zIndex: 0 }}><ScratchWebGlow map={map} loaded={loaded} geometry={scratch.geometry} opacity={scratch.opacity} loop={scratch.glowLoop}/><style>{`.maplibregl-ctrl-top-right { top: 125px; right: 10px; } @media (min-width: 700px) { .maplibregl-ctrl-top-right { top: 70px; } }`}</style><div ref={div} style={{ position: 'absolute', inset: 0 }} />{error && <Text style={{ position: 'absolute', top: 8, left: 8, right: 8, padding: 8, backgroundColor: '#fff', color: '#536671', fontSize: 12 }}>Map resources unavailable. Route geometry and ETA remain available.</Text>}</View>;
 }

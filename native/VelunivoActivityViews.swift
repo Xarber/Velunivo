@@ -11,6 +11,8 @@ private struct VelunivoActivityData {
   var timer: String { values["timer"] as? String ?? "—" }
   var recording: Bool { values["recording"] as? Bool ?? false }
   var groups: Int? { guard let count = values["groupCount"] as? Double, count.isFinite, (1...8).contains(count) else { return nil }; return Int(count) }
+  var approveTarget: String? { values["approveTarget"] as? String }
+  var declineTarget: String? { values["declineTarget"] as? String }
   var joinRequest: String? { values["joinRequest"] as? String }
   var requestLabel: String { values["requestLabel"] as? String ?? "Join request" }
   var actionLabel: String { values["actionLabel"] as? String ?? "Open ride" }
@@ -51,31 +53,26 @@ private struct VelunivoActivityBanner: View {
   let context: ActivityViewContext<LiveActivityAttributes>
   var body: some View {
     let data = VelunivoActivityData(context.state.props)
-    VStack(alignment: .leading, spacing: 10) {
-      HStack(alignment: .top, spacing: 12) {
-        Image(systemName: data.symbol).font(.title).foregroundStyle(data.regroup == nil ? Color.mint : Color.red)
-        VStack(alignment: .leading, spacing: 4) {
-          Text(data.distance).font(.headline).foregroundStyle(Color.mint)
-          Text(data.turn).font(.headline).lineLimit(2)
-          if let warning = data.regroup { Text(warning).font(.headline).foregroundStyle(Color.red).lineLimit(2) }
+    VStack(alignment: .leading, spacing: 8) {
+      HStack(alignment: .center, spacing: 12) {
+        Image(systemName: data.symbol).font(.system(size: 28, weight: .semibold)).foregroundStyle(data.regroup == nil ? Color.mint : Color.red)
+        VStack(alignment: .leading, spacing: 3) {
+          if !data.recording { Text(data.distance).font(.subheadline.weight(.semibold)).foregroundStyle(Color.mint) }
+          Text(data.turn).font(.headline).lineLimit(1)
         }
-      }
-      HStack {
-        Text(data.recording ? data.arrival : "\(data.arrival) \(data.arrivalLabel)")
-        Spacer(minLength: 8)
-        Text("\(data.minutes) · \(data.remaining)")
-      }.font(.caption)
-      if let name = data.joinRequest { Label("\(name) · \(data.requestLabel)", systemImage: "person.badge.plus").font(.headline).foregroundStyle(Color.mint) }
-      VelunivoActivityBadges(data: data, stale: velunivoActivityIsStale(context))
-      HStack {
-        Link(destination: data.actionURL) { Label(data.actionLabel, systemImage: data.joinRequest == nil ? "arrow.up.right" : "person.badge.plus").font(.subheadline.weight(.semibold)).padding(.vertical, 8).padding(.horizontal, 12).background(Color.white.opacity(0.12), in: Capsule()) }
         Spacer(minLength: 0)
-      }.padding(.top, 4)
-      if #available(iOS 16.2, *) {
-        if context.isStale { Text(data.pausedLabel).font(.caption).foregroundStyle(.secondary) }
+        if data.recording { Text(data.timer).font(.headline).monospacedDigit() }
       }
+      HStack {
+        Text(data.recording ? "\(data.minutes) · \(data.remaining)" : "\(data.arrival) \(data.arrivalLabel) · \(data.minutes) · \(data.remaining)").lineLimit(1).minimumScaleFactor(0.8)
+        Spacer(minLength: 0)
+        VelunivoActivityBadges(data: data, stale: velunivoActivityIsStale(context))
+      }.font(.caption)
+      if let warning = data.regroup { Text(warning).font(.caption.weight(.semibold)).foregroundStyle(Color.red).lineLimit(1) }
+      VelunivoJoinActions(data: data, source: context.state.name)
+      if #available(iOS 16.2, *), context.isStale { Text(data.pausedLabel).font(.caption2).foregroundStyle(.secondary).lineLimit(1) }
     }
-    .padding(20)
+    .padding(.horizontal, 20).padding(.vertical, 14)
     .activityBackgroundTint(Color(red: 0.04, green: 0.10, blue: 0.13))
     .activitySystemActionForegroundColor(.white)
     .foregroundStyle(.white)
@@ -105,12 +102,8 @@ private struct VelunivoActivitySection: View {
         Text(data.turn).font(.headline).lineLimit(2)
           if let warning = data.regroup { Text(warning).font(.headline).foregroundStyle(Color.red).lineLimit(2) }
         Text(data.recording ? "\(data.arrival) · \(data.minutes) · \(data.remaining)" : "\(data.arrival) \(data.arrivalLabel) · \(data.minutes) · \(data.remaining)").font(.caption)
-        if let name = data.joinRequest { Label("\(name) · \(data.requestLabel)", systemImage: "person.badge.plus").font(.headline).foregroundStyle(Color.mint) }
-      VelunivoActivityBadges(data: data, stale: velunivoActivityIsStale(context))
-      HStack {
-        Link(destination: data.actionURL) { Label(data.actionLabel, systemImage: data.joinRequest == nil ? "arrow.up.right" : "person.badge.plus").font(.subheadline.weight(.semibold)).padding(.vertical, 8).padding(.horizontal, 12).background(Color.white.opacity(0.12), in: Capsule()) }
-        Spacer(minLength: 0)
-      }.padding(.top, 4)
+        HStack { VelunivoActivityBadges(data: data, stale: velunivoActivityIsStale(context)); Spacer(minLength: 0) }
+        VelunivoJoinActions(data: data, source: context.state.name)
       }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 8).padding(.bottom, 6)
     default:
       EmptyView()
@@ -150,4 +143,24 @@ private struct VelunivoActivityBadges: View {
       if let count = data.groups { HStack(spacing: 5) { Image(systemName: "person.2.fill"); Text("\(count)") } }
     }.font(.caption)
   }
+}
+
+@available(iOS 16.1, *)
+private struct VelunivoJoinActions: View {
+ let data: VelunivoActivityData
+ let source: String
+ var body: some View {
+  if let name = data.joinRequest {
+   HStack(spacing: 10) {
+    Text("\(name) - \(data.requestLabel)").font(.subheadline.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.75)
+    Spacer(minLength: 0)
+    if #available(iOS 17.0, *), let yes = data.approveTarget, let no = data.declineTarget {
+     Button(intent: LiveActivityUserInteraction(source: source, target: yes)) { Image(systemName: "checkmark").font(.headline).frame(width: 36, height: 32) }.tint(.mint).accessibilityLabel("Accept")
+     Button(intent: LiveActivityUserInteraction(source: source, target: no)) { Image(systemName: "xmark").font(.headline).frame(width: 36, height: 32) }.tint(.red).accessibilityLabel("Decline")
+    } else {
+     Link(destination: data.actionURL) { Image(systemName: "person.badge.plus").frame(width: 36, height: 32) }
+    }
+   }.buttonStyle(.bordered).foregroundStyle(Color.mint)
+  }
+ }
 }

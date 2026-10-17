@@ -1531,18 +1531,30 @@
       "releaseCommit": "af0c6b3a6d0739a1e7022597f69cc672b63fa0a5"
     }
   ],
-  "2.5.1": [
+  "2.5.2": [
     {
       "sha": "68e42bced91ed2d011c772c6b858f8c1940ad16b",
       "title": "docs: Refresh Android native previews for 2.5.0 [skip ci]",
       "body": "Refresh Android native previews for 2.5.0 [skip ci]. Changed 25 files: assets/onboarding/android-explore.png, assets/onboarding/android-library.png, assets/onboarding/android-settings.png, assets/onboarding/android-tablet-explore.png, assets/onboarding/android-tablet-library.png, assets/onboarding/android-tablet-settings.png, assets/onboarding/android-tablet-vehicles.png, assets/onboarding/android-vehicles.png and 17 more.",
-      "releaseCommit": "2fdf14f9d93f2ca22bb1489573e46a36c15ffd3b"
+      "releaseCommit": "04847a6399aac88c56023a5af9a71bf8c8bd2684"
     },
     {
       "sha": "2fdf14f9d93f2ca22bb1489573e46a36c15ffd3b",
       "title": "fix: Complete rewards, adaptive native layouts and Live Activity controls [skip ci]",
       "body": "Group cosmetic unlocks in a dedicated rewards screen, add profile avatars and pin/scratch presets, make arrows visibly distinct and refresh native marker snapshots. Raise cosmetic XP thresholds and scale neighborhood rewards to 500 XP at 10 km without rewriting earned progress.\n\nMeasure native top tab-bar geometry for responsive iPad headers and use system safe areas for the Library. Use native SwiftUI map-action controls on Liquid Glass devices. Keep navigation, recording and shared-trip layouts separate from combinable Live Activity test events; render approval text and a bottom review-action row in Swift.\n\nAdd artifact-only development clients from any workflow branch, with Debug builds and a Metro launcher. Preserve release JS bundling and prevent development jobs from creating tags, publishing releases or updating AltSource. Add release commit IDs and factual descriptions for historical commits lacking a body.\n\nPrepare 2.5.1 for testing. No screenshot work or local native compilation; document 573 MB of temporary-artifact cleanup and pending native syncing, battery, Memories and Duo/iPad checks.",
-      "releaseCommit": "2fdf14f9d93f2ca22bb1489573e46a36c15ffd3b"
+      "releaseCommit": "04847a6399aac88c56023a5af9a71bf8c8bd2684"
+    },
+    {
+      "sha": "42c2f484071c11cacc8781f82d6da872c2ae5e3e",
+      "title": "docs: Complete version commit descriptions and testing handoff [skip ci]",
+      "body": "Backfill descriptions and release commit IDs across all 71 historical version ranges, preserving original authored bodies and version numbers. Document the native validation checklist, Debug client workflow, XP thresholds and disk-cache cleanup. Treat manual non-main release builds as prereleases; atomic metadata writes preserve the last valid history if storage fills.",
+      "releaseCommit": "04847a6399aac88c56023a5af9a71bf8c8bd2684"
+    },
+    {
+      "sha": "04847a6399aac88c56023a5af9a71bf8c8bd2684",
+      "title": "fix: Scope Library inset handling to its overview [skip ci]",
+      "body": "Preserve automatic native tab behavior on existing Library subpages. Apply system safe-area padding and explicit scroll-inset handling only to the redesigned Library overview, avoiding a potential nested-screen regression.",
+      "releaseCommit": "04847a6399aac88c56023a5af9a71bf8c8bd2684"
     }
   ]
 }

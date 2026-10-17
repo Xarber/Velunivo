@@ -1,0 +1,2 @@
+export async function webStorageQuota(){if(typeof navigator==='undefined'||!navigator.storage?.estimate)return null;const estimate=await navigator.storage.estimate();return {usage:estimate.usage??0,quota:estimate.quota??0,persistent:await navigator.storage.persisted?.()??false};}
+export async function requestPersistentStorage(){return typeof navigator!=='undefined'&&!!await navigator.storage?.persist?.();}

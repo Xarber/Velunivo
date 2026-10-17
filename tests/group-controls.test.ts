@@ -6,6 +6,7 @@ test('a current group has Leave but no Join button; leaving restores the joining
  const dependencies=(id:string)=>{
   if(id==='react')return React;
   if(id==='react-native')return {View:tag,Image:tag,Pressable:tag,ScrollView:tag,KeyboardAvoidingView:tag,Platform:{OS:'web'},ActivityIndicator:tag,Modal:(p:{visible:boolean;children:React.ReactNode})=>p.visible?tag(p):null};
+  if(id.includes('rewardTesting'))return {useDisplayCosmetics:(n:unknown)=>n};if(id.includes('riderBadges'))return {readBadges:()=>[]};
   if(id.includes('useGroupClock'))return {useGroupClock:()=>10000};if(id.includes('GroupProvider'))return {useGroupRide:group};
   if(id.includes('services/store'))return {useStore:()=>({navigationOptions:{groupVoice:false,groupName:'QA Rider'}})};
   if(id.includes('i18n/core'))return {t:(value:string)=>value};if(id.endsWith('/ui'))return {usePalette:()=>({}),styles:{},Button:button,IconButton:button};
