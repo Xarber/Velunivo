@@ -10,7 +10,7 @@ Neighborhood XP scales linearly from 100 to 500 over 0–10 km (rounded to 5 XP)
 
 ## Adaptive UI
 
-The main Library uses system-managed native safe areas on supported native tabs, all horizontal edges on other devices, and narrower previews stay scrollable instead of being squeezed. Automatic tab content insets are disabled there to avoid double application. iOS map actions use actual SwiftUI buttons and system glass rather than an imitation tab selector; other platforms retain their existing implementation. Their right edge aligns with Search.
+The main Library uses system-managed native safe areas on supported native tabs, all horizontal edges on other devices, and narrower previews stay scrollable instead of being squeezed. Only the overview scroll view disables automatic content-inset adjustment; other Library pages retain their established tab behavior. iOS map actions use actual SwiftUI buttons and system glass rather than an imitation tab selector; other platforms retain their existing implementation. Their right edge aligns with Search.
 
 The native appearance module measures the live window safe area and actual top tab-bar frame. Wide iPad headers share its row; compact windows place the header below it. Phones/folded layouts use current safe-area insets without fixed iPad spacing. Metrics refresh after dimensions/insets change. This implementation needs the new binary; it has not been visually verified on the user's Duo/iPad in this low-usage pass.
 
