@@ -11,6 +11,10 @@ private struct VelunivoActivityData {
   var timer: String { values["timer"] as? String ?? "—" }
   var recording: Bool { values["recording"] as? Bool ?? false }
   var groups: Int? { guard let count = values["groupCount"] as? Double, count.isFinite, (1...8).contains(count) else { return nil }; return Int(count) }
+  var joinRequest: String? { values["joinRequest"] as? String }
+  var requestLabel: String { values["requestLabel"] as? String ?? "Join request" }
+  var actionLabel: String { values["actionLabel"] as? String ?? "Open ride" }
+  var actionURL: URL { let fallback = recording ? "velunivo:///offline/record-trip" : "velunivo:///"; let value = values["actionURL"] as? String ?? fallback; return URL(string: value.hasPrefix("velunivo:") ? value : fallback)! }
   var regroup: String? { values["regroup"] as? String }
   var turn: String { values["turn"] as? String ?? "Open Velunivo for directions" }
   var distance: String { values["distance"] as? String ?? "—" }
@@ -61,7 +65,12 @@ private struct VelunivoActivityBanner: View {
         Spacer(minLength: 8)
         Text("\(data.minutes) · \(data.remaining)")
       }.font(.caption)
+      if let name = data.joinRequest { Label("\(name) · \(data.requestLabel)", systemImage: "person.badge.plus").font(.headline).foregroundStyle(Color.mint) }
       VelunivoActivityBadges(data: data, stale: velunivoActivityIsStale(context))
+      HStack {
+        Link(destination: data.actionURL) { Label(data.actionLabel, systemImage: data.joinRequest == nil ? "arrow.up.right" : "person.badge.plus").font(.subheadline.weight(.semibold)).padding(.vertical, 8).padding(.horizontal, 12).background(Color.white.opacity(0.12), in: Capsule()) }
+        Spacer(minLength: 0)
+      }.padding(.top, 4)
       if #available(iOS 16.2, *) {
         if context.isStale { Text(data.pausedLabel).font(.caption).foregroundStyle(.secondary) }
       }
@@ -96,7 +105,12 @@ private struct VelunivoActivitySection: View {
         Text(data.turn).font(.headline).lineLimit(2)
           if let warning = data.regroup { Text(warning).font(.headline).foregroundStyle(Color.red).lineLimit(2) }
         Text(data.recording ? "\(data.arrival) · \(data.minutes) · \(data.remaining)" : "\(data.arrival) \(data.arrivalLabel) · \(data.minutes) · \(data.remaining)").font(.caption)
-        VelunivoActivityBadges(data: data, stale: velunivoActivityIsStale(context))
+        if let name = data.joinRequest { Label("\(name) · \(data.requestLabel)", systemImage: "person.badge.plus").font(.headline).foregroundStyle(Color.mint) }
+      VelunivoActivityBadges(data: data, stale: velunivoActivityIsStale(context))
+      HStack {
+        Link(destination: data.actionURL) { Label(data.actionLabel, systemImage: data.joinRequest == nil ? "arrow.up.right" : "person.badge.plus").font(.subheadline.weight(.semibold)).padding(.vertical, 8).padding(.horizontal, 12).background(Color.white.opacity(0.12), in: Capsule()) }
+        Spacer(minLength: 0)
+      }.padding(.top, 4)
       }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 8).padding(.bottom, 6)
     default:
       EmptyView()

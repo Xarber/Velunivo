@@ -7,13 +7,19 @@ on:
       version:
         description: 'App version, e.g. 1.0.0 (the 1.0 tag is reserved for the source feed)'
         required: true
-        default: '1.0.0'
+        default: '2.5.1'
+      development_build:
+        description: 'Development client (Debug), artifacts only; choose any branch above'
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
   group: velunivo-release-${{ github.ref_name }}
   cancel-in-progress: true
 env:
+  APP_DEVELOPMENT_BUILD: ${{ inputs.development_build && '1' || '0' }}
+  SKIP_BUNDLING: ${{ inputs.development_build && '1' || '' }}
   EXPO_PUBLIC_UPDATE_REPOSITORY: ${{ github.repository }}
   EXPO_PUBLIC_UI_REFINEMENTS: ${{ vars.VELUNIVO_UI_REFINEMENTS || '1' }}
 jobs:
@@ -36,7 +42,10 @@ jobs:
           version="${INPUT_VERSION:-$(node -p 'require("./package.json").version')}"
           [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Use major.minor.patch'; exit 1; }
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          if [[ "$GITHUB_REF_NAME" == 'testing' ]]; then
+          if [[ "$APP_DEVELOPMENT_BUILD" == '1' ]]; then
+            echo "tag=dev-$version-$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
+            echo 'prerelease=true' >> "$GITHUB_OUTPUT"
+          elif [[ "$GITHUB_REF_NAME" == 'testing' ]]; then
             echo "tag=v$version-testing.$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
             echo 'prerelease=true' >> "$GITHUB_OUTPUT"
           else
@@ -53,6 +62,7 @@ jobs:
       - run: npm run lint && npm run typecheck && npm test
       - run: python3 -m unittest discover -s tests -p 'test_*.py'
       - name: Pin the unsigned release tag before compilation
+        if: inputs.development_build != true
         env:
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: bash scripts/pin-release-tag.sh
@@ -216,13 +226,14 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           cd android
-          ./gradlew assembleRelease --build-cache --no-daemon --max-workers=2 -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g -XX:+HeapDumpOnOutOfMemoryError"
+          ./gradlew "$([[ "$APP_DEVELOPMENT_BUILD" == '1' ]] && echo assembleDebug || echo assembleRelease)" --build-cache --no-daemon --max-workers=2 -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=1g -XX:+HeapDumpOnOutOfMemoryError"
       - name: Report Android compiler cache statistics
         if: always()
         run: if command -v ccache >/dev/null; then ccache --show-stats; fi
       - run: |
           mkdir -p artifacts
-          cp android/app/build/outputs/apk/release/app-release.apk artifacts/Velunivo.apk
+          variant=release; [[ "$APP_DEVELOPMENT_BUILD" != '1' ]] || variant=debug
+          cp "android/app/build/outputs/apk/$variant/app-$variant.apk" artifacts/Velunivo.apk
           "$ANDROID_HOME/build-tools/$ANDROID_BUILD_TOOLS/apksigner" verify artifacts/Velunivo.apk
           printf 'Android API %s; build-tools %s\n' "$ANDROID_COMPILE_SDK" "$ANDROID_BUILD_TOOLS" > artifacts/android-build.txt
       - uses: actions/upload-artifact@v4
@@ -325,7 +336,7 @@ jobs:
       - name: Archive iPhone app without signing
         run: |
           mkdir -p artifacts
-          xcodebuild -derivedDataPath "$PWD/.derived-ios" -workspace ios/Velunivo.xcworkspace -scheme Velunivo -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -archivePath "$PWD/artifacts/Velunivo.xcarchive" archive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CCACHE_DIR="$CCACHE_DIR" CCACHE_MAXSIZE="$CCACHE_MAXSIZE" CCACHE_BASEDIR="$CCACHE_BASEDIR" CCACHE_COMPILERCHECK="$CCACHE_COMPILERCHECK"
+          xcodebuild -derivedDataPath "$PWD/.derived-ios" -workspace ios/Velunivo.xcworkspace -scheme Velunivo -configuration "$([[ "$APP_DEVELOPMENT_BUILD" == '1' ]] && echo Debug || echo Release)" -sdk iphoneos -destination 'generic/platform=iOS' -archivePath "$PWD/artifacts/Velunivo.xcarchive" archive CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CCACHE_DIR="$CCACHE_DIR" CCACHE_MAXSIZE="$CCACHE_MAXSIZE" CCACHE_BASEDIR="$CCACHE_BASEDIR" CCACHE_COMPILERCHECK="$CCACHE_COMPILERCHECK"
           mkdir -p artifacts/Payload
           cp -R artifacts/Velunivo.xcarchive/Products/Applications/Velunivo.app artifacts/Payload/
           (cd artifacts && zip -qry Velunivo.ipa Payload)
@@ -452,8 +463,9 @@ jobs:
       - run: mkdir -p artifacts
       - name: Build Apple Silicon Simulator app
         run: |
-          xcodebuild -workspace ios/Velunivo.xcworkspace -scheme Velunivo -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath "$PWD/work/simulator" build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO ARCHS=arm64 ONLY_ACTIVE_ARCH=NO CCACHE_DIR="$CCACHE_DIR" CCACHE_MAXSIZE="$CCACHE_MAXSIZE" CCACHE_BASEDIR="$CCACHE_BASEDIR" CCACHE_COMPILERCHECK="$CCACHE_COMPILERCHECK"
-          cp -R work/simulator/Build/Products/Release-iphonesimulator/Velunivo.app artifacts/Velunivo-simulator.app
+          xcodebuild -workspace ios/Velunivo.xcworkspace -scheme Velunivo -configuration "$([[ "$APP_DEVELOPMENT_BUILD" == '1' ]] && echo Debug || echo Release)" -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath "$PWD/work/simulator" build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO ARCHS=arm64 ONLY_ACTIVE_ARCH=NO CCACHE_DIR="$CCACHE_DIR" CCACHE_MAXSIZE="$CCACHE_MAXSIZE" CCACHE_BASEDIR="$CCACHE_BASEDIR" CCACHE_COMPILERCHECK="$CCACHE_COMPILERCHECK"
+          configuration=Release; [[ "$APP_DEVELOPMENT_BUILD" != '1' ]] || configuration=Debug
+          cp -R "work/simulator/Build/Products/$configuration-iphonesimulator/Velunivo.app" artifacts/Velunivo-simulator.app
           ditto -c -k --keepParent artifacts/Velunivo-simulator.app artifacts/Velunivo-simulator.app.zip
       - name: Report compiler cache statistics
         if: always()
@@ -464,7 +476,7 @@ jobs:
           path: artifacts/Velunivo-simulator.app.zip
           if-no-files-found: error
   publish:
-    if: ${{ always() && needs.prepare.result == 'success' && needs.web.result == 'success' && needs.android.result == 'success' && needs.ios.result == 'success' && needs.ios-simulator.result == 'success' }}
+    if: ${{ inputs.development_build != true && always() && needs.prepare.result == 'success' && needs.web.result == 'success' && needs.android.result == 'success' && needs.ios.result == 'success' && needs.ios-simulator.result == 'success' }}
     concurrency:
       group: altsource
       cancel-in-progress: false

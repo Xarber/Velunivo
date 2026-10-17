@@ -1767,5 +1767,20 @@
   "Memories are optional recordings stored on the recorder’s device. They can contain received call audio, optional video and location updates from riders who allow recording. A red recording indicator appears in the riders list. Hide me from Memories stops your data being included by compatible clients; it cannot prevent someone recording their screen outside Velunivo. Memories media stays local and is not included in device sync or backup files.": "Los recuerdos son grabaciones opcionales que se guardan en el dispositivo de quien graba. Pueden incluir el audio recibido de la llamada, vídeo opcional y las ubicaciones de los participantes que permitan grabar. Aparece un indicador rojo en la lista de participantes. Excluirme de Recuerdos impide que los clientes compatibles incluyan tus datos, pero no evita grabaciones de pantalla externas a Velunivo. Los archivos multimedia permanecen en el dispositivo y no se incluyen en la sincronización ni en las copias de seguridad.",
   "Play recording": "Reproducir grabación",
   "Close recording": "Cerrar grabación",
-  "Show more": "Mostrar más"
+  "Show more": "Mostrar más",
+  "Location pins": "Marcadores de ubicación",
+  "Classic pin": "Marcador clásico",
+  "Halo pin": "Marcador con halo",
+  "Diamond pin": "Marcador en rombo",
+  "Scratch map style": "Estilo del mapa explorado",
+  "Soft edges": "Bordes redondeados",
+  "Crisp edges": "Bordes definidos",
+  "Profile avatars": "Avatares del perfil",
+  "City rider": "Viajero urbano",
+  "Night rider": "Viajero nocturno",
+  "Trail rider": "Explorador de senderos",
+  "Themes": "Temas",
+  "Best exploration day": "Tu mejor día de exploración",
+  "No discoveries yet": "Aún no hay descubrimientos",
+  "A dedicated rewards collection, adaptive layouts and clearer Live Activity controls.": "Recompensas en una sección propia, diseños adaptables y controles más claros de las actividades en directo."
 }

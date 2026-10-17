@@ -1,3 +1,4 @@
+import {useMapHeaderTop} from '../../services/useMapHeaderTop';
 import VehicleBatteryBadge from '../../components/VehicleBatteryBadge';
 import JoinRequestBanner from '../../components/JoinRequestBanner';
 import BatteryPlanWarning from '../../components/BatteryPlanWarning';
@@ -34,7 +35,7 @@ import { useNavigationActivity } from '../../services/useNavigationActivity';
 import { maneuverDistance, arrivalTime , forwardHeading, freshFix, distanceLeft, displaySpeed , displayableFix} from '../../core/rideView';
 import React, { useState, useEffect, useMemo, useRef, useSyncExternalStore } from 'react';
 import {View, ScrollView, Pressable, Modal, Platform, StyleSheet, useWindowDimensions} from 'react-native';
-import { SafeAreaView, useSafeAreaInsets,initialWindowMetrics } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import * as Haptics from 'expo-haptics';
@@ -118,7 +119,7 @@ export default function Explore() {
   const locationRequest = useRef(0), planRequest = useRef(0);
   const overviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [now, setNow] = useState(Date.now());
-  const webLeft=insets.left,webRight=insets.right;
+  const headerTop=useMapHeaderTop();const webLeft=insets.left,webRight=insets.right;
   const cancelRecording=useRef<()=>void>(()=>{});
   const recordingAccept = useRef<(fix: Fix, arrived?: boolean) => void | Promise<void>>(() => {});
   const pickerTouched=useRef(false),[pickerFocus,setPickerFocus]=useState<Coord>();
@@ -289,14 +290,14 @@ export default function Explore() {
 
     <View style={StyleSheet.absoluteFill}>
       <RideMap bookmarks={active?recorder.record?.bookmarks:undefined} scratchContext={active?'ride':'home'} groupRiders={nGroupPins()} completedMeters={active ? ride.completedMeters : undefined} mapBounds={pickerBounds} routes={picking||previewPin ? [] : visibleRoutes} selected={picking||previewPin ? null : selected} position={mapPosition} follow={follow && !overview && !previewPin && (active || (!selected && !startPoint && !picking))} onPan={() => {pickerTouched.current=true;setFollow(false);mapBrowsing.touch();}} heading={heading} tilted={navigationOptions.tilted && !overview} overviewRequest={overviewRequest} overview={overview} onPick={picked} transit={navigationOptions.transit} traffic={navigationOptions.traffic} startPoint={picking?undefined:previewPin || startPoint} endPoint={picking||previewPin ? undefined : endPoint} offlineMap={offlineMap} planningStops={stops.filter(s=>s.coordinate.every(Number.isFinite))} fitPadding={fitPadding} followPadding={followPadding} navigating={active} />
-      {!active && <View pointerEvents="none" style={[s.mapBadge, { backgroundColor: p.card,right:16+webRight,maxWidth:Math.max(120,width-webLeft-webRight-32), top: insets.top + (wide ? 24 : 82) }]}><View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: p.accent }} /><Text style={{ color: p.text, fontSize: 12, fontWeight: '700' }}>{picking ? `Tap your ${picking === 'start' ? 'start location' : 'destination'}` : selected?.source === 'gpx' ? 'GPX · TRACK PREVIEW' : !selected ? live.fix && !mapPosition ? 'Waiting for fresh GPS…' : live.status : 'ROUTE COMPARISON'}</Text></View>}
+      {!active && <View pointerEvents="none" style={[s.mapBadge, { backgroundColor: p.card,right:16+webRight,maxWidth:Math.max(120,width-webLeft-webRight-32), top: Math.max(insets.top+12,headerTop+76) }]}><View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: p.accent }} /><Text style={{ color: p.text, fontSize: 12, fontWeight: '700' }}>{picking ? `Tap your ${picking === 'start' ? 'start location' : 'destination'}` : selected?.source === 'gpx' ? 'GPX · TRACK PREVIEW' : !selected ? live.fix && !mapPosition ? 'Waiting for fresh GPS…' : live.status : 'ROUTE COMPARISON'}</Text></View>}
       {active && <><GlassSurface onLayout={e=>setTurnCardHeight(e.nativeEvent.layout.height)} style={{ position:'absolute',top:insets.top+12,left:12+webLeft,right:wide ? undefined : 12+webRight,width:wide ? 420 : undefined,borderRadius:24 }}><SwipeArea onSwipe={open=>setTurnList(!open)}><Pressable accessibilityRole="button" accessibilityLabel={t("Show upcoming directions")} onPress={()=>setTurnList(true)}><TurnDirection unit={navigationOptions.unit} sign={g?.next?.sign} meters={g?.maneuverMeters} arrived={g?.arrived} text={g?.offRoute ? 'Off route · stop safely to replan' : g?.next?.text || (selected?.source === 'gpx' ? 'GPX track · turns unavailable' : 'Turn instructions unavailable · follow the mapped route')} status={ride.mode === 'simulation' ? 'Simulation · no live GPS' : ride.status} /></Pressable></SwipeArea><RegroupWarning/><JoinRequestBanner/></GlassSurface><View style={{ position: 'absolute', left: 12 + webLeft, top: insets.top + Math.max(156,turnCardHeight+24) }}><SpeedBadges route={selected} profile={profile} fix={ride.fix} index={g?.index} offRoute={g?.offRoute} now={now} unit={navigationOptions.unit} simulation={ride.mode === 'simulation'} /></View></>}
 
       {!active&&!picking&&<View pointerEvents="none" style={{position:'absolute',left:12+webLeft,top:insets.top+(wide?70:126)}}><VehicleBatteryBadge vehicleId={profile.id} now={now}/></View>}
-      <MapControls top={insets.top+(active?162:wide?110:170)} right={12+webRight} follow={follow} compass={navigationOptions.compass} tilted={navigationOptions.tilted} overview={overview} resume={resumeFollowing} toggleCompass={()=>updateNavigationOptions({compass:!navigationOptions.compass})} toggleTilt={()=>updateNavigationOptions({tilted:!navigationOptions.tilted})} onOverview={selected && active?showOverview:undefined} />
+      <MapControls top={active?insets.top+162:Math.max(insets.top+110,headerTop+154)} right={16+webRight} follow={follow} compass={navigationOptions.compass} tilted={navigationOptions.tilted} overview={overview} resume={resumeFollowing} toggleCompass={()=>updateNavigationOptions({compass:!navigationOptions.compass})} toggleTilt={()=>updateNavigationOptions({tilted:!navigationOptions.tilted})} onOverview={selected && active?showOverview:undefined} />
 
     </View>
-    {!active && <View pointerEvents="box-none" style={[s.header, { top: Platform.OS==='ios'&&Platform.isPad&&width>=1000?(initialWindowMetrics?.insets.top??24)+8:insets.top+12, left: 16 + webLeft, right: Platform.OS==='ios'&&Platform.isPad&&width>=1000?16:wide ? undefined : 16 + webRight }]}><GlassSurface style={s.brandCard}><Brand /></GlassSurface><Pressable accessibilityRole="button" accessibilityLabel={t("Plan a ride")} disabled={active || busy||exploring} onPress={openPlanner} style={[s.round, { backgroundColor: p.card, opacity:busy||exploring?.4:1 }]}><Ionicons name="search" size={22} color={p.text} /></Pressable></View>}
+    {!active && <View pointerEvents="box-none" style={[s.header, { top: headerTop, left: 16 + webLeft, right:16+webRight }]}><GlassSurface style={s.brandCard}><Brand /></GlassSurface><Pressable accessibilityRole="button" accessibilityLabel={t("Plan a ride")} disabled={active || busy||exploring} onPress={openPlanner} style={[s.round, { backgroundColor: p.card, opacity:busy||exploring?.4:1 }]}><Ionicons name="search" size={22} color={p.text} /></Pressable></View>}
     <NativeTabSafeOverlay onHeight={setOverlayHeight}><GroupCameraPreview active={active} right={12+webRight} bottom={wide?16:(visiblePanelHeight??176)+24}/>
       {previewPin && <View style={{position:'absolute',bottom:195,left:12}}><Button title={t("Back to Where to")} icon="search" onPress={openPlanner} /></View>}
       {picking && <View style={{ position: 'absolute', bottom: 12, left: 12 }}><Button title={t("Cancel map selection")} secondary onPress={() => { setPicking(null); setPlanner(true); }} /></View>}

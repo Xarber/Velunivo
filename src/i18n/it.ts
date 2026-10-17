@@ -1145,3 +1145,5 @@ Object.assign(italian, {"Group ride Memories": "Ricordi dei viaggi in gruppo", "
 
 
 Object.assign(italian, {"Play recording": "Riproduci registrazione", "Close recording": "Chiudi registrazione", "Show more": "Mostra altro"});
+
+Object.assign(italian,{"Location pins": "Indicatori sulla mappa", "Classic pin": "Indicatore classico", "Halo pin": "Indicatore con alone", "Diamond pin": "Indicatore a rombo", "Scratch map style": "Stile della mappa esplorata", "Soft edges": "Bordi arrotondati", "Crisp edges": "Bordi netti", "Profile avatars": "Avatar del profilo", "City rider": "Viaggiatore urbano", "Night rider": "Viaggiatore notturno", "Trail rider": "Esploratore dei sentieri", "Themes": "Temi", "Best exploration day": "La tua migliore giornata di esplorazione", "No discoveries yet": "Nessuna scoperta per ora", "A dedicated rewards collection, adaptive layouts and clearer Live Activity controls.": "Premi in una sezione dedicata, schermate adattabili e controlli delle Attività live più chiari."});

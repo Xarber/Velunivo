@@ -1,3 +1,4 @@
+import {useStore} from '../services/store';
 import {usePalette} from './ui';
 import {nativeCoordinates} from '../core/nativeCoordinates';
 import TransitOverlay from './TransitOverlay';
@@ -26,7 +27,7 @@ export default function RideMap(props: MapProps & { offlineMap?: string }) {
   return <DeviceMap {...props} />;
 }
 function DeviceMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit,positionLabel,planningStops,areaSelection,groupRiders=[],bookmarks=[],scratchContext,scratchHighlight,onScratchTile,mapBounds,scratchIndexOverride }: MapProps) {
-  const p=usePalette();
+  const p=usePalette(),cosmetic=useStore().navigationOptions;
   const group=useGroupRide(),{bounds:scratchBounds,update:setScratchBounds}=useScratchViewport(),scratch=useScratchLayer(scratchContext,scratchBounds,scratchHighlight,scratchIndexOverride);
   const transitLines=useTransitLines(!!transit,scratchBounds);
   const map = useRef<MapView>(null);
@@ -57,7 +58,7 @@ function DeviceMap({ routes, selected, position, follow, onPick, traffic, startP
     {(planningStops??selected?.waypoints??[]).filter(s=>s.coordinate.every(Number.isFinite)).map((stop,i)=><Marker key={`stop-${i}`} coordinate={point(stop.coordinate)} title={`${t(`Stop ${i+1}`)} · ${stop.label}`} zIndex={100}><View style={{width:30,height:30,alignItems:'center',justifyContent:'center',backgroundColor:p.accentLight,borderWidth:3,borderColor:'#FFFFFF',borderRadius:15}}><Text style={{color:'#FFFFFF',fontWeight:'800'}}>{i+1}</Text></View></Marker>)}
     {bookmarks.map(b=><Marker key={b.id} coordinate={point(b.coordinate)} title={b.name} zIndex={800} anchor={{x:.5,y:1}}><BookmarkPin/></Marker>)}
     {groupRiders.filter(r=>r.position).map(r=><Marker key={r.id} coordinate={point(r.position!)} title={r.name} onPress={e=>{e.stopPropagation();if(navigating)group.pinVideo(r.id);}} zIndex={900} anchor={{x:.5,y:1}}><GroupPin rider={r} interactive={false}/></Marker>)}
-    {position && <Marker coordinate={point(position)} title={t(positionLabel || "Your position")} zIndex={1000} flat anchor={{ x: .5, y: .5 }}><PositionArrow navigating={navigating} rotation={rotation} /></Marker>}
+    {position && <Marker key={cosmetic.navigationArrow+":"+cosmetic.locationPin} coordinate={point(position)} title={t(positionLabel || "Your position")} zIndex={1000} flat anchor={{ x: .5, y: .5 }}><PositionArrow navigating={navigating} rotation={rotation} /></Marker>}
 
   </MapView>;
 }

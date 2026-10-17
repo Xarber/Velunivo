@@ -1,3 +1,4 @@
+import {useStore} from '../services/store';
 import {usePalette} from './ui';
 import {useTransitLines} from '../services/useTransitLines';
 import {transitGeometryPaint,transitPaint} from '../core/transitLines';
@@ -21,7 +22,7 @@ import PositionArrow from './PositionArrow';
 import { mapStyle } from './mapConfig';
 export interface MapProps {bookmarks?:import('../core/recordings').RideBookmark[];mapBounds?:[number,number,number,number];scratchIndexOverride?:import('../core/scratchMap').ScratchIndex;scratchContext?:import('../services/useScratchLayer').ScratchContext;scratchHighlight?:string[];onScratchTile?(id:string):void;groupRiders?:import('../groups/model').GroupMember[]; areaSelection?:MapAreaSelection; offlineStyle?: string; transit?: boolean; trace?: Coord[][]; completedMeters?: number; overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; positionLabel?:string; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord,resolution?:number): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; planningStops?:import('../core/itinerary').RouteStop[]; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
 export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, offlineStyle, transit, positionLabel, planningStops, areaSelection,groupRiders=[],bookmarks=[],scratchContext,scratchHighlight,onScratchTile,mapBounds,scratchIndexOverride }: MapProps) {
-  const p=usePalette();
+  const p=usePalette(),cosmetic=useStore().navigationOptions;
   const {bounds:scratchBounds,update:setScratchBounds}=useScratchViewport(),scratch=useScratchLayer(scratchContext,scratchBounds,scratchHighlight,scratchIndexOverride);
   const transitLines=useTransitLines(!!transit&&!offlineStyle,scratchBounds);
   const camera = useRef<CameraRef>(null);
@@ -54,6 +55,6 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
     {(startPoint || endPoint) && <GeoJSONSource id="planning" data={{ type: 'FeatureCollection', features: [startPoint, endPoint].filter((p): p is Coord => !!p).map(p => ({ type: 'Feature' as const, properties: {}, geometry: { type: 'Point' as const, coordinates: p } })) }}><Layer type="circle" paint={{ 'circle-radius': 7, 'circle-color': p.accentLight, 'circle-stroke-width': 3, 'circle-stroke-color': '#FFFFFF' }} /></GeoJSONSource>}
     {(planningStops??selected?.waypoints??[]).filter(s=>s.coordinate.every(Number.isFinite)).map((stop,i)=><Marker key={`stop-${i}`} id={`stop-${i}`} lngLat={stop.coordinate} accessibilityLabel={`${t(`Stop ${i+1}`)} · ${stop.label}`}><View style={{width:30,height:30,alignItems:'center',justifyContent:'center',backgroundColor:p.accentLight,borderWidth:3,borderColor:'#FFFFFF',borderRadius:15}}><Text style={{color:'#FFFFFF',fontWeight:'800'}}>{i+1}</Text></View></Marker>)}
     {groupRiders.filter(r=>r.position).map(r=><Marker key={r.id} id={`group-${r.id}`} lngLat={r.position!} anchor="bottom" accessibilityLabel={r.name}><GroupPin rider={r} interactive={navigating}/></Marker>)}
-    {position && <Marker id="navigation-position" lngLat={position} accessibilityLabel={t(positionLabel || 'Current position')}><PositionArrow navigating={navigating} rotation={rotation} /></Marker>}
+    {position && <Marker key={cosmetic.navigationArrow+":"+cosmetic.locationPin} id="navigation-position" lngLat={position} accessibilityLabel={t(positionLabel || 'Current position')}><PositionArrow navigating={navigating} rotation={rotation} /></Marker>}
   </Map>;
 }

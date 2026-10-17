@@ -9,8 +9,8 @@ export function activityTestData(kind:ActivityTestKind='navigation',overrides:Pa
  if(kind==='regroup')result.regroup=t('Regroup requested')+' · Alex';
  if(kind==='join-approval')result.joinRequest='Alex';
  if(kind==='stale'){result.batteryOld=true;result.batteryUpdatedAt=now-120000;result.updatedAt=now-120000;}
- const battery=result.batteryPercent;result.batteryColor=battery===undefined?undefined:batteryColor(battery);result.batterySymbol=`battery.${battery!==undefined&&battery<13?0:battery!==undefined&&battery<38?25:battery!==undefined&&battery<63?50:battery!==undefined&&battery<88?75:100}percent`;
- if(kind==='charging'){result.batterySymbol='battery.100percent.bolt';result.batteryColor='#39C982';}
+ const charging=result.batterySymbol==='battery.100percent.bolt';const battery=result.batteryPercent;result.batteryColor=battery===undefined?undefined:batteryColor(battery);result.batterySymbol=`battery.${battery!==undefined&&battery<13?0:battery!==undefined&&battery<38?25:battery!==undefined&&battery<63?50:battery!==undefined&&battery<88?75:100}percent`;
+ if(kind==='charging'||charging){result.batterySymbol='battery.100percent.bolt';result.batteryColor='#39C982';}
  if(kind==='recording')return {...result,recording:true,symbol:'record.circle',turn:t('Recording trip'),timer:overrides.timer||'12:34',arrival:t('Trip time')+' · '+(overrides.timer||'12:34'),distance:'22 km/h',minutes:overrides.remaining||'2.5 km',remaining:t('Travelled')};
  if(kind==='shared'){delete result.batteryPercent;delete result.batterySymbol;delete result.batteryUpdatedAt;result.turn=t('Shared trip')+' · '+t('Turn right');}
  return result;
