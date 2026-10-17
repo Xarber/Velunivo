@@ -44,3 +44,7 @@ No native compilation, SDK installation, simulator boot or interaction with the 
 - One earlier full run overloaded the standalone test's five-second startup window; its isolated rerun passed and the complete bounded-concurrency run passed unchanged. A new-version changelog fixture was updated to include 2.6.0.
 
 The final release-history check also found that the developer-note generator ignored prerelease tags, which could hide 2.5.1/2.5.2 developer history and repeat those commits under 2.6.0. It now selects the latest testing build per version (or the stable tag), retains untagged historical notes and bounds each version to its preceding release. A temporary-repository regression test covers these cases.
+
+### MapKit marker rotation follow-up
+
+Review of the installed react-native-maps source confirmed that the Apple MapKit marker manager never exports the public rotation property. The existing version-checked postinstall patch now exports it and rotates the annotation view using heading minus camera bearing. Other markers default to zero rotation. A finite-value guard avoids invalid transforms. The patch is idempotent and does not alter Android or Google Maps. Native compilation is delegated to CI; the patch regression test passes locally.

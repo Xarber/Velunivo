@@ -17,3 +17,17 @@ patch('AIRMapPolyline.m','[_map addOverlay:self];',`[_map addOverlay:self level:
         for (AIRMapPolyline *route in routes) { [_map removeOverlay:route]; [_map addOverlay:route level:MKOverlayLevelAboveLabels]; }
     }`);
 patch('AIRMap.mm','((AIRMapPolyline *)subview).map = self;\n        [self addOverlay:(id<MKOverlay>)subview];','((AIRMapPolyline *)subview).map = self;\n        [(AIRMapPolyline *)subview update];');
+// MapKit's marker manager does not implement the public rotation prop (Google/Android do).
+// Rotate the annotation view in screen coordinates; JS supplies heading minus camera bearing.
+patch('AIRMapMarker.h','@property (nonatomic, assign) double opacity;','@property (nonatomic, assign) double opacity;\n@property (nonatomic, assign) CGFloat velunivoRotation;');
+patch('AIRMapMarkerManager.m','RCT_EXPORT_VIEW_PROPERTY(opacity, double)','RCT_EXPORT_VIEW_PROPERTY(opacity, double)\nRCT_REMAP_VIEW_PROPERTY(rotation, velunivoRotation, CGFloat)');
+patch('AIRMapMarker.m','- (void)setOpacity:(double)opacity',`- (void)setVelunivoRotation:(CGFloat)value
+{
+    if (!isfinite(value)) return;
+    _velunivoRotation = value;
+    self.transform = CGAffineTransformMakeRotation(value * M_PI / 180.0);
+}
+
+- (void)setOpacity:(double)opacity`);
+
+patch('AIRMapMarker.m','#import \"AIRMapMarker.h\"','#import \"AIRMapMarker.h\"\n#include <math.h>');
