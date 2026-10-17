@@ -30,7 +30,7 @@ Install the relevant development artifact, then run `npm start -- --dev-client` 
 
 ## Cleanup and validation
 
-Removed 573,021,601 bytes of task-created temporary build/capture artifacts and a broken iOS 18.6 runtime symlink. Xcode DerivedData, simulator temporary-deletion directory and personalization cache were already empty. Installed Xcode/SDKs, user iPhone Duo and iPhone 18 Pro devices, archives, user apps and user files were preserved. No claim that all remaining disk usage is disposable.
+Removed 573,021,601 bytes of task-created temporary build/capture artifacts and a broken iOS 18.6 runtime symlink. Xcode DerivedData, simulator temporary-deletion directory and personalization cache were already empty. A later disk-full interruption also required removing regenerable Gradle caches; available storage returned to about 3.5 GB. The changelog generator now writes atomically so a failed write cannot truncate its previous valid output. Installed Xcode/SDKs, user iPhone Duo and iPhone 18 Pro devices, archives, user apps and user files were preserved. No claim that all remaining disk usage is disposable.
 
 Short checks: TypeScript, Expo lint, 432 application tests, 49 Python tooling tests, workflow YAML/shell syntax, development Expo config and Swift syntax parsing (no native compilation).
 
