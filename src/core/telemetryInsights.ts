@@ -3,13 +3,13 @@ import {RecordedRide,RideSample} from './recordings';
 import {Metric} from '../bluetooth/types';
 import {units} from '../bluetooth/telemetry';
 export interface SensorQuality {metric:Metric;coverage:number;readings:number;invalid:number;stale:number;medianInterval?:number;p95Interval?:number;}
-const bounds:Partial<Record<Metric,[number,number]>>={speed:[0,55],batteryPercent:[0,100],voltage:[1,150],current:[-300,300],power:[-45000,45000],batteryTemperature:[-40,120],controllerTemperature:[-40,180],motorTemperature:[-40,200],odometer:[0,1e9]};
+const bounds:Partial<Record<Metric,[number,number]>>={speed:[0,55],batteryPercent:[0,100],voltage:[1,150],current:[-300,300],power:[-45000,45000],batteryTemperature:[-40,120],controllerTemperature:[-40,180],motorTemperature:[-40,200],odometer:[0,1e9],tripDistance:[0,1e8],remainingRange:[0,1e6],signal:[-127,20],chargeCycles:[0,100000]};
 /** Coverage uses valid endpoints, not the number of repeated cached snapshots. */
 export function sensorReliability(ride:RecordedRide,samples:readonly RideSample[]):SensorQuality[]{
  const metrics=new Map<Metric,{coverage:SamplingCoverage;times:number[];seen:Set<number>;invalid:number;stale:number}>(),ordered=[...samples].sort((a,b)=>a.fix.timestamp-b.fix.timestamp),duration=Math.max(0,((ride.endedAt??ride.lastFixAt??ride.startedAt)-ride.startedAt)/1000);
  for(const s of ordered)for(const key of Object.keys(s.bluetooth?.fields??{}) as Metric[])if(!metrics.has(key))metrics.set(key,{coverage:new SamplingCoverage(),times:[],seen:new Set(),invalid:0,stale:0});
  for(const s of ordered){const at=s.fix.timestamp,b=s.bluetooth,connected=b?.vehicleId===ride.vehicle.id&&b.state==='connected'&&!b.simulated;
-  for(const [key,q] of metrics){const r=connected?b?.fields[key]:undefined,range=bounds[key],valid=!!r&&r.source==='vehicle'&&r.unit===units[key]&&Number.isFinite(r.timestamp)&&(typeof r.value==='number'?Number.isFinite(r.value)&&(!range||(r.value>=range[0]&&r.value<=range[1])):typeof r.value==='boolean'||typeof r.value==='string'),fresh=valid&&at-r!.timestamp>=-1000&&at-r!.timestamp<=(key==='batteryPercent'?30000:key.endsWith('Temperature')?15000:5000);
+  for(const [key,q] of metrics){const r=connected?b?.fields[key]:undefined,range=bounds[key],valid=!!r&&r.source==='vehicle'&&r.unit===units[key]&&Number.isFinite(r.timestamp)&&(range?typeof r.value==='number'&&Number.isFinite(r.value)&&r.value>=range[0]&&r.value<=range[1]:key==='charging'?typeof r.value==='boolean':key==='ridingMode'?typeof r.value==='string'&&r.value.length<=80:typeof r.value==='number'&&Number.isFinite(r.value)),fresh=valid&&at-r!.timestamp>=-1000&&at-r!.timestamp<=(key==='batteryPercent'?30000:key.endsWith('Temperature')?15000:5000);
    q.coverage.accept(at,!!fresh&&!s.breakBefore);if(r&&!q.seen.has(r.timestamp)){q.seen.add(r.timestamp);if(!valid)q.invalid++;else q.times.push(r.timestamp);}if(valid&&!fresh)q.stale++;
   }
  }

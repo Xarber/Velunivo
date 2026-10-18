@@ -33,3 +33,7 @@ No firmware commands, CallKit behavior, microphone policy or peer protocol chang
 Browser visual follow-up confirmed five map pins with intact avatar/initial faces and loaded vector badges, sample Memory opening, and mobile bounds. Inspection caught a light-mode expanded web sheet using the dark tint with dark text; its tint now follows the same light/dark policy as native. Android capture now turns on the actual developer sample-data controls through UIAutomator, without storage injection or another build. Workflow test total is 50.
 
 Sample riders use a session-seeded random cluster, 45–175 metres from the local position, with at least 45 metres of separation. They keep their relative placement on redraw and follow the local position while moving; toggling the fixture never publishes a real group membership. A deterministic geometry/isolation test covers this behavior.
+
+Final pre-native checkpoint: 468 app tests, 50 workflow tests, lint and type-check pass. Isolated Chromium and WebKit both render all five sample rider pins with vector badges, preserve avatar/initial content, open read-only sample Memories and stay within mobile viewport bounds without JavaScript exceptions. These engine tests inject location; they do not certify macOS Safari's OS location provider.
+
+Sensor reliability additionally rejects wrong value types (for example text speed or numeric charging flags), rather than treating them as fresh numeric coverage.
