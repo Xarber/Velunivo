@@ -45,7 +45,7 @@ class SimulatorVerificationTests(unittest.TestCase):
                 self.assertEqual(len(launches), 3)
                 self.assertTrue(all('--payload-url' in args for args in launches))
                 self.assertFalse(any('openurl' in call.args for call in run.call_args_list))
-                self.assertEqual([call.args[0] for call in sleep.call_args_list], [8, 6, 25])
+                self.assertEqual([call.args[0] for call in sleep.call_args_list], [8, 1, 6, 1, 25, 1])
 
     def setUp(self):
         sim.ORIENTATION_HELP=None

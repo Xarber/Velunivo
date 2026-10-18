@@ -332,6 +332,8 @@ def capture_gallery(udid, family, pid):
             time.sleep(2)
             dismiss_owned_url_prompt(udid,family)
         time.sleep({'library':8,'vehicles':6,'navigation':25}[name])
+        best_effort('xcrun','simctl','location',udid,'set','45.4642,9.1900',timeout=10)
+        time.sleep(1)
         os.kill(pid,0)
         image = ARTIFACTS / f'{family}-{name}.png'
         run('xcrun','simctl','io',udid,'screenshot',str(image),timeout=30)
@@ -381,8 +383,14 @@ def capture_once(devices, family, gallery=False):
         os.kill(pid, 0)
         best_effort('xcrun', 'simctl', 'status_bar', udid, 'override', '--time', '9:41',
                     '--batteryState', 'charged', '--batteryLevel', '100', timeout=10)
-        if family == 'ipad' and not orientation_locked:
+        # Locking the interface does not rotate the device's framebuffer.
+        # Orient the device once after launch as well, including locked QA galleries.
+        if family == 'ipad':
             landscape(udid)
+        # A single injected fix ages during first-boot settling; refresh the same
+        # public fixture rather than publishing a misleading GPS-stale banner.
+        best_effort('xcrun','simctl','location',udid,'set','45.4642,9.1900',timeout=10)
+        time.sleep(1)
         run('xcrun', 'simctl', 'io', udid, 'screenshot', str(ARTIFACTS / f'{family}.png'), timeout=30)
         if family == 'ipad':
             verify_landscape(ARTIFACTS / 'ipad.png')

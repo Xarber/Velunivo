@@ -1,13 +1,13 @@
 # 2.6.1 implementation and verification checklist
 
 ## Native/map regressions
-- [x] Camera recenter after rotation/resizing, including Duo right-side viewport.
-- [ ] Restore native navigation arrow implemented; actual rendered native screenshots pending.
+- [ ] Resize recenter implemented; unfolded Duo landscape gate corrected, final native retest pending.
+- [x] Native arrow visibly rendered in the existing Duo candidate Simulator.
 - [x] Web marker badges; centered native halo avatar; all pins retain faces.
 - [x] Safari-compatible continuous map location without hiding on ordinary update gaps.
-- [x] Settings return action routes to the owning navigation/recording activity.
-- [x] Native accessory/sidebar placement research, compact centered controls and Search first.
-- [x] Landscape speed/limit unobstructed, following Apple Maps reference where applicable.
+- [ ] Settings return owner implemented; Duo exposed a second reset in Store, now fixed; retest final artifact.
+- [ ] Portrait accessory centered and verified; real Duo toolbar rail path implemented, awaiting CI artifact test.
+- [ ] Landscape placement implemented; unfolded Duo height gate fixed after native test, awaiting retest.
 - [ ] First-render absolute animation disabled; native reproduction/verification pending.
 
 ## Battery
