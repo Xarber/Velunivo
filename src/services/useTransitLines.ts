@@ -1,5 +1,5 @@
 import {useEffect,useState} from 'react';
-import {transitGeometry,transitQueryBounds} from '../core/transitLines';
+import {transitGeometry,transitQueryBounds,mergeTransit} from '../core/transitLines';
 import {requestJson} from './request';
 import {ViewportRequests} from '../core/viewportRequests';
 /** Cached viewport geometry supplements vector tiles that omit minor lines at low zoom. */
@@ -12,6 +12,6 @@ async function load(key:string,signal:AbortSignal){const [west,south,east,north]
 }
 const requests=new ViewportRequests(load,value=>value.features.reduce((sum,feature)=>sum+feature.geometry.coordinates.length,0));
 export function useTransitLines(enabled:boolean,bounds:[number,number,number,number]){const [data,setData]=useState(()=>empty),key=transitQueryBounds(bounds)?.join(',');
- useEffect(()=>{if(!enabled||!key)return;let cancelled=false,release:(()=>void)|undefined;const timer=setTimeout(()=>{const request=requests.acquire(key);release=request.release;void request.promise.then(next=>{if(!cancelled)setData(next);}).catch(()=>{});},600);return()=>{cancelled=true;clearTimeout(timer);release?.();};},[enabled,key]);
+ useEffect(()=>{if(!enabled||!key)return;let cancelled=false,release:(()=>void)|undefined,retry:ReturnType<typeof setTimeout>|undefined;const read=()=>{const request=requests.acquire(key);release=request.release;void request.promise.then(next=>{if(!cancelled)setData(previous=>mergeTransit(previous,next));if(!next.features.length&&!cancelled)retry=setTimeout(read,30000);}).catch(()=>{if(!cancelled)retry=setTimeout(read,20000);});};const timer=setTimeout(read,350);return()=>{cancelled=true;clearTimeout(timer);clearTimeout(retry);release?.();};},[enabled,key]);
  return enabled?data:empty;
 }

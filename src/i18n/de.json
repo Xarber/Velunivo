@@ -1946,5 +1946,21 @@
   "Condition-matched comparisons": "Vergleiche unter ähnlichen Bedingungen",
   "Typical": "Typisch",
   "comparable rides": "vergleichbare Fahrten",
-  "Matched on available speed, distance, mode, terrain, charge, temperature and load. Weather and traffic may still differ.": "Abgeglichen anhand verfügbarer Daten zu Geschwindigkeit, Strecke, Modus, Gelände, Ladestand, Temperatur und Last. Wetter und Verkehr können abweichen."
+  "Matched on available speed, distance, mode, terrain, charge, temperature and load. Weather and traffic may still differ.": "Abgeglichen anhand verfügbarer Daten zu Geschwindigkeit, Strecke, Modus, Gelände, Ladestand, Temperatur und Last. Wetter und Verkehr können abweichen.",
+  "Back to Memories": "Zurück zu Erinnerungen",
+  "Estimated arrival charge {percent}%": "Erwarteter Akkustand bei Ankunft: {percent}%",
+  "Estimated return usage {percent}%": "Erwarteter Verbrauch für den Rückweg: {percent}%",
+  "Estimated {percent}% usage": "Erwarteter Verbrauch: {percent}%",
+  "Invalid compressed sync block": "Ungültiger komprimierter Synchronisierungsblock",
+  "Invalid sync encoding": "Ungültige Synchronisierungskodierung",
+  "Memory locations could not be loaded.": "Die Positionen der Erinnerung konnten nicht geladen werden.",
+  "No media recorded": "Keine Medien aufgezeichnet",
+  "Replay timeline": "Wiedergabezeitleiste",
+  "Unsupported sync encoding": "Nicht unterstützte Synchronisierungskodierung",
+  "Route information": "Routeninformationen",
+  "Memories in motion": "Erinnerungen in Bewegung",
+  "Replay riders and allowed recordings together on one timeline.": "Fahrer und freigegebene Aufnahmen gemeinsam auf einer Zeitleiste wiedergeben.",
+  "Lighter device transfers": "Schlankere Geräteübertragung",
+  "Compressed blocks and reusable snapshots reduce repeated transfers.": "Komprimierte, wiederverwendbare Blöcke reduzieren wiederholte Übertragungen.",
+  "Clearer routes, vehicle batteries and more reliable native map controls.": "Übersichtlichere Routen, Fahrzeugakkus und zuverlässigere native Kartensteuerung."
 }

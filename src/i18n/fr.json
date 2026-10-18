@@ -1946,5 +1946,21 @@
   "Condition-matched comparisons": "Comparaisons en conditions similaires",
   "Typical": "Habituel",
   "comparable rides": "trajets comparables",
-  "Matched on available speed, distance, mode, terrain, charge, temperature and load. Weather and traffic may still differ.": "Comparaison selon les données disponibles de vitesse, distance, mode, relief, charge, température et poids. La météo et le trafic peuvent différer."
+  "Matched on available speed, distance, mode, terrain, charge, temperature and load. Weather and traffic may still differ.": "Comparaison selon les données disponibles de vitesse, distance, mode, relief, charge, température et poids. La météo et le trafic peuvent différer.",
+  "Back to Memories": "Retour aux souvenirs",
+  "Estimated arrival charge {percent}%": "Charge prévue à l’arrivée : {percent}%",
+  "Estimated return usage {percent}%": "Consommation prévue au retour : {percent}%",
+  "Estimated {percent}% usage": "Consommation prévue : {percent}%",
+  "Invalid compressed sync block": "Bloc de synchronisation compressé invalide",
+  "Invalid sync encoding": "Encodage de synchronisation invalide",
+  "Memory locations could not be loaded.": "Impossible de charger les positions du souvenir.",
+  "No media recorded": "Aucun média enregistré",
+  "Replay timeline": "Chronologie de lecture",
+  "Unsupported sync encoding": "Encodage de synchronisation non pris en charge",
+  "Route information": "Informations sur l’itinéraire",
+  "Memories in motion": "Des souvenirs à revivre",
+  "Replay riders and allowed recordings together on one timeline.": "Retrouvez les participants et les enregistrements autorisés sur une même chronologie.",
+  "Lighter device transfers": "Des transferts plus légers",
+  "Compressed blocks and reusable snapshots reduce repeated transfers.": "Les blocs compressés et réutilisables réduisent les transferts répétés.",
+  "Clearer routes, vehicle batteries and more reliable native map controls.": "Des itinéraires plus clairs, les batteries des véhicules et des commandes natives de carte plus fiables."
 }

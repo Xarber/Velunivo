@@ -1,0 +1,6 @@
+import {MemoryLocation,MemoryMedia,RideMemory} from './memories';
+/** One absolute clock for all rider/location/media tracks. Original files remain separate and editable. */
+export function memoryTimeline(memory:RideMemory,locations:readonly MemoryLocation[]){const start=memory.startedAt,end=Math.max(start,memory.endedAt??start,locations.reduce((at,p)=>Math.max(at,p.at),start),memory.media.reduce((at,m)=>Math.max(at,m.endedAt??m.startedAt),start));const tracks=memory.riders.map(rider=>({rider,locations:locations.filter(p=>p.riderId===rider.id).sort((a,b)=>a.at-b.at),media:memory.media.filter(m=>m.riderId===rider.id&&m.bytes>0).sort((a,b)=>a.startedAt-b.startedAt)}));return {start,duration:end-start,tracks};}
+export function memoryLocationAt(points:readonly MemoryLocation[],at:number){let low=0,high=points.length-1,found=-1;while(low<=high){const mid=(low+high)>>>1;if(points[mid].at<=at){found=mid;low=mid+1;}else high=mid-1;}return found<0?undefined:points[found];}
+export function memoryMediaAt(media:readonly MemoryMedia[],at:number){return media.filter(m=>m.startedAt<=at&&(m.endedAt===undefined||at<m.endedAt));}
+export function mediaClock(media:MemoryMedia,at:number){return Math.max(0,(at-media.startedAt)/1000);}

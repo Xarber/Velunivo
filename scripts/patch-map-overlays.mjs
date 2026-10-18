@@ -21,11 +21,27 @@ patch('AIRMap.mm','((AIRMapPolyline *)subview).map = self;\n        [self addOve
 // Rotate the annotation view in screen coordinates; JS supplies heading minus camera bearing.
 patch('AIRMapMarker.h','@property (nonatomic, assign) double opacity;','@property (nonatomic, assign) double opacity;\n@property (nonatomic, assign) CGFloat velunivoRotation;');
 patch('AIRMapMarkerManager.m','RCT_EXPORT_VIEW_PROPERTY(opacity, double)','RCT_EXPORT_VIEW_PROPERTY(opacity, double)\nRCT_REMAP_VIEW_PROPERTY(rotation, velunivoRotation, CGFloat)');
-patch('AIRMapMarker.m','- (void)setOpacity:(double)opacity',`- (void)setVelunivoRotation:(CGFloat)value
+{const p=root+'AIRMapMarker.m';let v=fs.readFileSync(p,'utf8');const old=`- (void)setVelunivoRotation:(CGFloat)value
 {
     if (!isfinite(value)) return;
     _velunivoRotation = value;
     self.transform = CGAffineTransformMakeRotation(value * M_PI / 180.0);
+}
+
+`;if(v.includes(old)){v=v.replace(old,'');fs.writeFileSync(p,v);}}
+patch('AIRMapMarker.m','- (void)setOpacity:(double)opacity',`- (void)setVelunivoRotation:(CGFloat)value
+{
+    if (!isfinite(value)) return;
+    _velunivoRotation = value;
+    [self updateVelunivoRotation];
+}
+
+- (void)updateVelunivoRotation
+{
+    BOOL navigation = [self.identifier isEqualToString:@"velunivo-navigation"];
+    CGFloat heading = navigation ? self.velunivoRotation - self.map.camera.heading : self.velunivoRotation;
+    self.transform = CGAffineTransformMakeRotation(heading * M_PI / 180.0);
+    if (navigation) { self.layer.shadowOpacity = 0; self.layer.shadowPath = nil; }
 }
 
 - (void)setOpacity:(double)opacity`);
@@ -53,3 +69,24 @@ patch('AIRMapManager.m','[AIRMap animateWithDuration:duration/1000 animations:^{
                 [mapView setCamera:originalCamera animated:NO];
             }
             [AIRMap animateWithDuration:duration/1000 animations:^{`);
+
+// Bundled marker images must not depend on RCTBridge.currentBridge in bridgeless RN.
+patch('AIRMapMarker.m', '    _imageSrc = imageSrc;', `    _imageSrc = imageSrc;
+    NSURL *localURL = [RCTConvert NSURL:imageSrc];
+    if (localURL.isFileURL) {
+        UIImage *bundled = [UIImage imageWithContentsOfFile:localURL.path];
+        if (bundled) {
+            self.layer.shadowOpacity = 0;
+            self.layer.shadowPath = nil;
+            self.image = bundled;
+            return;
+        }
+    }`);
+
+patch('AIRMapMarker.h','@property (nonatomic, assign) CGFloat velunivoRotation;','@property (nonatomic, assign) CGFloat velunivoRotation;\n- (void)updateVelunivoRotation;');
+patch('AIRMapManager.m','    [self _regionChanged:mapView continuous:YES];',`    for (id<MKAnnotation> annotation in mapView.annotations) {
+        if ([annotation isKindOfClass:[AIRMapMarker class]] && [((AIRMapMarker *)annotation).identifier isEqualToString:@"velunivo-navigation"]) {
+            [((AIRMapMarker *)annotation) updateVelunivoRotation];
+        }
+    }
+    [self _regionChanged:mapView continuous:YES];`);

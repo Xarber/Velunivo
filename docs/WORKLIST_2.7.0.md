@@ -1,0 +1,13 @@
+# 2.7.0 requested fixes and replay/sync improvements
+- [ ] Native compass overlay, arrow artwork and rectangular shadow; actual customization test.
+- [ ] Landscape controls and full-screen safe-area directions; Duo toolbar ordering/icons/padding.
+- [ ] Vehicle battery picker/list layout and last-reading provenance.
+- [ ] Clean icon/label route and battery summaries.
+- [ ] Shared badge artwork and stale GPS/presence fading on all maps.
+- [ ] Duo Library card sizing.
+- [ ] Memories synchronized multitrack replay and normal replay timeline.
+- [ ] Transit viewport refresh and complete continuous line geometry.
+- [ ] Navigation/recording Dynamic Island presentation: simulator test.
+- [ ] Bounded sync compression and changed-data transfer where compatible.
+- [ ] Tests, CI/native validation, screenshots, push and matching hosted web deployment.
+- [ ] After push: Apple Design, Animate Expo, Review Animations audit.

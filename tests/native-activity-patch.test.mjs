@@ -42,3 +42,5 @@ test('native patch is installed during clean CI install and cannot be replaced w
 });
 
 test('native battery and viewer badges consume mixed JSON props and support OS-driven stale state',()=>{const views=fs.readFileSync('native/VelunivoActivityViews.swift','utf8');for(const key of ['batteryPercent','batteryUpdatedAt','batteryOld','viewerCount','oldLabel'])assert(views.includes(`values["${key}"]`));assert.match(views,/context.isStale/);assert.match(views,/Text\(date, style: .relative\)/);assert.match(views,/old \? .orange/);assert.match(views,/VelunivoActivityBadges\(data: data, stale: velunivoActivityIsStale\(context\)\)/);});
+
+test('Velunivo activities retain foreground relevance on starts and updates',async()=>{const {patchActivityPriority}=await import('../scripts/patch-widgets.mjs');for(const name of ['LiveActivityFactory.swift','LiveActivity.swift']){const text=fs.readFileSync('node_modules/expo-widgets/ios/'+name,'utf8');assert.match(text,/relevanceScore: name.hasPrefix\("Velunivo"\) \? 100 : 0/);assert.equal(patchActivityPriority(text),text);}});

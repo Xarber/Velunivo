@@ -1946,5 +1946,21 @@
   "Condition-matched comparisons": "Comparaciones en condiciones similares",
   "Typical": "Habitual",
   "comparable rides": "viajes comparables",
-  "Matched on available speed, distance, mode, terrain, charge, temperature and load. Weather and traffic may still differ.": "Comparación según velocidad, distancia, modo, terreno, carga de batería, temperatura y peso disponibles. El clima y tráfico pueden variar."
+  "Matched on available speed, distance, mode, terrain, charge, temperature and load. Weather and traffic may still differ.": "Comparación según velocidad, distancia, modo, terreno, carga de batería, temperatura y peso disponibles. El clima y tráfico pueden variar.",
+  "Back to Memories": "Volver a Recuerdos",
+  "Estimated arrival charge {percent}%": "Carga prevista al llegar: {percent}%",
+  "Estimated return usage {percent}%": "Consumo previsto de vuelta: {percent}%",
+  "Estimated {percent}% usage": "Consumo previsto: {percent}%",
+  "Invalid compressed sync block": "Bloque comprimido de sincronización no válido",
+  "Invalid sync encoding": "Codificación de sincronización no válida",
+  "Memory locations could not be loaded.": "No se pudieron cargar las ubicaciones del recuerdo.",
+  "No media recorded": "No se grabaron archivos multimedia",
+  "Replay timeline": "Línea de tiempo de reproducción",
+  "Unsupported sync encoding": "Codificación de sincronización no compatible",
+  "Route information": "Información de la ruta",
+  "Memories in motion": "Recuerdos en movimiento",
+  "Replay riders and allowed recordings together on one timeline.": "Reproduce a los participantes y las grabaciones permitidas en una sola línea de tiempo.",
+  "Lighter device transfers": "Transferencias más ligeras",
+  "Compressed blocks and reusable snapshots reduce repeated transfers.": "Los bloques comprimidos y reutilizables reducen las transferencias repetidas.",
+  "Clearer routes, vehicle batteries and more reliable native map controls.": "Rutas más claras, batería de los vehículos y controles nativos del mapa más fiables."
 }

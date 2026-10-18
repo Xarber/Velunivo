@@ -24,9 +24,14 @@ export function patchSources(widget,utils,views) {
  utils=once(utils,'  let layout = WidgetsStorage.getString(forKey: "__expo_widgets_live_activity_\\(name)_layout") ?? ""',`${marker}\n  if name == "VelunivoNavigation" || name == "VelunivoNavigationTest" || name == "VelunivoSharedTrip" {\n    return ["__velunivo_native": true]\n  }\n  let layout = WidgetsStorage.getString(forKey: "__expo_widgets_live_activity_\\(name)_layout") ?? ""`);
  return {widget:widget+`\n${marker}\n`+views,utils};
 }
+export function patchActivityPriority(source) {
+ return source.replace('content: .init(state: initialState, staleDate: staleDate),','content: .init(state: initialState, staleDate: staleDate, relevanceScore: name.hasPrefix("Velunivo") ? 100 : 0),')
+  .replace('ActivityContent(state: newState, staleDate: staleDate)', 'ActivityContent(state: newState, staleDate: staleDate, relevanceScore: name.hasPrefix("Velunivo") ? 100 : 0)');
+}
 export function applyPatch(directory=root) {
  const folder=path.join(directory,'node_modules/expo-widgets');
  const version=JSON.parse(fs.readFileSync(path.join(folder,'package.json'),'utf8')).version;
+ for(const file of ['LiveActivityFactory.swift','LiveActivity.swift']){const target=path.join(folder,'ios',file);if(fs.existsSync(target)){const before=fs.readFileSync(target,'utf8'),after=patchActivityPriority(before);fs.writeFileSync(target,after);}}
  if(version!=='57.0.23')throw new Error(`Review native activity patch for Expo Widgets ${version}`);
  const widgetPath=path.join(folder,'ios/Widgets/WidgetLiveActivity.swift'),utilsPath=path.join(folder,'ios/Widgets/Utils.swift');
  const views=fs.readFileSync(path.join(directory,'native/VelunivoActivityViews.swift'),'utf8');

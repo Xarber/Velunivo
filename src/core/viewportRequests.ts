@@ -28,7 +28,7 @@ export class ViewportRequests<T> {
       void Promise.resolve().then(()=>{if(entry.controller.signal.aborted)throw new Error('Viewport request cancelled');return this.load(key,entry.controller.signal);}).then(value=>{
         if(entry.controller.signal.aborted||this.entries.get(key)!==entry)return;
         const weight=this.size(value);
-        if(Number.isFinite(weight)&&weight>=0&&weight<=this.budget){
+        if(Number.isFinite(weight)&&weight>0&&weight<=this.budget){
           while(this.cache.size&&(this.weight+weight>this.budget||this.cache.size>=20)){const first=this.cache.keys().next().value!;this.weight-=this.cache.get(first)!.weight;this.cache.delete(first);}
           this.cache.set(key,{value,weight});this.weight+=weight;
         }

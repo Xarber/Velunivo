@@ -1946,5 +1946,21 @@
   "Condition-matched comparisons": "Comparações em condições semelhantes",
   "Typical": "Típico",
   "comparable rides": "viagens comparáveis",
-  "Matched on available speed, distance, mode, terrain, charge, temperature and load. Weather and traffic may still differ.": "Comparação baseada nos dados disponíveis de velocidade, distância, modo, relevo, carga, temperatura e peso. Clima e trânsito podem variar."
+  "Matched on available speed, distance, mode, terrain, charge, temperature and load. Weather and traffic may still differ.": "Comparação baseada nos dados disponíveis de velocidade, distância, modo, relevo, carga, temperatura e peso. Clima e trânsito podem variar.",
+  "Back to Memories": "Voltar às memórias",
+  "Estimated arrival charge {percent}%": "Carga prevista à chegada: {percent}%",
+  "Estimated return usage {percent}%": "Consumo previsto no regresso: {percent}%",
+  "Estimated {percent}% usage": "Consumo previsto: {percent}%",
+  "Invalid compressed sync block": "Bloco comprimido de sincronização inválido",
+  "Invalid sync encoding": "Codificação de sincronização inválida",
+  "Memory locations could not be loaded.": "Não foi possível carregar as localizações da memória.",
+  "No media recorded": "Nenhum conteúdo multimédia gravado",
+  "Replay timeline": "Cronologia de reprodução",
+  "Unsupported sync encoding": "Codificação de sincronização não suportada",
+  "Route information": "Informações do percurso",
+  "Memories in motion": "Memórias em movimento",
+  "Replay riders and allowed recordings together on one timeline.": "Reproduz os participantes e as gravações permitidas numa única cronologia.",
+  "Lighter device transfers": "Transferências mais leves",
+  "Compressed blocks and reusable snapshots reduce repeated transfers.": "Os blocos comprimidos e reutilizáveis reduzem transferências repetidas.",
+  "Clearer routes, vehicle batteries and more reliable native map controls.": "Percursos mais claros, baterias dos veículos e controlos nativos do mapa mais fiáveis."
 }
