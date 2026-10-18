@@ -1,0 +1,3 @@
+/** Shared vector silhouettes, independent of emoji fonts and browser platform. */
+export const badgePaths:Record<string,string>={completion:'M3 17L1 6L7 10L12 2L17 10L23 6L21 17Z M4 21H20',level50:'M12 2L15 8L22 9L17 14L18 22L12 18L6 22L7 14L2 9L9 8Z',leaf:'M21 3C10 1 2 7 5 16C10 24 23 15 21 3Z M5 21L16 9',spark:'M12 1L15 9L23 12L15 15L12 23L9 15L1 12L9 9Z',crown:'M4 18L2 5L8 10L12 3L16 10L22 5L20 18Z M5 21H19'};
+export function badgeSvg(id:string,color:string){return `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path d="${badgePaths[id]??badgePaths.spark}" fill="${color}" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/></svg>`;}

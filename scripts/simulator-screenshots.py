@@ -260,7 +260,7 @@ def seed_gallery(udid):
     places = [dict(id='screenshot-duomo', name='Duomo', address='Piazza del Duomo, Milano, Italia', coordinate=[9.1901,45.4642]),
               dict(id='screenshot-park', name='Parco Sempione', address='Parco Sempione, Milano, Italia', coordinate=[9.1756,45.4738]),
               dict(id='screenshot-theatre', name='Teatro alla Scala', address='Piazza della Scala, Milano, Italia', coordinate=[9.1895,45.4675])]
-    entries = {'ui-language-v1':'en','welcome-seen-v1':'true', 'release-seen-v1':json.dumps([info['CFBundleShortVersionString']]),
+    entries = {'developer-sample-data':'true','developer-ghost-riders':'true','ui-language-v1':'en','welcome-seen-v1':'true', 'release-seen-v1':json.dumps([info['CFBundleShortVersionString']]),
                'vehicles-v1':json.dumps(dict(vehicles=[profile,bike],activeId=profile['id'])),
                'navigation-v1':json.dumps(dict(voice=False,volume='off',liveActivities=False,recordRides=False,tilted=os.environ.get('GITHUB_ACTIONS')!='true')),
                'places-v1':json.dumps(places),'route-library-ids-v2':json.dumps([route['id']]),

@@ -7,6 +7,7 @@ export const welcomePages=[
  {icon:'shield-checkmark-outline',title:'You stay in control',text:'Check road signs and local rules. Your records stay on your device until you export or share them.'},
 ] as const;
 export const releaseDetails=[
+ {version:'2.6.1',items:[{icon:'build-outline',title:'Fixes & Improvements',text:'Restored native arrows, clearer rider pins and reliable remembered battery estimates.'}]},
  {version:'2.6.0',items:[{icon:'analytics-outline',title:'Ride analytics',text:'Explore electrical energy, performance and telemetry quality with linked charts.'},{icon:'navigate-outline',title:'Fixes & Improvements',text:'Clearer map controls, retained rider pins, focused ride screens and unified sync progress.'}]},
  {version:'2.5.2',items:[{icon:'build-outline',title:'Fixes & Improvements',text:'More reliable native map controls, compact Live Activities, larger web storage and local reward previews.'}]},
  {version:'2.5.1',items:[{icon:'build-outline',title:'Fixes & Improvements',text:'A dedicated rewards collection, adaptive layouts and clearer Live Activity controls.'}]},

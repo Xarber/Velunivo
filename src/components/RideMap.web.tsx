@@ -1,3 +1,4 @@
+import {useGhostRiders} from '../services/sampleData';
 import {readBadges} from '../core/riderBadges';
 import {useDisplayCosmetics} from '../services/rewardTesting';
 import {useStore} from '../services/store';
@@ -17,7 +18,7 @@ import {t} from '../i18n/core';
 import Text from './LocalizedText';
 import { routeLayers, ROUTE_WIDTH } from '../core/routeLayers';
 import { useCameraTarget } from '../services/useCameraTarget';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import {View} from 'react-native';
@@ -25,10 +26,11 @@ import { Route, Coord } from '../core/types';
 import { routeBounds } from '../core/geo';
 import { serverUrl } from '../services/api';
 import { mapStyle } from './mapConfig';
-interface MapProps {bookmarks?:import('../core/recordings').RideBookmark[];mapBounds?:[number,number,number,number];scratchIndexOverride?:import('../core/scratchMap').ScratchIndex;scratchContext?:import('../services/useScratchLayer').ScratchContext;scratchHighlight?:string[];onScratchTile?(id:string):void;groupRiders?:import('../groups/model').GroupMember[]; areaSelection?:MapAreaSelection; transit?: boolean; trace?: Coord[][]; completedMeters?: number; overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; positionLabel?:string; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord,resolution?:number): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; planningStops?:import('../core/itinerary').RouteStop[]; offlineMap?: string; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
-export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit, positionLabel, planningStops, areaSelection,groupRiders=[],bookmarks=[],scratchContext,scratchHighlight,onScratchTile,mapBounds,scratchIndexOverride }: MapProps) {
+interface MapProps {showGhosts?:boolean;bookmarks?:import('../core/recordings').RideBookmark[];mapBounds?:[number,number,number,number];scratchIndexOverride?:import('../core/scratchMap').ScratchIndex;scratchContext?:import('../services/useScratchLayer').ScratchContext;scratchHighlight?:string[];onScratchTile?(id:string):void;groupRiders?:import('../groups/model').GroupMember[]; areaSelection?:MapAreaSelection; transit?: boolean; trace?: Coord[][]; completedMeters?: number; overview?: boolean; onPan?(): void; routes: Route[]; selected: Route | null; position?: Coord; positionLabel?:string; follow?: boolean; heading?: number; navigating?: boolean; followPadding?: MapProps['fitPadding']; tilted?: boolean; overviewRequest?: number; onPick?(p: Coord,resolution?:number): void; traffic?: boolean; startPoint?: Coord; endPoint?: Coord; planningStops?:import('../core/itinerary').RouteStop[]; offlineMap?: string; fitPadding?: { top: number; bottom: number; left: number; right: number }; }
+export default function RideMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit, positionLabel, planningStops, areaSelection,groupRiders=[],showGhosts=false,bookmarks=[],scratchContext,scratchHighlight,onScratchTile,mapBounds,scratchIndexOverride }: MapProps) {
  const {bounds:scratchBounds,update:setScratchBounds}=useScratchViewport(),scratch=useScratchLayer(scratchContext,scratchBounds,scratchHighlight,scratchIndexOverride);
  const transitLines=useTransitLines(!!transit,scratchBounds);
+ const ghosts=useGhostRiders(position),allRiders=useMemo(()=>showGhosts?[...groupRiders,...ghosts]:groupRiders,[showGhosts,groupRiders,ghosts]);
  const {navigationOptions:savedMapOptions}=useStore();const mapOptions=useDisplayCosmetics(savedMapOptions);const groupVideo=useGroupRide(),peoplePalette=usePalette();
   const div = useRef<HTMLDivElement>(null), map = useRef<maplibregl.Map | null>(null);
   const [loaded, setLoaded] = useState(false), [error, setError] = useState(false);
@@ -121,8 +123,8 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
   }, [startPoint, endPoint, loaded, selected, follow, fitPadding, tilted,scratchContext,peoplePalette.accentLight]);
   useEffect(()=>{const m=map.current;if(!m||!loaded)return;
     people.current??=new PeopleMarkers((element,position)=>new maplibregl.Marker({element,anchor:'bottom'}).setLngLat(position).addTo(m));
-    people.current.update(groupRiders.map(r=>r.id===groupVideo.selfId&&mapOptions!==savedMapOptions?{...r,locationPin:mapOptions.locationPin,profileBadges:readBadges(mapOptions.profileBadges,mapOptions.profileBadge)}:r),groupVideo.videoFeeds,groupVideo.videoEnabled,peoplePalette.accent,peoplePalette.dark,navigating?groupVideo.pinVideo:undefined);
-  },[mapOptions,savedMapOptions,groupVideo.selfId,groupRiders,loaded,groupVideo.videoEnabled,groupVideo.videoFeeds,peoplePalette.accent,peoplePalette.dark,groupVideo.pinVideo,navigating]);
+    people.current.update(allRiders.map(r=>r.id===groupVideo.selfId&&mapOptions!==savedMapOptions?{...r,locationPin:mapOptions.locationPin,profileBadges:readBadges(mapOptions.profileBadges,mapOptions.profileBadge)}:r),groupVideo.videoFeeds,groupVideo.videoEnabled,peoplePalette.accent,peoplePalette.dark,navigating?groupVideo.pinVideo:undefined);
+  },[mapOptions,savedMapOptions,groupVideo.selfId,allRiders,loaded,groupVideo.videoEnabled,groupVideo.videoFeeds,peoplePalette.accent,peoplePalette.dark,groupVideo.pinVideo,navigating]);
   useEffect(()=>{const m=map.current;if(!m||!loaded)return;const markers=bookmarks.slice(0,1000).map(bookmark=>{const el=document.createElement('div');el.setAttribute('aria-label',bookmark.name);el.title=bookmark.name;el.innerHTML='<svg width="28" height="32" viewBox="0 0 28 32"><path fill-rule="evenodd" d="M5 2H23V29L14 23L5 29Z" fill="'+peoplePalette.accentLight+'" stroke="white" stroke-width="2"/></svg>';return new maplibregl.Marker({element:el,anchor:'bottom'}).setLngLat(bookmark.coordinate).addTo(m);});return()=>markers.forEach(marker=>marker.remove());},[bookmarks,loaded,peoplePalette.accentLight]);
   return <View style={{ flex: 1, zIndex: 0 }}><ScratchWebGlow map={map} loaded={loaded} geometry={scratch.geometry} opacity={scratch.opacity} loop={scratch.glowLoop}/><style>{`.maplibregl-ctrl-top-right { top: 125px; right: 10px; } @media (min-width: 700px) { .maplibregl-ctrl-top-right { top: 70px; } }`}</style><div ref={div} style={{ position: 'absolute', inset: 0 }} />{error && <Text style={{ position: 'absolute', top: 8, left: 8, right: 8, padding: 8, backgroundColor: '#fff', color: '#536671', fontSize: 12 }}>Map resources unavailable. Route geometry and ETA remain available.</Text>}</View>;
 }

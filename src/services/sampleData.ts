@@ -1,0 +1,7 @@
+import {useEffect,useSyncExternalStore,useMemo,useState} from 'react';import AsyncStorage from '@react-native-async-storage/async-storage';import {Coord} from '../core/types';import {sampleRiders,sampleRoute} from '../core/sampleData';
+let state={enabled:false,ghosts:false},loaded=false;const listeners=new Set<()=>void>();function emit(){for(const fn of listeners)fn();}
+export function startSampleData(){if(loaded)return;loaded=true;void AsyncStorage.multiGet(['developer-sample-data','developer-ghost-riders']).then(values=>{state={enabled:values[0][1]==='true',ghosts:values[1][1]==='true'};emit();}).catch(()=>{});}
+export async function setSampleData(enabled:boolean){state={enabled,ghosts:enabled&&state.ghosts};emit();await AsyncStorage.setItem('developer-sample-data',String(enabled));}
+export async function setGhostRiders(ghosts:boolean){state={...state,ghosts};emit();await AsyncStorage.setItem('developer-ghost-riders',String(ghosts));}
+export function useSampleData(){useEffect(startSampleData,[]);return useSyncExternalStore(fn=>{listeners.add(fn);return()=>{listeners.delete(fn);};},()=>state,()=>state);}
+export function useGhostRiders(position?:Coord){const s=useSampleData(),[at]=useState(()=>Date.now()),x=position?.[0]??sampleRoute.coordinates[0][0],y=position?.[1]??sampleRoute.coordinates[0][1];return useMemo(()=>s.enabled&&s.ghosts?sampleRiders([x,y],at):[],[s.enabled,s.ghosts,x,y,at]);}

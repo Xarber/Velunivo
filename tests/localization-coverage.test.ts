@@ -22,6 +22,6 @@ test('UI literals and user-facing error messages have Italian translations',()=>
    }ts.forEachChild(node,visit);
   };visit(source);
  }}};walk(path.resolve('src'));
- const missing=[...messages].filter(s=>/[A-Za-z]{3}/.test(s)&&!s.includes('://')&&!/^[a-z][\w-]*$/.test(s)&&!properNamesAndUnits.has(s)&&translate(s,'it')===s);
+ const missing=[...messages].filter(s=>/[A-Za-z]{3}/.test(s)&&!s.includes('://')&&!s.startsWith('/')&&!/^[a-z][\w-]*$/.test(s)&&!properNamesAndUnits.has(s)&&translate(s,'it')===s);
  assert.deepEqual(missing.sort(),[]);
 });

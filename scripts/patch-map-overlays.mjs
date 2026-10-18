@@ -31,3 +31,25 @@ patch('AIRMapMarker.m','- (void)setOpacity:(double)opacity',`- (void)setVelunivo
 - (void)setOpacity:(double)opacity`);
 
 patch('AIRMapMarker.m','#import \"AIRMapMarker.h\"','#import \"AIRMapMarker.h\"\n#include <math.h>');
+// MapKit camera centering does not consistently account for asymmetric margins on resize.
+// Resolve the desired screen point with MapKit's projection, then animate once from the original camera.
+patch('AIRMapManager.m','[AIRMap animateWithDuration:duration/1000 animations:^{',`UIEdgeInsets padding = mapView.mapPadding;
+            CGRect available = UIEdgeInsetsInsetRect(mapView.bounds, padding);
+            if (available.size.width > 44 && available.size.height > 44 &&
+                (padding.left != padding.right || padding.top != padding.bottom)) {
+                MKMapCamera *originalCamera = [mapView.camera copy];
+                camera = [camera copy];
+                CLLocationCoordinate2D anchor = camera.centerCoordinate;
+                CGPoint target = CGPointMake(CGRectGetMidX(available), CGRectGetMidY(available));
+                for (NSInteger pass = 0; pass < 2; pass++) {
+                    [mapView setCamera:camera animated:NO];
+                    [mapView layoutIfNeeded];
+                    CGPoint actual = [mapView convertCoordinate:anchor toPointToView:mapView];
+                    CGPoint center = [mapView convertCoordinate:camera.centerCoordinate toPointToView:mapView];
+                    CLLocationCoordinate2D shifted = [mapView convertPoint:CGPointMake(center.x + actual.x - target.x, center.y + actual.y - target.y) toCoordinateFromView:mapView];
+                    if (!CLLocationCoordinate2DIsValid(shifted)) break;
+                    camera.centerCoordinate = shifted;
+                }
+                [mapView setCamera:originalCamera animated:NO];
+            }
+            [AIRMap animateWithDuration:duration/1000 animations:^{`);
