@@ -28,3 +28,9 @@
 ## Validation checkpoint
 - Earlier stable 2.6.1 build completed; gallery workflows reported success by reusing old captures, not fresh capture. Android phone capture failed at the sample-data switch. These remain under investigation.
 - Short tests, CI compilation and actual Duo target checks will be recorded before release completion. No local native compilation or SDK download.
+
+## Follow-up validation and capture repairs
+- Chromium and isolated WebKit passed compact vehicle battery layout, last reading in the recording picker, vector badge pins, multi-rider Memories replay/seek/pause, mobile bounds and JavaScript-error checks.
+- Native Memories uses one receiver-only media WebView for all synchronized tracks, avoiding a browser process per rider. Media seek waits for metadata; source documents remain stable across clock ticks.
+- Screenshot capture finds only its owned app's data container through container metadata and falls back to CoreDevice installation after a Simulator install timeout. Android capture scrolls and verifies developer/sample switches instead of assuming an obscured tap succeeded.
+- Lint and TypeScript validation passed; 478 application tests passed. Native compilation and fresh simulator/gallery checks are still pending; browser results do not establish native behavior or real scooter/media interoperability.

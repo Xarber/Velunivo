@@ -76,26 +76,35 @@ def find_control(label,elements):
     matches=[e for e in elements if label in (e.get('text',''),e.get('content-desc',''))]
     return next((e for e in matches if e.get('checkable')=='true'),next((e for e in matches if e.get('clickable')=='true'),next(iter(matches),None)))
 
+def reachable_control(label,timeout=25):
+    deadline=time.monotonic()+timeout
+    while time.monotonic()<deadline:
+        xml,elements=nodes();ROOT.joinpath(PREFIX+'-developer.xml').write_text(xml)
+        item=find_control(label,elements)
+        size=adb('shell','wm','size');w,h=map(int,re.findall(r'(\d+)x(\d+)',size)[-1])
+        bounds=list(map(int,re.findall(r'\d+',item.get('bounds','')))) if item is not None else []
+        if len(bounds)==4 and bounds[3]>bounds[1] and bounds[1]>40 and bounds[3]<h*.84:return item
+        adb('shell','input','swipe',str(w//2),str(h*4//5),str(w//2),str(h//3),'250');time.sleep(.5)
+    raise RuntimeError('Native developer control is not reachable: '+label)
+
 def enable_sample_data():
-    # Operate the existing developer controls on this disposable CI emulator only.
-    # No root, private app storage injection, release-only backdoor or extra APK build.
     launch_page('/settings');wait_for_page('settings')
-    version=None
-    for _ in range(10):
-        _,elements=nodes();version=find_control('App version',elements)
-        if version is not None:break
-        size=adb('shell','wm','size');w,h=map(int,re.findall(r'(\d+)x(\d+)',size)[-1]);adb('shell','input','swipe',str(w//2),str(h*4//5),str(w//2),str(h//4),'300')
-    if version is None:raise RuntimeError('Could not reveal developer screenshot fixtures')
+    version=reachable_control('App version')
     for _ in range(3):tap_node(version)
-    time.sleep(1);_,elements=nodes();toggle=find_control('Developer Mode',elements)
-    if toggle is None:raise RuntimeError('Developer fixture switch missing')
-    if toggle.get('checked')!='true':tap_node(toggle)
-    launch_page('/settings/developer-simulation');time.sleep(3);_,elements=nodes();toggle=find_control('Show sample data',elements)
-    if toggle is None:raise RuntimeError('Sample data switch missing')
-    if toggle.get('checked')!='true':tap_node(toggle)
-    time.sleep(1);_,elements=nodes();button=find_control('Show ghost riders',elements)
-    if button is not None:tap_node(button)
     time.sleep(1)
+    # The revealed controls sit below the version. Scroll them above the native
+    # tab bar before tapping, and verify the actual Switch state.
+    toggle=reachable_control('Developer Mode')
+    if toggle.get('checked')!='true':tap_node(toggle)
+    time.sleep(.5);toggle=reachable_control('Developer Mode')
+    if toggle.get('checked')!='true':raise RuntimeError('Developer Mode did not enable')
+    tap_node(reachable_control('Developer Options'));time.sleep(1)
+    tap_node(reachable_control('Ride simulation'));time.sleep(1)
+    toggle=reachable_control('Show sample data')
+    if toggle.get('checked')!='true':tap_node(toggle)
+    time.sleep(.5);toggle=reachable_control('Show sample data')
+    if toggle.get('checked')!='true':raise RuntimeError('Sample data did not enable')
+    tap_node(reachable_control('Show ghost riders'));time.sleep(.5)
 
 def main():
     ROOT.mkdir(exist_ok=True)

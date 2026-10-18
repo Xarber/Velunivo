@@ -324,3 +324,13 @@ class CaptureOrientationTests(unittest.TestCase):
                 commands.assert_not_called()
             info.write_bytes(plistlib.dumps({'CFBundleShortVersionString':'2.4.1'}))
             with patch.object(sim,'ARTIFACTS',root),self.assertRaises(RuntimeError):sim.configure_ipad_capture_orientation()
+
+class GalleryContainerTests(unittest.TestCase):
+    def test_owned_device_registration_can_resolve_container_without_xpc(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);folder=root/'Library/Developer/CoreSimulator/Devices/qa-device/data/Containers/Data/Application/app-container';folder.mkdir(parents=True)
+            import plistlib
+            (folder/'.com.apple.mobile_container_manager.metadata.plist').write_bytes(plistlib.dumps({'MCMMetadataIdentifier':sim.BUNDLE}))
+            with patch.object(sim.Path,'home',return_value=root),patch.object(sim,'run') as run:
+                self.assertEqual(sim.gallery_container('qa-device'),folder)
+                run.assert_not_called()

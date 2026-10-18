@@ -1,0 +1,2 @@
+import React from 'react';import {View} from 'react-native';import MemoryMediaPlayer,{MemoryPlayback} from './MemoryMediaPlayer';import {MemoryMedia} from '../core/memories';
+export default function MemoryTrackPlayback({media,playback}:{media:MemoryMedia[];playback:MemoryPlayback}){return <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>{media.map(m=><View key={m.id} style={{width:m.mime.startsWith('video/')?'48%':1}}><MemoryMediaPlayer media={m} playback={playback}/></View>)}</View>;}

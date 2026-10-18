@@ -139,7 +139,12 @@ def boot_and_install(udid, family):
     if os.environ.get('VELUNIVO_CAPTURE_INSTALLER')=='devicehub':
         run('xcrun','devicectl','--timeout','90','device','install','app','--device',udid,'artifacts/Velunivo-simulator.app',timeout=95)
     else:
-        run('xcrun', 'simctl', 'install', udid, 'artifacts/Velunivo-simulator.app', timeout=90)
+        try:
+            run('xcrun', 'simctl', 'install', udid, 'artifacts/Velunivo-simulator.app', timeout=90)
+        except subprocess.TimeoutExpired:
+            # Do not discard a warm OS and restart its first-boot indexing. The
+            # supported CoreDevice installer can finish the same registration.
+            run('xcrun','devicectl','--timeout','90','device','install','app','--device',udid,'artifacts/Velunivo-simulator.app',timeout=95)
 
 
 def diagnostics(udid, family):
@@ -244,12 +249,24 @@ def verify_landscape(path):
         raise RuntimeError(f'iPad screenshot must be landscape; got {width} x {height}')
 
 
+def gallery_container(udid):
+    # Read only this capture device's registration metadata. This avoids an XPC
+    # get_app_container call stalling while first-boot services are still settling.
+    base=Path.home()/'Library/Developer/CoreSimulator/Devices'/udid/'data/Containers/Data/Application'
+    if base.is_dir():
+        for metadata in base.glob('*/.com.apple.mobile_container_manager.metadata.plist'):
+            try:
+                if plistlib.loads(metadata.read_bytes()).get('MCMMetadataIdentifier')==BUNDLE:return metadata.parent
+            except (OSError,ValueError,plistlib.InvalidFileException):pass
+    return Path(run('xcrun','simctl','get_app_container',udid,BUNDLE,'data',timeout=60))
+
+
 def seed_gallery(udid):
     app = ARTIFACTS / 'Velunivo-simulator.app'
     info = plistlib.loads((app / 'Info.plist').read_bytes())
     if not info.get('VelunivoCaptureFixtures'):
         raise RuntimeError('Gallery needs a Simulator QA build with EXPO_PUBLIC_CAPTURE_FIXTURES=1')
-    container = Path(run('xcrun', 'simctl', 'get_app_container', udid, BUNDLE, 'data', timeout=60))
+    container = gallery_container(udid)
     directory = container / 'Library/Application Support' / BUNDLE / 'RCTAsyncLocalStorage_V1'
     directory.mkdir(parents=True, exist_ok=True)
     route = json.loads((Path(__file__).parent / 'screenshot-route.json').read_text())

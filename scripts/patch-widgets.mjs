@@ -31,8 +31,8 @@ export function patchActivityPriority(source) {
 export function applyPatch(directory=root) {
  const folder=path.join(directory,'node_modules/expo-widgets');
  const version=JSON.parse(fs.readFileSync(path.join(folder,'package.json'),'utf8')).version;
- for(const file of ['LiveActivityFactory.swift','LiveActivity.swift']){const target=path.join(folder,'ios',file);if(fs.existsSync(target)){const before=fs.readFileSync(target,'utf8'),after=patchActivityPriority(before);fs.writeFileSync(target,after);}}
  if(version!=='57.0.23')throw new Error(`Review native activity patch for Expo Widgets ${version}`);
+ for(const file of ['LiveActivityFactory.swift','LiveActivity.swift']){const target=path.join(folder,'ios',file);if(fs.existsSync(target)){const before=fs.readFileSync(target,'utf8'),after=patchActivityPriority(before);fs.writeFileSync(target,after);}}
  const widgetPath=path.join(folder,'ios/Widgets/WidgetLiveActivity.swift'),utilsPath=path.join(folder,'ios/Widgets/Utils.swift');
  const views=fs.readFileSync(path.join(directory,'native/VelunivoActivityViews.swift'),'utf8');
  let widget=fs.readFileSync(widgetPath,'utf8'),utils=fs.readFileSync(utilsPath,'utf8');
