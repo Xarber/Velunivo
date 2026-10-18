@@ -1,4 +1,4 @@
-import {markerOpacity} from '../core/mapFreshness';
+import {useMarkerOpacity} from '../services/useMarkerOpacity';
 import {navigationArrowAssets} from './navigationArrowAssets';
 import {useGhostRiders} from '../services/sampleData';
 import {useDisplayCosmetics} from '../services/rewardTesting';
@@ -31,6 +31,7 @@ export default function RideMap(props: MapProps & { offlineMap?: string }) {
   return <DeviceMap {...props} />;
 }
 function DeviceMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit,positionLabel,positionAt,planningStops,areaSelection,groupRiders=[],showGhosts=false,bookmarks=[],scratchContext,scratchHighlight,onScratchTile,mapBounds,scratchIndexOverride }: MapProps) {
+ const positionOpacity=useMarkerOpacity(positionAt,undefined,positionLabel?.includes('Last known')?.45:1);
   const p=usePalette(),cosmetic=useDisplayCosmetics(useStore().navigationOptions);
   const ghosts=useGhostRiders(showGhosts?position??startPoint:undefined),allRiders=showGhosts?[...groupRiders,...ghosts]:groupRiders;
   const group=useGroupRide(),{bounds:scratchBounds,update:setScratchBounds}=useScratchViewport(),scratch=useScratchLayer(scratchContext,scratchBounds,scratchHighlight,scratchIndexOverride);
@@ -64,7 +65,7 @@ function DeviceMap({ routes, selected, position, follow, onPick, traffic, startP
     {(planningStops??selected?.waypoints??[]).filter(s=>s.coordinate.every(Number.isFinite)).map((stop,i)=><Marker key={`stop-${i}`} coordinate={point(stop.coordinate)} title={`${t(`Stop ${i+1}`)} · ${stop.label}`} zIndex={100}><View style={{width:30,height:30,alignItems:'center',justifyContent:'center',backgroundColor:p.accentLight,borderWidth:3,borderColor:'#FFFFFF',borderRadius:15}}><Text style={{color:'#FFFFFF',fontWeight:'800'}}>{i+1}</Text></View></Marker>)}
     {bookmarks.map(b=><Marker key={b.id} coordinate={point(b.coordinate)} title={b.name} zIndex={800} anchor={{x:.5,y:1}}><BookmarkPin/></Marker>)}
     {allRiders.filter(r=>r.position).map(r=><Marker key={r.id} coordinate={point(r.position!)} title={r.name} onPress={e=>{e.stopPropagation();if(navigating)group.pinVideo(r.id);}} zIndex={900} anchor={{x:.5,y:1}}><View collapsable={false} style={{width:66,height:70,alignItems:'center'}}><GroupPin rider={r} interactive={false}/></View></Marker>)}
-    {position && <Marker ref={positionMarker} tracksViewChanges identifier={navigating?"velunivo-navigation":undefined} rotation={navigating?heading:0} key={String(navigating)+":"+cosmetic.navigationArrow+":"+cosmetic.locationPin} coordinate={point(position)} title={t(positionLabel || "Your position")} image={navigating?navigationArrowAssets[cosmetic.navigationArrow]:undefined} opacity={positionAt===undefined?(positionLabel?.includes('Last known')?.45:1):markerOpacity(positionAt,undefined)} zIndex={1000} anchor={{ x: .5, y: .5 }}>{!navigating&&<PositionArrow onReady={()=>positionMarker.current?.redraw()} navigating={false} rotation={rotation} />}</Marker>}
+    {position && <Marker ref={positionMarker} tracksViewChanges identifier={navigating?"velunivo-navigation":undefined} rotation={navigating?heading:0} key={String(navigating)+":"+cosmetic.navigationArrow+":"+cosmetic.locationPin} coordinate={point(position)} title={t(positionLabel || "Your position")} image={navigating?navigationArrowAssets[cosmetic.navigationArrow]:undefined} opacity={positionOpacity} zIndex={1000} anchor={{ x: .5, y: .5 }}>{!navigating&&<PositionArrow onReady={()=>positionMarker.current?.redraw()} navigating={false} rotation={rotation} />}</Marker>}
 
   </MapView>;
 }
