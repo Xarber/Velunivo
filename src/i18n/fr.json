@@ -1964,5 +1964,14 @@
   "Compressed blocks and reusable snapshots reduce repeated transfers.": "Les blocs compressés et réutilisables réduisent les transferts répétés.",
   "Clearer routes, vehicle batteries and more reliable native map controls.": "Des itinéraires plus clairs, les batteries des véhicules et des commandes natives de carte plus fiables.",
   "Waiting for the other device to prepare data…": "En attente de la préparation des données sur l’autre appareil…",
-  "More reliable device sync, cleaner landscape controls and smoother menus.": "Une synchronisation plus fiable, des commandes plus claires en paysage et des menus plus fluides."
+  "More reliable device sync, cleaner landscape controls and smoother menus.": "Une synchronisation plus fiable, des commandes plus claires en paysage et des menus plus fluides.",
+  "Snapshot messages reach paired devices, with bounded transfers and clearer progress.": "Les appareils associés reçoivent les messages de synchronisation, avec des transferts maîtrisés et une progression plus claire.",
+  "Map continuity": "Continuité de la carte",
+  "Remember your last map position and keep completed transit lines while loading nearby areas.": "La carte mémorise la dernière position et conserve les lignes de transport chargées pendant la recherche des lignes voisines.",
+  "Landscape controls": "Commandes en paysage",
+  "Compact ride panels, native toolbar actions and landscape-friendly replays and popups.": "Des panneaux de trajet compacts, des commandes natives et des relectures et fenêtres adaptées au paysage.",
+  "Motion refinements": "Animations plus fluides",
+  "Lighter glass surfaces, responsive gestures and brief scratch reveals.": "Des effets de verre plus légers, des gestes réactifs et de brèves animations des zones explorées.",
+  "Versioned release notes open on web; diagnostics and GPX export stay in Developer Mode.": "Les notes de chaque version s’ouvrent sur le web ; le diagnostic et l’export GPX restent en mode développeur.",
+  "Device transfer": "Transfert entre appareils"
 }

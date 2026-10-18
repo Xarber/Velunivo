@@ -1964,5 +1964,14 @@
   "Compressed blocks and reusable snapshots reduce repeated transfers.": "Komprimierte, wiederverwendbare Blöcke reduzieren wiederholte Übertragungen.",
   "Clearer routes, vehicle batteries and more reliable native map controls.": "Übersichtlichere Routen, Fahrzeugakkus und zuverlässigere native Kartensteuerung.",
   "Waiting for the other device to prepare data…": "Das andere Gerät bereitet die Daten vor…",
-  "More reliable device sync, cleaner landscape controls and smoother menus.": "Zuverlässigere Synchronisierung, übersichtlichere Steuerelemente im Querformat und flüssigere Menüs."
+  "More reliable device sync, cleaner landscape controls and smoother menus.": "Zuverlässigere Synchronisierung, übersichtlichere Steuerelemente im Querformat und flüssigere Menüs.",
+  "Snapshot messages reach paired devices, with bounded transfers and clearer progress.": "Gekoppelte Geräte empfangen die Synchronisierungsnachrichten; Übertragungen und Fortschritt sind zuverlässiger nachvollziehbar.",
+  "Map continuity": "Lückenlosere Kartenansicht",
+  "Remember your last map position and keep completed transit lines while loading nearby areas.": "Die Karte merkt sich die letzte Position und behält geladene Verkehrslinien bei, während weitere Linien geladen werden.",
+  "Landscape controls": "Steuerung im Querformat",
+  "Compact ride panels, native toolbar actions and landscape-friendly replays and popups.": "Kompakte Fahrtansichten, native Bedienelemente sowie Wiedergaben und Dialoge für das Querformat.",
+  "Motion refinements": "Flüssigere Animationen",
+  "Lighter glass surfaces, responsive gestures and brief scratch reveals.": "Leichtere Glaseffekte, direkte Gesten und kurze Animationen beim Erkunden neuer Gebiete.",
+  "Versioned release notes open on web; diagnostics and GPX export stay in Developer Mode.": "Versionshinweise öffnen sich auch im Web; Diagnose und GPX-Export bleiben im Entwicklermodus.",
+  "Device transfer": "Geräteübertragung"
 }

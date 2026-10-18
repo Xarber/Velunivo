@@ -1964,5 +1964,14 @@
   "Compressed blocks and reusable snapshots reduce repeated transfers.": "Os blocos comprimidos e reutilizáveis reduzem transferências repetidas.",
   "Clearer routes, vehicle batteries and more reliable native map controls.": "Percursos mais claros, baterias dos veículos e controlos nativos do mapa mais fiáveis.",
   "Waiting for the other device to prepare data…": "Aguardando o outro dispositivo preparar os dados…",
-  "More reliable device sync, cleaner landscape controls and smoother menus.": "Sincronização mais confiável, controles mais organizados na horizontal e menus mais fluidos."
+  "More reliable device sync, cleaner landscape controls and smoother menus.": "Sincronização mais confiável, controles mais organizados na horizontal e menus mais fluidos.",
+  "Snapshot messages reach paired devices, with bounded transfers and clearer progress.": "Os dispositivos pareados recebem as mensagens de sincronização, com transferências controladas e progresso mais claro.",
+  "Map continuity": "Continuidade do mapa",
+  "Remember your last map position and keep completed transit lines while loading nearby areas.": "O mapa lembra a última posição e mantém as linhas de transporte já carregadas enquanto busca as próximas.",
+  "Landscape controls": "Controles na horizontal",
+  "Compact ride panels, native toolbar actions and landscape-friendly replays and popups.": "Painéis de viagem compactos, controles nativos e reproduções e janelas adaptadas à horizontal.",
+  "Motion refinements": "Animações mais fluidas",
+  "Lighter glass surfaces, responsive gestures and brief scratch reveals.": "Efeitos de vidro mais leves, gestos rápidos e animações breves das áreas exploradas.",
+  "Versioned release notes open on web; diagnostics and GPX export stay in Developer Mode.": "As notas de cada versão abrem na web; o diagnóstico e a exportação GPX continuam no modo de desenvolvedor.",
+  "Device transfer": "Transferência entre dispositivos"
 }
