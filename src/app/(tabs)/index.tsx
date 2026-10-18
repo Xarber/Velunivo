@@ -83,7 +83,7 @@ export default function Explore() {
   const focused=useIsFocused();
   const p = usePalette(), { height, width } = useWindowDimensions();
 
-  const landscape=Platform.OS!=='web'&&width>height&&height<600;const wide = width >= 700, insets = useSafeAreaInsets();
+  const landscape=Platform.OS!=='web'&&width>height;const wide = width >= 700, insets = useSafeAreaInsets();
   const [panelOpen, setPanelOpen] = useState(false);
   const [plannerDragging,setPlannerDragging]=useState(false);
   const labelRequests=useRef(new Map<string,number>());

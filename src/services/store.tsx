@@ -58,7 +58,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
   async function save(route: Route) { setSaved(await saveRoute(route)); }
   async function remove(id: string) { setSaved(await removeRoute(id)); }
-  useEffect(()=>{setRideLock(vehicleLocked);return()=>setRideLock(false);},[vehicleLocked]);
+  // lockVehicle is the single writer; a state-effect cleanup would reset the ride owner on every lock change.
+  useEffect(()=>()=>setRideLock(false),[]);
 
   const editPlaces=(change:React.SetStateAction<SavedPlace[]>)=>{writable.current.places=true;setPlaces(change);};
   const editGarage=(change:React.SetStateAction<typeof garage>)=>{writable.current.garage=true;setGarage(change);};

@@ -4,6 +4,50 @@ public class VelunivoAppearanceModule: Module {
  private weak var mapTabs: UITabBarController?
  private var mapTools: UIStackView?
  private var toolSignature = ""
+ private weak var toolNavigation: UINavigationController?
+ private weak var toolOwner: UIViewController?
+ private var previousToolbarItems: [UIBarButtonItem]?
+ private var previousToolbarHidden = true
+ private var railSignature = ""
+ private func activeWindow() -> UIWindow? {
+  let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+  return scenes.filter { $0.activationState == .foregroundActive }.flatMap { $0.windows }.first { $0.isKeyWindow }
+   ?? scenes.flatMap { $0.windows }.first { $0.isKeyWindow }
+ }
+ private func navigationController(_ root: UIViewController?) -> UINavigationController? {
+  guard let root = root else { return nil }
+  if let tabs = root as? UITabBarController { return navigationController(tabs.selectedViewController) ?? tabs.navigationController }
+  if let nav = root as? UINavigationController { return navigationController(nav.visibleViewController) ?? nav }
+  for child in root.children { if let nav = navigationController(child) { return nav } }
+  return nil
+ }
+ private func clearRailTools() {
+  if let nav = toolNavigation, let owner = toolOwner {
+   owner.toolbarItems = previousToolbarItems
+   nav.setToolbarHidden(previousToolbarHidden, animated: false)
+  }
+  toolNavigation = nil; toolOwner = nil; previousToolbarItems = nil; railSignature = ""
+ }
+ private func railTools(_ rows: [[String: String]], color: String, root: UIViewController?, tabs: UITabBarController) -> Bool {
+  // A Duo vertical tab rail is not UITabBarController.Sidebar. Real toolbar items
+  // belong to its navigation controller so UIKit chooses their adaptive placement.
+  let bar = tabs.tabBar
+  guard !rows.isEmpty, !bar.isHidden, bar.bounds.height > bar.bounds.width,
+        let nav = navigationController(root), let owner = nav.topViewController else { clearRailTools(); return false }
+  let signature = rows.description + color
+  if toolNavigation === nav && toolOwner === owner && railSignature == signature { return true }
+  clearRailTools()
+  toolNavigation = nav; toolOwner = owner; previousToolbarItems = owner.toolbarItems; previousToolbarHidden = nav.isToolbarHidden
+  var value: UInt64 = 0; Scanner(string: color.replacingOccurrences(of: "#", with: "")).scanHexInt64(&value)
+  nav.toolbar.tintColor = UIColor(red: CGFloat((value >> 16) & 255)/255, green: CGFloat((value >> 8) & 255)/255, blue: CGFloat(value & 255)/255, alpha: 1)
+  owner.toolbarItems = rows.prefix(5).compactMap { row in
+   guard let id = row["id"], let symbol = row["symbol"] else { return nil }
+   let item = UIBarButtonItem(image: UIImage(systemName: symbol), primaryAction: UIAction { [weak self] _ in self?.sendEvent("onMapAction", ["id": id]) })
+   item.accessibilityLabel = row["label"]; return item
+  }
+  nav.setToolbarHidden(false, animated: false); railSignature = signature
+  return true
+ }
  private func tabController(_ root: UIViewController?) -> UITabBarController? {
   guard let root = root else { return nil }
   if let tabs = root as? UITabBarController { return tabs }
@@ -15,15 +59,16 @@ public class VelunivoAppearanceModule: Module {
   Events("onMapAction")
   AsyncFunction("setMapSidebarActions") { (rows: [[String: String]], color: String) -> Bool in
    guard #available(iOS 18.0, *) else { return false }
-   let root = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.flatMap { $0.windows }.first { $0.isKeyWindow }?.rootViewController
+   let root = self.activeWindow()?.rootViewController
    guard let tabs = self.tabController(root) else { return false }
    let available: Bool
    if #available(iOS 27.0, *) { available = tabs.sidebar.isAvailable } else { available = tabs.mode == .tabSidebar }
    let visible = available && !tabs.sidebar.isHidden
    if rows.isEmpty || !visible {
     if tabs.sidebar.bottomBarView === self.mapTools { tabs.sidebar.bottomBarView = nil }
-    self.mapTools = nil; self.toolSignature = ""; return false
+    self.mapTools = nil; self.toolSignature = ""; return self.railTools(rows, color: color, root: root, tabs: tabs)
    }
+   self.clearRailTools()
    let signature = rows.description + color
    if self.mapTabs === tabs && self.toolSignature == signature && tabs.sidebar.bottomBarView === self.mapTools { return true }
    if let old = self.mapTabs, old !== tabs, old.sidebar.bottomBarView === self.mapTools { old.sidebar.bottomBarView = nil }
@@ -43,7 +88,7 @@ public class VelunivoAppearanceModule: Module {
    return true
   }.runOnQueue(.main)
   AsyncFunction("mapChrome") { () -> [String: Double] in
-   guard let window = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).flatMap({ $0.windows }).first(where: { $0.isKeyWindow }) else { return [:] }
+   guard let window = self.activeWindow() else { return [:] }
    func findBar(_ view: UIView) -> UITabBar? {
     if let bar = view as? UITabBar, !bar.isHidden, bar.alpha > 0 { return bar }
     for child in view.subviews { if let bar = findBar(child) { return bar } }

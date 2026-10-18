@@ -41,3 +41,10 @@ Sensor reliability additionally rejects wrong value types (for example text spee
 ### Analytics completion
 
 Condition-matched comparison cards now report robust medians for energy, battery use per kilometre, acceleration benchmarks, voltage sag, speed/distance calibration and interruptions per hour. Each metric needs five independently usable peer rides; unavailable values are omitted. Recommendations include smoother acceleration only when fresh vehicle speed and electrical coverage support repeated acceleration's measured energy share, repairing telemetry coverage before comparing incomplete energy, and reviewing conditions before trusting a longer range after a consumption outlier. Comparisons remain observational rather than mechanical diagnoses. Automated total: 470 app tests.
+
+### Duo target testing follow-up
+- The existing Duo renders to active display 3; default display-1 captures were black. Real Device Hub rotation is required for the Duo (the CLI can rotate the inactive display).
+- Candidate e89d799 visibly renders the previously missing native chevron, five nearby ghost riders, centered halo faces, and stacked badges. Portrait bottom controls are compact and centered; the collapsed sheet is anchored at the bottom.
+- Actual recording → Settings testing exposed an additional bug: Store's redundant lock-effect cleanup erased the recording return target when the lock changed. Removed that duplicate writer; lockVehicle remains authoritative. Native retest pending the next CI artifact.
+- Unfolded Duo landscape was excluded by an obsolete height<600 gate. Landscape padding/speed placement now applies to every native landscape viewport.
+- Apple's Duo documentation distinguishes vertical toolbar/tab rails from the iPad sidebar. Added real UIBarButtonItem toolbar ownership when the native tab bar is vertical, restoring previous items/visibility on cleanup; the existing sidebar path remains for actual sidebars. Requires CI compilation and Duo verification.
