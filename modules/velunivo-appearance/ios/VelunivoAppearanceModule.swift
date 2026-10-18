@@ -44,6 +44,13 @@ public class VelunivoAppearanceModule: Module {
   tabs.bottomAccessory = accessory
   return true
  }
+ private func tabController(_ root: UIViewController?) -> UITabBarController? {
+  guard let root else { return nil }
+  if let tabs = root as? UITabBarController { return tabs }
+  if let presented = root.presentedViewController, let tabs = tabController(presented) { return tabs }
+  for child in root.children { if let tabs = tabController(child) { return tabs } }
+  return nil
+ }
  public func definition() -> ModuleDefinition {
   Name("VelunivoAppearance")
   Events("onMapAction")
