@@ -140,7 +140,7 @@ jobs:
       contents: write
       actions: read
     concurrency:
-      group: android-gallery-publication
+      group: native-onboarding-publication
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4

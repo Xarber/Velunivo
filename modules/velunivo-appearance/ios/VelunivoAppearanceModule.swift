@@ -22,8 +22,8 @@ public class VelunivoAppearanceModule: Module {
   return nil
  }
  private func clearRailTools() {
-  if let nav = toolNavigation, let owner = toolOwner {
-   owner.toolbarItems = previousToolbarItems
+  if let nav = toolNavigation {
+   toolOwner?.toolbarItems = previousToolbarItems
    nav.setToolbarHidden(previousToolbarHidden, animated: false)
   }
   toolNavigation = nil; toolOwner = nil; previousToolbarItems = nil; railSignature = ""
@@ -32,7 +32,8 @@ public class VelunivoAppearanceModule: Module {
   // A Duo vertical tab rail is not UITabBarController.Sidebar. Real toolbar items
   // belong to its navigation controller so UIKit chooses their adaptive placement.
   let bar = tabs.tabBar
-  guard !rows.isEmpty, !bar.isHidden, bar.bounds.height > bar.bounds.width,
+  let rail = bar.convert(bar.bounds, to: bar.window)
+  guard !rows.isEmpty, bar.window != nil, !bar.isHidden, rail.height > rail.width,
         let nav = navigationController(root), let owner = nav.topViewController else { clearRailTools(); return false }
   let signature = rows.description + color
   if toolNavigation === nav && toolOwner === owner && railSignature == signature { return true }

@@ -130,3 +130,36 @@ jobs:
           gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --pattern build_info.json --dir artifacts
           python3 scripts/update-source.py --repo "$GITHUB_REPOSITORY" --tag "$RELEASE_TAG" --assets artifacts --existing work/source/apps.json --output work/source/apps.json
           python3 scripts/publish-source.py --repo "$GITHUB_REPOSITORY" --source work/source
+  stage-preview:
+    needs: [identify, publish]
+    runs-on: ubuntu-latest
+    concurrency:
+      group: native-onboarding-publication
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: gallery-native-*
+          path: artifacts
+          merge-multiple: true
+      - name: Refresh welcome previews from verified native captures
+        env:
+          BUILD_RUN: ${{ needs.identify.outputs.run }}
+        run: |
+          # Validation rejects partial/reused/historical captures without changing previews.
+          if ! python3 scripts/stage-ios-screenshots.py artifacts --build-run "$BUILD_RUN"; then
+            echo '::notice::Keeping existing welcome previews; no matching complete native pair.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/onboarding/iphone-*.png assets/onboarding/ipad-*.png assets/onboarding/provenance.json
+          if git diff --cached --quiet; then exit 0; fi
+          git -c commit.gpgsign=false commit --no-gpg-sign -m 'docs: refresh verified iOS welcome previews [skip ci]'
+          git push origin HEAD:main
