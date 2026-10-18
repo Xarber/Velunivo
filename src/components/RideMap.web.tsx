@@ -93,7 +93,8 @@ export default function RideMap({ routes, selected, position, follow, onPick, tr
     if (!position) { user.current?.remove(); user.current = null; return; }
     if (!user.current) { const element = document.createElement('div'); element.style.cssText = 'width:42px;height:42px;z-index:20;filter:drop-shadow(0 2px 4px #0005);pointer-events:none'; user.current = new maplibregl.Marker({ element, rotationAlignment: 'map', pitchAlignment: 'viewport' }).setLngLat(position).addTo(m); }
     const element = user.current.getElement(); element.setAttribute('aria-label', positionLabel || (navigating ? 'Navigation position arrow' : 'Current position'));
-    element.style.opacity=String(positionOpacity);
+    // MapLibre owns the marker element opacity and overwrites direct CSS during camera updates.
+    user.current.setOpacity(positionOpacity);
     element.innerHTML = navigating ? '<svg viewBox="0 0 40 40" width="42" height="42"><path fill-rule="evenodd" d="'+arrowPath(mapOptions.navigationArrow)+'" fill="#287CF5" stroke="white" stroke-width="3" stroke-linejoin="round"/></svg>' : '<svg viewBox="0 0 40 40" width="42" height="42">'+(mapOptions.locationPin==='halo'?'<circle cx="20" cy="20" r="16" fill="#287CF530"/>':'')+(mapOptions.locationPin==='diamond'?'<path d="M20 7L33 20L20 33L7 20Z" fill="#287CF5" stroke="white" stroke-width="3"/>':'<circle cx="20" cy="20" r="9" fill="#287CF5" stroke="white" stroke-width="3"/>')+'</svg>';
     user.current.setLngLat(position).setRotation(navigating ? heading : 0);
 
