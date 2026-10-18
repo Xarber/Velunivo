@@ -1962,5 +1962,7 @@
   "Replay riders and allowed recordings together on one timeline.": "Fahrer und freigegebene Aufnahmen gemeinsam auf einer Zeitleiste wiedergeben.",
   "Lighter device transfers": "Schlankere Geräteübertragung",
   "Compressed blocks and reusable snapshots reduce repeated transfers.": "Komprimierte, wiederverwendbare Blöcke reduzieren wiederholte Übertragungen.",
-  "Clearer routes, vehicle batteries and more reliable native map controls.": "Übersichtlichere Routen, Fahrzeugakkus und zuverlässigere native Kartensteuerung."
+  "Clearer routes, vehicle batteries and more reliable native map controls.": "Übersichtlichere Routen, Fahrzeugakkus und zuverlässigere native Kartensteuerung.",
+  "Waiting for the other device to prepare data…": "Das andere Gerät bereitet die Daten vor…",
+  "More reliable device sync, cleaner landscape controls and smoother menus.": "Zuverlässigere Synchronisierung, übersichtlichere Steuerelemente im Querformat und flüssigere Menüs."
 }

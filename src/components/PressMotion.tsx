@@ -1,9 +1,3 @@
-import React, { useState } from 'react';
-import { Animated, Pressable, PressableProps } from 'react-native';
-import { useReducedMotion } from './WebMotion';
-export default function PressMotion(props: PressableProps) {
-  const [scale] = useState(() => new Animated.Value(1));
-  const reduced = useReducedMotion();
-  const animate = (value: number) => { if (reduced) scale.setValue(1); else Animated.spring(scale, { toValue: value, useNativeDriver: true, speed: 30, bounciness: 3 }).start(); };
-  return <Animated.View style={{ transform: [{ scale }] }}><Pressable {...props} onPressIn={e => { animate(.97); props.onPressIn?.(e); }} onPressOut={e => { animate(1); props.onPressOut?.(e); }} /></Animated.View>;
-}
+import React,{useState} from 'react';import {Pressable,PressableProps,PressableStateCallbackType} from 'react-native';import Animated from 'react-native-reanimated';import {useReducedMotion} from './WebMotion';
+const AnimatedPressable=Animated.createAnimatedComponent(Pressable);
+export default function PressMotion(props:PressableProps){const [pressed,setPressed]=useState(false),reduced=useReducedMotion();return <AnimatedPressable {...props} pressRetentionOffset={16} onPressIn={e=>{setPressed(true);props.onPressIn?.(e);}} onPressOut={e=>{setPressed(false);props.onPressOut?.(e);}} style={(state:PressableStateCallbackType)=>[typeof props.style==='function'?props.style(state):props.style,{transform:[{scale:pressed&&!reduced?.97:1}],transitionProperty:'transform',transitionDuration:reduced?0:pressed?120:80,transitionTimingFunction:'cubic-bezier(0.23,1,0.32,1)'}]}/>;}

@@ -1,3 +1,4 @@
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import KeyboardPage from '../components/KeyboardPage';
 import CosmeticThemeProvider from '../components/CosmeticThemeProvider';
 import {GroupProvider} from '../groups/GroupProvider';
@@ -20,5 +21,5 @@ import { StoreProvider } from '../services/store';
 import { usePalette } from '../components/ui';
 export default function Layout() {
   const [dataEpoch,setDataEpoch]=useState(0);useEffect(()=>subscribeDataChange(()=>setDataEpoch(v=>v+1)),[]);const p = usePalette();const language=useLanguage();useEffect(()=>{void loadLanguage();const state=AppState.addEventListener('change',s=>{if(s==='active')notifySystemLanguage();});if(Platform.OS==='web')window.addEventListener('languagechange',notifySystemLanguage);return()=>{state.remove();if(Platform.OS==='web')window.removeEventListener('languagechange',notifySystemLanguage);};},[]);useEffect(()=>{if(Platform.OS==='web')document.documentElement.lang=language.language;},[language.choice,language.language]);
-  return <><PairedDeviceSync/><StoreProvider key={dataEpoch}><CosmeticThemeProvider><BluetoothProvider><GroupProvider><AppIntroduction /><ScratchRecap/><BatteryUsagePrompt /><ShortRideNotice /><PwaLifecycle /><WebMotion /><StatusBar style={p.dark ? 'light' : 'dark'} /><KeyboardPage><Stack screenOptions={{headerShown:false}}><Stack.Screen name="(tabs)"/><Stack.Screen name="share"/></Stack></KeyboardPage></GroupProvider></BluetoothProvider></CosmeticThemeProvider></StoreProvider></>;
+  return <GestureHandlerRootView style={{flex:1}}><PairedDeviceSync/><StoreProvider key={dataEpoch}><CosmeticThemeProvider><BluetoothProvider><GroupProvider><AppIntroduction /><ScratchRecap/><BatteryUsagePrompt /><ShortRideNotice /><PwaLifecycle /><WebMotion /><StatusBar style={p.dark ? 'light' : 'dark'} /><KeyboardPage><Stack screenOptions={{headerShown:false}}><Stack.Screen name="(tabs)"/><Stack.Screen name="share"/></Stack></KeyboardPage></GroupProvider></BluetoothProvider></CosmeticThemeProvider></StoreProvider></GestureHandlerRootView>;
 }

@@ -7,6 +7,7 @@ export const welcomePages=[
  {icon:'shield-checkmark-outline',title:'You stay in control',text:'Check road signs and local rules. Your records stay on your device until you export or share them.'},
 ] as const;
 export const releaseDetails=[
+ {version:'2.7.2',items:[{icon:'build-outline',title:'Fixes & Improvements',text:'More reliable device sync, cleaner landscape controls and smoother menus.'}]},
  {version:'2.7.1',items:[{icon:'build-outline',title:'Fixes & Improvements',text:'Smaller refinements and reliability fixes.'}]},
  {version:'2.7.0',items:[{icon:'play-circle-outline',title:'Memories in motion',text:'Replay riders and allowed recordings together on one timeline.'},{icon:'sync-outline',title:'Lighter device transfers',text:'Compressed blocks and reusable snapshots reduce repeated transfers.'},{icon:'build-outline',title:'Fixes & Improvements',text:'Clearer routes, vehicle batteries and more reliable native map controls.'}]},
  {version:'2.6.1',items:[{icon:'build-outline',title:'Fixes & Improvements',text:'Restored native arrows, clearer rider pins and reliable remembered battery estimates.'}]},

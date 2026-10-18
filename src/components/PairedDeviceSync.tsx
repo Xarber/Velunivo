@@ -1,3 +1,4 @@
+import {pairedTransferPacket} from '../core/dataSyncChoice';
 import {SyncLease} from '../core/syncLease';
 import {automaticSyncDigest} from '../services/automaticSyncDigest';
 import React,{useEffect,useMemo,useRef,useState,useSyncExternalStore,useCallback} from 'react';
@@ -32,7 +33,7 @@ function PairConnection({pair}:{pair:DevicePair}){const updateDevicePairState=us
  if(message.type==='unpair-final'){emit({type:'unpair-complete'});await new Promise(resolve=>setTimeout(resolve,200));requestDeviceUnpair(current);return;}
  if(message.type==='unpair-complete'){requestDeviceUnpair(current);return;}
  if(current.pending)return;
- if(!['choose','chosen','offer','accept','chunk','ack','complete','cancel','applying'].includes(message.type||''))return;
+ if(!pairedTransferPacket(message))return;
  if(isRideLocked()){exchange.current?.cancel();return;}
  if(!exchange.current){if(message.type!=='choose'&&message.type!=='chosen')return;working.current=true;lastProgress.current=Date.now();if(!createExchange())return;}exchange.current?.receive(message);
  }

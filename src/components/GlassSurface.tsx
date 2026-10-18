@@ -13,11 +13,11 @@ export default function GlassSurface({ children, style, interactive = false, exp
     return () => { alive = false; sub.remove(); };
   }, []);
   const liquid = Platform.OS === 'ios' && !opaque && isGlassEffectAPIAvailable() && isLiquidGlassAvailable();
-  const radius = StyleSheet.flatten(style)?.borderRadius ?? 24;
-  return <MotionView {...props} style={[style, { backgroundColor: 'transparent', overflow: 'hidden' }]}>
-    {Platform.OS === 'ios' && !opaque && <BlurView pointerEvents="none" tint={expanded ? (dark?'systemUltraThinMaterialDark':'systemUltraThinMaterialLight') : dark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'} intensity={expanded ? 100 : 35} style={StyleSheet.absoluteFill} />}
-    {liquid ? <GlassView pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius }]} glassEffectStyle={{ style: expanded ? 'none' : 'regular', animate: true, animationDuration: .3 }} tintColor={dark ? '#172A3140' : '#FFFFFF30'} isInteractive={interactive} /> : Platform.OS === 'ios' && !opaque ? <BlurView pointerEvents="none" tint={dark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'} intensity={85} style={StyleSheet.absoluteFill} /> : <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: dark ? '#172A31F0' : '#FFFFFFF0', borderRadius: radius, borderWidth: 1, borderColor: dark ? '#FFFFFF18' : '#FFFFFFAA' }]} />}
+  const flat=StyleSheet.flatten(style);
+  const radius = flat?.borderRadius ?? 24;
+  return <View {...props} style={[style, { backgroundColor: 'transparent', overflow: 'hidden' }]}>
+    {liquid ? <GlassView pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius }]} glassEffectStyle={{ style: 'regular', animate: true, animationDuration: .3 }} tintColor={dark ? '#172A3140' : '#FFFFFF30'} isInteractive={interactive} /> : Platform.OS === 'ios' && !opaque ? <BlurView pointerEvents="none" tint={dark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'} intensity={85} style={StyleSheet.absoluteFill} /> : <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: dark ? '#172A31F0' : '#FFFFFFF0', borderRadius: radius, borderWidth: 1, borderColor: dark ? '#FFFFFF18' : '#FFFFFFAA' }]} />}
     {expanded && <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: dark?'#071118DF':'#FFFFFFEB' }]} />}
-    {children}
-  </MotionView>;
+    <MotionView motionKey={expanded} style={{flexShrink:1,minHeight:0,flexDirection:flat?.flexDirection,gap:flat?.gap,alignItems:flat?.alignItems,justifyContent:flat?.justifyContent}}>{children}</MotionView>
+  </View>;
 }

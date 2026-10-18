@@ -18,7 +18,7 @@ export function NavigationWarning({ visible, title, messages, description, confi
     return () => clearInterval(tick);
   }, [visible]);
   // Parent keys the dialog by route so each new warning starts at three seconds.
-  return <Modal visible={visible} transparent animationType={reduced ? 'none' : 'fade'} onRequestClose={onCancel}>
+  return <Modal supportedOrientations={['portrait','portrait-upside-down','landscape-left','landscape-right']} visible={visible} transparent animationType={reduced ? 'none' : 'fade'} onRequestClose={onCancel}>
     <View style={{ flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#00000080' }}>
       <ScrollView accessibilityViewIsModal style={{ flexGrow: 0, maxWidth: 480, maxHeight: '95%', width: '100%', alignSelf: 'center', borderRadius: 26, backgroundColor: p.bg }} contentContainerStyle={{ padding: 24, gap: 18 }}>
         <Text accessibilityRole="header" style={{ color: p.text, fontWeight: '800', fontSize: 24 }}>{title}</Text>

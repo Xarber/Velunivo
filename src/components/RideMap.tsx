@@ -1,3 +1,4 @@
+import {useInitialMapLocation} from '../services/initialMapLocation';
 import {useMarkerOpacity} from '../services/useMarkerOpacity';
 import {navigationArrowAssets} from './navigationArrowAssets';
 import {useGhostRiders} from '../services/sampleData';
@@ -31,6 +32,7 @@ export default function RideMap(props: MapProps & { offlineMap?: string }) {
   return <DeviceMap {...props} />;
 }
 function DeviceMap({ routes, selected, position, follow, onPick, traffic, startPoint, endPoint, fitPadding, heading = 0, navigating = false, followPadding, tilted = false, overviewRequest = 0, overview = false, onPan, trace, completedMeters, transit,positionLabel,positionAt,planningStops,areaSelection,groupRiders=[],showGhosts=false,bookmarks=[],scratchContext,scratchHighlight,onScratchTile,mapBounds,scratchIndexOverride }: MapProps) {
+ const initial=useInitialMapLocation(position);
  const positionOpacity=useMarkerOpacity(positionAt,undefined,positionLabel?.includes('Last known')?.45:1);
   const p=usePalette(),cosmetic=useDisplayCosmetics(useStore().navigationOptions);
   const ghosts=useGhostRiders(showGhosts?position??startPoint:undefined),allRiders=showGhosts?[...groupRiders,...ghosts]:groupRiders;
@@ -53,8 +55,9 @@ function DeviceMap({ routes, selected, position, follow, onPick, traffic, startP
     if (follow && cameraTarget) map.current?.animateCamera({ center: point(cameraTarget.position), zoom: navigating ? 16.5 : 15, altitude: navigating ? 650 : 1800, heading: cameraTarget.heading, pitch: tilted ? 50 : 0 }, { duration: cameraTarget.duration });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraTarget]);
-  const [w, s, e, n] = useMemo(()=>selected ? routeBounds(selected.coordinates) : [9.18, 45.46, 9.20, 45.48],[selected]);
+  const [w, s, e, n] = useMemo(()=>selected ? routeBounds(selected.coordinates) : initial.coordinate?[initial.coordinate[0]-.01,initial.coordinate[1]-.01,initial.coordinate[0]+.01,initial.coordinate[1]+.01]:[-100,-50,100,50],[selected,initial.coordinate]);
   const paths=useMemo(()=>routeLayers(routes,selected,completedMeters,trace,p.accentDark),[routes,selected,completedMeters,trace,p.accentDark]);
+  if(!initial.ready)return <View style={{flex:1,backgroundColor:p.bg}}/>;
   return <MapView onRegionChange={region=>{updateBearing();if(scratchContext||transit)setScratchBounds([region.longitude-region.longitudeDelta/2,region.latitude-region.latitudeDelta/2,region.longitude+region.longitudeDelta/2,region.latitude+region.latitudeDelta/2]);}} onLayout={event=>{const {width,height}=event.nativeEvent.layout;setViewport(old=>old.width===width&&old.height===height?old:{width,height});if(scratchContext||transit)void map.current?.getMapBoundaries().then(b=>setScratchBounds([b.southWest.longitude,b.southWest.latitude,b.northEast.longitude,b.northEast.latitude])).catch(()=>{});}} onRegionChangeComplete={region=>{setScratchBounds([region.longitude-region.longitudeDelta/2,region.latitude-region.latitudeDelta/2,region.longitude+region.longitudeDelta/2,region.latitude+region.latitudeDelta/2]);reportArea();updateBearing();}} onPanDrag={onPan} onTouchStart={onPan} onTouchMove={onPan} onTouchEnd={onPan} ref={map} style={{ flex: 1 }} mapPadding={follow ? followPadding || fitPadding : { top: 0, bottom: 0, left: 0, right: 0 }} showsCompass={false} showsTraffic={traffic} mapType={transit ? 'standard' : 'mutedStandard'} showsPointsOfInterests showsBuildings showsUserLocation={false} pitchEnabled={!areaSelection} rotateEnabled={!follow&&!areaSelection} onMapReady={() => { setReady(true); fit(); }} legalLabelInsets={{ top: 120, left: 12, right: 12, bottom: fitPadding?.bottom || 45 }} initialRegion={{ latitude: (s + n) / 2, longitude: (w + e) / 2, latitudeDelta: Math.max(.005, (n - s) * 1.5), longitudeDelta: Math.max(.005, (e - w) * 1.5) }} onPress={ev => onPick?.([ev.nativeEvent.coordinate.longitude, ev.nativeEvent.coordinate.latitude],scratch.geometry.resolution)}>
     {transit&&<TransitOverlay data={transitLines}/> }
     <NativeScratchOverlay geometry={scratch.geometry} opacity={scratch.opacity} loop={scratch.glowLoop} onPick={onScratchTile}/>

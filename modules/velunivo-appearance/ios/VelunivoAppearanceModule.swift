@@ -5,8 +5,7 @@ public class VelunivoAppearanceModule: Module {
  private var mapTools: UIStackView?
  private var toolSignature = ""
  private weak var railTabs: UITabBarController?
- private var railAccessory: AnyObject?
- private var previousAccessory: AnyObject?
+ private var railToolsView: UIView?
  private var railSignature = ""
  private func activeWindow() -> UIWindow? {
   let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
@@ -14,34 +13,39 @@ public class VelunivoAppearanceModule: Module {
    ?? scenes.flatMap { $0.windows }.first { $0.isKeyWindow }
  }
  private func clearRailTools() {
-  if #available(iOS 26.0, *), let tabs = railTabs, tabs.bottomAccessory === (railAccessory as? UITabAccessory) {
-   tabs.bottomAccessory = previousAccessory as? UITabAccessory
-  }
-  railTabs = nil; railAccessory = nil; previousAccessory = nil; railSignature = ""
+  railToolsView?.removeFromSuperview(); railToolsView = nil; railTabs = nil; railSignature = ""
  }
  private func railTools(_ rows: [[String: String]], color: String, root: UIViewController?, tabs: UITabBarController) -> Bool {
   guard #available(iOS 26.0, *) else { return false }
-  let bar = tabs.tabBar, rail = tabs.tabBar.convert(tabs.tabBar.bounds, to: tabs.tabBar.window)
-  guard !rows.isEmpty, bar.window != nil, !bar.isHidden, rail.height > rail.width else { clearRailTools(); return false }
+  let bar = tabs.tabBar
+  guard !rows.isEmpty, bar.window != nil, !bar.isHidden, bar.bounds.height > bar.bounds.width,
+        tabs.view.bounds.height > bar.bounds.height + CGFloat(rows.count * 44) + 48 else { clearRailTools(); return false }
   let signature = rows.description + color
-  if railTabs === tabs && railSignature == signature && tabs.bottomAccessory === (railAccessory as? UITabAccessory) { return true }
+  if railTabs === tabs && railSignature == signature && railToolsView?.superview != nil { return true }
   clearRailTools()
-  // The tab controller owns ordering/overflow relative to its tab rail. An outer
-  // navigation-controller toolbar occupies the same rail slot and overlaps it.
-  let stack = UIStackView(); stack.axis = .vertical; stack.alignment = .center; stack.spacing = 0
+  // UITabAccessory is always a bottom accessory, even beside a vertical tab rail.
+  // Constrain native glass actions to the public tab bar's anchors instead.
+  let glass = UIGlassEffect(style: .regular); glass.isInteractive = true
+  let tools = UIVisualEffectView(effect: glass); tools.translatesAutoresizingMaskIntoConstraints = false
+  tools.layer.cornerRadius = 24; tools.clipsToBounds = true
+  let stack = UIStackView(); stack.axis = .vertical; stack.alignment = .center; stack.translatesAutoresizingMaskIntoConstraints = false
+  var value: UInt64 = 0; Scanner(string: color.replacingOccurrences(of: "#", with: "")).scanHexInt64(&value)
+  let tint = UIColor(red:CGFloat((value >> 16)&255)/255,green:CGFloat((value >> 8)&255)/255,blue:CGFloat(value&255)/255,alpha:1)
   for row in rows.prefix(5) {
    guard let id = row["id"], let symbol = row["symbol"] else { continue }
-   let button = UIButton(type: .system); button.accessibilityLabel = row["label"]
-   button.setImage(UIImage(systemName: symbol), for: .normal)
-   button.addAction(UIAction { [weak self] _ in self?.sendEvent("onMapAction", ["id":id]) }, for: .touchUpInside)
+   let button = UIButton(type: .system); button.accessibilityLabel = row["label"]; button.tintColor = tint
+   button.setImage(UIImage(systemName:symbol,withConfiguration:UIImage.SymbolConfiguration(pointSize:22)),for:.normal)
+   button.addAction(UIAction { [weak self] _ in self?.sendEvent("onMapAction", ["id":id]) }, for:.touchUpInside)
    button.widthAnchor.constraint(equalToConstant:44).isActive = true; button.heightAnchor.constraint(equalToConstant:44).isActive = true
    stack.addArrangedSubview(button)
   }
-  var value: UInt64 = 0; Scanner(string:color.replacingOccurrences(of:"#",with:"")).scanHexInt64(&value)
-  stack.tintColor = UIColor(red:CGFloat((value >> 16)&255)/255,green:CGFloat((value >> 8)&255)/255,blue:CGFloat(value&255)/255,alpha:1)
-  previousAccessory = tabs.bottomAccessory
-  let accessory = UITabAccessory(contentView:stack); railTabs = tabs; railAccessory = accessory; railSignature = signature
-  tabs.bottomAccessory = accessory
+  tools.contentView.addSubview(stack); tabs.view.addSubview(tools)
+  NSLayoutConstraint.activate([
+   stack.leadingAnchor.constraint(equalTo:tools.contentView.leadingAnchor,constant:2), stack.trailingAnchor.constraint(equalTo:tools.contentView.trailingAnchor,constant:-2),
+   stack.topAnchor.constraint(equalTo:tools.contentView.topAnchor,constant:4),stack.bottomAnchor.constraint(equalTo:tools.contentView.bottomAnchor,constant:-4),
+   tools.centerXAnchor.constraint(equalTo:bar.centerXAnchor),tools.bottomAnchor.constraint(equalTo:bar.topAnchor,constant:-10)
+  ])
+  railTabs = tabs; railToolsView = tools; railSignature = signature
   return true
  }
  private func tabController(_ root: UIViewController?) -> UITabBarController? {

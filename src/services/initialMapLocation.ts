@@ -1,0 +1,6 @@
+import {useEffect,useSyncExternalStore} from 'react';import AsyncStorage from '@react-native-async-storage/async-storage';import type {Coord} from '../core/types';
+let state:{ready:boolean;coordinate?:Coord}={ready:false},pending:Promise<void>|undefined,lastSaved=0;const listeners=new Set<()=>void>();
+const valid=(p:unknown):p is Coord=>Array.isArray(p)&&p.length===2&&p.every(Number.isFinite)&&Math.abs(p[0])<=180&&Math.abs(p[1])<=85;
+const load=()=>pending??=AsyncStorage.getItem('last-map-position-v1').then(raw=>{let coordinate:unknown;try{coordinate=JSON.parse(raw||'null');}catch{}state={ready:true,coordinate:valid(coordinate)?coordinate:undefined};for(const fn of listeners)fn();}).catch(()=>{state={ready:true};for(const fn of listeners)fn();});
+/** Viewport hint only; never treated as a GPS fix or used for scratching/recording. */
+export function useInitialMapLocation(position?:Coord){useEffect(()=>{void load();},[]);useEffect(()=>{if(!valid(position)||Date.now()-lastSaved<15000)return;lastSaved=Date.now();state={ready:true,coordinate:[...position]};void AsyncStorage.setItem('last-map-position-v1',JSON.stringify(position)).catch(()=>{});},[position]);return useSyncExternalStore(fn=>{listeners.add(fn);return()=>{listeners.delete(fn);};},()=>state,()=>state);}

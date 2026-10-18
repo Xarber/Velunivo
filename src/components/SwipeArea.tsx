@@ -1,10 +1,2 @@
-import React, { useMemo } from 'react';
-import { PanResponder, View, ViewProps } from 'react-native';
-export default function SwipeArea({ onSwipe, ...props }: ViewProps & { onSwipe(open: boolean): void }) {
-  const drag = useMemo(() => PanResponder.create({
-    onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dy) > 10 && Math.abs(g.dy) > Math.abs(g.dx),
-    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 10 && Math.abs(g.dy) > Math.abs(g.dx),
-    onPanResponderRelease: (_, g) => { if (g.dy < -25) onSwipe(true); else if (g.dy > 25) onSwipe(false); },
-  }), [onSwipe]);
-  return <View {...props} {...drag.panHandlers} />;
-}
+import React,{useMemo} from 'react';import {ViewProps} from 'react-native';import Animated,{useSharedValue,useAnimatedStyle,withSpring,ReduceMotion,cancelAnimation} from 'react-native-reanimated';import {Gesture,GestureDetector} from 'react-native-gesture-handler';import {scheduleOnRN} from 'react-native-worklets';import {useReducedMotion} from './WebMotion';
+export default function SwipeArea({onSwipe,...props}:ViewProps&{onSwipe(open:boolean):void}){const y=useSharedValue(0),origin=useSharedValue(0),velocity=useSharedValue(0),reduced=useReducedMotion();const pan=useMemo(()=>Gesture.Pan().activeOffsetY([-10,10]).failOffsetX([-20,20]).onStart(()=>{cancelAnimation(y);origin.set(y.get());velocity.set(0);}).onUpdate(e=>{y.set(reduced?0:Math.max(-12,Math.min(12,origin.get()+e.translationY*.2)));velocity.set(e.velocityY*.2);}).onEnd(e=>{if(e.translationY< -25||e.velocityY< -250)scheduleOnRN(onSwipe,true);else if(e.translationY>25||e.velocityY>250)scheduleOnRN(onSwipe,false);}).onFinalize(()=>{y.set(withSpring(0,{duration:300,dampingRatio:.8,velocity:velocity.get(),reduceMotion:ReduceMotion.System}));}),[onSwipe,reduced,y,origin,velocity]);const movement=useAnimatedStyle(()=>({transform:[{translateY:y.get()}]}));return <GestureDetector gesture={pan}><Animated.View {...props} style={[props.style,movement]}/></GestureDetector>;}

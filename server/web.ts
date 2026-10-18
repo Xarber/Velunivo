@@ -15,6 +15,6 @@ export function createWebServer(directory:string){
  app.get('/.well-known/apple-app-site-association',(_req,res)=>{const data=appleSiteAssociation(process.env.APPLE_TEAM_ID||'',process.env.APP_IDENTIFIER);if(!data)return res.status(404).end();res.setHeader('Cache-Control','public, max-age=300');res.json(data);});
  app.get('/.well-known/assetlinks.json',(_req,res)=>{const data=androidAssetLinks(process.env.ANDROID_CERT_FINGERPRINTS||'',process.env.APP_IDENTIFIER);if(!data)return res.status(404).end();res.setHeader('Cache-Control','public, max-age=300');res.json(data);});
  app.use(express.static(root,{index:false,setHeaders:(res,path)=>{if(path.endsWith('.mjs'))res.setHeader('Content-Type','application/javascript');if(/\.(html|webmanifest)$|\/sw\.js$/.test(path))res.setHeader('Cache-Control','no-cache');}}));
- app.use((req,res)=>{if(req.method!=='GET'||req.path.startsWith('/peer')||req.path.startsWith('/.well-known')||req.path.match(/\.[a-z0-9]+$/i))return res.status(404).end();res.setHeader('Cache-Control','no-cache');res.sendFile(resolve(root,'index.html'));});
+ app.use((req,res)=>{if(req.method!=='GET'||req.path.startsWith('/peer')||req.path.startsWith('/.well-known')||(req.path.match(/\.[a-z0-9]+$/i)&&!/^\/settings\/changelog\/(?:developer\/)?\d+\.\d+\.\d+\/?$/.test(req.path)))return res.status(404).end();res.setHeader('Cache-Control','no-cache');res.sendFile(resolve(root,'index.html'));});
  return server;
 }

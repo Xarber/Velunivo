@@ -1,12 +1,6 @@
-import React, { useEffect } from 'react';
-import { ViewProps,StyleSheet } from 'react-native';
-import Animated, { LinearTransition, ReduceMotion, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { useReducedMotion } from './WebMotion';
-export default function MotionView(props: ViewProps) {
-  const reduced = useReducedMotion(),absolute=StyleSheet.flatten(props.style)?.position==='absolute';
-  const offset = useSharedValue(reduced ? 0 : 12);
-  useEffect(() => { offset.value = withTiming(0, { duration: reduced ? 0 : 280, reduceMotion: ReduceMotion.System }); }, [offset, reduced]);
-  const animation = useAnimatedStyle(() => ({ transform: [{ translateY: offset.value }] }));
-  // Translation and layout only: zero-opacity ancestors suppress iOS Liquid Glass.
-  return <Animated.View {...props} layout={absolute?undefined:LinearTransition.duration(320).reduceMotion(ReduceMotion.System)} style={[props.style,absolute?undefined:animation]} />;
-}
+import React,{useEffect} from 'react';
+import {ViewProps} from 'react-native';
+import Animated,{Easing,ReduceMotion,useSharedValue,useAnimatedStyle,withTiming} from 'react-native-reanimated';
+import {useReducedMotion} from './WebMotion';
+/** Stable outer geometry belongs to the host; only content moves, never its anchor. */
+export default function MotionView({motionKey,...props}:ViewProps&{motionKey?:boolean}){const reduced=useReducedMotion(),offset=useSharedValue(0);useEffect(()=>{offset.set(reduced?0:6);offset.set(withTiming(0,{duration:200,easing:Easing.bezier(.23,1,.32,1),reduceMotion:ReduceMotion.System}));},[motionKey,offset,reduced]);const motion=useAnimatedStyle(()=>({transform:[{translateY:offset.get()}]}));return <Animated.View {...props} style={[props.style,motion]}/>;}

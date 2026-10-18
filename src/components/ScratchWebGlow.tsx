@@ -1,9 +1,3 @@
-import {useEffect,memo,RefObject} from 'react';
-import type {Map} from 'maplibre-gl';
-import {ScratchGeometry} from '../core/scratchMap';
-import {useScratchGlow} from '../services/useScratchGlow';
-/** Changes only a GPU paint uniform; no source setData, H3 rebuild or parent-map rerender. */
-export default memo(function ScratchWebGlow({map,loaded,geometry,opacity,loop}:{map:RefObject<Map|null>;loaded:boolean;geometry:ScratchGeometry;opacity:number;loop:boolean}){
- const glow=useScratchGlow(geometry.features.some(f=>f.properties.highlight),loop,geometry.features.filter(f=>f.properties.highlight).map(f=>f.id).join(','));
- useEffect(()=>{const m=map.current;if(loaded&&m?.getLayer('scratch-fill'))m.setPaintProperty('scratch-fill','fill-opacity',['*',['get','opacity'],opacity,['case',['get','highlight'],glow,1]]);},[map,loaded,geometry,opacity,glow]);return null;
-});
+import {useEffect,memo,RefObject} from 'react';import type {Map} from 'maplibre-gl';import {ScratchGeometry} from '../core/scratchMap';import {useReducedMotion} from './WebMotion';
+/** MapLibre owns the uniform transition: two commands, no per-frame React updates. */
+export default memo(function ScratchWebGlow({map,loaded,geometry,opacity}:{map:RefObject<Map|null>;loaded:boolean;geometry:ScratchGeometry;opacity:number;loop:boolean}){const reduced=useReducedMotion(),key=geometry.features.filter(f=>f.properties.highlight).map(f=>f.id).join(',');useEffect(()=>{const m=map.current;if(!loaded||!m?.getLayer('scratch-fill'))return;m.setPaintProperty('scratch-fill','fill-opacity',['*',['get','opacity'],opacity,['case',['get','highlight'],0,1]]);},[map,loaded,geometry,opacity]);useEffect(()=>{const m=map.current;if(!loaded||!m?.getLayer('scratch-reveal'))return;m.setPaintProperty('scratch-reveal','fill-opacity-transition',{duration:0,delay:0});m.setPaintProperty('scratch-reveal','fill-opacity',key&&!reduced?.8*opacity:0);const frame=requestAnimationFrame(()=>{if(!m.getLayer('scratch-reveal'))return;m.setPaintProperty('scratch-reveal','fill-opacity-transition',{duration:480,delay:0});m.setPaintProperty('scratch-reveal','fill-opacity',0);});return()=>cancelAnimationFrame(frame);},[map,loaded,key,reduced,opacity]);return null;});

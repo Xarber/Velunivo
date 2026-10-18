@@ -19,11 +19,11 @@ export default function WebMotion() {
     @keyframes velunivo-content { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes velunivo-popup-in { from { opacity: 0; transform: translateY(18px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
     @keyframes velunivo-popup-out { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(10px) scale(.985); } }
-    [data-velunivo-motion="sheet"] { transition: height 360ms cubic-bezier(.22,1,.36,1); animation: velunivo-rise 300ms cubic-bezier(.22,1,.36,1); }
+    [data-velunivo-motion="sheet"] { animation: velunivo-rise 240ms cubic-bezier(0.32,0.72,0,1); }
     @media (min-width: 700px) { [data-velunivo-motion="sheet"] { animation-name: velunivo-sidebar; } }
     [data-velunivo-motion="content"] { animation: velunivo-content 200ms ease-out; }
     [data-velunivo-motion="planner"][data-motion-state="open"] { animation: velunivo-popup-in 240ms cubic-bezier(.22,1,.36,1) both; }
-    [data-velunivo-motion="planner"][data-motion-state="closed"] { animation: velunivo-popup-out 200ms ease-in both; }
+    [data-velunivo-motion="planner"][data-motion-state="closed"] { animation: velunivo-popup-out 180ms cubic-bezier(0.23,1,0.32,1) both; }
     [data-velunivo-motion="button"], [data-velunivo-motion="route"] { transition: transform 160ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, opacity 160ms ease; }
     @media (hover: hover) and (pointer: fine) {
       [data-velunivo-motion="button"]:not([aria-disabled="true"]):hover { transform: translateY(-1px); box-shadow: 0 4px 12px #00000016; }
