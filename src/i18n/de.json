@@ -1932,5 +1932,19 @@
   "Larger battery temperature rise than comparable rides": "Stärkerer Anstieg der Akkutemperatur als bei vergleichbaren Fahrten",
   "Map and battery fixes": "Karten- und Akkukorrekturen",
   "Restored native arrows, clearer rider pins and reliable remembered battery estimates.": "Native Pfeile wiederhergestellt, klarere Teilnehmermarker und Schätzungen anhand der letzten Akkuladung.",
-  "Sample": "Beispiel"
+  "Sample": "Beispiel",
+  "Try smoother, steadier riding": "Versuche gleichmäßiger und sanfter zu fahren",
+  "A substantial share of measured energy was used during repeated acceleration. Where conditions allow, try gentler acceleration and compare similar rides. Hills and traffic can also affect this result.": "Ein erheblicher Teil der gemessenen Energie wurde bei wiederholtem Beschleunigen verbraucht. Beschleunige bei geeigneten Bedingungen sanfter und vergleiche ähnliche Fahrten. Steigungen und Verkehr können ebenfalls Einfluss haben.",
+  "Improve telemetry coverage before comparing energy": "Verbessere die Datenabdeckung vor dem Energievergleich",
+  "Electrical gaps prevent a trustworthy energy comparison. Review Bluetooth diagnostics; missing intervals are never filled with assumed power.": "Lücken in elektrischen Messwerten verhindern einen zuverlässigen Vergleich. Prüfe die Bluetooth-Diagnose; fehlende Zeiträume werden niemals mit angenommener Leistung aufgefüllt.",
+  "Review conditions before extending your range": "Prüfe die Bedingungen, bevor du mit mehr Reichweite rechnest",
+  "Consumption exceeded comparable rides. Check speed, load and riding conditions, then compare another similar ride before relying on a longer range estimate. This is not a mechanical diagnosis.": "Der Verbrauch lag über vergleichbaren Fahrten. Prüfe Geschwindigkeit, Last und Fahrbedingungen und vergleiche eine weitere ähnliche Fahrt, bevor du mit mehr Reichweite rechnest. Dies ist keine mechanische Diagnose.",
+  "Battery use per kilometre": "Akkuverbrauch pro Kilometer",
+  "Observed acceleration · 0–20 km/h": "Gemessene Beschleunigung · 0–20 km/h",
+  "Median voltage sag": "Medianer Spannungseinbruch",
+  "Bluetooth interruptions per hour": "Bluetooth-Unterbrechungen pro Stunde",
+  "Condition-matched comparisons": "Vergleiche unter ähnlichen Bedingungen",
+  "Typical": "Typisch",
+  "comparable rides": "vergleichbare Fahrten",
+  "Matched on available speed, distance, mode, terrain, charge, temperature and load. Weather and traffic may still differ.": "Abgeglichen anhand verfügbarer Daten zu Geschwindigkeit, Strecke, Modus, Gelände, Ladestand, Temperatur und Last. Wetter und Verkehr können abweichen."
 }

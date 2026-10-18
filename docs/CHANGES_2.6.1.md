@@ -37,3 +37,7 @@ Sample riders use a session-seeded random cluster, 45–175 metres from the loca
 Final pre-native checkpoint: 468 app tests, 50 workflow tests, lint and type-check pass. Isolated Chromium and WebKit both render all five sample rider pins with vector badges, preserve avatar/initial content, open read-only sample Memories and stay within mobile viewport bounds without JavaScript exceptions. These engine tests inject location; they do not certify macOS Safari's OS location provider.
 
 Sensor reliability additionally rejects wrong value types (for example text speed or numeric charging flags), rather than treating them as fresh numeric coverage.
+
+### Analytics completion
+
+Condition-matched comparison cards now report robust medians for energy, battery use per kilometre, acceleration benchmarks, voltage sag, speed/distance calibration and interruptions per hour. Each metric needs five independently usable peer rides; unavailable values are omitted. Recommendations include smoother acceleration only when fresh vehicle speed and electrical coverage support repeated acceleration's measured energy share, repairing telemetry coverage before comparing incomplete energy, and reviewing conditions before trusting a longer range after a consumption outlier. Comparisons remain observational rather than mechanical diagnoses. Automated total: 470 app tests.

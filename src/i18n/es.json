@@ -1932,5 +1932,19 @@
   "Larger battery temperature rise than comparable rides": "Mayor aumento de temperatura de batería que en viajes comparables",
   "Map and battery fixes": "Correcciones de mapa y batería",
   "Restored native arrows, clearer rider pins and reliable remembered battery estimates.": "Flechas nativas restauradas, marcadores más claros y estimaciones basadas en la última carga.",
-  "Sample": "Ejemplo"
+  "Sample": "Ejemplo",
+  "Try smoother, steadier riding": "Prueba una conducción más suave y constante",
+  "A substantial share of measured energy was used during repeated acceleration. Where conditions allow, try gentler acceleration and compare similar rides. Hills and traffic can also affect this result.": "Una parte importante de la energía medida se usó en aceleraciones repetidas. Cuando sea posible, acelera con suavidad y compara viajes similares. Las pendientes y el tráfico también influyen.",
+  "Improve telemetry coverage before comparing energy": "Mejora la cobertura de datos antes de comparar energía",
+  "Electrical gaps prevent a trustworthy energy comparison. Review Bluetooth diagnostics; missing intervals are never filled with assumed power.": "Las lagunas en los datos eléctricos impiden una comparación fiable. Revisa el diagnóstico Bluetooth; nunca se rellenan con potencia supuesta.",
+  "Review conditions before extending your range": "Revisa las condiciones antes de contar con más autonomía",
+  "Consumption exceeded comparable rides. Check speed, load and riding conditions, then compare another similar ride before relying on a longer range estimate. This is not a mechanical diagnosis.": "El consumo superó el de viajes comparables. Revisa velocidad, carga y condiciones y compara otro viaje similar antes de confiar en una autonomía mayor. No es un diagnóstico mecánico.",
+  "Battery use per kilometre": "Consumo de batería por kilómetro",
+  "Observed acceleration · 0–20 km/h": "Aceleración medida · 0–20 km/h",
+  "Median voltage sag": "Caída de tensión mediana",
+  "Bluetooth interruptions per hour": "Interrupciones Bluetooth por hora",
+  "Condition-matched comparisons": "Comparaciones en condiciones similares",
+  "Typical": "Habitual",
+  "comparable rides": "viajes comparables",
+  "Matched on available speed, distance, mode, terrain, charge, temperature and load. Weather and traffic may still differ.": "Comparación según velocidad, distancia, modo, terreno, carga de batería, temperatura y peso disponibles. El clima y tráfico pueden variar."
 }
