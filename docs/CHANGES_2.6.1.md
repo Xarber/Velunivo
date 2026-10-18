@@ -29,3 +29,5 @@ No firmware commands, CallKit behavior, microphone policy or peer protocol chang
 ### Automated checkpoint, 18 October
 
 466 app tests pass, lint/type-check pass, 49 Python workflow tests pass, Swift parser accepts the appearance module, and the web export succeeds. Isolated Chromium verifies planner entry, the real analytics UI on a synthetic 120 W / 120 s fixture (4.0 Wh), linked chart/map cursor, responsive width and developer version. No JavaScript exceptions observed. Native behavior remains pending at this checkpoint.
+
+Browser visual follow-up confirmed five map pins with intact avatar/initial faces and loaded vector badges, sample Memory opening, and mobile bounds. Inspection caught a light-mode expanded web sheet using the dark tint with dark text; its tint now follows the same light/dark policy as native. Android capture now turns on the actual developer sample-data controls through UIAutomator, without storage injection or another build. Workflow test total is 50.

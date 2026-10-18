@@ -14,3 +14,8 @@ class NativeCaptureTests(unittest.TestCase):
     def test_launcher_text_never_counts_as_native_app_content(self):
         home=ET.Element('node',{'package':'com.google.android.apps.nexuslauncher','text':'Your ride','bounds':'[0,0][100,100]'})
         self.assertFalse(capture.page_matches('explore',[home]))
+
+    def test_developer_sample_switch_targets_native_checkable_control(self):
+        title=ET.Element('node',{'text':'Show sample data','clickable':'false'})
+        switch=ET.Element('node',{'content-desc':'Show sample data','checkable':'true','checked':'false','clickable':'true'})
+        self.assertIs(capture.find_control('Show sample data',[title,switch]),switch)

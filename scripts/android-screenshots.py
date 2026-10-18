@@ -67,6 +67,36 @@ def launch_page(path):
             if attempt==11:raise
             time.sleep(2)
 
+def tap_node(node):
+    values=list(map(int,re.findall(r'\d+',node.get('bounds',''))))
+    if len(values)!=4:raise RuntimeError('Control has no native bounds')
+    x1,y1,x2,y2=values;adb('shell','input','tap',str((x1+x2)//2),str((y1+y2)//2))
+
+def find_control(label,elements):
+    matches=[e for e in elements if label in (e.get('text',''),e.get('content-desc',''))]
+    return next((e for e in matches if e.get('checkable')=='true'),next((e for e in matches if e.get('clickable')=='true'),next(iter(matches),None)))
+
+def enable_sample_data():
+    # Operate the existing developer controls on this disposable CI emulator only.
+    # No root, private app storage injection, release-only backdoor or extra APK build.
+    launch_page('/settings');wait_for_page('settings')
+    version=None
+    for _ in range(10):
+        _,elements=nodes();version=find_control('App version',elements)
+        if version is not None:break
+        size=adb('shell','wm','size');w,h=map(int,re.findall(r'(\d+)x(\d+)',size)[-1]);adb('shell','input','swipe',str(w//2),str(h*4//5),str(w//2),str(h//4),'300')
+    if version is None:raise RuntimeError('Could not reveal developer screenshot fixtures')
+    for _ in range(3):tap_node(version)
+    time.sleep(1);_,elements=nodes();toggle=find_control('Developer Mode',elements)
+    if toggle is None:raise RuntimeError('Developer fixture switch missing')
+    if toggle.get('checked')!='true':tap_node(toggle)
+    launch_page('/settings/developer-simulation');time.sleep(3);_,elements=nodes();toggle=find_control('Show sample data',elements)
+    if toggle is None:raise RuntimeError('Sample data switch missing')
+    if toggle.get('checked')!='true':tap_node(toggle)
+    time.sleep(1);_,elements=nodes();button=find_control('Show ghost riders',elements)
+    if button is not None:tap_node(button)
+    time.sleep(1)
+
 def main():
     ROOT.mkdir(exist_ok=True)
     # sys.boot_completed can precede the package service settling on API 37.
@@ -80,6 +110,7 @@ def main():
     adb('shell','wm','size',os.environ.get('CAPTURE_SIZE','1280x2856'));adb('shell','wm','density',os.environ.get('CAPTURE_DENSITY','480'))
     adb('shell','settings','put','system','accelerometer_rotation','0');adb('shell','settings','put','system','user_rotation','0')
     adb('emu','geo','fix','9.1900','45.4642');adb('logcat','-c');screens=[]
+    if os.environ.get('VELUNIVO_CAPTURE_SAMPLE_DATA','1')=='1':enable_sample_data()
     for name,path in [('explore','/'),('library','/offline'),('vehicles','/scooter'),('settings','/settings')]:
         launch_page(path)
         time.sleep(15 if name=='explore' else 3);wait_for_page(name)
