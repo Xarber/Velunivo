@@ -37,3 +37,9 @@ Further target findings:
 
 - Sample data and ghost riders now require Developer Mode in normal builds, even when their stored flags remain enabled. Screenshot QA builds retain their explicit fixture exception. Chromium and WebKit passed both enabled and disabled cases without import/runtime errors.
 - Local gallery creation was attempted with the installed iOS 27.1 runtime: both iPhone 17 Pro and iPad Pro 11-inch M5 returned CoreSimulator incompatible-device error 403. The existing Duo remains usable. No additional runtime/SDK was downloaded and no failed capture was published; fresh regular phone/tablet galleries require the CI runners.
+
+Native release gate (not yet approved):
+
+- Testing run 39186999547 (0b6eff6) passed Android, iPhone, Simulator and web compilation. The Simulator artifact was installed on the existing Duo.
+- App-only screenshots taken while the Mac was locked did not show system tabs. Read-only debugger inspection found four correct native tab items, tabBarHidden=false and a full-height 69-point tab rail, but the UITabBar itself had no rendered subviews. This is not sufficient evidence to attribute missing system chrome to a specific layout implementation.
+- A temporary JS-only experiment with an always-present horizontal BottomAccessory was inspected and reverted; it was not approved or committed. Stable 2.7.2 remains held until an unlocked Device Hub session verifies the actual native rail, tab switching and controller restoration. The Mac's installed runtime rejected regular phone/tablet gallery devices; no additional runtime was installed.
