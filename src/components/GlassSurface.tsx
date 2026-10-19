@@ -18,6 +18,6 @@ export default function GlassSurface({ children, style, interactive = false, exp
   return <View {...props} style={[style, { backgroundColor: 'transparent', overflow: 'hidden' }]}>
     {liquid ? <GlassView pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius }]} glassEffectStyle={{ style: 'regular', animate: true, animationDuration: .3 }} tintColor={dark ? '#172A3140' : '#FFFFFF30'} isInteractive={interactive} /> : Platform.OS === 'ios' && !opaque ? <BlurView pointerEvents="none" tint={dark ? 'systemChromeMaterialDark' : 'systemChromeMaterialLight'} intensity={85} style={StyleSheet.absoluteFill} /> : <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: dark ? '#172A31F0' : '#FFFFFFF0', borderRadius: radius, borderWidth: 1, borderColor: dark ? '#FFFFFF18' : '#FFFFFFAA' }]} />}
     {expanded && <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: dark?'#071118DF':'#FFFFFFEB' }]} />}
-    <MotionView motionKey={expanded} style={{flexShrink:1,minHeight:0,flexDirection:flat?.flexDirection,gap:flat?.gap,alignItems:flat?.alignItems,justifyContent:flat?.justifyContent}}>{children}</MotionView>
+    <MotionView motionKey={expanded} style={{flexGrow:flat?.height!==undefined?1:0,flexShrink:1,minHeight:0,flexDirection:flat?.flexDirection,gap:flat?.gap,alignItems:flat?.alignItems,justifyContent:flat?.justifyContent}}>{children}</MotionView>
   </View>;
 }

@@ -4,48 +4,61 @@ public class VelunivoAppearanceModule: Module {
  private weak var mapTabs: UITabBarController?
  private var mapTools: UIStackView?
  private var toolSignature = ""
- private weak var railTabs: UITabBarController?
- private var railToolsView: UIView?
+ private weak var toolNavigation: UINavigationController?
+ private weak var toolOwner: UIViewController?
+ private var previousToolbarItems: [UIBarButtonItem]?
+ private var previousToolbarHidden = true
+ private var previousToolbarTransform = CGAffineTransform.identity
  private var railSignature = ""
  private func activeWindow() -> UIWindow? {
   let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
   return scenes.filter { $0.activationState == .foregroundActive }.flatMap { $0.windows }.first { $0.isKeyWindow }
    ?? scenes.flatMap { $0.windows }.first { $0.isKeyWindow }
  }
+ private func navigationController(_ root: UIViewController?) -> UINavigationController? {
+  guard let root else { return nil }
+  if let tabs = root as? UITabBarController { return navigationController(tabs.selectedViewController) ?? tabs.navigationController }
+  if let nav = root as? UINavigationController { return navigationController(nav.visibleViewController) ?? nav }
+  for child in root.children { if let nav = navigationController(child) { return nav } }
+  return nil
+ }
  private func clearRailTools() {
-  railToolsView?.removeFromSuperview(); railToolsView = nil; railTabs = nil; railSignature = ""
+  if let nav = toolNavigation, let owner = toolOwner {
+   nav.toolbar.transform = previousToolbarTransform
+   owner.toolbarItems = previousToolbarItems
+   nav.setToolbarHidden(previousToolbarHidden, animated:false)
+  }
+  toolNavigation = nil; toolOwner = nil; previousToolbarItems = nil; railSignature = ""
  }
  private func railTools(_ rows: [[String: String]], color: String, root: UIViewController?, tabs: UITabBarController) -> Bool {
-  guard #available(iOS 26.0, *) else { return false }
-  let bar = tabs.tabBar
-  guard !rows.isEmpty, bar.window != nil, !bar.isHidden, bar.bounds.height > bar.bounds.width,
-        tabs.view.bounds.height > bar.bounds.height + CGFloat(rows.count * 44) + 48 else { clearRailTools(); return false }
+  guard let window = tabs.view.window else { clearRailTools(); return false }
+  let bar = tabs.tabBar, rail = tabs.tabBar.convert(tabs.tabBar.bounds,to:window)
+  // UIKit can rotate the bar: bounds describe its local axis, not the visible rail.
+  guard !rows.isEmpty, !bar.isHidden, rail.height > rail.width,
+        let nav = navigationController(root), let owner = nav.topViewController else { clearRailTools(); return false }
   let signature = rows.description + color
-  if railTabs === tabs && railSignature == signature && railToolsView?.superview != nil { return true }
-  clearRailTools()
-  // UITabAccessory is always a bottom accessory, even beside a vertical tab rail.
-  // Constrain native glass actions to the public tab bar's anchors instead.
-  let glass = UIGlassEffect(style: .regular); glass.isInteractive = true
-  let tools = UIVisualEffectView(effect: glass); tools.translatesAutoresizingMaskIntoConstraints = false
-  tools.layer.cornerRadius = 24; tools.clipsToBounds = true
-  let stack = UIStackView(); stack.axis = .vertical; stack.alignment = .center; stack.translatesAutoresizingMaskIntoConstraints = false
-  var value: UInt64 = 0; Scanner(string: color.replacingOccurrences(of: "#", with: "")).scanHexInt64(&value)
-  let tint = UIColor(red:CGFloat((value >> 16)&255)/255,green:CGFloat((value >> 8)&255)/255,blue:CGFloat(value&255)/255,alpha:1)
-  for row in rows.prefix(5) {
-   guard let id = row["id"], let symbol = row["symbol"] else { continue }
-   let button = UIButton(type: .system); button.accessibilityLabel = row["label"]; button.tintColor = tint
-   button.setImage(UIImage(systemName:symbol,withConfiguration:UIImage.SymbolConfiguration(pointSize:22)),for:.normal)
-   button.addAction(UIAction { [weak self] _ in self?.sendEvent("onMapAction", ["id":id]) }, for:.touchUpInside)
-   button.widthAnchor.constraint(equalToConstant:44).isActive = true; button.heightAnchor.constraint(equalToConstant:44).isActive = true
-   stack.addArrangedSubview(button)
+  if toolNavigation !== nav || toolOwner !== owner || railSignature != signature {
+   clearRailTools(); toolNavigation = nav; toolOwner = owner
+   previousToolbarItems = owner.toolbarItems; previousToolbarHidden = nav.isToolbarHidden; previousToolbarTransform = nav.toolbar.transform
+   var value: UInt64 = 0; Scanner(string:color.replacingOccurrences(of:"#",with:"")).scanHexInt64(&value)
+   nav.toolbar.tintColor = UIColor(red:CGFloat((value >> 16)&255)/255,green:CGFloat((value >> 8)&255)/255,blue:CGFloat(value&255)/255,alpha:1)
+   owner.toolbarItems = rows.prefix(5).compactMap { row in
+    guard let id = row["id"], let symbol = row["symbol"] else { return nil }
+    let item = UIBarButtonItem(image:UIImage(systemName:symbol,withConfiguration:UIImage.SymbolConfiguration(pointSize:22)),primaryAction:UIAction { [weak self] _ in self?.sendEvent("onMapAction",["id":id]) })
+    item.accessibilityLabel = row["label"]; return item
+   }
+   nav.setToolbarHidden(false,animated:false); railSignature = signature
   }
-  tools.contentView.addSubview(stack); tabs.view.addSubview(tools)
-  NSLayoutConstraint.activate([
-   stack.leadingAnchor.constraint(equalTo:tools.contentView.leadingAnchor,constant:2), stack.trailingAnchor.constraint(equalTo:tools.contentView.trailingAnchor,constant:-2),
-   stack.topAnchor.constraint(equalTo:tools.contentView.topAnchor,constant:4),stack.bottomAnchor.constraint(equalTo:tools.contentView.bottomAnchor,constant:-4),
-   tools.centerXAnchor.constraint(equalTo:bar.centerXAnchor),tools.bottomAnchor.constraint(equalTo:bar.topAnchor,constant:-10)
-  ])
-  railTabs = tabs; railToolsView = tools; railSignature = signature
+  // Keep UIKit's adaptive toolbar and its native buttons, above the tab rail.
+  // Re-evaluate in window coordinates after each size/placement change.
+  nav.toolbar.transform = previousToolbarTransform
+  nav.view.layoutIfNeeded()
+  let tools = nav.toolbar.convert(nav.toolbar.bounds,to:window)
+  if tools.intersects(rail.insetBy(dx:-8,dy:-8)), let parent = nav.toolbar.superview {
+   let delta = max(0,tools.maxY - rail.minY + 10)
+   let origin = parent.convert(.zero,from:window), shifted = parent.convert(CGPoint(x:0,y:-delta),from:window)
+   nav.toolbar.transform = previousToolbarTransform.concatenating(CGAffineTransform(translationX:shifted.x-origin.x,y:shifted.y-origin.y))
+  }
   return true
  }
  private func tabController(_ root: UIViewController?) -> UITabBarController? {
@@ -58,6 +71,11 @@ public class VelunivoAppearanceModule: Module {
  public func definition() -> ModuleDefinition {
   Name("VelunivoAppearance")
   Events("onMapAction")
+  AsyncFunction("setTabsHidden") { (hidden: Bool) in
+   guard let tabs = self.tabController(self.activeWindow()?.rootViewController) else { return }
+   if #available(iOS 18.0, *) { tabs.setTabBarHidden(hidden,animated:false) }
+   else { tabs.tabBar.isHidden = hidden }
+  }.runOnQueue(.main)
   AsyncFunction("setMapSidebarActions") { (rows: [[String: String]], color: String) -> Bool in
    guard #available(iOS 18.0, *) else { return false }
    let root = self.activeWindow()?.rootViewController

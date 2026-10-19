@@ -76,14 +76,24 @@ def find_control(label,elements):
     matches=[e for e in elements if label in (e.get('text',''),e.get('content-desc',''))]
     return next((e for e in matches if e.get('checkable')=='true'),next((e for e in matches if e.get('clickable')=='true'),next(iter(matches),None)))
 
+def control_visible(item,elements,height):
+    def bounds(node):return list(map(int,re.findall(r'\d+',node.get('bounds',''))))
+    tabs=[bounds(e)[1] for e in elements if len(bounds(e))==4 and bounds(e)[1]>height*.65 and any(name in (e.get('text',''),e.get('content-desc','')) or e.get('content-desc','').endswith(', '+name) for name in ('Explore','Library','Vehicles','Settings'))]
+    limit=min(tabs,default=height*.94)
+    rect=bounds(item) if item is not None else []
+    return len(rect)==4 and rect[3]>rect[1] and rect[1]>40 and rect[3]<limit-8
+
+def scroll_page_top():
+    size=adb('shell','wm','size');w,h=map(int,re.findall(r'(\d+)x(\d+)',size)[-1])
+    for _ in range(5):adb('shell','input','swipe',str(w//2),str(h//4),str(w//2),str(h*4//5),'200');time.sleep(.2)
+
 def reachable_control(label,timeout=25):
     deadline=time.monotonic()+timeout
     while time.monotonic()<deadline:
         xml,elements=nodes();ROOT.joinpath(PREFIX+'-developer.xml').write_text(xml)
         item=find_control(label,elements)
         size=adb('shell','wm','size');w,h=map(int,re.findall(r'(\d+)x(\d+)',size)[-1])
-        bounds=list(map(int,re.findall(r'\d+',item.get('bounds','')))) if item is not None else []
-        if len(bounds)==4 and bounds[3]>bounds[1] and bounds[1]>40 and bounds[3]<h*.84:return item
+        if control_visible(item,elements,h):return item
         adb('shell','input','swipe',str(w//2),str(h*4//5),str(w//2),str(h//3),'250');time.sleep(.5)
     raise RuntimeError('Native developer control is not reachable: '+label)
 
@@ -122,7 +132,9 @@ def main():
     if os.environ.get('VELUNIVO_CAPTURE_SAMPLE_DATA','1')=='1':enable_sample_data()
     for name,path in [('explore','/'),('library','/offline'),('vehicles','/scooter'),('settings','/settings')]:
         launch_page(path)
-        time.sleep(15 if name=='explore' else 3);wait_for_page(name)
+        time.sleep(15 if name=='explore' else 3)
+        if name!='explore':scroll_page_top()
+        wait_for_page(name)
         if name=='explore':
             # Deliver fixes after permissions and the app's watcher are ready.
             for _ in range(3):adb('emu','geo','fix','9.1900','45.4642');time.sleep(2)

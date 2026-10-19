@@ -40,3 +40,21 @@ Reviewed after pushing candidate `a6512df` to testing, using Apple Design, Anima
 
 - Apple: [Tab bars](https://developer.apple.com/design/human-interface-guidelines/tab-bars), [UITabAccessory](https://developer.apple.com/documentation/uikit/uitabaccessory), [adaptive tab/sidebar controls](https://developer.apple.com/documentation/uikit/elevating-your-ipad-app-with-a-tab-bar-and-sidebar).
 - Local review standards: `/Users/xarber/.codex/skills/review-animations/STANDARDS.md`; construction guidance: `/Users/xarber/.codex/skills/animate-expo/SKILL.md`; design guidance: `/Users/xarber/.codex/skills/apple-design/SKILL.md`.
+
+## 2.7.2 implementation follow-up
+
+The previously deferred findings are now implemented in the focused patch. This preserves the audit's original verdict as history.
+
+| Before | After | Why |
+| --- | --- | --- |
+| Sheet height transitions and planner ease-in | Transform/opacity entrance, 240 ms drawer curve; 180 ms strong ease-out dismissal | Keeps layout out of continuous animation and responds immediately |
+| JS drag updates and distance-only swipe | Gesture Handler shared values; RN callbacks only on commit/cancel; distance or velocity threshold and 300 ms/.8 spring with release velocity | Continuous feedback no longer crosses React on each frame; cancelled gestures release scroll locks |
+| Blanket layout movement and animated panel hosts | Stable outer View; inner 6 pt content response at 200 ms | The absolute panel anchor is independent of animated content |
+| Symmetric JS press springs | Reanimated CSS .97 scale, 120 ms press / 80 ms release | Faster system response with reduced-motion handling |
+| 33 Hz scratch paint loop | Renderer/UI-owned finite 480 ms reveal | No per-frame React rendering; this longer-than-UI duration is a noninteractive map discovery trace, not a menu transition |
+| Duplicate live materials | One GlassView, BlurView or opaque fallback | Avoids stacking live map blur passes |
+| Fixed-width replay assumptions | Bounded landscape column, safe map padding, scrollable roster/media | Keeps playback controls reachable without covering the available map region |
+
+**Performance / accessibility:** no blanket layout transitions, repeated scratch loop, or stacked blur remains in the changed path. Reduced motion removes positional effects and preserves static state feedback. UI-thread code is not a claim of physical low-end frame-rate verification.
+
+**Target verdict:** source changes address the recorded blockers. Native anchoring, drag interruption, Dynamic Type and material contrast require target inspection of the new compiled candidate; Simulator checks are documented in UPDATE_2.7.2.md. Physical gesture feel/haptic timing and the slowest supported Android remain unverified.

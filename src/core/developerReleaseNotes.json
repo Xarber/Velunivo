@@ -1533,40 +1533,172 @@
   ],
   "2.6.0": [
     {
+      "sha": "baae089d7408c135a12d26df3fda408708293328",
+      "title": "feat: add capability-aware ride analytics; fix: native maps and sync convergence",
+      "body": "Analyze original vehicle/GPS samples with signed bounded-gap energy integration, time-weighted speed distributions, observed sag and temperature, calibration and separate coverage scores. Add linked ride charts, historical vehicle trends, capability-aware live widgets, conservative cached battery planning and six-language UI without new dependencies or firmware commands.\n\nReplace the crash-prone window sidebar host with the supported native tab accessory, Search first. Restore asset-backed native arrows and layered rider avatars, retain group locations, improve landscape/keyboard/Library safe areas and hide activity tabs. Unify merge progress and make settings, achievement and quest digests converge while preserving edit times. Document constraints and validation in docs/UPDATE_2.6.0.md.",
+      "releaseCommit": "358959ab7f6015a7fa051a3a094770a447941937"
+    },
+    {
+      "sha": "b7a65a20ed54d93c567619e67522189e25260e91",
+      "title": "chore(release): prepare 2.6.0 testing changelog [skip ci]",
+      "body": "Include the implementation commit and detailed changes in developer release notes. Native device rendering and real scooter electrical measurements remain explicit validation requirements; CI builds and matching hosted web deployment follow this unsigned revision.",
+      "releaseCommit": "358959ab7f6015a7fa051a3a094770a447941937"
+    },
+    {
+      "sha": "4c2465ce1f000f0c2449f6332fbd8cafa568ca13",
+      "title": "fix(releases): retain testing-version developer history [skip ci]",
+      "body": "Select the latest testing tag for each version, prefer stable tags when present and preserve historical notes without tags. Prevent older testing commits from being repeated under the next release. Cover latest-build selection and historical retention with a temporary Git repository regression test.",
+      "releaseCommit": "358959ab7f6015a7fa051a3a094770a447941937"
+    },
+    {
+      "sha": "358959ab7f6015a7fa051a3a094770a447941937",
+      "title": "fix(maps): implement marker rotation in Apple MapKit [skip ci]",
+      "body": "The MapKit backend ignores react-native-maps' public rotation prop. Extend the existing version-checked native patch to export a finite guarded screen rotation for the annotation view. Combined with heading minus camera bearing, native image arrows retain their actual orientation while maps turn. Verify patch application is idempotent; leave Google and Android backends unchanged.",
+      "releaseCommit": "358959ab7f6015a7fa051a3a094770a447941937"
+    }
+  ],
+  "2.5.1": [
+    {
       "sha": "68e42bced91ed2d011c772c6b858f8c1940ad16b",
       "title": "docs: Refresh Android native previews for 2.5.0 [skip ci]",
       "body": "Refresh Android native previews for 2.5.0 [skip ci]. Changed 25 files: assets/onboarding/android-explore.png, assets/onboarding/android-library.png, assets/onboarding/android-settings.png, assets/onboarding/android-tablet-explore.png, assets/onboarding/android-tablet-library.png, assets/onboarding/android-tablet-settings.png, assets/onboarding/android-tablet-vehicles.png, assets/onboarding/android-vehicles.png and 17 more.",
-      "releaseCommit": "baae089d7408c135a12d26df3fda408708293328"
+      "releaseCommit": "04847a6399aac88c56023a5af9a71bf8c8bd2684"
     },
     {
       "sha": "2fdf14f9d93f2ca22bb1489573e46a36c15ffd3b",
       "title": "fix: Complete rewards, adaptive native layouts and Live Activity controls [skip ci]",
       "body": "Group cosmetic unlocks in a dedicated rewards screen, add profile avatars and pin/scratch presets, make arrows visibly distinct and refresh native marker snapshots. Raise cosmetic XP thresholds and scale neighborhood rewards to 500 XP at 10 km without rewriting earned progress.\n\nMeasure native top tab-bar geometry for responsive iPad headers and use system safe areas for the Library. Use native SwiftUI map-action controls on Liquid Glass devices. Keep navigation, recording and shared-trip layouts separate from combinable Live Activity test events; render approval text and a bottom review-action row in Swift.\n\nAdd artifact-only development clients from any workflow branch, with Debug builds and a Metro launcher. Preserve release JS bundling and prevent development jobs from creating tags, publishing releases or updating AltSource. Add release commit IDs and factual descriptions for historical commits lacking a body.\n\nPrepare 2.5.1 for testing. No screenshot work or local native compilation; document 573 MB of temporary-artifact cleanup and pending native syncing, battery, Memories and Duo/iPad checks.",
-      "releaseCommit": "baae089d7408c135a12d26df3fda408708293328"
+      "releaseCommit": "04847a6399aac88c56023a5af9a71bf8c8bd2684"
     },
     {
       "sha": "42c2f484071c11cacc8781f82d6da872c2ae5e3e",
       "title": "docs: Complete version commit descriptions and testing handoff [skip ci]",
       "body": "Backfill descriptions and release commit IDs across all 71 historical version ranges, preserving original authored bodies and version numbers. Document the native validation checklist, Debug client workflow, XP thresholds and disk-cache cleanup. Treat manual non-main release builds as prereleases; atomic metadata writes preserve the last valid history if storage fills.",
-      "releaseCommit": "baae089d7408c135a12d26df3fda408708293328"
+      "releaseCommit": "04847a6399aac88c56023a5af9a71bf8c8bd2684"
     },
     {
       "sha": "04847a6399aac88c56023a5af9a71bf8c8bd2684",
       "title": "fix: Scope Library inset handling to its overview [skip ci]",
       "body": "Preserve automatic native tab behavior on existing Library subpages. Apply system safe-area padding and explicit scroll-inset handling only to the redesigned Library overview, avoiding a potential nested-screen regression.",
-      "releaseCommit": "baae089d7408c135a12d26df3fda408708293328"
-    },
+      "releaseCommit": "04847a6399aac88c56023a5af9a71bf8c8bd2684"
+    }
+  ],
+  "2.5.2": [
     {
       "sha": "83bf8e2bf1f8fe2007928775967421bbea0b1a92",
       "title": "fix: Stabilize native map chrome, activities and web storage [skip ci]",
       "body": "Keep the iPad header below native tabs on resize, add owned sidebar actions and distinct bitmap navigation arrows. Compact Live Activities and bind approval actions to the pending group request.\n\nMigrate web data atomically from localStorage to IndexedDB with quota reporting. Add measured sync progress and shared loading fills. Render stacked milestone badges and temporary local developer reward previews without unlocking themes or avatars or publishing test selections.\n\nDocument 2.5.2 testing scope and validate 436 app tests, 49 workflow tests, lint, TypeScript, Swift syntax and real-browser 8MB storage migration/reload/rollback/cross-tab behavior. Native Duo and sideload interaction checks remain device validation.",
-      "releaseCommit": "baae089d7408c135a12d26df3fda408708293328"
+      "releaseCommit": "83bf8e2bf1f8fe2007928775967421bbea0b1a92"
+    }
+  ],
+  "2.7.2": [
+    {
+      "sha": "dac9299153207147ed5c045629182d6efaea6fbe",
+      "title": "fix: stabilize paired sync, native panels and map updates",
+      "body": "Forward snapshot probe/need messages through encrypted paired channels and negotiate a bounded large-transfer window. Keep native panel anchors stable, use one material layer, reserve landscape map space, and anchor Duo glass actions above the native tab rail. Restore UI-thread gestures and finite renderer-owned scratch reveals. Persist the last viewport, retain overlapping transit queries, fix diamond crops, developer-only diagnostics and versioned changelog URLs, and preserve modal orientation. Includes regression tests and 2.7.2 candidate validation notes.",
+      "releaseCommit": "0fd962bd377372e02f62ad014411ad791ddfc047"
     },
     {
-      "sha": "baae089d7408c135a12d26df3fda408708293328",
-      "title": "feat: add capability-aware ride analytics; fix: native maps and sync convergence",
-      "body": "Analyze original vehicle/GPS samples with signed bounded-gap energy integration, time-weighted speed distributions, observed sag and temperature, calibration and separate coverage scores. Add linked ride charts, historical vehicle trends, capability-aware live widgets, conservative cached battery planning and six-language UI without new dependencies or firmware commands.\n\nReplace the crash-prone window sidebar host with the supported native tab accessory, Search first. Restore asset-backed native arrows and layered rider avatars, retain group locations, improve landscape/keyboard/Library safe areas and hide activity tabs. Unify merge progress and make settings, achievement and quest digests converge while preserving edit times. Document constraints and validation in docs/UPDATE_2.6.0.md.",
-      "releaseCommit": "baae089d7408c135a12d26df3fda408708293328"
+      "sha": "b33271bf4dd348211b55bd73d4712f0e9a0e7b17",
+      "title": "test: include 2.7.2 in complete release history",
+      "body": "Keep the release-history assertion aligned with the new candidate version and retain individual patch changes in the full changelog, while the overview remains one Fixes & Improvements entry.",
+      "releaseCommit": "0fd962bd377372e02f62ad014411ad791ddfc047"
+    },
+    {
+      "sha": "0fd962bd377372e02f62ad014411ad791ddfc047",
+      "title": "fix: localize patch details and constrain narrow landscape replays",
+      "body": "Translate the complete 2.7.2 changelog in all supported languages and remove conflicting right/width constraints from compact landscape Memories panels. Validated with 482 app tests, 53 workflow tests, lint and typecheck.",
+      "releaseCommit": "0fd962bd377372e02f62ad014411ad791ddfc047"
+    }
+  ],
+  "2.6.1": [
+    {
+      "sha": "fe31e863e72c8642cd8c9bf8b10e6983d82098dc",
+      "title": "fix(maps): restore native markers and adaptive ride layouts",
+      "body": "Render native navigation silhouettes without the legacy image bridge, recenter measured viewports on resize, retain last known map fixes and recover hung browser GPS requests. Preserve recording ownership when returning from Settings and keep landscape speed controls unobstructed. Use the public UIKit sidebar action slot with a centered compact fallback.\n\nAdd evidence-gated remembered battery curves and one-time manual charge updates, vehicle battery summaries, virtualized Library previews, isolated developer sample riders, per-sensor reliability and condition-matched historical analytics. Add shared vector badges, native Android frame artwork and regression coverage. Automated checks: 466 app tests, 49 workflow tests, lint, types, Swift parse and isolated web analytics QA. Native Simulator verification is the final stage after implementation.",
+      "releaseCommit": "5be3b479059c18f364dda4fe9f92a7ae3b6b7ec7"
+    },
+    {
+      "sha": "fee0db9e54f35d80993676fe9cc45c062e0f1804",
+      "title": "fix(ui): preserve light-mode sheet contrast and seed Android gallery",
+      "body": "Use a light expanded web sheet in light mode after visual QA exposed dark text on a dark background. Enable sample data and ghost riders through the real developer controls on disposable Android capture emulators; prefer the actual checkable control over its text label. Add a native-control selection regression test.",
+      "releaseCommit": "5be3b479059c18f364dda4fe9f92a7ae3b6b7ec7"
+    },
+    {
+      "sha": "e89d79931405afb198ef583dcea0e7e41616a8aa",
+      "title": "fix(developer): scatter sample riders as a nearby riding group",
+      "body": "Replace the grid with a session-seeded local cluster in metre-based coordinates. Keep relative positions stable across redraws, separate riders enough for avatar testing and retain all sample-data signaling/recording exclusions. Add geometry and transfer-isolation coverage.",
+      "releaseCommit": "5be3b479059c18f364dda4fe9f92a7ae3b6b7ec7"
+    },
+    {
+      "sha": "ac965eec97bc5407f539fe0f0157bfb04e1aab25",
+      "title": "fix(analytics): reject incorrectly typed sensor readings",
+      "body": "Apply metric-specific numeric bounds and boolean/text types in per-sensor coverage. Invalid speed strings or numeric charging flags cannot inflate confidence. Preserve raw measurements and record the final pre-native automated/browser verification checkpoint.",
+      "releaseCommit": "5be3b479059c18f364dda4fe9f92a7ae3b6b7ec7"
+    },
+    {
+      "sha": "92de59d4342276e254a1e09f5783647f7f341955",
+      "title": "feat(analytics): add evidence-based efficiency advice and matched comparisons",
+      "body": "Compare robust per-metric medians across at least five rides with similar observed conditions. Cover energy, charge use, acceleration, voltage sag, calibration and normalized interruption rates. Recommend steadier acceleration only with measured events and sufficient vehicle/electrical coverage; explain missing data and higher-than-matched consumption without speculative mechanical diagnoses. Preserve visibility preferences and localize the complete UI. Validation: 470 app tests, lint and types.",
+      "releaseCommit": "5be3b479059c18f364dda4fe9f92a7ae3b6b7ec7"
+    },
+    {
+      "sha": "1223437309a384c51dc6312835b8c3e3be03ab39",
+      "title": "fix(native): preserve recording return target and adapt Duo map toolbar",
+      "body": "preserve recording return target and adapt Duo map toolbar. Changed 4 files: docs/CHANGES_2.6.1.md, modules/velunivo-appearance/ios/VelunivoAppearanceModule.swift, src/app/(tabs)/index.tsx, src/services/store.tsx.",
+      "releaseCommit": "5be3b479059c18f364dda4fe9f92a7ae3b6b7ec7"
+    },
+    {
+      "sha": "02173546894d2e620c2ccaa44c6e3641df9451b7",
+      "title": "ci(screenshots): refresh native welcome previews only after verified paired galleries",
+      "body": "refresh native welcome previews only after verified paired galleries. Changed 6 files: .github/workflows/capture-android.yml, .github/workflows/gallery.yml, docs/CHANGES_2.6.1.md, modules/velunivo-appearance/ios/VelunivoAppearanceModule.swift, scripts/stage-ios-screenshots.py, tests/test_stage_ios_screenshots.py.",
+      "releaseCommit": "5be3b479059c18f364dda4fe9f92a7ae3b6b7ec7"
+    },
+    {
+      "sha": "5be3b479059c18f364dda4fe9f92a7ae3b6b7ec7",
+      "title": "fix(screenshots): orient the iPad framebuffer and preserve verification handoff",
+      "body": "orient the iPad framebuffer and preserve verification handoff. Changed 5 files: docs/CHANGES_2.6.1.md, docs/RESUME_2.6.1.md, docs/WORKLIST_2.6.1.md, scripts/simulator-screenshots.py, tests/test_simulator_screenshots.py.",
+      "releaseCommit": "5be3b479059c18f364dda4fe9f92a7ae3b6b7ec7"
+    }
+  ],
+  "2.7.0": [
+    {
+      "sha": "e709048ebc3c88b74432ac2c6e55bd6f46abd675",
+      "title": "feat(replay): synchronize Memories tracks and streamline native ride maps",
+      "body": "Add one seekable clock for recorded rides and consented rider/media Memories tracks. Negotiate bounded block compression and content reuse during device sync, retaining legacy peer compatibility and existing consent.\n\nUnify arrow and badge artwork, fix vehicle battery layout, simplify route estimates, separate GPS freshness from presence, adapt native landscape controls and Duo accessory placement, and retain transit continuity across map viewports. Raise Velunivo Live Activity relevance on start and update. Add regression tests and translations.",
+      "releaseCommit": "dfca56ed97f665d7dfca6cac54f8c8fed745cd0b"
+    },
+    {
+      "sha": "0dc0696d6b7840ee177108c7c5d84a57556541f0",
+      "title": "fix(replay): bound media playback surfaces and repair screenshot capture",
+      "body": "bound media playback surfaces and repair screenshot capture. Changed 11 files: app.json, docs/CHANGES_2.7.0.md, scripts/android-screenshots.py, scripts/patch-widgets.mjs, scripts/simulator-screenshots.py, src/components/MemoryMediaPlayer.tsx, src/components/MemoryMediaPlayer.web.tsx, src/components/MemoryReplay.tsx and 3 more.",
+      "releaseCommit": "dfca56ed97f665d7dfca6cac54f8c8fed745cd0b"
+    },
+    {
+      "sha": "a6512dfed769b29ddcc51c40121ea34e95b557c6",
+      "title": "fix(ios): restore tab controller lookup for native map tools",
+      "body": "restore tab controller lookup for native map tools. Changed 1 files: modules/velunivo-appearance/ios/VelunivoAppearanceModule.swift.",
+      "releaseCommit": "dfca56ed97f665d7dfca6cac54f8c8fed745cd0b"
+    },
+    {
+      "sha": "dfca56ed97f665d7dfca6cac54f8c8fed745cd0b",
+      "title": "fix(maps): fade silent GPS fixes and preserve portable replay media",
+      "body": "fade silent GPS fixes and preserve portable replay media. Changed 9 files: docs/CHANGES_2.7.0.md, docs/DESIGN_MOTION_REVIEW_2.7.0.md, src/components/OfflineRideMap.tsx, src/components/PositionArrow.ios.tsx, src/components/RideMap.tsx, src/components/RideMap.web.tsx, src/services/memoryMedia.web.ts, src/services/useMarkerOpacity.ts and 1 more.",
+      "releaseCommit": "dfca56ed97f665d7dfca6cac54f8c8fed745cd0b"
+    }
+  ],
+  "2.7.1": [
+    {
+      "sha": "949ff13acecd19502c1456e04b5f57fac878a3cf",
+      "title": "fix(web): preserve stale position opacity through map updates",
+      "body": "preserve stale position opacity through map updates. Changed 8 files: .github/workflows/release.yml, app.json, docs/CHANGES_2.7.1.md, package-lock.json, package.json, src/components/RideMap.web.tsx, src/core/appIntroduction.ts, tests/data-transfer.test.ts.",
+      "releaseCommit": "a6039810a449ca5b983c9582adc56b4a96692e8e"
+    },
+    {
+      "sha": "a6039810a449ca5b983c9582adc56b4a96692e8e",
+      "title": "fix(ui): retain landscape control material and record native test findings",
+      "body": "retain landscape control material and record native test findings. Changed 2 files: docs/CHANGES_2.7.1.md, src/components/MapControls.ios.tsx.",
+      "releaseCommit": "a6039810a449ca5b983c9582adc56b4a96692e8e"
     }
   ]
 }

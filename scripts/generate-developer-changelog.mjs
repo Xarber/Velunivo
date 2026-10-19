@@ -13,5 +13,10 @@ function describeCommit(sha,title){
 }
 let previous;
 for(const {version,tag} of tags){const raw=git('log','--reverse','--format=%H%x1f%s%x1f%b%x1e',previous?`${previous}..${tag}`:tag);notes[version]=raw.split('\x1e').filter(s=>s.trim()).map(s=>{const [sha,title,body]=s.trim().split('\x1f');return {sha,title,body:body?.trim()||describeCommit(sha,title),releaseCommit:git('rev-parse',tag+'^{}')};});previous=tag;}
-if(!notes[current]){const raw=git('log','--reverse','--format=%H%x1f%s%x1f%b%x1e',previous?`${previous}..HEAD`:'HEAD');notes[current]=raw.split('\x1e').filter(s=>s.trim()).map(s=>{const [sha,title,body]=s.trim().split('\x1f');return {sha,title,body:body?.trim()||describeCommit(sha,title),releaseCommit:git('rev-parse','HEAD')};});}
+// Always rebuild the current release from the previous VERSION, even after its
+// tag is pinned or an earlier testing build left a retained entry behind.
+const beforeCurrent=version=>{const a=version.split('.').map(Number),b=current.split('.').map(Number);for(let i=0;i<3;i++)if(a[i]!==b[i])return a[i]<b[i];return false;};
+const baseline=tags.filter(item=>beforeCurrent(item.version)).at(-1)?.tag;
+{const raw=git('log','--reverse','--format=%H%x1f%s%x1f%b%x1e',baseline?`${baseline}..HEAD`:'HEAD');notes[current]=raw.split('\x1e').filter(s=>s.trim()).map(s=>{const [sha,title,body]=s.trim().split('\x1f');return {sha,title,body:body?.trim()||describeCommit(sha,title),releaseCommit:git('rev-parse','HEAD')};});}
+writeFileSync('src/core/buildIdentity.generated.json',JSON.stringify({version:current,commit:git('rev-parse','HEAD')})+'\n');
 const temporary=target+'.tmp';writeFileSync(temporary,JSON.stringify(notes,null,2)+'\n');renameSync(temporary,target);

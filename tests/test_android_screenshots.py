@@ -19,3 +19,10 @@ class NativeCaptureTests(unittest.TestCase):
         title=ET.Element('node',{'text':'Show sample data','clickable':'false'})
         switch=ET.Element('node',{'content-desc':'Show sample data','checkable':'true','checked':'false','clickable':'true'})
         self.assertIs(capture.find_control('Show sample data',[title,switch]),switch)
+
+    def test_version_near_bottom_is_visible_above_actual_tabs(self):
+        version=ET.Element('node',{'content-desc':'App version','bounds':'[72,2292][1208,2457]'})
+        tab=ET.Element('node',{'package':capture.APP,'content-desc':'icon, Explore','bounds':'[0,2638][320,2784]'})
+        self.assertTrue(capture.control_visible(version,[version,tab],2856))
+        covered=ET.Element('node',{'bounds':'[72,2600][1208,2700]'})
+        self.assertFalse(capture.control_visible(covered,[covered,tab],2856))

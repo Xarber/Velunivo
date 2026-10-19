@@ -78,6 +78,7 @@ jobs:
           path: |
             release-notes.md
             src/core/developerReleaseNotes.json
+            src/core/buildIdentity.generated.json
   web:
     needs: prepare
     runs-on: ubuntu-latest
@@ -103,7 +104,7 @@ jobs:
         with:
           name: notes
           path: .release-metadata
-      - run: cp .release-metadata/src/core/developerReleaseNotes.json src/core/developerReleaseNotes.json
+      - run: cp .release-metadata/src/core/{developerReleaseNotes.json,buildIdentity.generated.json} src/core/
       - name: Compute version-independent native dependency cache key
         run: python3 scripts/native-cache-key.py >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
@@ -147,7 +148,7 @@ jobs:
         with:
           name: notes
           path: .release-metadata
-      - run: cp .release-metadata/src/core/developerReleaseNotes.json src/core/developerReleaseNotes.json
+      - run: cp .release-metadata/src/core/{developerReleaseNotes.json,buildIdentity.generated.json} src/core/
       - name: Compute version-independent native dependency cache key
         run: python3 scripts/native-cache-key.py >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
@@ -268,7 +269,7 @@ jobs:
         with:
           name: notes
           path: .release-metadata
-      - run: cp .release-metadata/src/core/developerReleaseNotes.json src/core/developerReleaseNotes.json
+      - run: cp .release-metadata/src/core/{developerReleaseNotes.json,buildIdentity.generated.json} src/core/
       - name: Compute version-independent native dependency cache key
         run: python3 scripts/native-cache-key.py >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
@@ -395,7 +396,7 @@ jobs:
         with:
           name: notes
           path: .release-metadata
-      - run: cp .release-metadata/src/core/developerReleaseNotes.json src/core/developerReleaseNotes.json
+      - run: cp .release-metadata/src/core/{developerReleaseNotes.json,buildIdentity.generated.json} src/core/
       - name: Compute version-independent native dependency cache key
         run: python3 scripts/native-cache-key.py >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
