@@ -34,3 +34,6 @@ Further target findings:
 - Native inspection found Fabric camera commands bypassed the existing legacy MapKit padding patch. RNMapsMapView now applies the same viewport projection and honors zero-duration/reduced-motion updates. The idempotence test covers both command paths.
 - The first toolbar candidate failed native compilation on an overloaded CGPoint/CGRect `.zero`; the argument is now explicitly CGPoint.zero. No failed binary was promoted as stable.
 - Hosted CI web artifact 5b93102 was activated with rollback, public Chromium/WebKit commit/footer/notes checks, health and WSS OPEN. PeerServer PID 723322 was preserved.
+
+- Sample data and ghost riders now require Developer Mode in normal builds, even when their stored flags remain enabled. Screenshot QA builds retain their explicit fixture exception. Chromium and WebKit passed both enabled and disabled cases without import/runtime errors.
+- Local gallery creation was attempted with the installed iOS 27.1 runtime: both iPhone 17 Pro and iPad Pro 11-inch M5 returned CoreSimulator incompatible-device error 403. The existing Duo remains usable. No additional runtime/SDK was downloaded and no failed capture was published; fresh regular phone/tablet galleries require the CI runners.
