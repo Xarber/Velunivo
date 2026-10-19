@@ -56,7 +56,7 @@ public class VelunivoAppearanceModule: Module {
   let tools = nav.toolbar.convert(nav.toolbar.bounds,to:window)
   if tools.intersects(rail.insetBy(dx:-8,dy:-8)), let parent = nav.toolbar.superview {
    let delta = max(0,tools.maxY - rail.minY + 10)
-   let origin = parent.convert(.zero,from:window), shifted = parent.convert(CGPoint(x:0,y:-delta),from:window)
+   let origin = parent.convert(CGPoint.zero,from:window), shifted = parent.convert(CGPoint(x:0,y:-delta),from:window)
    nav.toolbar.transform = previousToolbarTransform.concatenating(CGAffineTransform(translationX:shifted.x-origin.x,y:shifted.y-origin.y))
   }
   return true

@@ -27,3 +27,10 @@ Native follow-up and latest reports:
 - Progress now uses a darker version of the button background and fills with its original color, without a translucent white overlay.
 - Current developer notes regenerate even when the release tag already exists or retained notes are empty. A generated build identity travels with the notes artifact to every native/web job.
 - Transit uses a bounded, cached same-origin backend proxy to avoid browser CORS failures and identify upstream requests. Public providers are currently returning errors; existing completed cells are retained and retries back off. The new backend is deployed with rollback and WSS verification; final static web deployment is still pending.
+
+Further target findings:
+
+- Duo navigation displayed the chevron bitmap without a square shadow or extra MapKit compass. Full-screen upcoming directions remained landscape with safe-area padding. Arrival stopped the simulation and Done restored all four tabs; expanded/collapsed home panels remained anchored. These checks used the previous CI native binary with the corrected local JS, not the final toolbar binary.
+- Native inspection found Fabric camera commands bypassed the existing legacy MapKit padding patch. RNMapsMapView now applies the same viewport projection and honors zero-duration/reduced-motion updates. The idempotence test covers both command paths.
+- The first toolbar candidate failed native compilation on an overloaded CGPoint/CGRect `.zero`; the argument is now explicitly CGPoint.zero. No failed binary was promoted as stable.
+- Hosted CI web artifact 5b93102 was activated with rollback, public Chromium/WebKit commit/footer/notes checks, health and WSS OPEN. PeerServer PID 723322 was preserved.

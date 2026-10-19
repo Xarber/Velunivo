@@ -70,6 +70,36 @@ patch('AIRMapManager.m','[AIRMap animateWithDuration:duration/1000 animations:^{
             }
             [AIRMap animateWithDuration:duration/1000 animations:^{`);
 
+// Fabric dispatches camera commands through RNMapsMapView, bypassing the legacy
+// manager above. Apply the same padding calculation and honor reduced duration.
+patch('RNMapsMapView.mm',`    _view.ignoreRegionChanges = YES;
+    [_view setCamera:camera animated:YES];`, `    BOOL originalIgnore = _view.ignoreRegionChanges;
+    _view.ignoreRegionChanges = YES;
+    UIEdgeInsets padding = _view.mapPadding;
+    CGRect available = UIEdgeInsetsInsetRect(_view.bounds,padding);
+    if (available.size.width > 44 && available.size.height > 44 &&
+        (padding.left != padding.right || padding.top != padding.bottom)) {
+        MKMapCamera *originalCamera = [_view.camera copy];
+        camera = [camera copy];
+        CLLocationCoordinate2D anchor = camera.centerCoordinate;
+        CGPoint target = CGPointMake(CGRectGetMidX(available),CGRectGetMidY(available));
+        for (NSInteger pass = 0; pass < 2; pass++) {
+            [_view setCamera:camera animated:NO];
+            [_view layoutIfNeeded];
+            CGPoint actual = [_view convertCoordinate:anchor toPointToView:_view];
+            CGPoint center = [_view convertCoordinate:camera.centerCoordinate toPointToView:_view];
+            CLLocationCoordinate2D shifted = [_view convertPoint:CGPointMake(center.x + actual.x - target.x,center.y + actual.y - target.y) toCoordinateFromView:_view];
+            if (!CLLocationCoordinate2DIsValid(shifted)) break;
+            camera.centerCoordinate = shifted;
+        }
+        [_view setCamera:originalCamera animated:NO];
+    }
+    [AIRMap animateWithDuration:MAX(0,duration)/1000.0 animations:^{
+        [_view setCamera:camera animated:NO];
+    } completion:^(BOOL finished){
+        _view.ignoreRegionChanges = originalIgnore;
+    }];`);
+
 // Bundled marker images must not depend on RCTBridge.currentBridge in bridgeless RN.
 patch('AIRMapMarker.m', '    _imageSrc = imageSrc;', `    _imageSrc = imageSrc;
     NSURL *localURL = [RCTConvert NSURL:imageSrc];
