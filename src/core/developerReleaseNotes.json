@@ -1596,19 +1596,61 @@
       "sha": "dac9299153207147ed5c045629182d6efaea6fbe",
       "title": "fix: stabilize paired sync, native panels and map updates",
       "body": "Forward snapshot probe/need messages through encrypted paired channels and negotiate a bounded large-transfer window. Keep native panel anchors stable, use one material layer, reserve landscape map space, and anchor Duo glass actions above the native tab rail. Restore UI-thread gestures and finite renderer-owned scratch reveals. Persist the last viewport, retain overlapping transit queries, fix diamond crops, developer-only diagnostics and versioned changelog URLs, and preserve modal orientation. Includes regression tests and 2.7.2 candidate validation notes.",
-      "releaseCommit": "0fd962bd377372e02f62ad014411ad791ddfc047"
+      "releaseCommit": "1d64ef4f2fc6e8b76b29b15c887e329f7912d763"
     },
     {
       "sha": "b33271bf4dd348211b55bd73d4712f0e9a0e7b17",
       "title": "test: include 2.7.2 in complete release history",
       "body": "Keep the release-history assertion aligned with the new candidate version and retain individual patch changes in the full changelog, while the overview remains one Fixes & Improvements entry.",
-      "releaseCommit": "0fd962bd377372e02f62ad014411ad791ddfc047"
+      "releaseCommit": "1d64ef4f2fc6e8b76b29b15c887e329f7912d763"
     },
     {
       "sha": "0fd962bd377372e02f62ad014411ad791ddfc047",
       "title": "fix: localize patch details and constrain narrow landscape replays",
       "body": "Translate the complete 2.7.2 changelog in all supported languages and remove conflicting right/width constraints from compact landscape Memories panels. Validated with 482 app tests, 53 workflow tests, lint and typecheck.",
-      "releaseCommit": "0fd962bd377372e02f62ad014411ad791ddfc047"
+      "releaseCommit": "1d64ef4f2fc6e8b76b29b15c887e329f7912d763"
+    },
+    {
+      "sha": "5b93102b98c1945d5206b4c7588a1a827df24d77",
+      "title": "fix: restore native button styles, tab chrome and complete build notes",
+      "body": "Restore adaptive UIKit toolbar actions with rail overlap compensation and reconcile tab visibility after activity and window changes. Keep native panel placement stable and use valid native easing. Darken unfilled progress while retaining the original button color for its fill. Rebuild current release commit history and ship build identity metadata to all platforms. Add bounded cached transit proxy requests, provider backoff and gallery visibility checks.",
+      "releaseCommit": "1d64ef4f2fc6e8b76b29b15c887e329f7912d763"
+    },
+    {
+      "sha": "0b6eff6b11882fdc87ba53342b9b74a4c7947e4f",
+      "title": "fix(ios): apply camera padding to Fabric and disambiguate toolbar geometry",
+      "body": "The new architecture dispatches MapKit camera commands through RNMapsMapView rather than AIRMapManager. Apply asymmetric padding in both command paths and respect reduced-motion duration. Extend the idempotence test to Fabric. Use an explicit CGPoint for toolbar coordinate conversion after the native runner caught the overloaded zero literal.",
+      "releaseCommit": "1d64ef4f2fc6e8b76b29b15c887e329f7912d763"
+    },
+    {
+      "sha": "b88cd71735a4b0704b65007c068c6f378290b4cc",
+      "title": "fix(ios): restore tabs after direct routes and controller attachment",
+      "body": "Reapply the intended tab visibility when routes change and briefly retry during native controller attachment. Clear scheduled work on route, ride-state and window changes. This recovers cold deep links and post-ride detail screens without a persistent polling loop.",
+      "releaseCommit": "1d64ef4f2fc6e8b76b29b15c887e329f7912d763"
+    },
+    {
+      "sha": "6f93de21fec2d482f45fb5794cfa96a417324187",
+      "title": "fix: hide retained sample data outside developer and capture modes",
+      "body": "Keep remembered sample toggles private to Developer Mode in normal builds. Remove an open sample Memories selection when the mode is disabled, while retaining explicit Simulator gallery fixtures. Verify both states in Chromium and WebKit.",
+      "releaseCommit": "1d64ef4f2fc6e8b76b29b15c887e329f7912d763"
+    },
+    {
+      "sha": "17519fe2af21442b22e95f0d466aeb3ecefc85f4",
+      "title": "docs: record native verification gate and successful candidate build",
+      "body": "record native verification gate and successful candidate build. Changed 1 files: docs/UPDATE_2.7.2.md.",
+      "releaseCommit": "1d64ef4f2fc6e8b76b29b15c887e329f7912d763"
+    },
+    {
+      "sha": "aac605cd1e01cfb951f9c469972c12fb6fc20193",
+      "title": "fix(ios): let tab controller own adaptive map accessories",
+      "body": "let tab controller own adaptive map accessories. Changed 1 files: modules/velunivo-appearance/ios/VelunivoAppearanceModule.swift.",
+      "releaseCommit": "1d64ef4f2fc6e8b76b29b15c887e329f7912d763"
+    },
+    {
+      "sha": "1d64ef4f2fc6e8b76b29b15c887e329f7912d763",
+      "title": "feat(plugins): add isolated extensions and development-client handoff",
+      "body": "Add permission-checked plugin packages with cards, telemetry widgets, accents, map actions and private storage. Bundle five disabled examples, hide the menu until external installation or developer opt-in, and document the API. Fix expanded replay scrolling and prioritize stable transit viewport cells. Add validation and local Metro startup support.",
+      "releaseCommit": "1d64ef4f2fc6e8b76b29b15c887e329f7912d763"
     }
   ],
   "2.6.1": [
