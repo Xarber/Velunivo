@@ -1,0 +1,36 @@
+import React,{createContext,useCallback,useContext,useEffect,useLayoutEffect,useMemo,useRef,useState} from 'react';
+import {View,AppState,Platform} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Crypto from 'expo-crypto';
+import {APP_VERSION} from '../core/appVersion';
+import {useStore} from '../services/store';
+import {bluetoothBridge} from '../bluetooth/service';
+import {routeLengths} from '../core/geo';
+import {InstalledPlugin,PluginAccent,PluginCard,permitted,pluginAccent,pluginCard} from './model';
+import {pluginStore,usePlugins} from './store';
+import PluginSandbox,{SandboxHandle} from './PluginSandbox';
+type Output={cards:PluginCard[];accent?:PluginAccent;error?:string};
+type Extensions=Record<string,Output>;
+const Context=createContext<{outputs:Extensions;action(id:string,action:string):void}>({outputs:{},action:()=>{}});
+export const usePluginExtensions=()=>useContext(Context);
+export function PluginProvider({children}:{children:React.ReactNode}){const installed=usePlugins(),[outputs,setOutputs]=useState<Extensions>({}),[actions]=useState(()=>new Map<string,(id:string)=>void>());useEffect(()=>{void pluginStore.load();},[]);const enabled=installed.installed.filter(p=>p.enabled);const update=useCallback((id:string,output:Output|null)=>setOutputs(old=>{const next={...old};if(output)next[id]=output;else delete next[id];return next;}),[]);const value=useMemo(()=>({outputs,action:(id:string,action:string)=>actions.get(id)?.(action)}),[outputs,actions]);return <Context.Provider value={value}>{children}<View pointerEvents="none" style={{position:'absolute',width:1,height:1,overflow:'hidden'}}>{enabled.map(plugin=><Runtime key={plugin.package.id+plugin.digest} plugin={plugin} update={update} actions={actions}/>)}</View></Context.Provider>;}
+function Runtime({plugin,update,actions}:{plugin:InstalledPlugin;update(id:string,output:Output|null):void;actions:Map<string,(id:string)=>void>}){
+ const store=useStore(),latest=useRef(store);useLayoutEffect(()=>{latest.current=store;},[store]);
+ const [token]=useState(()=>Crypto.randomUUID()),[stopped,setStopped]=useState(false),sandbox=useRef<SandboxHandle>(null),output=useRef<Output>({cards:[]}),alive=useRef(true),ready=useRef(false),pong=useRef(0),rate=useRef({at:0,count:0}),pending=useRef(0),storageQueue=useRef(Promise.resolve());const id=plugin.package.id;
+ const send=useCallback((m:Record<string,unknown>)=>sandbox.current?.send({...m,token}),[token]);
+ const fail=useCallback((message:string)=>{if(!alive.current)return;setStopped(true);output.current={cards:[],error:message};update(id,output.current);},[id,update]);
+ const context=useCallback(()=>{const s=latest.current;return {version:APP_VERSION,vehicle:{kind:s.profile.kind},route:s.selected?{name:s.selected.name,meters:(routeLengths(s.selected.coordinates).at(-1)??0)}:null,rideActive:s.vehicleLocked};},[]);
+ const request=useCallback(async(method:string,args:unknown)=>{
+  const pkg=plugin.package,need=(permission:typeof pkg.permissions[number])=>{if(!permitted(pkg,permission))throw new Error('Plugin permission denied.');};
+  if(method==='app.read'){need('app.read');return context();}
+  if(method==='vehicle.telemetry'){need('vehicle.telemetry');const snapshot=bluetoothBridge.getSnapshot();if(snapshot.vehicleId!==latest.current.profile.id||snapshot.state!=='connected')return {};const values:Record<string,number>={};for(const key of ['batteryPercent','voltage','current','power','batteryTemperature','speed'] as const){const reading=snapshot.fields[key];if(reading&&Date.now()-reading.timestamp<60000&&typeof reading.value==='number'&&Number.isFinite(reading.value))values[key]=reading.value;}return values;}
+  if(method==='ui.card'){need('ui.cards');const card=pluginCard(args);output.current={...output.current,cards:[...output.current.cards.filter(c=>c.id!==card.id),card].slice(-12)};update(id,output.current);return true;}
+  if(method==='appearance.accent'){need('appearance.accent');output.current={...output.current,accent:pluginAccent(args)};update(id,output.current);return true;}
+  if(method==='map.toggleTransit'){need('actions.map');latest.current.updateNavigationOptions({transit:!latest.current.navigationOptions.transit});return true;}
+  if(method==='storage.get'||method==='storage.set'){need('storage');const a=args as {key?:unknown;value?:unknown}|null;if(!a||typeof a.key!=='string'||!/^[a-zA-Z0-9_.-]{1,64}$/.test(a.key))throw new Error('Invalid plugin storage key.');const key='plugin-data-v1:'+id;await storageQueue.current.catch(()=>{});if(method==='storage.get'){const data=JSON.parse(await AsyncStorage.getItem(key)||'{}');return Object.hasOwn(data,a.key)?data[a.key]:null;}const field=a.key,value=JSON.parse(JSON.stringify(a.value??null));storageQueue.current=storageQueue.current.catch(()=>{}).then(async()=>{const data=Object.assign(Object.create(null),JSON.parse(await AsyncStorage.getItem(key)||'{}'));data[field]=value;const raw=JSON.stringify(data);if(raw.length>64000)throw new Error('Plugin storage limit reached.');await AsyncStorage.setItem(key,raw);});await storageQueue.current;return true;}
+  throw new Error('Unsupported plugin API.');
+ },[context,id,plugin.package,update]);
+ const onMessage=useCallback((raw:string)=>{if(stopped||!alive.current)return;if(raw.length>40000){fail('Plugin message limit exceeded.');return;}let m:Record<string,unknown>;try{m=JSON.parse(raw);}catch{return;}if(!m||typeof m!=='object'||Array.isArray(m)||m.token!==token)return;const now=Date.now();if(now-rate.current.at>=1000)rate.current={at:now,count:0};if(++rate.current.count>40){fail('Plugin message limit exceeded.');return;}if(m.type==='pong'||m.type==='boot'||m.type==='ready'){pong.current=now;if(m.type==='ready')ready.current=true;return;}if(m.type==='error'){fail('Plugin stopped. Disable and enable it to retry.');return;}if(m.type!=='request'||typeof m.id!=='number'||!Number.isSafeInteger(m.id)||typeof m.method!=='string')return;if(++pending.current>20){fail('Plugin request limit exceeded.');return;}void request(m.method,m.args).then(value=>{if(alive.current)send({type:'reply',id:m.id,value});},()=>{if(alive.current)send({type:'reply',id:m.id,error:'Plugin request failed or permission denied.'});}).finally(()=>pending.current--);},[fail,request,send,stopped,token]);
+ useEffect(()=>{alive.current=true;actions.set(id,action=>send({type:'event',name:'action',value:action}));const started=Date.now();let previous='';const timer=setInterval(()=>{if(output.current.error)return;const now=Date.now();if(AppState.currentState!=='active'||(Platform.OS==='web'&&document.hidden)){pong.current=now;return;}if((!ready.current&&now-started>12000)||(ready.current&&now-pong.current>15000)){fail('Plugin is not responding.');return;}send({type:'ping'});const next=JSON.stringify(context());if(next!==previous||permitted(plugin.package,'vehicle.telemetry')){previous=next;send({type:'event',name:'context'});}},3000);return()=>{alive.current=false;clearInterval(timer);actions.delete(id);update(id,null);};},[actions,context,fail,id,send,update,plugin.package]);
+ return stopped?null:<PluginSandbox ref={sandbox} token={token} code={plugin.package.code} onMessage={onMessage}/>;
+}

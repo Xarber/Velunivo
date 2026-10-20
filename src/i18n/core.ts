@@ -1,8 +1,9 @@
+import {pluginMessages} from './pluginMessages';
 import {italian} from './it';
 import spanish from './es.json';import french from './fr.json';import german from './de.json';import portuguese from './pt.json';
 export const languages=['en','it','es','fr','de','pt'] as const;
 export const languageNames={en:'English',it:'Italiano',es:'Español',fr:'Français',de:'Deutsch',pt:'Português'};
-const dictionaries:Record<string,Record<string,string>>={it:italian,es:spanish,fr:french,de:german,pt:portuguese};
+const dictionaries:Record<string,Record<string,string>>=Object.fromEntries(Object.entries({it:italian,es:spanish,fr:french,de:german,pt:portuguese}).map(([language,messages])=>[language,{...messages,...pluginMessages[language]}]));
 export const localeTags={en:'en-US',it:'it-IT',es:'es-ES',fr:'fr-FR',de:'de-DE',pt:'pt-BR'};
 export type Language=typeof languages[number];
 export type LanguageChoice=Language|'system';

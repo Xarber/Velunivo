@@ -11,4 +11,13 @@ export function mergeTransit(previous:ReturnType<typeof transitGeometry>,next:Re
 
 export const transitGeometryPaint:NonNullable<LineLayerSpecification['paint']>={...transitPaint,'line-color':['case',['match',['get','kind'],['rail','monorail'],true,false],'#1E90FF','#B184A4']};
 /** Stable geographic cells keep overlapping requests alive across pans; at most nine cover the viewport. */
-export function transitQueryTiles(bounds:[number,number,number,number]){const [w,s,e,n]=bounds,span=Math.max(e-w,n-s);if(!bounds.every(Number.isFinite)||e<=w||n<=s||span>8)return [];const step=Math.max(.05,Math.ceil(span/.1)*.05),keys:string[]=[];for(let x=Math.floor(w/step);x<Math.ceil(e/step);x++)for(let y=Math.floor(s/step);y<Math.ceil(n/step);y++)keys.push([x*step,y*step,(x+1)*step,(y+1)*step].map(v=>Number(v.toFixed(6))).join(','));return keys;}
+export function transitQueryTiles(bounds:[number,number,number,number]) {
+ const [w,s,e,n]=bounds,span=Math.max(e-w,n-s);
+ if(!bounds.every(Number.isFinite)||e<=w||n<=s||span>8)return [];
+ // Fixed cells survive zoom changes. The proxy accepts at most half a degree.
+ const step=.1,cx=(w+e)/2,cy=(s+n)/2,keys:{key:string;distance:number}[]=[];
+ const x0=Math.max(Math.floor(w/step),Math.floor(cx/step)-2),x1=Math.min(Math.ceil(e/step),Math.floor(cx/step)+3);
+ const y0=Math.max(Math.floor(s/step),Math.floor(cy/step)-2),y1=Math.min(Math.ceil(n/step),Math.floor(cy/step)+3);
+ for(let x=x0;x<x1;x++)for(let y=y0;y<y1;y++)keys.push({key:[x*step,y*step,(x+1)*step,(y+1)*step].map(v=>Number(v.toFixed(6))).join(','),distance:Math.hypot((x+.5)*step-cx,(y+.5)*step-cy)});
+ return keys.sort((a,b)=>a.distance-b.distance||a.key.localeCompare(b.key)).map(k=>k.key);
+}

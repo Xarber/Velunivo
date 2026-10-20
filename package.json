@@ -89,7 +89,8 @@
     "brand:generate": "node scripts/generate-brand.mjs",
     "pwa:generate": "node scripts/generate-pwa.mjs",
     "server:peer": "tsx server/peer.ts",
-    "serve:web": "tsx server/start-web.ts"
+    "serve:web": "tsx server/start-web.ts",
+    "dev": "expo start --dev-client --lan --port 8081"
   },
   "private": true,
   "expo": {

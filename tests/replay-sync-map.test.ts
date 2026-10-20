@@ -29,3 +29,4 @@ test('encrypted paired channels complete snapshot probes and cached repeat trans
  }
  assert.equal(imports,2);assert.equal(pairedTransferPacket({type:'probe',session:'b'.repeat(32),index:0,total:1,hash:'bad'}),false);
 });
+test('transit cells stay bounded at overview zoom and prioritize the new viewport',()=>{const overview=transitQueryTiles([11,41,14,43]);assert(overview.length<=25);for(const cell of overview){const [w,s,e,n]=cell.split(',').map(Number);assert(e-w<=.100001&&n-s<=.100001);}const first=overview[0].split(',').map(Number);assert(first[0]<=12.5&&first[2]>=12.5&&first[1]<=42&&first[3]>=42);const old=transitQueryTiles([12.4,41.8,12.55,41.95]),zoomed=transitQueryTiles([12.46,41.86,12.49,41.89]);assert(zoomed.every(cell=>old.includes(cell)));assert.notDeepEqual(transitQueryTiles([12.8,42,12.9,42.1]),zoomed);});

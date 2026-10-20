@@ -1,0 +1,5 @@
+import React,{forwardRef,useLayoutEffect,useImperativeHandle,useMemo,useRef} from 'react';
+import {sandboxDocument} from './sandbox';
+// Keep the component contract identical without importing the native WebView on web.
+type Props={code:string;token:string;onMessage(value:string):void};
+export default forwardRef<{send(value:unknown):void},Props>(function PluginSandbox({code,token,onMessage},ref){const frame=useRef<HTMLIFrameElement>(null),html=useMemo(()=>sandboxDocument(code,token),[code,token]);useImperativeHandle(ref,()=>({send:value=>frame.current?.contentWindow?.postMessage(value,'*')}),[]);useLayoutEffect(()=>{const receive=(event:MessageEvent)=>{if(event.source===frame.current?.contentWindow&&typeof event.data==='string')onMessage(event.data);};window.addEventListener('message',receive);return()=>window.removeEventListener('message',receive);},[onMessage]);return <iframe ref={frame} title="Plugin runtime" sandbox="allow-scripts" srcDoc={html} style={{width:1,height:1,border:0,position:'absolute',pointerEvents:'none',opacity:0}}/>;});

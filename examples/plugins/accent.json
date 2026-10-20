@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "api": 1,
+  "id": "example.accent",
+  "name": "Ocean accent example",
+  "version": "1.0.0",
+  "description": "Applies an ocean blue accent throughout the app.",
+  "permissions": [
+    "appearance.accent"
+  ],
+  "code": "api.appearance.accent({light:'#1767A6',dark:'#80C9FF'});"
+}

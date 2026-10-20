@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "api": 1,
+  "id": "example.telemetry",
+  "name": "Telemetry widget example",
+  "version": "1.0.0",
+  "description": "Adds a ride card with available electrical readings.",
+  "permissions": [
+    "vehicle.telemetry",
+    "ui.cards"
+  ],
+  "code": "async function refresh(){const v=await api.vehicle.telemetry();const parts=Object.entries(v).filter(([k,v])=>typeof v==='number').map(([k,v])=>k+': '+Math.round(v*10)/10);api.ui.card({id:'electrical',slot:'ride',title:'Vehicle readings',text:parts.length?parts.join(' \u00b7 '):'Connect a supported vehicle to see readings.'});}await refresh();api.on('context',refresh);"
+}
