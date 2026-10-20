@@ -90,7 +90,7 @@
     "pwa:generate": "node scripts/generate-pwa.mjs",
     "server:peer": "tsx server/peer.ts",
     "serve:web": "tsx server/start-web.ts",
-    "dev": "expo start --dev-client --lan --port 8081"
+    "dev": "EXPO_NO_METRO_LAZY=1 expo start --dev-client --lan --port 8081"
   },
   "private": true,
   "expo": {

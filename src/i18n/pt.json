@@ -1973,5 +1973,11 @@
   "Motion refinements": "Animações mais fluidas",
   "Lighter glass surfaces, responsive gestures and brief scratch reveals.": "Efeitos de vidro mais leves, gestos rápidos e animações breves das áreas exploradas.",
   "Versioned release notes open on web; diagnostics and GPX export stay in Developer Mode.": "As notas de cada versão abrem na web; o diagnóstico e a exportação GPX continuam no modo de desenvolvedor.",
-  "Device transfer": "Transferência entre dispositivos"
+  "Device transfer": "Transferência entre dispositivos",
+  "Includes Expo warnings, console messages, JavaScript errors and unhandled rejections.": "Inclui avisos do Expo, mensagens do console, erros JavaScript e rejeições de promessas não tratadas.",
+  "Record debug logs": "Gravar logs de depuração",
+  "Verbose diagnostics": "Diagnóstico detalhado",
+  "Adds Bluetooth services, read-only responses, telemetry samples and detailed console output to the same log archive. Off by default.": "Adiciona serviços Bluetooth, respostas de leitura, amostras de telemetria e mensagens detalhadas do console ao mesmo arquivo de logs. Desativado por padrão.",
+  "Runtime diagnostics": "Diagnóstico do app",
+  "Export app warnings and errors together with optional verbose Bluetooth diagnostics.": "Exporte avisos e erros do app junto com o diagnóstico Bluetooth detalhado opcional."
 }

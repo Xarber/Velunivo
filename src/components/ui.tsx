@@ -1,9 +1,10 @@
 import {useCoordinateActivity} from '../services/useCoordinateActivity';
 import Text from './LocalizedText';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 import PressMotion from './PressMotion';
 import { motionProps, useReducedMotion } from './WebMotion';
-import {Animated, Easing, Keyboard, ActivityIndicator, StyleSheet, useColorScheme, View, TextInput, TextInputProps} from 'react-native';
+import Animated,{Easing,useSharedValue,useAnimatedStyle,withRepeat,withTiming,cancelAnimation,ReduceMotion} from 'react-native-reanimated';
+import {AppState, Keyboard, ActivityIndicator, StyleSheet, useColorScheme, View, TextInput, TextInputProps} from 'react-native';
 import { Ionicons,MaterialCommunityIcons } from '@expo/vector-icons';
 import {t} from '../i18n/core';
 import {useLanguage} from '../i18n/react';
@@ -20,9 +21,10 @@ export function Button({ title, onPress, secondary = false, disabled = false, lo
 }
 function darkenButton(color:string){return /^#[a-f0-9]{6}$/i.test(color)?'#'+[1,3,5].map(i=>Math.round(parseInt(color.slice(i,i+2),16)*.62).toString(16).padStart(2,'0')).join(''):color;}
 function ButtonProgress({fraction,color}:{fraction:number|null;color:string}) {
- const [motion]=useState(()=>new Animated.Value(0)),[width,setWidth]=useState(0),reduced=useReducedMotion();
- useEffect(()=>{if(fraction!==null||reduced){motion.setValue(0);return;}const loop=Animated.loop(Animated.timing(motion,{toValue:1,duration:1400,easing:Easing.linear,useNativeDriver:true}));loop.start();return()=>loop.stop();},[fraction,motion,reduced]);
- return <View pointerEvents="none" accessibilityRole="progressbar" accessibilityLabel={t('Progress')} accessibilityValue={fraction===null?undefined:{min:0,max:100,now:Math.round(Math.max(0,Math.min(1,fraction))*100)}} onLayout={event=>setWidth(event.nativeEvent.layout.width)} style={{position:'absolute',inset:0}}>{fraction===null?<Animated.View style={{position:'absolute',top:0,bottom:0,width:reduced?'100%':'35%',backgroundColor:color,transform:reduced?[]:[{translateX:motion.interpolate({inputRange:[0,1],outputRange:[-width*.35,width]})}]}}/>:<View style={{height:'100%',width:`${Math.max(0,Math.min(1,fraction))*100}%`,backgroundColor:color}}/>}</View>;
+ const motion=useSharedValue(0),width=useSharedValue(0),reduced=useReducedMotion();
+ useEffect(()=>{const apply=()=>{cancelAnimation(motion);motion.set(0);if(fraction===null&&!reduced&&AppState.currentState==='active')motion.set(withRepeat(withTiming(1,{duration:1400,easing:Easing.linear,reduceMotion:ReduceMotion.System}),-1,false));};apply();const sub=AppState.addEventListener('change',apply);return()=>{sub.remove();cancelAnimation(motion);};},[fraction,motion,reduced]);
+ const sweep=useAnimatedStyle(()=>({transform:reduced?[]:[{translateX:width.get()*(-.35+motion.get()*1.35)}]}));
+ return <View pointerEvents="none" accessibilityRole="progressbar" accessibilityLabel={t('Progress')} accessibilityValue={fraction===null?undefined:{min:0,max:100,now:Math.round(Math.max(0,Math.min(1,fraction))*100)}} onLayout={event=>width.set(event.nativeEvent.layout.width)} style={{position:'absolute',inset:0}}>{fraction===null?<Animated.View style={[{position:'absolute',top:0,bottom:0,width:reduced?'100%':'35%',backgroundColor:color},sweep]}/>:<View style={{height:'100%',width:`${Math.max(0,Math.min(1,fraction))*100}%`,backgroundColor:color}}/>}</View>;
 }
 export function Field({ label, ...props }: TextInputProps & { label: string }) {
   const p = usePalette(),resolving=useCoordinateActivity(props.value??'');useLanguage(); return <View style={{ gap: 6 }}><Text style={{ color: p.muted, fontSize: 12, fontWeight: '700', letterSpacing: .8 }}>{label}</Text><View style={{flexDirection:'row',alignItems:'center',gap:8}}>{resolving&&<ActivityIndicator size="small" color={p.muted}/>}<TextInput returnKeyType="done" onSubmitEditing={Keyboard.dismiss} {...motionProps('field')} accessibilityLabel={t(label)} placeholderTextColor={p.muted} {...props} placeholder={props.placeholder?t(props.placeholder):undefined} style={[styles.field, { flex:1, color: resolving?p.muted:p.text, backgroundColor: p.bg, borderColor: p.line }, props.style]} /></View></View>;

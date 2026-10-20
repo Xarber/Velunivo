@@ -8,6 +8,8 @@ Open Developer Options and enable **Show plugins menu** to explore the bundled, 
 
 Enter an HTTPS JSON URL, a GitHub `blob` URL, or `owner/repository` (resolves `main/velunivo.plugin.json`). Download previews identity, description and permissions. Install stores a local copy, disabled. Enable it to run; enabled packages are automatically discovered at startup. Updating requires downloading and installing the replacement; it disables the package again. Downloads never silently update executable code. GitHub raw URLs work on web; other download hosts must allow cross-origin requests. There is no plugin catalog or mandatory Velunivo server.
 
+Bundled example IDs are reserved. To test downloading without replacing an example, install `https://raw.githubusercontent.com/Xarber/Velunivo/development/examples/plugins/installable-demo.json`. Fork authors can use their own package IDs.
+
 Each installation stores its source, SHA-256 digest and timestamp. Up to 30 packages may be installed, eight enabled. Removing a package removes its private storage. File/device backups deliberately do not transfer executable plugins; install them explicitly on each device.
 
 ## Package

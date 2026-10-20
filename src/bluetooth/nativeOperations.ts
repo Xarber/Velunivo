@@ -1,4 +1,4 @@
-import {diagnostic} from '../core/diagnosticEvents';
+import {diagnostic,verboseDiagnostic} from '../core/diagnosticEvents';
 /** BLE-PLX adapter operations, kept independent of React Native for failure-path tests. */
 export interface NativeCharacteristicInfo {
  uuid:string; isNotifying:boolean; isWritableWithResponse:boolean; isWritableWithoutResponse:boolean;
@@ -36,7 +36,7 @@ export function nativeOperations(device:NativeWriteDevice,cancel:(id:string)=>Pr
    void notificationReady.catch(()=>{});
   },
   write(service:string,id:string,bytes:Uint8Array){
-   diagnostic('bluetooth','write-queued',{service,characteristic:id,bytes:bytes.length});const copy=bytes.slice();const operation=writes.then(async()=>{
+   verboseDiagnostic('bluetooth','write-queued',{service,characteristic:id,bytes:bytes.length});const copy=bytes.slice();const operation=writes.then(async()=>{
     await notificationReady;if(ended)throw new Error('Bluetooth session closed');
     const c=await characteristic(service,id);
     if(!c.isWritableWithoutResponse&&!c.isWritableWithResponse)throw new Error('This device does not support writing to the vehicle data service.');
