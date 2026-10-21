@@ -10,12 +10,12 @@ Physical iPhone, connected through iPhone Mirroring. Standalone Velunivo and the
 - Development client loaded the current local JavaScript bundle.
 - Library previews and Recorded Rides opened with the existing local recordings.
 - Icon-enhanced Ride insights rendered on the physical iPhone; scrolling exposed the first ride card. After the requested refinement, the compact Ride insights entry opened its dedicated submenu, showing the vehicle selector, summary and rendered distance-over-time chart. Selecting a point showed its date, measured distance and chart crosshair.
-- The official downloadable `.vpi` demo was fetched on the phone. The metadata/permission preview and packaged PNG icon rendered correctly; no executable manifest field is used.
+- The official downloadable `.vpi` demo was fetched on the phone. The metadata/permission preview and packaged PNG icon rendered correctly; no executable manifest field is used. The downloaded demo appeared installed, disabled initially, and its enable switch changed to on without a visible runtime error. The home-card rendering check was not completed because Mirroring subsequently lost its input window binding.
 - A startup React Native warning reported a raw text node in AppIntroduction. Removed the stray whitespace child between conditional views. Existing error handling correctly preserved and surfaced the warning.
 
 ## Constraints
 
-Mirroring intermittently paused or returned `noWindowsAvailable`; rebinding restored the window. Inputs often settled after a separate screenshot observation. No successful tap is inferred from pointer movement alone.
+Mirroring intermittently paused or returned `noWindowsAvailable`; rebinding restored the window. Inputs often settled after a separate screenshot observation. Later coordinate input repeatedly returned `noWindowsAvailable` even while screenshots still showed the connected phone. Native scrolling and navigation coverage is therefore limited to the explicitly observed screens. No successful tap is inferred from pointer movement alone.
 
 No new Bluetooth hardware pairing, two-device sync, group media call, new consented Memory, iPad/Fold landscape, native crash recovery, or background endurance was proven by these checks. Existing personal data and pairings were preserved.
 
