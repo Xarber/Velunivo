@@ -1,0 +1,1 @@
+api.ui.card({id:'transit',slot:'home',title:'Transit shortcut',text:'Show or hide transit lines on the map.',action:{id:'toggle',label:'Toggle transit lines'}});api.on('action',async id=>{if(id==='toggle')await api.map.toggleTransit();});

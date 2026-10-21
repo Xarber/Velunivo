@@ -1,0 +1,23 @@
+# iPhone Mirroring checks — 21 October 2026
+
+Physical iPhone, connected through iPhone Mirroring. Standalone Velunivo and the LiveContainer development client were both present; the app switcher confirmed their identities. Development client loaded from a manually entered Mac LAN URL, with lazy Metro imports disabled.
+
+## Observed
+
+- Standalone Data transfer opened; Back returned to General settings.
+- Standalone Explore opened, live GPS reached “Live location,” Plan a ride had its filled background, and the native controls/accessory and tab bar were visible.
+- Destination text entry and automatic address results worked. Mirroring input sometimes arrived late or reordered early keystrokes; the final Colosseo query returned the expected public destination. Starting actual navigation was not established by that observation.
+- Development client loaded the current local JavaScript bundle.
+- Library previews and Recorded Rides opened with the existing local recordings.
+- Icon-enhanced Ride insights rendered on the physical iPhone; scrolling exposed the first ride card.
+- A startup React Native warning reported a raw text node in AppIntroduction. Removed the stray whitespace child between conditional views. Existing error handling correctly preserved and surfaced the warning.
+
+## Constraints
+
+Mirroring intermittently paused or returned `noWindowsAvailable`; rebinding restored the window. Inputs often settled after a separate screenshot observation. No successful tap is inferred from pointer movement alone.
+
+No new Bluetooth hardware pairing, two-device sync, group media call, new consented Memory, iPad/Fold landscape, native crash recovery, or background endurance was proven by these checks. Existing personal data and pairings were preserved.
+
+## Package change
+
+VPI/ZIP import validates metadata, bounded local code/data modules and optional PNG icons before installation. Existing installed legacy plugins remain readable. Downloaded modules use the existing Worker/WebView isolation and explicit permission broker. Native or remotely imported libraries are unsupported. See PLUGINS.md for the package guide.

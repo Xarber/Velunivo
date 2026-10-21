@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "api": 1,
+  "id": "example.storage",
+  "name": "Local counter example",
+  "version": "1.0.0",
+  "description": "Demonstrates private plugin storage and interactive cards.",
+  "permissions": [
+    "ui.cards",
+    "storage"
+  ],
+  "entry": "src/main.js",
+  "icon": "assets/icon.png"
+}

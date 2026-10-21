@@ -6,13 +6,26 @@ Plugins extend Velunivo without rebuilding the native application. They are sepa
 
 Open Developer Options and enable **Show plugins menu** to explore the bundled, disabled examples. Those examples do not reveal the menu automatically. Installing an external package makes Settings → Plugins visible, including while that plugin is disabled.
 
-Enter an HTTPS JSON URL, a GitHub `blob` URL, or `owner/repository` (resolves `main/velunivo.plugin.json`). Download previews identity, description and permissions. Install stores a local copy, disabled. Enable it to run; enabled packages are automatically discovered at startup. Updating requires downloading and installing the replacement; it disables the package again. Downloads never silently update executable code. GitHub raw URLs work on web; other download hosts must allow cross-origin requests. There is no plugin catalog or mandatory Velunivo server.
+Use **Import plugin file** for a `.vpi` or `.zip`, or enter an HTTPS archive URL, GitHub `blob` URL, or `owner/repository` (resolves `main/velunivo.vpi`). `.vpi` is simply a renamed ZIP; both extensions have identical behavior. Preview the icon, identity, description and permissions, then install disabled and explicitly enable. Downloading or inspecting an archive never executes it. Enabled packages load automatically at startup; replacements are disabled again for review. Other hosts must permit web cross-origin downloads.
 
-Bundled example IDs are reserved. To test downloading without replacing an example, install `https://raw.githubusercontent.com/Xarber/Velunivo/development/examples/plugins/installable-demo.json`. Fork authors can use their own package IDs.
+Try `https://raw.githubusercontent.com/Xarber/Velunivo/development/examples/plugins/installable-demo.vpi`. Bundled example IDs are reserved. Existing installed legacy packages remain compatible; new installs use archives rather than executable JSON manifests.
 
 Each installation stores its source, SHA-256 digest and timestamp. Up to 30 packages may be installed, eight enabled. Removing a package removes its private storage. File/device backups deliberately do not transfer executable plugins; install them explicitly on each device.
 
-## Package
+## Create a plugin
+
+Keep `info.json` at the ZIP root (do not ZIP the containing folder):
+
+```text
+my-plugin/
+  info.json
+  src/main.js
+  lib/format.js       # optional local pure-JavaScript libraries
+  assets/icon.png     # optional PNG, up to 512×512 and 64 KB
+  LICENSE            # include dependency licenses
+```
+
+`info.json` contains metadata only, never source code:
 
 ```json
 {
@@ -23,11 +36,39 @@ Each installation stores its source, SHA-256 digest and timestamp. Up to 30 pack
   "version": "1.0.0",
   "description": "A compact route summary.",
   "permissions": ["app.read", "ui.cards"],
-  "code": "const s = await api.app.read(); await api.ui.card({id:'summary',slot:'home',title:'My route',text:s.route ? Math.round(s.route.meters)+' m' : 'Choose a destination'});"
+  "entry": "src/main.js",
+  "icon": "assets/icon.png"
 }
 ```
 
-The code is the body of an async function receiving `api`. No import, bundler or Node dependencies are required. Use `await` for API calls, including UI registration, and handle errors in event handlers. Package names/versions are validated, executable code is limited to 200,000 characters, and downloads to 512 KB with a 15-second timeout. UI messages have length/count bounds.
+`src/main.js` is an async function body with `api` and a local CommonJS `require`:
+
+```js
+const {meters} = require('../lib/format');
+async function refresh() {
+  const state = await api.app.read();
+  await api.ui.card({id:'summary', slot:'home', title:'My route',
+    text:state.route ? meters(state.route.meters) : 'Choose a destination'});
+}
+await refresh();
+api.on('context', refresh);
+```
+
+`lib/format.js`:
+
+```js
+exports.meters = value => Math.round(value) + ' m';
+```
+
+Package and validate from this repository:
+
+```sh
+node --import tsx scripts/package-plugin.mjs path/to/my-plugin my-plugin.vpi
+```
+
+Or create a regular ZIP containing the root files and rename it to `.vpi`. Download/import limits: 512 KB compressed, 1 MB expanded, 64 entries, 200 KB source/data modules and 220 KB compiled source. Only `.js`, `.json`, `.png`, `.md`, `.txt` and license files are accepted; unsafe paths and duplicates are rejected. Nothing is extracted to the app filesystem. Icons are local PNGs; remote icons, SVG, executable binaries and nested archives are not accepted.
+
+Local libraries use `module.exports`/`exports`, relative `require('./file')`, JSON data modules and `index.js`. Runtime npm installation, native modules and remote imports are unsupported. For npm libraries, bundle browser/Worker-compatible code ahead of time (for example esbuild with `--bundle --platform=browser --format=cjs`) and include licenses. Libraries remain in the same isolated Worker as the plugin, with no additional permissions. Do not bundle React Native, Node APIs or libraries needing DOM/network access. `await` at entry is supported; synchronous required libraries must not use top-level await.
 
 ## API and extension points
 
@@ -50,12 +91,6 @@ Only install code you trust. A granted read permission allows the package to pro
 
 ## Examples
 
-`examples/plugins/` contains downloadable packages identical to the disabled bundled examples:
+`examples/plugins/` contains source folders and matching downloadable `.vpi` packages for route cards, telemetry, accent colors, a transit action and private storage. `installable-demo/` demonstrates a separate local library and icon using a non-reserved ID.
 
-- `ride-card.json`: route summary card.
-- `telemetry.json`: capability-aware electrical widget.
-- `accent.json`: ocean accent.
-- `map-action.json`: transit toggle action.
-- `storage.json`: interactive persistent counter.
-
-To add more built-in packages, register them in `src/plugins/examples.ts`. Frontend extension contracts live in `model.ts`; permissions are enforced in `PluginProvider.tsx`. Extend those together when incrementing API compatibility. Packages cannot register new native modules or Bluetooth protocols at runtime.
+Bundled examples remain registered in `src/plugins/examples.ts`, disabled by default. Permissions are enforced by `PluginProvider.tsx`; archive validation and local module compilation are in `archive.ts`. Packages cannot register new native modules or Bluetooth protocols at runtime.

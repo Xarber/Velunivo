@@ -1,0 +1,1 @@
+async function refresh(){const v=await api.vehicle.telemetry();const parts=Object.entries(v).filter(([k,v])=>typeof v==='number').map(([k,v])=>k+': '+Math.round(v*10)/10);api.ui.card({id:'electrical',slot:'ride',title:'Vehicle readings',text:parts.length?parts.join(' · '):'Connect a supported vehicle to see readings.'});}await refresh();api.on('context',refresh);

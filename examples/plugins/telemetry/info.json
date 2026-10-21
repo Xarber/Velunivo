@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "api": 1,
+  "id": "example.telemetry",
+  "name": "Telemetry widget example",
+  "version": "1.0.0",
+  "description": "Adds a ride card with available electrical readings.",
+  "permissions": [
+    "vehicle.telemetry",
+    "ui.cards"
+  ],
+  "entry": "src/main.js",
+  "icon": "assets/icon.png"
+}

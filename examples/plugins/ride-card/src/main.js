@@ -1,0 +1,1 @@
+async function refresh(){const s=await api.app.read();api.ui.card({id:'summary',slot:'home',title:'Route summary',text:s.route?Math.round(s.route.meters/100)/10+' km planned':'Choose a route to see its distance.'});} await refresh();api.on('context',refresh);

@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "api": 1,
+  "id": "example.map-action",
+  "name": "Transit shortcut example",
+  "version": "1.0.0",
+  "description": "Adds a map action that toggles transit lines.",
+  "permissions": [
+    "ui.cards",
+    "actions.map"
+  ],
+  "entry": "src/main.js",
+  "icon": "assets/icon.png"
+}

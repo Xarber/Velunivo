@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "api": 1,
+  "id": "example.ride-card",
+  "name": "Ride summary example",
+  "version": "1.0.0",
+  "description": "Adds a compact card using the current route summary.",
+  "permissions": [
+    "app.read",
+    "ui.cards"
+  ],
+  "entry": "src/main.js",
+  "icon": "assets/icon.png"
+}

@@ -3,6 +3,7 @@ import * as Crypto from 'expo-crypto';
 import {useSyncExternalStore} from 'react';
 import {bundledPlugins} from './examples';
 import {InstalledPlugin,parsePlugin,packageUrl} from './model';
+import {MAX_PLUGIN_ARCHIVE,parsePluginArchive} from './archive';
 const key='app-plugins-v1';
 type State={ready:boolean;showMenu:boolean;installed:InstalledPlugin[]};
 let state:State={ready:false,showMenu:false,installed:[]},loading:Promise<void>|undefined,queue=Promise.resolve();
@@ -19,4 +20,16 @@ export const pluginStore={
  async showMenu(showMenu:boolean){state={...state,showMenu};emit();await save();},
 };
 export function usePlugins(){return useSyncExternalStore(pluginStore.subscribe,pluginStore.get,pluginStore.get);}
-export async function downloadPlugin(input:string){const url=packageUrl(input),controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);try{const response=await fetch(url,{signal:controller.signal,credentials:'omit',headers:{Accept:'application/json'}});if(!response.ok)throw new Error('Could not download plugin.');if(response.url&&new URL(response.url).protocol!=='https:')throw new Error('Use an HTTPS plugin package URL.');if(Number(response.headers.get('content-length'))>512000)throw new Error('Plugin package is too large.');let text='';if(response.body?.getReader){const reader=response.body.getReader(),decoder=new TextDecoder();let bytes=0;for(;;){const chunk=await reader.read();if(chunk.done)break;bytes+=chunk.value.byteLength;if(bytes>512000){await reader.cancel();throw new Error('Plugin package is too large.');}text+=decoder.decode(chunk.value,{stream:true});}text+=decoder.decode();}else{text=await response.text();if(text.length>512000)throw new Error('Plugin package is too large.');}return {package:parsePlugin(JSON.parse(text)),source:url};}finally{clearTimeout(timer);}}
+export async function downloadPlugin(input:string){
+ const url=packageUrl(input),controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
+ try{
+  const response=await fetch(url,{signal:controller.signal,credentials:'omit',headers:{Accept:'application/zip, application/octet-stream'}});
+  if(!response.ok)throw new Error('Could not download plugin.');
+  if(response.url&&new URL(response.url).protocol!=='https:')throw new Error('Use an HTTPS plugin package URL.');
+  if(Number(response.headers.get('content-length'))>MAX_PLUGIN_ARCHIVE)throw new Error('Plugin package is too large.');
+  let bytes:Uint8Array;
+  if(response.body?.getReader){const reader=response.body.getReader(),parts:Uint8Array[]=[];let size=0;for(;;){const chunk=await reader.read();if(chunk.done)break;size+=chunk.value.byteLength;if(size>MAX_PLUGIN_ARCHIVE){await reader.cancel();throw new Error('Plugin package is too large.');}parts.push(chunk.value);}bytes=new Uint8Array(size);let offset=0;for(const part of parts){bytes.set(part,offset);offset+=part.length;}}
+  else bytes=new Uint8Array(await response.arrayBuffer());
+  return {package:parsePluginArchive(bytes),source:url};
+ }finally{clearTimeout(timer);}
+}

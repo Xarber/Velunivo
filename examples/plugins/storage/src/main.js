@@ -1,0 +1,1 @@
+let count=Number(await api.storage.get('count'))||0;function render(){api.ui.card({id:'count',slot:'plugins',title:'Local counter',text:String(count),action:{id:'add',label:'Add one'}});}render();api.on('action',async id=>{if(id==='add'){count++;await api.storage.set('count',count);render();}});

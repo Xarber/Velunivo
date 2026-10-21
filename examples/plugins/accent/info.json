@@ -8,5 +8,6 @@
   "permissions": [
     "appearance.accent"
   ],
-  "code": "api.appearance.accent({light:'#1767A6',dark:'#80C9FF'});"
+  "entry": "src/main.js",
+  "icon": "assets/icon.png"
 }

@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "api": 1,
+  "id": "demo.download-card",
+  "name": "Download demo",
+  "version": "1.0.0",
+  "description": "A downloadable route card for testing plugin installation.",
+  "permissions": [
+    "app.read",
+    "ui.cards"
+  ],
+  "entry": "src/main.js",
+  "icon": "assets/icon.png"
+}

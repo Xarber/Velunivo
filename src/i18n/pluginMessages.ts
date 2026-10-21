@@ -17,3 +17,12 @@ const additional:Record<string,string[]>={
  pt:['Adiciona um cartão compacto com o resumo da rota atual.','Adiciona uma ação para mostrar ou ocultar linhas de transporte.','Adiciona um cartão de viagem com as leituras elétricas disponíveis.','Plugins do app','Aplica uma cor azul oceano em todo o app.','Demonstra o armazenamento privado do plugin com cartões interativos.','Instale extensões opcionais com cartões, telemetria e cores personalizadas.','Cor de destaque do plugin inválida.','Ação do plugin inválida.','Cartão do plugin inválido.','Chave de armazenamento do plugin inválida.','Permissão do plugin negada.','Ambiente do plugin','O ambiente do plugin parou.','API do plugin não compatível.','Exemplo: resumo da viagem','Exemplo: telemetria','Exemplo: cor oceano','Exemplo: atalho de transporte','Exemplo: contador local'],
 };
 for(const [language,values] of Object.entries(additional))Object.assign(pluginMessages[language],Object.fromEntries(additionalKeys.map((key,index)=>[key,values[index]??key])));
+const archiveLabels=['Import plugin file','Choose a .vpi or .zip plugin package.','Invalid plugin archive.'];
+const archiveTranslations:Record<string,string[]>={
+ it:['Importa plugin da file','Scegli un pacchetto plugin .vpi o .zip.','Archivio del plugin non valido.'],
+ es:['Importar archivo de plugin','Elige un paquete de plugin .vpi o .zip.','Archivo de plugin no válido.'],
+ fr:['Importer une extension','Choisissez un paquet d’extension .vpi ou .zip.','Archive d’extension non valide.'],
+ de:['Plugin-Datei importieren','Wähle ein Plugin-Paket im Format .vpi oder .zip.','Ungültiges Plugin-Archiv.'],
+ pt:['Importar arquivo de plugin','Escolha um pacote de plugin .vpi ou .zip.','Arquivo de plugin inválido.'],
+};
+for(const [language,values] of Object.entries(archiveTranslations))Object.assign(pluginMessages[language],Object.fromEntries(archiveLabels.map((key,i)=>[key,values[i]])));
