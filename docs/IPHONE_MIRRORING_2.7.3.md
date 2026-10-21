@@ -9,7 +9,8 @@ Physical iPhone, connected through iPhone Mirroring. Standalone Velunivo and the
 - Destination text entry and automatic address results worked. Mirroring input sometimes arrived late or reordered early keystrokes; the final Colosseo query returned the expected public destination. Starting actual navigation was not established by that observation.
 - Development client loaded the current local JavaScript bundle.
 - Library previews and Recorded Rides opened with the existing local recordings.
-- Icon-enhanced Ride insights rendered on the physical iPhone; scrolling exposed the first ride card.
+- Icon-enhanced Ride insights rendered on the physical iPhone; scrolling exposed the first ride card. After the requested refinement, the compact Ride insights entry opened its dedicated submenu, showing the vehicle selector, summary and rendered distance-over-time chart. Selecting a point showed its date, measured distance and chart crosshair.
+- The official downloadable `.vpi` demo was fetched on the phone. The metadata/permission preview and packaged PNG icon rendered correctly; no executable manifest field is used.
 - A startup React Native warning reported a raw text node in AppIntroduction. Removed the stray whitespace child between conditional views. Existing error handling correctly preserved and surfaced the warning.
 
 ## Constraints
