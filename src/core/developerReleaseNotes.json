@@ -1792,97 +1792,109 @@
       "sha": "5b93102b98c1945d5206b4c7588a1a827df24d77",
       "title": "fix: restore native button styles, tab chrome and complete build notes",
       "body": "Restore adaptive UIKit toolbar actions with rail overlap compensation and reconcile tab visibility after activity and window changes. Keep native panel placement stable and use valid native easing. Darken unfilled progress while retaining the original button color for its fill. Rebuild current release commit history and ship build identity metadata to all platforms. Add bounded cached transit proxy requests, provider backoff and gallery visibility checks.",
-      "releaseCommit": "a047df2d4ea5d0b2b77f9ee084399540be02f629"
+      "releaseCommit": "2ead7f8ecf4b3707f97e06bd0870f3630cd57322"
     },
     {
       "sha": "0b6eff6b11882fdc87ba53342b9b74a4c7947e4f",
       "title": "fix(ios): apply camera padding to Fabric and disambiguate toolbar geometry",
       "body": "The new architecture dispatches MapKit camera commands through RNMapsMapView rather than AIRMapManager. Apply asymmetric padding in both command paths and respect reduced-motion duration. Extend the idempotence test to Fabric. Use an explicit CGPoint for toolbar coordinate conversion after the native runner caught the overloaded zero literal.",
-      "releaseCommit": "a047df2d4ea5d0b2b77f9ee084399540be02f629"
+      "releaseCommit": "2ead7f8ecf4b3707f97e06bd0870f3630cd57322"
     },
     {
       "sha": "b88cd71735a4b0704b65007c068c6f378290b4cc",
       "title": "fix(ios): restore tabs after direct routes and controller attachment",
       "body": "Reapply the intended tab visibility when routes change and briefly retry during native controller attachment. Clear scheduled work on route, ride-state and window changes. This recovers cold deep links and post-ride detail screens without a persistent polling loop.",
-      "releaseCommit": "a047df2d4ea5d0b2b77f9ee084399540be02f629"
+      "releaseCommit": "2ead7f8ecf4b3707f97e06bd0870f3630cd57322"
     },
     {
       "sha": "6f93de21fec2d482f45fb5794cfa96a417324187",
       "title": "fix: hide retained sample data outside developer and capture modes",
       "body": "Keep remembered sample toggles private to Developer Mode in normal builds. Remove an open sample Memories selection when the mode is disabled, while retaining explicit Simulator gallery fixtures. Verify both states in Chromium and WebKit.",
-      "releaseCommit": "a047df2d4ea5d0b2b77f9ee084399540be02f629"
+      "releaseCommit": "2ead7f8ecf4b3707f97e06bd0870f3630cd57322"
     },
     {
       "sha": "17519fe2af21442b22e95f0d466aeb3ecefc85f4",
       "title": "docs: record native verification gate and successful candidate build",
       "body": "record native verification gate and successful candidate build. Changed 1 files: docs/UPDATE_2.7.2.md.",
-      "releaseCommit": "a047df2d4ea5d0b2b77f9ee084399540be02f629"
+      "releaseCommit": "2ead7f8ecf4b3707f97e06bd0870f3630cd57322"
     },
     {
       "sha": "aac605cd1e01cfb951f9c469972c12fb6fc20193",
       "title": "fix(ios): let tab controller own adaptive map accessories",
       "body": "let tab controller own adaptive map accessories. Changed 1 files: modules/velunivo-appearance/ios/VelunivoAppearanceModule.swift.",
-      "releaseCommit": "a047df2d4ea5d0b2b77f9ee084399540be02f629"
+      "releaseCommit": "2ead7f8ecf4b3707f97e06bd0870f3630cd57322"
     },
     {
       "sha": "1d64ef4f2fc6e8b76b29b15c887e329f7912d763",
       "title": "feat(plugins): add isolated extensions and development-client handoff",
       "body": "Add permission-checked plugin packages with cards, telemetry widgets, accents, map actions and private storage. Bundle five disabled examples, hide the menu until external installation or developer opt-in, and document the API. Fix expanded replay scrolling and prioritize stable transit viewport cells. Add validation and local Metro startup support.",
-      "releaseCommit": "a047df2d4ea5d0b2b77f9ee084399540be02f629"
+      "releaseCommit": "2ead7f8ecf4b3707f97e06bd0870f3630cd57322"
     },
     {
       "sha": "12718d97b3e9ff955c9416ea49e74c0dfbc36e5d",
       "title": "docs(changelog): record plugin and replay implementation details",
       "body": "record plugin and replay implementation details. Changed 2 files: src/core/buildIdentity.generated.json, src/core/developerReleaseNotes.json.",
-      "releaseCommit": "a047df2d4ea5d0b2b77f9ee084399540be02f629"
+      "releaseCommit": "2ead7f8ecf4b3707f97e06bd0870f3630cd57322"
     },
     {
       "sha": "893fda1475b20151912fc568fbe1967fc5c1feca",
       "title": "feat(diagnostics): capture release errors and opt-in verbose telemetry",
       "body": "Capture Expo console warnings/errors, JS exceptions and Hermes release promise rejections in the existing redacted log archive. Keep console and crash behavior intact, buffer opt-in startup warnings, and bound event volume. Add a separate disabled-by-default verbose mode for BLE services, read responses, normalized samples and chatty console output. Record screen/size context, improve stack redaction, move progress sweeps to the UI thread with reduced-motion/background handling, and add the manual device test and attachment checklist.",
-      "releaseCommit": "a047df2d4ea5d0b2b77f9ee084399540be02f629"
+      "releaseCommit": "2ead7f8ecf4b3707f97e06bd0870f3630cd57322"
     },
     {
       "sha": "0cd47e37077a0a0ac2e343a65eb42f7cf83f19aa",
       "title": "docs(changelog): include release diagnostics and test handoff",
       "body": "include release diagnostics and test handoff. Changed 2 files: src/core/buildIdentity.generated.json, src/core/developerReleaseNotes.json.",
-      "releaseCommit": "a047df2d4ea5d0b2b77f9ee084399540be02f629"
+      "releaseCommit": "2ead7f8ecf4b3707f97e06bd0870f3630cd57322"
     },
     {
       "sha": "ebae9c8962581c9e5c3cbe35df76db6d66a24ad8",
       "title": "feat(plugins): add VPI archives and ride insight charts",
       "body": "Import bounded ZIP/VPI packages with metadata-only manifests, local CommonJS libraries and PNG icons. Keep execution in the existing permission-gated Worker sandbox; include validated example archives and a packaging guide.\n\nMove ride insights to a dedicated page with vehicle-filtered distance, duration, pace and recorded battery charts. Add visual anchors to dense reports and remove the raw startup text node found during iPhone Mirroring checks. Preserve existing installed plugins and user data.",
-      "releaseCommit": "a047df2d4ea5d0b2b77f9ee084399540be02f629"
+      "releaseCommit": "2ead7f8ecf4b3707f97e06bd0870f3630cd57322"
     },
     {
       "sha": "7ef35c30571349ec1c837f9f26d9b9a2f8b4b6a0",
       "title": "fix(plugins): keep package feedback beside import controls",
       "body": "Allow URL submission from the keyboard and show package operation errors next to the controls instead of below the installed plugin list. Document observed physical-iPhone preview and chart-selection results without treating them as broader device validation.",
-      "releaseCommit": "a047df2d4ea5d0b2b77f9ee084399540be02f629"
+      "releaseCommit": "2ead7f8ecf4b3707f97e06bd0870f3630cd57322"
     },
     {
       "sha": "34a8a5a959671792c1d20b75293c0c7c324ac6db",
       "title": "docs(changelog): record VPI and insight testing changes",
       "body": "record VPI and insight testing changes. Changed 2 files: src/core/buildIdentity.generated.json, src/core/developerReleaseNotes.json.",
-      "releaseCommit": "a047df2d4ea5d0b2b77f9ee084399540be02f629"
+      "releaseCommit": "2ead7f8ecf4b3707f97e06bd0870f3630cd57322"
     },
     {
       "sha": "eaac3483741e7c226d128969c3985a239abe7710",
       "title": "fix(plugins): prioritize installed packages over bundled examples",
       "body": "Keep downloaded extensions visible immediately below package controls instead of burying them after the disabled examples. Record the physical iPhone's installed/icon/enabled state and the remaining Mirroring input limitation.",
-      "releaseCommit": "a047df2d4ea5d0b2b77f9ee084399540be02f629"
+      "releaseCommit": "2ead7f8ecf4b3707f97e06bd0870f3630cd57322"
     },
     {
       "sha": "13933fb19c5dab9ce8ac59c0494a15f9266d4a65",
       "title": "docs(changelog): include final plugin usability review",
       "body": "include final plugin usability review. Changed 2 files: src/core/buildIdentity.generated.json, src/core/developerReleaseNotes.json.",
-      "releaseCommit": "a047df2d4ea5d0b2b77f9ee084399540be02f629"
+      "releaseCommit": "2ead7f8ecf4b3707f97e06bd0870f3630cd57322"
     },
     {
       "sha": "a047df2d4ea5d0b2b77f9ee084399540be02f629",
       "title": "fix(replay): keep the map clear and expire scratch reveals",
       "body": "Measure replay panels when padding the camera; reserve the side panel on tablets. Remove completed native reveal overlays and defer plugin heartbeats until sandbox boot. Add regression coverage and document simulator observations and hardware limits.",
-      "releaseCommit": "a047df2d4ea5d0b2b77f9ee084399540be02f629"
+      "releaseCommit": "2ead7f8ecf4b3707f97e06bd0870f3630cd57322"
+    },
+    {
+      "sha": "b4d1b23127b172340c7b83713d7973ae0261d2bf",
+      "title": "docs(changelog): record simulator reliability fixes in 2.7.4",
+      "body": "record simulator reliability fixes in 2.7.4. Changed 2 files: src/core/buildIdentity.generated.json, src/core/developerReleaseNotes.json.",
+      "releaseCommit": "2ead7f8ecf4b3707f97e06bd0870f3630cd57322"
+    },
+    {
+      "sha": "2ead7f8ecf4b3707f97e06bd0870f3630cd57322",
+      "title": "fix(ci): recognize release candidate Xcode on hosted runners",
+      "body": "Keep prerelease-only release builds while accepting the runner's Xcode 27.2 RC. Rank real version metadata and ignore aliases; add selector regressions and document iPad validation and storage limits.",
+      "releaseCommit": "2ead7f8ecf4b3707f97e06bd0870f3630cd57322"
     }
   ]
 }
