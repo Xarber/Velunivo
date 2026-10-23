@@ -276,17 +276,9 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - name: Select newest installed Xcode beta (never silently use stable)
+      - name: Select newest installed prerelease Xcode (beta or RC)
         run: |
-          python3 - <<'PY' >> "$GITHUB_ENV"
-          from pathlib import Path
-          import re
-          candidates=[p for p in Path('/Applications').glob('Xcode*.app') if 'beta' in p.name.lower() and not p.is_symlink()]
-          if not candidates: raise SystemExit('No Xcode beta installed on this runner')
-          chosen=max(candidates,key=lambda p:tuple(map(int,re.findall(r'\d+',p.name))))
-          print(f'DEVELOPER_DIR={chosen}/Contents/Developer')
-          print(f'XCODE_CACHE_ID={chosen.name}')
-          PY
+          python3 scripts/select-xcode.py >> "$GITHUB_ENV"
       - name: Restore incremental iPhone build products
         uses: actions/cache@v4
         continue-on-error: true
@@ -403,17 +395,9 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - name: Select newest installed Xcode beta (never silently use stable)
+      - name: Select newest installed prerelease Xcode (beta or RC)
         run: |
-          python3 - <<'PY' >> "$GITHUB_ENV"
-          from pathlib import Path
-          import re
-          candidates=[p for p in Path('/Applications').glob('Xcode*.app') if 'beta' in p.name.lower() and not p.is_symlink()]
-          if not candidates: raise SystemExit('No Xcode beta installed on this runner')
-          chosen=max(candidates,key=lambda p:tuple(map(int,re.findall(r'\d+',p.name))))
-          print(f'DEVELOPER_DIR={chosen}/Contents/Developer')
-          print(f'XCODE_CACHE_ID={chosen.name}')
-          PY
+          python3 scripts/select-xcode.py >> "$GITHUB_ENV"
       - name: Restore incremental Simulator build products
         uses: actions/cache@v4
         continue-on-error: true

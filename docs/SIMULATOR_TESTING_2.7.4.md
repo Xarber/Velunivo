@@ -30,3 +30,15 @@ Synthetic telemetry initially omitted units; those fixture-display artefacts are
 ## Limits
 
 A simulator cannot validate real scooter authentication, BLE radio reliability, physical microphone/camera quality, signing-dependent Live Activity/CallKit behavior or prolonged background endurance. Those remain physical-device checks; no claim of successful hardware testing is made here.
+
+## iPad Pro observed checks
+
+- Regular 2.7.3 launched at the injected location with the native top tab bar present, a bottom-left Your ride card, and visible rider markers.
+- Library used three compact cards for the three recorded rides. Memories/downloaded map previews and their Show all entries were present; the single-place and single-route sections did not add a fourth preview card.
+- Opening a sample Memory showed its own replay timeline, rider list and explicit No media recorded labels. Playback advanced; rotating to landscape kept the map beside the expanded rider panel. These sample Memories intentionally contain no audio/video tracks and do not establish media playback correctness.
+
+## Storage and CI
+
+Stopped both permanent simulators when free space fell below a safe level. Removed only downloaded test binaries/archives and regenerable Siri/language model caches that iOS had automatically populated inside these two new devices. Devices, OS runtimes, app data and other simulators were preserved. No further local boot is attempted while storage remains tight.
+
+The remote native jobs initially failed before compiling because the runner changed from an Xcode beta to Xcode 27.2 Release Candidate. The shared release selector now recognizes RC as prerelease, reads actual version metadata, ignores symlink aliases and still refuses implicit stable fallback. 57 Python checks passed, including regression tests for RC selection, an unversioned beta and explicit-only stable fallback.
