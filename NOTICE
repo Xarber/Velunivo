@@ -1,0 +1,9 @@
+Velunivo
+Copyright (c) 2026 Xarber and contributors
+SPDX-License-Identifier: AGPL-3.0-only
+
+Original Velunivo code is licensed under GNU AGPL version 3 only; see LICENSE.
+This does not relicense third-party code, libraries, fonts, images or assets.
+The original Expo scaffold notice is preserved in docs/licenses/EXPO-TEMPLATE-MIT.txt.
+Third-party distributions must retain their applicable notices and source obligations.
+See docs/LICENSING.md for audit scope and limitations.

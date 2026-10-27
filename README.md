@@ -144,3 +144,7 @@ Daily discovery goals, nearby-area challenges and additional achievements unlock
 Group leaders can lock invitations or approve new participants. Existing members can reconnect while a group is locked. Optional native local notifications and Live Activity request indicators help you notice regroup and admission requests.
 
 Private device pairing supports up to five devices. Paired devices introduce each other, synchronize original edit dates and deletions, and deliver offline unpair requests when the other device reconnects. See [2.4.0 implementation and validation](docs/UPDATE_2.4.0.md) for migration, testing and native-build requirements.
+
+## License and project documentation
+
+Original Velunivo code is [AGPL-3.0-only](LICENSE). Third-party components retain their licenses; see [licensing and attribution](docs/LICENSING.md). Start with the [documentation index](docs/INDEX.md) for architecture, development, privacy and release procedures.

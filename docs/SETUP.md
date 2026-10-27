@@ -233,3 +233,7 @@ A reviewed, version/hash-guarded postinstall patch applies the small view hooks 
 Library → Recorded Rides → Replay uses archived samples without GPS permissions or a vehicle connection. Check recorded speed/compass and optional telemetry, seek controls and 1×/2×/4× playback. Native and web maps use their existing rendering implementations. Replay does not record, share or invent missing road limits/turn instructions.
 
 For normal recordings, total filtered path distance must reach 100 m. A destination less than 100 m from the start instead requires at least 15 m. GPS jitter does not count; round trips count their travelled path. Below-threshold rides are not persisted and do not request battery usage. GPS permission denial warns before closing navigation and cancels its empty recording.
+
+### Python checks on macOS
+
+Release metadata helpers require Python 3.11+ (`hashlib.file_digest`). Apple's Command Line Tools Python 3.9 is insufficient for the complete Python suite. Use an already installed supported interpreter, for example `python3.13 -m unittest discover -s tests -p 'test_*.py'`; do not install another toolchain without authorization. These unit tests mock simulator commands and do not establish native-device verification.

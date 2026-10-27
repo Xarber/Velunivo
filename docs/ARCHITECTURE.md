@@ -1,3 +1,5 @@
+> Historical baseline: parts of this document describe the original implementation (including foreground-only guidance and basic range arithmetic). They are not the current feature contract. Background rides, Bluetooth telemetry, energy analytics, synchronization, plugins and offline road routing have since evolved. Use [the documentation index](INDEX.md) and current feature documents; a complete architecture reconciliation remains pending.
+
 # Architecture and source research
 
 Researched 2026-10-09. Package versions are pinned by package-lock.json: Expo 57, React 19.2.3, React Native 0.86.3, MapLibre RN 11.5, MapLibre GL JS 6.13. Node 24 is used in CI.

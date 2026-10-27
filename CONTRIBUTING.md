@@ -9,3 +9,7 @@ Run `npm run lint`, `npm run typecheck` and meaningful tests for changed behavio
 For bug reports, include platform, app version, steps, expected/observed result and a redacted screenshot if useful. Do not publish private GPX tracks, home/work addresses, GPS recordings, provider keys, signing credentials or personal logs. Reproduce routing issues with public landmarks when possible.
 
 Builds use GitHub Actions, not EAS. Do not download local SDKs without explicit authorization. Do not relax road restrictions to hide provider failures or manufacture routes, street limits, turn instructions, battery readings or traffic forecasts.
+
+## Standards and licensing
+
+Read the [documentation index](docs/INDEX.md) and [universal standards](docs/standards/UNIVERSAL_APPLICATION_STANDARDS.md). Original contributions use AGPL-3.0-only; retain third-party notices. Existing project branches intentionally remain development → testing → main until an authorized migration. Use temporary branches/worktrees for isolated work and integrate into development before promotion. See the [adoption report](docs/reports/STANDARDS_ADOPTION.md) for known gaps; do not interpret the standards as evidence that every capability has already been verified.
