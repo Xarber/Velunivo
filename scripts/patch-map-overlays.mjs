@@ -120,3 +120,16 @@ patch('AIRMapManager.m','    [self _regionChanged:mapView continuous:YES];',`   
         }
     }
     [self _regionChanged:mapView continuous:YES];`);
+
+// Fabric bypasses AIRMapMarkerManager's RCT_REMAP_VIEW_PROPERTY. Forward the
+// public rotation after identifier so the navigation marker uses world heading.
+patch('RNMapsMarkerView.mm', '    REMAP_MAPVIEW_STRING_PROP(identifier)', `    REMAP_MAPVIEW_STRING_PROP(identifier)
+    if (newViewProps.rotation != oldViewProps.rotation || newViewProps.identifier != oldViewProps.identifier) {
+        [_view setVelunivoRotation:newViewProps.rotation];
+    }`);
+
+// 1.27.2 also omits rotation from its Fabric schema and shipped C++ props.
+// Keep both in sync: this package compiles the pre-generated iOS sources.
+{const path='node_modules/react-native-maps/src/specs/NativeComponentMarker.ts';let source=fs.readFileSync(path,'utf8');if(!source.includes('rotation?: WithDefault<Double, 0>;')){source=source.replace('export interface MarkerFabricNativeProps extends ViewProps {','export interface MarkerFabricNativeProps extends ViewProps {\n  rotation?: WithDefault<Double, 0>;');fs.writeFileSync(path,source);}}
+{const path='node_modules/react-native-maps/ios/generated/RNMapsSpecs/Props.h';let source=fs.readFileSync(path,'utf8');const marker='  bool isPreselected{false};\n  double opacity{1.0};';if(!source.includes('  double rotation{0.0};')){if(!source.includes(marker))throw new Error('Marker Fabric props layout changed');source=source.replace(marker,'  bool isPreselected{false};\n  double rotation{0.0};\n  double opacity{1.0};');fs.writeFileSync(path,source);}}
+{const path='node_modules/react-native-maps/ios/generated/RNMapsSpecs/Props.cpp';let source=fs.readFileSync(path,'utf8');const marker='    isPreselected(convertRawProp(context, rawProps, "isPreselected", sourceProps.isPreselected, {false})),';if(!source.includes('rotation(convertRawProp(context, rawProps, "rotation"')){if(!source.includes(marker))throw new Error('Marker Fabric constructor changed');source=source.replace(marker,marker+'\n    rotation(convertRawProp(context, rawProps, "rotation", sourceProps.rotation, {0.0})),');const diff='  if (isPreselected != oldProps->isPreselected) {';if(!source.includes(diff))throw new Error('Marker Fabric diff props changed');source=source.replace(diff,'  if (rotation != oldProps->rotation) { result["rotation"] = rotation; }\n'+diff);fs.writeFileSync(path,source);}}
