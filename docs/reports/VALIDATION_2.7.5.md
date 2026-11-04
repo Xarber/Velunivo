@@ -23,3 +23,11 @@ Lint and TypeScript checks passed during implementation. The full suite passed 5
 - Test OS background wake separately from force-quitting. After moving beyond the monitoring region, confirm an alert only follows a fresh real vehicle-speed confirmation. Denied notification permission and force-quit may prevent an alert; do not claim otherwise.
 
 Physical sync, media/CallKit and broader application validation are outside this batch. The SSD is disconnected and no native-device testing is claimed.
+
+## Publication and hosted web
+
+Application source `3290cd2f89b9cf2836760fa88362068bc8cb865b` was pushed to the existing development and testing branches. Stable main was not changed. Native/web prerelease workflow: https://github.com/Xarber/Velunivo/actions/runs/41793013164 . It was queued at last observation; no successful native build, installation or GitHub prerelease is claimed here. This repository's existing pipeline still does not produce AAB; see the standards adoption report.
+
+A production web export of that exact source/version passed bundling and manifest/icon/service-worker checks. Hosted https://velunivo.xcenter.it was updated to 2.7.5 / 3290cd2 under the existing deployment lock, with the previous selector saved in rollback-2.7.5-web-target.txt. Served local HTML matched the staged artifact; public build metadata and stamped service worker matched; HTTP health returned web=true and peer=true; a real public WSS PeerServer handshake returned OPEN. No server/PeerServer restart or routing/configuration change was made. No browser-interaction or native visual validation was performed in this batch.
+
+Final code checks: lint passed, typecheck passed, 516 JavaScript tests passed and 57 Python tests passed. Simulator-related Python helpers were mocked. Automatic detection remains an opt-in implementation awaiting the physical-device scenarios above, not a guarantee of arbitrary iOS background execution.
