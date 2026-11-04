@@ -1,3 +1,4 @@
+import {t} from '../i18n/core';
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import { Alert, Platform } from 'react-native';
@@ -17,7 +18,7 @@ if (!TaskManager.isTaskDefined(TASK)) TaskManager.defineTask<{locations:Location
     try {await current.accept(locationFix(p));} catch(e) {current.error(e instanceof Error ? e.message : 'Background guidance update failed');}
   }
 });
-export async function beginBackgroundLocation(accept: Listener['accept'], error: Listener['error'], isCancelled: () => boolean = () => false) {
+export async function beginBackgroundLocation(accept: Listener['accept'], error: Listener['error'], isCancelled: () => boolean = () => false, monitoring = false) {
   if(!await TaskManager.isAvailableAsync()) throw new Error('Background location needs a native build.');
   let permission=await Location.getBackgroundPermissionsAsync();
   if(permission.status!=='granted') {
@@ -34,7 +35,7 @@ export async function beginBackgroundLocation(accept: Listener['accept'], error:
     if(isCancelled()) throw new Error('Ride ended before background location started.');
     if(await Location.hasStartedLocationUpdatesAsync(TASK))await Location.stopLocationUpdatesAsync(TASK);
     listener={token,accept,error};
-    try {await Location.startLocationUpdatesAsync(TASK,{accuracy:Location.Accuracy.BestForNavigation,distanceInterval:2,timeInterval:1000,deferredUpdatesInterval:1000,deferredUpdatesDistance:0,activityType:Location.ActivityType.OtherNavigation,pausesUpdatesAutomatically:false,showsBackgroundLocationIndicator:true,foregroundService:{notificationTitle:'Velunivo navigation',notificationBody:'Your ride is active. Open Velunivo to stop navigation.',notificationColor:'#007F6D',killServiceOnDestroy:true}});} catch(e) {if(listener?.token===token)listener=null;throw e;}
+    try {await Location.startLocationUpdatesAsync(TASK,{accuracy:monitoring?Location.Accuracy.Balanced:Location.Accuracy.BestForNavigation,distanceInterval:monitoring?20:2,timeInterval:monitoring?5000:1000,deferredUpdatesInterval:monitoring?5000:1000,deferredUpdatesDistance:0,activityType:Location.ActivityType.OtherNavigation,pausesUpdatesAutomatically:false,showsBackgroundLocationIndicator:true,foregroundService:{notificationTitle:monitoring?t('Bluetooth ride detection'):'Velunivo navigation',notificationBody:monitoring?t('Waiting for movement from your connected vehicle.'):'Your ride is active. Open Velunivo to stop navigation.',notificationColor:'#007F6D',killServiceOnDestroy:true}});} catch(e) {if(listener?.token===token)listener=null;throw e;}
   });
   return ()=>serial(async()=>{if(listener?.token!==token)return;listener=null;if(await Location.hasStartedLocationUpdatesAsync(TASK))await Location.stopLocationUpdatesAsync(TASK);});
 }

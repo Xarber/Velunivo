@@ -60,7 +60,7 @@ export function useSpectatorActivity(active:boolean,props:NavigationActivity,lin
 function useActivity(factory:typeof activity,active: boolean, props: NavigationActivity,link:string) {
   const instance=useRef<LiveActivity<NavigationActivity> | null>(null), latest=useRef(props), last=useRef('');
   const [status,setStatus]=useState(''); useEffect(()=>{latest.current={...props,actionURL:link,actionLabel:t(props.joinRequest?'Review request':props.regroup?'View group':'Open ride'),requestLabel:t('Join request'),oldLabel:props.oldLabel||t('Old'),arrivalLabel:t('Arrival'),pausedLabel:t('Updates paused · last location may be outdated')};if(factory===activity)currentRideProps=active?props:undefined;},[active,props,factory,link]);
-  useEffect(()=>{ try { for(const old of factory.getInstances()) void old.end('immediate').catch(()=>{}); } catch { /* Unsupported/sideloaded host. */ } },[factory]);
+  useEffect(()=>{ if(!active)return;try { for(const old of factory.getInstances()) void old.end('immediate').catch(()=>{}); } catch { /* Unsupported/sideloaded host. */ } },[factory,active]);
   useEffect(()=>{ if(!active)return;
     // The native ActivityKit factory synchronously reports availability.
     // eslint-disable-next-line react-hooks/set-state-in-effect

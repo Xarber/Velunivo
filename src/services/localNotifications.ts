@@ -8,8 +8,8 @@ export async function requestLocalNotifications(){
  const permission=await Notifications.requestPermissionsAsync();return permission.granted;
 }
 const recent=new Map<string,number>();
-export async function notifyRideEvent(id:string,title:string,body:string){
+export async function notifyRideEvent(id:string,title:string,body:string,url='velunivo:///'){
  if(Platform.OS==='web'||Date.now()-(recent.get(id)??0)<60000)return;
  recent.set(id,Date.now());if(recent.size>100)recent.delete(recent.keys().next().value!);
- try{if(!(await Notifications.getPermissionsAsync()).granted)return;await Notifications.scheduleNotificationAsync({content:{title:t(title),body,data:{url:'velunivo:///'},sound:false},trigger:Platform.OS==='android'?{channelId:'ride-events'}:null});}catch{/* Never interrupt a ride for an optional notification. */}
+ try{if(!(await Notifications.getPermissionsAsync()).granted)return;await Notifications.scheduleNotificationAsync({content:{title:t(title),body,data:{url},sound:false},trigger:Platform.OS==='android'?{channelId:'ride-events'}:null});}catch{/* Never interrupt a ride for an optional notification. */}
 }
