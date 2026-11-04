@@ -11,3 +11,5 @@ Start with [AGENTS.md](../AGENTS.md) and the [universal standards](standards/UNI
 Some older documents describe historical snapshots, not current guarantees. The architecture overview is explicitly marked historical where applicable; consult current feature documents and source before implementation.
 
 - Current automatic recording: [Bluetooth detection and iOS wake behavior](features-automatic-bluetooth-recording.md), [2.7.5 validation scope](reports/VALIDATION_2.7.5.md).
+
+- Scooter controls: [M365 controls and physical validation plan](features-m365-controls.md), [validation scope](reports/VALIDATION_SCOOTER_CONTROLS.md).

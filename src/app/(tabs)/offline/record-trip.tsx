@@ -1,3 +1,4 @@
+import {useM365RideControls} from '../../../bluetooth/plugins/useM365RideControls';
 import PluginCards from '../../../plugins/PluginCards';
 import {retainedMapFix,bearing,displaySpeed,distanceLeft,freshFix,forwardHeading} from '../../../core/rideView';
 import {setRideScreen,getRideScreen} from '../../../services/rideLock';
@@ -70,6 +71,7 @@ export default function RecordTrip(){
   const accept=React.useCallback(async (fix:import('../../../core/types').Fix)=>{if(fix.speed!==null)setPeak(v=>Math.max(v,fix.speed!*3.6));await recordFix(fix);const summary=recordSnapshot();if(n.liveActivities&&summary)await updateRecordingActivity({...recordingActivity(fix,summary.meters,summary.startedAt,n.unit,fix.timestamp),...currentActivityExtras(profile.id,fix.timestamp)});},[recordFix,recordSnapshot,n.liveActivities,n.unit,profile.id]);
   const location=useTripLocation(active,n.backgroundNavigation||externalBackground,accept),preview=useLocation(focused&&!active);
   const fix=active ? location.fix : preview.fix,valid=freshFix(fix,now),position=retainedMapFix(fix,now)?fix!.coordinate:undefined;
+  useM365RideControls(active,profile.id);
   useBluetoothLease(profile.id,active);
   const bluetooth=useBluetoothVehicle(profile.id),{preferences:bluetoothPreferences}=useBluetoothPreferences();
   const reported=active && metricVisible(bluetoothPreferences,'speed')?dashboardReading(bluetooth,profile.id,'speed',now):undefined;

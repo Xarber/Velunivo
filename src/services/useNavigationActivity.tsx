@@ -16,3 +16,6 @@ export function useSpectatorActivity(_active:boolean,_props:NavigationActivity,_
 export function useRecordingActivity(_active:boolean,_props:NavigationActivity){return {status:'Live Activities require a native build.'};}
 
 export async function updateRecordingActivity(_props:NavigationActivity){}
+
+export async function showRidingPromptActivity(){return false;}
+export async function stopRidingPromptActivity(){}

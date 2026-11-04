@@ -19,7 +19,7 @@ export interface BLELink {
 }
 export interface ManufacturerDiscoveryFilter { companyIdentifier:number; dataPrefix:readonly number[]; }
 export interface BLETransport { chooseDevice?(services:string[],manufacturerFilters?:readonly ManufacturerDiscoveryFilter[]):Promise<BLEDeviceInfo>; ready(requestPermission:boolean):Promise<void>; observeState(listener:(state:AdapterState)=>void):()=>void; scan(services:string[],listener:(device:BLEDeviceInfo)=>void,error:(e:Error)=>void):Promise<()=>void>; connect(device:BLEDeviceInfo):Promise<BLELink>; }
-export interface ProtocolSession { identity:{serial?:string; firmware?:string; model:string}; capabilities:Capabilities; close():Promise<void>; setLocked?(locked:boolean):Promise<void>; }
+export interface ProtocolSession { identity:{serial?:string; firmware?:string; model:string}; capabilities:Capabilities; close():Promise<void>; refreshTelemetry?():Promise<void>; setLocked?(locked:boolean):Promise<void>; }
 export interface VehicleProtocolPlugin {
  id:string; manufacturer:string; vehicleTypes:readonly VehicleType[]; models:readonly string[]; services:readonly string[]; capabilities:Capabilities; simulator?:boolean; manufacturerFilters?:readonly ManufacturerDiscoveryFilter[];
  detect(device:BLEDeviceInfo):Detection;

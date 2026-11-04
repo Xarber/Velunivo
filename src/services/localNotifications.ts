@@ -11,5 +11,6 @@ const recent=new Map<string,number>();
 export async function notifyRideEvent(id:string,title:string,body:string,url='velunivo:///'){
  if(Platform.OS==='web'||Date.now()-(recent.get(id)??0)<60000)return;
  recent.set(id,Date.now());if(recent.size>100)recent.delete(recent.keys().next().value!);
- try{if(!(await Notifications.getPermissionsAsync()).granted)return;await Notifications.scheduleNotificationAsync({content:{title:t(title),body,data:{url},sound:false},trigger:Platform.OS==='android'?{channelId:'ride-events'}:null});}catch{/* Never interrupt a ride for an optional notification. */}
+ try{if(!(await Notifications.getPermissionsAsync()).granted)return;
+ if(id==='bluetooth-ride-detected')await Notifications.setNotificationCategoryAsync('ride-detection',[{identifier:'START_RECORDING',buttonTitle:t('Start recording'),options:{opensAppToForeground:true}},{identifier:'SEARCH_DESTINATION',buttonTitle:t('Find destination'),options:{opensAppToForeground:true}}]);await Notifications.scheduleNotificationAsync({content:{title:t(title),body,data:{url},...(id==='bluetooth-ride-detected'?{categoryIdentifier:'ride-detection'}:{}),sound:false},trigger:Platform.OS==='android'?{channelId:'ride-events'}:null});}catch{/* Never interrupt a ride for an optional notification. */}
 }

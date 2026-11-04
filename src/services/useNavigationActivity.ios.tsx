@@ -6,7 +6,7 @@ import { AppState } from 'react-native';
 import { inspectActivityInstallation } from './activityInstallation';
 import { ActivityReport, activityDiagnosis } from '../core/activityDiagnostics';
 import { Button, Image, Text, VStack, HStack } from '@expo/ui/swift-ui';
-import { font, foregroundStyle, padding } from '@expo/ui/swift-ui/modifiers';
+import { font, foregroundStyle, padding,buttonStyle,tint } from '@expo/ui/swift-ui/modifiers';
 import { createLiveActivity, LiveActivity, LiveActivityEnvironment } from 'expo-widgets';
 import { NavigationActivity, rideActivity } from '../core/liveActivity';
 import { Route, Profile, NavigationOptions, Fix } from '../core/types';
@@ -17,6 +17,8 @@ export function inspectLiveActivity():ActivityReport { const checks=inspectActiv
 const NavigationLayout = (p: NavigationActivity, environment: LiveActivityEnvironment) => {
   'widget';
   const accent=environment.isLuminanceReduced ? '#FFFFFF' : '#28DAB0';
+  if(p.ridingPrompt){const actions=environment.isStale?null:<HStack spacing={12}><Button target="ride-prompt:record" modifiers={[buttonStyle('borderedProminent'),tint(accent)]}><Text>{p.recordLabel}</Text></Button><Button target="ride-prompt:search" modifiers={[buttonStyle('plain'),foregroundStyle(accent)]}><Text>{p.searchLabel}</Text></Button></HStack>;return {banner:<VStack alignment="leading" spacing={8} modifiers={[padding({all:16})]}><HStack spacing={8}><Image systemName="arrow.up" color={accent}/><Text modifiers={[font({size:20,weight:'bold'})]}>Velunivo</Text></HStack><Text>{p.turn}</Text>{actions}</VStack>,compactLeading:<Image systemName="arrow.up" color={accent}/>,compactTrailing:<Text>?</Text>,minimal:<Image systemName="arrow.up" color={accent}/>,expandedLeading:<Image systemName="arrow.up" color={accent} modifiers={[font({size:30})]}/>,expandedBottom:<VStack spacing={8}><Text>Velunivo</Text><Text>{p.turn}</Text>{actions}</VStack>};}
+
   const old=environment.isStale || p.batteryOld;
   const batteryTint=old?'#E49235':p.batteryColor || accent;
   const badges=<HStack spacing={16}>{p.batteryPercent!==undefined && <HStack spacing={5}><Image systemName={p.batterySymbol || 'battery.100percent'} color={batteryTint} /><Text modifiers={[foregroundStyle(batteryTint)]}>{p.batteryPercent}%</Text>{old && <Text modifiers={[foregroundStyle(batteryTint)]}>{p.oldLabel}</Text>}{p.batteryUpdatedAt!==undefined && <Text date={new Date(p.batteryUpdatedAt)} dateStyle="relative" modifiers={[font({size:11}),foregroundStyle(batteryTint)]} />}</HStack>}{p.viewerCount!==undefined && <HStack spacing={5}><Image systemName="eye.fill" color={accent} /><Text>{p.viewerCount}</Text>{environment.isStale && <Image systemName="clock" color="#E49235" />}</HStack>}{p.groupCount!==undefined&&<HStack spacing={5}><Image systemName="person.2.fill" color={accent}/><Text>{p.groupCount}</Text></HStack>}</HStack>;
@@ -31,6 +33,8 @@ const NavigationLayout = (p: NavigationActivity, environment: LiveActivityEnviro
     expandedBottom: <VStack modifiers={[padding({all:12})]}><Text>{p.turn}</Text><Text>{p.arrival}{p.recording?'':` ${p.arrivalLabel||'Arrival'}`} · {p.minutes} · {p.remaining}</Text>{environment.isStale&&<Text modifiers={[foregroundStyle('#E49235')]}>{p.oldLabel}</Text>}{p.regroup&&<Text modifiers={[foregroundStyle('#FF5965'),font({weight:'bold'})]}>{p.regroup}</Text>}{badges}{actions}</VStack>,
   };
 };
+let ridingPromptTimer:ReturnType<typeof setTimeout>|undefined;
+const ridingPromptActivity=createLiveActivity<NavigationActivity>('VelunivoRidingPrompt',NavigationLayout);
 const activity=createLiveActivity<NavigationActivity>('VelunivoNavigation',NavigationLayout);
 // Separate factory: tests must never replace, update or end a real ride.
 const recordingActivity=createLiveActivity<NavigationActivity>('VelunivoRecording',NavigationLayout);
@@ -81,3 +85,10 @@ export async function updateRideActivity(route:Route,profile:Profile & {id?:stri
 export async function markActivityPaused() {try {for(const live of activity.getInstances())await live.update({...currentRideProps,batteryOld:true,turn:'Guidance paused · enable background location',symbol:'arrow.up',distance:'—',arrival:'—',minutes:'—',remaining:'—'},new Date());} catch { /* Unsupported extension. */ }}
 
 export async function updateRecordingActivity(props:NavigationActivity){try{for(const live of recordingActivity.getInstances())await live.update(props,new Date(Date.now()+30000));}catch(error){lastActivityError=error instanceof Error?error.message:String(error);}}
+
+/** ActivityKit cannot request an ordinary local activity from arbitrary background execution. */
+export async function showRidingPromptActivity(){
+ if(AppState.currentState!=='active')return false;
+ try{if(ridingPromptTimer)clearTimeout(ridingPromptTimer);for(const live of ridingPromptActivity.getInstances())await live.end('immediate');ridingPromptActivity.start({ridingPrompt:true,turn:t('Are you riding?'),symbol:'arrow.up',distance:'',arrival:'',minutes:'',remaining:'',recordLabel:t('Start recording'),searchLabel:t('Find destination')},'velunivo:///',new Date(Date.now()+120000));ridingPromptTimer=setTimeout(()=>void stopRidingPromptActivity(),120000);return true;}catch{return false;}
+}
+export async function stopRidingPromptActivity(){if(ridingPromptTimer)clearTimeout(ridingPromptTimer);ridingPromptTimer=undefined;try{for(const live of ridingPromptActivity.getInstances())await live.end('immediate');}catch{}}

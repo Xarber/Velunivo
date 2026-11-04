@@ -24,3 +24,6 @@ export async function stopTestLiveActivity(){await enqueue('velunivo-test',async
 export async function startTestLiveActivity(kind:ActivityTestKind='navigation',overrides:Partial<NavigationActivity>={}){await enqueue('velunivo-test',()=>begin('velunivo-test'));await publish('velunivo-test',activityTestData(kind,overrides),'velunivo:///');return inspectLiveActivity();}
 
 export async function updateRecordingActivity(props:NavigationActivity){await publish('velunivo-recording',props,'velunivo:///offline/record-trip').catch(()=>{});}
+
+export async function showRidingPromptActivity(){return false;}
+export async function stopRidingPromptActivity(){}
