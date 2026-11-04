@@ -14,6 +14,8 @@ When foreground ride detection uses alerts, iOS can show a separate two-minute r
 
 Headlight, night-light scheduling, sleep timeout and locked timeout are not implemented. Public feature descriptions do not establish firmware-specific command/register layout, units or safe ranges. The known tail-light register is not evidence for a headlight command. The controls page explains unavailability instead of exposing nonfunctional switches. Do not guess writes or change firmware.
 
+The [4 November physical inspection and follow-up](reports/M365_PHYSICAL_INSPECTION_2026-11-04.md) exercised Utility's normal and locked timeout edits and Profile 3's Always on headlight setting. Original values were restored and configuration was loaded again after reconnect. The user confirmed that enabling Always on headlight illuminated the front light; disabling that setting left the light on until a physical button press. This is not a verified symmetrical headlight command. Captured encrypted BLE traffic does not establish plaintext SHFW field mappings, so these writes remain unavailable in Velunivo. The three profile light editors were inspected; copying, resetting, full-profile writes and restorable backup were not tested.
+
 ## Tonight's ScooterHacking Utility test
 
 Use the physical stationary scooter with the rider nearby. Disconnect Velunivo's Bluetooth session before Utility connects; avoid competing clients. Record scooter model, BLE/DRV/SHFW versions and original settings. Do not include pairing credentials, authentication material or identifiers in shared traces.
