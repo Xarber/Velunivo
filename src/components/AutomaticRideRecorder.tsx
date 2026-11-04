@@ -6,11 +6,12 @@ import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {router} from 'expo-router';
+import {useGroupActivity} from '../groups/useGroupActivity';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AutomaticRideDetector,AUTOMATIC_RIDE_COOLDOWN,AUTOMATIC_RIDE_DISCONNECT_GRACE} from '../core/automaticRide';
 import {useStore} from '../services/store';
 import {bluetoothBridge} from '../bluetooth/service';
-import {useBluetoothVehicle} from '../bluetooth/react';
+import {useBluetoothVehicle,useBluetoothLease} from '../bluetooth/react';
 import {beginBackgroundLocation} from '../services/backgroundLocation';
 import {useTripLocation} from '../services/useTripLocation';
 import {useRideRecorder} from '../services/useRideRecorder';
@@ -32,16 +33,18 @@ export default function AutomaticRideRecorder(){
  const [active,setActive]=useState(false),[saving,setSaving]=useState(false),[foreground,setForeground]=useState(AppState.currentState==='active'),[consented,setConsented]=useState(false),[now,setNow]=useState(()=>Date.now()),[error,setError]=useState('');
  const policy=useRef({enabled:false,notifyOnly:false});useEffect(()=>{policy.current={enabled:consented&&n.autoBluetoothRecording,notifyOnly:n.bluetoothRecordingNotifyOnly};},[consented,n.autoBluetoothRecording,n.bluetoothRecordingNotifyOnly]);
  const detector=useRef(new AutomaticRideDetector()),cooldown=useRef(0),armed=useRef(false),own=useRef(false),ending=useRef(false),disconnectedAt=useRef<number|null>(null);
+ useBluetoothLease(profile.id,active);
  const recorder=useRideRecorder(active,true,false,metadata,profile,noMotion,noCompass,false);
  const accept=useCallback(async(fix:import('../core/types').Fix)=>{await recorder.accept(fix);const ride=recorder.snapshot();if(n.liveActivities&&ride)await updateRecordingActivity(recordingActivity(fix,ride.meters,ride.startedAt,n.unit,fix.timestamp));},[recorder,n.liveActivities,n.unit]);
  const location=useTripLocation(active,true,accept);
  useRecordingActivity(active&&n.liveActivities,recordingActivity(location.fix,recorder.record?.meters??0,recorder.record?.startedAt??now,n.unit,now));
  const finish=useCallback(async()=>{
-  if(!own.current||ending.current)return;
+  if(!own.current)return true;if(ending.current)return false;
   ending.current=true;setSaving(true);cooldown.current=Date.now()+AUTOMATIC_RIDE_COOLDOWN;
-  try{if(await recorder.finish()===false){setError('Automatic ride could not be saved. Try again.');return;}own.current=false;setActive(false);lockVehicle(false);setError('');}
+  try{if(await recorder.finish()===false){setError('Automatic ride could not be saved. Try again.');return false;}own.current=false;setActive(false);lockVehicle(false);setError('');return true;}
   finally{ending.current=false;setSaving(false);}
  },[recorder,lockVehicle]);
+ useGroupActivity(active,finish);
  const finishRef=useRef(finish);useEffect(()=>{finishRef.current=finish;},[finish]);
  useEffect(()=>{let cancelled=false;void AsyncStorage.getItem('automatic-ride-consent-v1').then(v=>{if(!cancelled)setConsented(v==='true');}).catch(()=>{});return()=>{cancelled=true;};},[n.autoBluetoothRecording]);
  useEffect(()=>{if(ready&&!n.autoBluetoothRecording)void stopAutomaticRideWake().catch(()=>{});},[ready,n.autoBluetoothRecording]);
