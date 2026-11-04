@@ -13,3 +13,5 @@ Some older documents describe historical snapshots, not current guarantees. The 
 - Current automatic recording: [Bluetooth detection and iOS wake behavior](features-automatic-bluetooth-recording.md), [2.7.5 validation scope](reports/VALIDATION_2.7.5.md).
 
 - Scooter controls: [M365 controls and physical validation plan](features-m365-controls.md), [validation scope](reports/VALIDATION_SCOOTER_CONTROLS.md).
+
+- Physical scooter inspection: [4 November evidence and unresolved protocol mappings](reports/M365_PHYSICAL_INSPECTION_2026-11-04.md).
