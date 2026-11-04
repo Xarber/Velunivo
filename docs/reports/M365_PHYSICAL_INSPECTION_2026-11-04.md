@@ -1,5 +1,7 @@
 # Physical scooter inspection — 4 November 2026
 
+Later work: [independent authenticated SHFW reads and remaining write-mapping limits](M365_INDEPENDENT_PROTOCOL_2026-11-05.md). The sessions below describe their own historical scope; the later report adds evidence without retroactively changing it.
+
 ## Scope and observations
 
 Chrome ScooterHacking Utility 4.2.1 release #78 was connected to a physical Mi Electric Scooter Pro 2 reporting SHFW 3.12.2. The user confirmed live dashboard updates. No simulator or Velunivo native test was performed.

@@ -15,3 +15,5 @@ Some older documents describe historical snapshots, not current guarantees. The 
 - Scooter controls: [M365 controls and physical validation plan](features-m365-controls.md), [validation scope](reports/VALIDATION_SCOOTER_CONTROLS.md).
 
 - Physical scooter inspection: [4 November evidence and unresolved protocol mappings](reports/M365_PHYSICAL_INSPECTION_2026-11-04.md).
+- Independent scooter research: [local read-only diagnostic tool and candidate-register evidence](M365_INSPECTION.md).
+- Independent SHFW responses: [5 November read-only investigation and validation scope](reports/M365_INDEPENDENT_PROTOCOL_2026-11-05.md).

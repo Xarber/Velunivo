@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Velunivo scooter inspection</title>
+<style>body{font:17px system-ui;max-width:880px;margin:40px auto;padding:0 20px;background:#101a20;color:#eef5f5}h1{font-size:30px}p{line-height:1.5}label{display:block;padding:20px;background:#253339;border-radius:12px}button{font:inherit;padding:12px 18px;margin:20px 8px 20px 0;border-radius:10px;border:0}button:disabled{opacity:.45}pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:16px;border:1px solid #47616a;border-radius:12px}small{color:#b5c8cc}input{width:22px;height:22px;vertical-align:middle;margin-right:10px}</style>
+<h1>Velunivo scooter inspection</h1>
+<p>Local research tool. Uses Velunivo’s own authentication and reads a fixed set of candidate SHFW blocks. It cannot change scooter settings, flash firmware, or restore a backup. Keep the scooter stationary and disconnect other scooter apps first.</p>
+<label><input type="checkbox" id="registration">I understand that connecting may create a new Xiaomi pairing and require pairing again in Utility or other scooter apps. The token stays in this tab’s memory and is lost when the tab closes.</label>
+<button id="connect">Connect scooter</button><button id="read" disabled>Read inspection</button><button id="disconnect" disabled>Disconnect</button><button id="download" disabled>Save diagnostic snapshot</button>
+<p id="status" role="status" aria-live="polite">Not connected. No radio access until you connect.</p>
+<small>Nothing is uploaded. Authentication secrets, device identity and serial numbers are excluded from the snapshot. Raw configuration blocks may still contain private settings. This is a temporary developer tool, separate from the installed application.</small>
+<pre id="output" aria-label="Raw diagnostic response">No observations yet.</pre>
+<script src="/bundle.js" defer></script></html>
