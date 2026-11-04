@@ -1575,3 +1575,262 @@ When uncertain, choose the approach that:
 6. Requires the least unnecessary disruption.
 
 **The ultimate goal is not merely code that compiles. It is to deliver complete, production-quality applications that are reliable, secure, polished, extensible, multiplatform, thoroughly documented, and easy to maintain—while respecting the exact task, existing project decisions, and established authorization boundaries.**
+
+## 31. Automatic Update Detection and In-App Updates
+
+**Every applicable application must support automatic update checks using GitHub Releases as its primary release metadata source.**
+
+The update system must integrate with the application's existing versioning, GitHub Actions release workflows, distribution channels, What's New interface, and changelog history.
+
+### Update Discovery
+
+- Automatically check for updates when the application launches.
+- Recheck periodically when the application returns to the foreground, using reasonable throttling and caching.
+- Provide a **Check for Updates** option in Settings.
+- Display the currently installed version, build number, and update status.
+- Compare versions and build numbers correctly rather than relying on release publication dates.
+- Distinguish stable releases from prereleases.
+- Never mistakenly offer the dedicated mutable `1.0` distribution-metadata release as an application update.
+- Do not offer incompatible artifacts, downgrades, or updates intended for another distribution variant.
+
+Use the GitHub Releases API or a validated release manifest generated from GitHub Actions.
+
+Respect GitHub API rate limits, caching headers, and network availability.
+
+For private repositories, use an appropriately secured update service or authenticated distribution mechanism. Never embed long-lived GitHub access tokens or private repository credentials in client applications.
+
+### Release Channels
+
+Support at least:
+
+**Stable**
+- Receives validated releases from `main`.
+- Never automatically installs beta versions.
+- Uses the authorized stable distribution source.
+
+**Beta**
+- Receives prereleases from `beta`.
+- Can optionally accept newer stable versions when appropriate.
+- Uses the authorized beta distribution source.
+
+The application's build configuration should determine its default update channel.
+
+Allow channel switching only where supported and explicitly intended, preventing incompatible updates.
+
+### In-App Android APK Updates
+
+**Android applications distributed as directly installed APKs must support an integrated self-update experience.**
+
+When a newer compatible APK becomes available:
+
+1. Detect the update through GitHub release metadata.
+2. Display a compact update notification or modal.
+3. Show the new version and relevant release notes.
+4. Provide an **Update Now** action.
+5. Download the correct universal APK directly within the application.
+6. Display download progress, speed, and remaining size when available.
+7. Verify download integrity and package compatibility.
+8. Initiate installation using the supported Android package installation APIs.
+9. Request any required Android system installation permission or confirmation.
+10. Preserve application data, settings, accounts, and local storage across the update.
+11. Report installation failures clearly and offer retry options.
+
+The user should not need to manually visit GitHub, locate a release, or download an APK through a browser.
+
+Use Android's supported `PackageInstaller` APIs or equivalent system installation flows.
+
+**Never attempt to bypass Android security prompts or installation restrictions.**
+
+Preserve application identifiers and signing-key continuity so downloaded updates can replace existing installations safely.
+
+Check that the downloaded APK is newer, compatible with the device, and signed with the expected signing identity.
+
+Do not allow unsigned or untrusted APKs to replace a trusted installation.
+
+### Download and Installation Experience
+
+Support, where practical:
+
+- Download progress.
+- Pause, cancellation, and retry.
+- Resumable downloads.
+- Appropriate background download handling.
+- Network interruption recovery.
+- Available-storage checks.
+- Metered-network awareness.
+- Download integrity verification using published checksums.
+- Clear error messages.
+- Safe temporary-file cleanup.
+- Installation status and result handling.
+
+Do not delete the currently installed application or its data before installing an update.
+
+Do not assume installation succeeded merely because the download completed or the system installer was opened.
+
+When installation requires user action, guide the user through the official Android system interface.
+
+### Google Play and Other Managed Stores
+
+Applications installed through Google Play should use the supported Google Play In-App Updates mechanism where available.
+
+- Use flexible updates for ordinary improvements.
+- Consider immediate updates only for justified critical requirements.
+- Do not redirect Play Store users to sideload GitHub APKs by default.
+- Respect store policies and installer ownership restrictions.
+
+For other managed stores, use their supported update APIs or redirect users to the appropriate store listing.
+
+Where installation-source detection is unreliable, use the configured distribution variant and safe fallbacks rather than assuming the source.
+
+### iOS and iPadOS Updates
+
+iOS and iPadOS applications must check for available updates where appropriate, but follow their distribution channel's installation restrictions.
+
+**App Store builds**
+- Check for new versions using an appropriate authorized mechanism.
+- Show release notes when available.
+- Direct users to the App Store for native application updates.
+- Never attempt to install an unsigned IPA or bypass App Store restrictions.
+
+**GitHub / sideloaded builds**
+- Check the appropriate authorized GitHub release channel.
+- Show the new version and release notes.
+- Provide an installation or update action compatible with the application's actual distribution method, such as an approved alternative store or signing workflow.
+- Do not claim direct IPA installation is possible when it requires signing or an external installer.
+
+### Expo OTA Updates
+
+For React Native / Expo applications, support compatible over-the-air updates when they are enabled for the project.
+
+- Use the installed SDK's supported `expo-updates` APIs.
+- Only deliver OTA updates compatible with the application's native runtime version.
+- Distinguish JavaScript/assets updates from updates requiring a new native binary.
+- Never attempt to apply native dependency or entitlement changes through OTA.
+- Preserve rollback or recovery mechanisms.
+- Respect release channels and store policies.
+- Keep OTA update metadata consistent with the visible changelog.
+
+GitHub Actions may coordinate OTA publication, but the update delivery mechanism must be compatible with the chosen runtime and infrastructure.
+
+### Update Notifications and Release Notes
+
+**Every update prompt must show what changed before the user decides to download or install it.**
+
+Use the same visual language as the application's What's New system.
+
+For major features:
+
+- Show a descriptive icon beside each change.
+- Use concise, user-friendly descriptions.
+- Prioritize the most important additions.
+- Avoid displaying raw Conventional Commit messages to normal users.
+
+Group minor changes under **Fixes & Improvements**.
+
+Place lengthy technical explanations behind expandable information controls.
+
+The update interface should provide:
+
+- New version number.
+- Major-feature highlights with icons.
+- Fixes & Improvements summary.
+- Full Changelog action.
+- Download size when available.
+- Update Now action.
+- Later action when the update is optional.
+
+During download, keep the release notes accessible rather than replacing them entirely with a progress indicator.
+
+After installation, integrate the update with the existing post-update What's New popup and permanent changelog.
+
+Do not display duplicate or contradictory update notifications.
+
+### Update Preferences
+
+Add an **Updates** section to Settings containing:
+
+- Current application version.
+- Current release channel.
+- Last successful update check.
+- Update availability status.
+- Check for Updates action.
+- Automatic update-check preference.
+- Automatic download preference where supported.
+- Wi-Fi-only download preference where useful.
+- View Latest Release Notes action.
+- Full Changelog action.
+
+The normal default should be automatic update checks with user-controlled installation.
+
+Do not silently download large update packages over metered networks without respecting the user's configured preferences.
+
+### Critical Updates
+
+Support the ability to mark releases as security-critical or requiring special attention.
+
+- Clearly distinguish critical security updates from ordinary feature releases.
+- Allow stronger update reminders when justified.
+- Do not arbitrarily block application usage for routine updates.
+- If a server genuinely requires a newer minimum compatible client version, provide a clear explanation and supported recovery path.
+- Avoid falsely presenting ordinary releases as mandatory.
+
+### GitHub Actions Integration
+
+The release pipeline must generate or publish the metadata needed for update detection.
+
+After a successful authorized release:
+
+1. Build and validate all required platform artifacts.
+2. Publish the GitHub release or prerelease.
+3. Generate structured release metadata containing the version, build number, commit, channel, changelog, artifact URLs, sizes, checksums, and compatibility information.
+4. Update the appropriate distribution manifests and external store sources.
+5. Validate the published download URLs and metadata.
+6. Ensure installed application versions can discover the new release.
+
+Do not expose unreleased, incomplete, or failed build artifacts as available updates.
+
+### Reliability and Security
+
+- Verify the authenticity and integrity of downloaded updates.
+- Preserve Android signing-key continuity.
+- Reject incompatible packages and downgrades.
+- Handle offline conditions gracefully.
+- Cache the last valid update metadata without misrepresenting it as current.
+- Prevent duplicate download or installation sessions.
+- Avoid excessive update polling.
+- Protect release credentials and authentication tokens.
+- Never install or execute untrusted packages silently.
+- Respect operating-system security requirements.
+
+### Completion Requirements
+
+Consider the update system complete when the relevant supported build variants can:
+
+1. Detect a newer compatible release.
+2. Display accurate, icon-based release notes.
+3. Offer an appropriate update action.
+4. Download updates internally for directly distributed Android APKs.
+5. Initiate the official Android installation flow when applicable.
+6. Preserve existing application data.
+7. Handle failures and interrupted downloads.
+8. Verify or accurately report the installation result.
+9. Integrate the installed update with What's New and version history.
+
+Test the update process using real release artifacts when possible.
+
+Clearly distinguish simulated update testing from successful physical-device installation testing.
+
+**The objective is a seamless, secure update experience in which users can discover new versions, understand what's changed, and update through their application's supported distribution method—without manually navigating GitHub whenever direct in-app updating is technically supported.**
+## 32. Mandatory Progressive Web App (PWA) Support
+
+Every applicable website and Expo Web application must be installable, with a complete manifest, stable identity, standalone scope/start URL, service worker, HTTPS, standard and maskable icons, Apple Touch Icons and responsive layouts. Cache essential static resources with versioned caches and an offline fallback; never cache private responses indiscriminately. Preserve user data, deep links and unsaved work through offline use and updates. Detect updates and offer release notes and a safe user-controlled reload. Use feature detection for sharing, files, badging, push and background sync. Verify production exports, installation, offline use and updates on supported mobile and desktop targets; document untested or unsupported platforms.
+
+## 33. Original Application Identity, Branding, and Layered Icons
+
+New applications need an original researched name and coherent branding; preserve existing names unless changes are authorized. Keep editable layered SVG masters with meaningful stable group identifiers. Generate relevant native, adaptive, monochrome, light/dark/tinted, PWA, maskable, favicon and desktop exports reproducibly, respecting small-size legibility, platform masks and safe zones. Maintain docs/BRANDING.md with naming rationale, colors, typography, layer structure, variants, generation and usage instructions. Do not claim trademark clearance without adequate verification.
+
+## 34. Automatic Cleanup of Temporary Branches and Worktrees
+
+After integration, identify task-created temporary branches/worktrees, verify all required commits are integrated into the project's authorized development branch and no associated task/PR remains active, then use safe Git cleanup. Never delete long-lived testing, beta, main or protected release branches; active PR branches; unmerged, user-owned or unrelated branches; or worktrees with uncommitted changes. Ask before discarding intentionally abandoned unmerged experiments. Prune stale references only when safe. Report what was removed and what was intentionally preserved.
+
+Sections 32–34 above are a concise repository transcription of the owner's additional standards; the complete instruction supplied in the conversation governs if wording differs.
