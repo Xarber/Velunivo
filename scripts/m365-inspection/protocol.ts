@@ -18,6 +18,24 @@ export const inspectionReads = Object.freeze({
   globalStart: {register: 178, length: 32},
   globalLater: {register: 194, length: 32},
   globalEnd: {register: 210, length: 32},
+  // Fixed, read-only survey of the full 8-bit SHFW word-address window.
+  // Raw response locations only: these are not inferred setting/write addresses.
+  window000: {register: 0, length: 32},
+  window016: {register: 16, length: 32},
+  window032: {register: 32, length: 32},
+  window048: {register: 48, length: 32},
+  window064: {register: 64, length: 32},
+  window080: {register: 80, length: 32},
+  window096: {register: 96, length: 32},
+  window112: {register: 112, length: 32},
+  window128: {register: 128, length: 32},
+  window144: {register: 144, length: 32},
+  window160: {register: 160, length: 32},
+  window176: {register: 176, length: 32},
+  window192: {register: 192, length: 32},
+  window208: {register: 208, length: 32},
+  window224: {register: 224, length: 32},
+  window240: {register: 240, length: 32},
 } satisfies Record<string, {register: number; length: number}>);
 for (const read of Object.values(inspectionReads)) Object.freeze(read);
 export type InspectionRead = keyof typeof inspectionReads;
@@ -38,7 +56,7 @@ export function inspectionReply(name: InspectionRead, body: Uint8Array): Uint8Ar
 
 export interface InspectionResult {
   schema: 1;
-  probeRevision: 'readonly-shfw-2';
+  probeRevision: 'readonly-shfw-3';
   capturedAt: string;
   provenance: 'authenticated-vehicle-response';
   firmwareBytes: number[];
@@ -80,7 +98,7 @@ export async function inspectMiSession(link: BLELink, uart: MiUART, signal: Abor
       throw new Error('A stationary compatible controller response is required');
     }
     const firmwareBytes = Array.from(await ordinaryRead(0x1a, 2));
-    const result: InspectionResult = {schema: 1, probeRevision: 'readonly-shfw-2', capturedAt: new Date().toISOString(),
+    const result: InspectionResult = {schema: 1, probeRevision: 'readonly-shfw-3', capturedAt: new Date().toISOString(),
       provenance: 'authenticated-vehicle-response', firmwareBytes, batteryPercent, speedMetresPerSecond, blocks: {}, failures: []};
     for (const name of Object.keys(inspectionReads) as InspectionRead[]) {
       try {
