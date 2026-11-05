@@ -2,6 +2,7 @@
 import {WebBLETransport} from '../../src/bluetooth/webTransport';
 import {authenticateMi, MI, MiUART} from '../../src/bluetooth/plugins/miAuth';
 import {NUS} from '../../src/bluetooth/plugins/m365Packets';
+import {VehicleApprovalRequiredError} from '../../src/bluetooth/approvalRetry';
 import type {BLELink} from '../../src/bluetooth/types';
 import {inspectMiSession, inspectionReads, InspectionResult} from './protocol';
 
@@ -16,7 +17,9 @@ let link: BLELink | undefined, uart: MiUART | undefined, abort: AbortController 
 let result: InspectionResult | undefined;
 let generation = 0;
 const message = (text: string) => {status.textContent = text;};
-const failure = (error: unknown) => message(error instanceof Error ? error.message : 'Inspection failed');
+const failure = (error: unknown) => message(error instanceof VehicleApprovalRequiredError
+  ? 'Physical approval needed. Toggle the headlight once while disconnected, then immediately use Connect scooter and select it again. This probe does not reconnect automatically.'
+  : error instanceof Error ? error.message : 'Inspection failed');
 async function close() {
   generation++;
   abort?.abort(); uart = undefined;
