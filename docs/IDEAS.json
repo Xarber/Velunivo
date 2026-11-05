@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "project": "org.velunivo.app",
+  "application": "Velunivo",
+  "exportedAt": 1793873795672,
+  "ideas": [
+    {
+      "at": 1793873795672,
+      "title": "Developer Ideas notebook",
+      "description": "Implement section 35: private offline developer notes, reviewable import/export, lifecycle history and agent/changelog integration.",
+      "steps": "",
+      "category": "Feature",
+      "priority": 2,
+      "status": "In Progress",
+      "deleted": false,
+      "id": "developer-ideas",
+      "createdAt": 1793873795672,
+      "history": [
+        {
+          "at": 1793873795672,
+          "title": "Developer Ideas notebook",
+          "description": "Implement section 35: private offline developer notes, reviewable import/export, lifecycle history and agent/changelog integration.",
+          "steps": "",
+          "category": "Feature",
+          "priority": 2,
+          "status": "Approved",
+          "deleted": false
+        }
+      ]
+    }
+  ]
+}

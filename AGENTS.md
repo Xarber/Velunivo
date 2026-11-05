@@ -58,3 +58,9 @@ All commits and tags must remain unsigned, including when global Git signing is 
 ## Hosted web updates
 
 For every Velunivo application update, also deploy the matching validated web build to https://velunivo.xcenter.it. Updating GitHub/native artifacts alone does not complete a release. Preserve rollback and verify the public version/commit, web health and PeerServer handshake. Prefer changing static release selectors without restarting healthy signaling. See docs/WEB_DEPLOYMENT_2.1.1.md for the current deployment procedure; inspect the live host before applying it.
+
+## Developer Ideas — section 35
+
+At the start of each substantial session, read `docs/IDEAS.json` and `docs/features/DEVELOPER_IDEAS.md`. Run `./node_modules/.bin/tsx scripts/ideas.ts list` for pending/approved/deferred counts. Identify new or relevant ideas, compare against source and release metadata, and ask whether to implement selected ideas now or later; do not automatically implement unrelated ideas or repeatedly interrupt a declined decision. Explicit task authorization remains sufficient for matching work.
+
+Private on-device ideas are not accessible automatically. Ask for the one-action Ideas JSON export only when needed. Preview it with `tsx scripts/ideas.ts import FILE`; review privacy before `--apply` or committing anything. Conflicting versions require explicit `--accept=ID` to replace local content; both histories are retained. Never publish private ideas through this public repository or release artifacts without explicit authorization. Preserve deferred/unselected entries, IDs, source timestamps and histories. Track verified implementation with version, commit and verification time; include idea IDs in structured release metadata and commit bodies. Never mark started or untested work Implemented.
