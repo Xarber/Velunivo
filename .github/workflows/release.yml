@@ -276,9 +276,9 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - name: Select newest installed prerelease Xcode (beta or RC)
+      - name: Select newest installed Xcode (prefer beta or RC)
         run: |
-          python3 scripts/select-xcode.py >> "$GITHUB_ENV"
+          python3 scripts/select-xcode.py --allow-stable >> "$GITHUB_ENV"
       - name: Restore incremental iPhone build products
         uses: actions/cache@v4
         continue-on-error: true
@@ -398,9 +398,9 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - name: Select newest installed prerelease Xcode (beta or RC)
+      - name: Select newest installed Xcode (prefer beta or RC)
         run: |
-          python3 scripts/select-xcode.py >> "$GITHUB_ENV"
+          python3 scripts/select-xcode.py --allow-stable >> "$GITHUB_ENV"
       - name: Restore incremental Simulator build products
         uses: actions/cache@v4
         continue-on-error: true
