@@ -1,6 +1,6 @@
 import {diagnostic} from '../core/diagnosticEvents';
 import {useM365RideControls} from '../bluetooth/plugins/useM365RideControls';
-import {armAutomaticRideWake,stopAutomaticRideWake} from '../services/automaticRideWake';
+import {armAutomaticRideWake,stopAutomaticRideWake,setAutomaticRideWakeActivity} from '../services/automaticRideWake';
 // SPDX-License-Identifier: AGPL-3.0-only
 import React,{useCallback,useEffect,useRef,useState} from 'react';
 import {AppState,Platform,View} from 'react-native';
@@ -31,10 +31,10 @@ const noMotion={accelerometer:null,gyroscope:null},noCompass={heading:null,times
 /** A root-owned recorder survives tab changes. No background UI navigation is required. */
 export default function AutomaticRideRecorder(){
  const {profile,navigationOptions:n,ready,vehicleLocked,lockVehicle}=useStore();
- const {preferences}=useBluetoothPreferences();
+ const {preferences,ready:bluetoothReady}=useBluetoothPreferences();
  const simulatedMode=n.developerMode&&preferences.simulateTelemetry;
  const snapshot=useBluetoothVehicle(profile.id),p=usePalette(),insets=useSafeAreaInsets();
- const [active,setActive]=useState(false),[saving,setSaving]=useState(false),[foreground,setForeground]=useState(AppState.currentState==='active'),[consented,setConsented]=useState(false),[now,setNow]=useState(()=>Date.now()),[error,setError]=useState('');
+ const [active,setActive]=useState(false),[saving,setSaving]=useState(false),[foreground,setForeground]=useState(AppState.currentState==='active'),[consented,setConsented]=useState(false),[consentLoaded,setConsentLoaded]=useState(false),[now,setNow]=useState(()=>Date.now()),[error,setError]=useState('');
  const policy=useRef({enabled:false,notifyOnly:false});useEffect(()=>{policy.current={enabled:consented&&n.autoBluetoothRecording&&!simulatedMode,notifyOnly:n.bluetoothRecordingNotifyOnly};},[consented,n.autoBluetoothRecording,n.bluetoothRecordingNotifyOnly,simulatedMode]);
  const connectionAlert=useRef(new AutomaticConnectionAlert());
  const detector=useRef(new AutomaticRideDetector()),cooldown=useRef(0),armed=useRef(false),own=useRef(false),ending=useRef(false),disconnectedAt=useRef<number|null>(null);
@@ -52,7 +52,14 @@ export default function AutomaticRideRecorder(){
  },[recorder,lockVehicle]);
  useGroupActivity(active,finish);
  const finishRef=useRef(finish);useEffect(()=>{finishRef.current=finish;},[finish]);
- useEffect(()=>{let cancelled=false;void AsyncStorage.getItem('automatic-ride-consent-v1').then(v=>{if(!cancelled)setConsented(v==='true');}).catch(()=>{});return()=>{cancelled=true;};},[n.autoBluetoothRecording]);
+ useEffect(()=>{let cancelled=false;void AsyncStorage.getItem('automatic-ride-consent-v1').then(v=>{if(!cancelled)setConsented(v==='true');}).catch(()=>{}).finally(()=>{if(!cancelled)setConsentLoaded(true);});return()=>{cancelled=true;};},[n.autoBluetoothRecording]);
+ useEffect(()=>{void setAutomaticRideWakeActivity(vehicleLocked).catch(()=>{});},[vehicleLocked]);
+ const associationId=bluetoothBridge.association(profile.id)?.device.id;
+ useEffect(()=>{
+  if(Platform.OS!=='ios'||!ready||!bluetoothReady||!consentLoaded)return;
+  if(consented&&n.autoBluetoothRecording&&associationId&&!simulatedMode)void armAutomaticRideWake(profile.id).catch(()=>{});
+  else void stopAutomaticRideWake().catch(()=>{});
+ },[ready,bluetoothReady,consentLoaded,consented,n.autoBluetoothRecording,associationId,simulatedMode,profile.id]);
  useEffect(()=>{if(vehicleLocked||!n.autoBluetoothRecording)void stopRidingPromptActivity();},[vehicleLocked,n.autoBluetoothRecording]);
  useEffect(()=>{if(ready&&!n.autoBluetoothRecording)void stopAutomaticRideWake().catch(()=>{});},[ready,n.autoBluetoothRecording]);
  useEffect(()=>{const sub=AppState.addEventListener('change',state=>setForeground(state==='active'));return()=>sub.remove();},[]);

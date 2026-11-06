@@ -2079,5 +2079,10 @@
   "selected": "sélectionnées",
   "Vehicle connected": "Véhicule connecté",
   "Bluetooth restoration and automatic ride alerts.": "Restauration Bluetooth et alertes de trajet automatiques.",
-  "Reconnects can offer a ride alert. Force-quitting the app stops detection until you open it again.": "La reconnexion peut proposer une alerte de trajet. Si vous forcez la fermeture de l’app, la détection s’arrête jusqu’à sa réouverture."
+  "Reconnects can offer a ride alert. Force-quitting the app stops detection until you open it again.": "La reconnexion peut proposer une alerte de trajet. Si vous forcez la fermeture de l’app, la détection s’arrête jusqu’à sa réouverture.",
+  "Movement detected. Open Velunivo to connect your scooter and record.": "Un déplacement a été détecté. Ouvrez Velunivo pour connecter la trottinette et enregistrer.",
+  "Location wake can resume detection after a swipe-away. Always location and Background App Refresh are required; detection may be delayed.": "La localisation peut relancer la détection après une fermeture forcée. L’accès Toujours et l’actualisation en arrière-plan sont nécessaires ; la détection peut être retardée.",
+  "Wakes on significant location changes, then checks your saved scooter. Coarse wake events are not recorded as rides. Timing depends on iOS.": "Se réactive lors de changements significatifs de position, puis vérifie la trottinette enregistrée. Ces événements approximatifs ne sont pas enregistrés comme trajets. Le délai dépend d’iOS.",
+  "Could not disable all wake services. Open the app and try again.": "Impossible de désactiver tous les services de réactivation. Ouvrez l’app et réessayez.",
+  "Native location wake for automatic ride detection.": "Réactivation native par localisation pour détecter les trajets automatiquement."
 }

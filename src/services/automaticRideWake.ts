@@ -1,3 +1,5 @@
+import {requireOptionalNativeModule} from 'expo-modules-core';
+import {diagnostic} from '../core/diagnosticEvents';
 // SPDX-License-Identifier: AGPL-3.0-only
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
@@ -9,6 +11,11 @@ import {AutomaticRideDetector} from '../core/automaticRide';
 import {notifyRideEvent} from './localNotifications';
 import {isRideLocked} from './rideLock';
 const TASK='velunivo-bluetooth-ride-wake-v1';
+interface NativeWake {setRideActive(active:boolean):Promise<void>;configure(enabled:boolean,title:string,body:string,record:string,search:string):Promise<boolean>;status():Promise<string>}
+const nativeWake=()=>Platform.OS==='ios'?requireOptionalNativeModule<NativeWake>('VelunivoRideWake'):null;
+export async function setAutomaticRideWakeActivity(active:boolean){await nativeWake()?.setRideActive(active);}
+async function configureNativeWake(enabled:boolean){const native=nativeWake();if(!native)return;await native.configure(enabled,t('Velunivo'),t('Movement detected. Open Velunivo to connect your scooter and record.'),t('Start recording'),t('Find destination'));diagnostic('automatic-ride','native-location-wake',JSON.parse(await native.status()));}
+
 let checking=false,generation=0,pending:Promise<unknown>=Promise.resolve();
 function serialize<T>(run:()=>Promise<T>){const next=pending.then(run,run);pending=next.catch(()=>{});return next;}
 /** A geofence exit can wake an OS-terminated iOS process. It is only a hint:
@@ -45,6 +52,8 @@ if(!TaskManager.isTaskDefined(TASK))TaskManager.defineTask<{eventType:Location.G
 export function armAutomaticRideWake(vehicleId:string,coordinate?:readonly [number,number]){
  const token=generation;return serialize(async()=>{
  if(Platform.OS!=='ios'||!(await Location.getBackgroundPermissionsAsync()).granted)return;
+ if(token!==generation||await AsyncStorage.getItem('automatic-ride-consent-v1')!=='true'||!bluetoothBridge.association(vehicleId))return;
+ await configureNativeWake(true);
  const fix=coordinate?{coords:{longitude:coordinate[0],latitude:coordinate[1]}}:await Location.getLastKnownPositionAsync({maxAge:60000,requiredAccuracy:100});
  if(!fix||token!==generation||await AsyncStorage.getItem('automatic-ride-consent-v1')!=='true')return;
  await AsyncStorage.setItem('automatic-ride-vehicle-v1',vehicleId);
@@ -54,6 +63,7 @@ export function armAutomaticRideWake(vehicleId:string,coordinate?:readonly [numb
 export function stopAutomaticRideWake(){
  generation++;return serialize(async()=>{
  if(Platform.OS==='web')return;
+ await configureNativeWake(false);
  if(await Location.hasStartedGeofencingAsync(TASK))await Location.stopGeofencingAsync(TASK);
  await AsyncStorage.removeItem('automatic-ride-vehicle-v1');
  });

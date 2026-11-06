@@ -7,6 +7,7 @@ export const welcomePages=[
  {icon:'shield-checkmark-outline',title:'You stay in control',text:'Check road signs and local rules. Your records stay on your device until you export or share them.'},
 ] as const;
 export const releaseDetails=[
+ {version:'2.8.3',items:[{icon:'build-outline',title:'Fixes & Improvements',text:'Native location wake for automatic ride detection.'}]},
  {version:'2.8.2',items:[{icon:'build-outline',title:'Fixes & Improvements',text:'Bluetooth restoration and automatic ride alerts.'}]},
  {version:'2.8.1',ideaIds:['developer-ideas'],items:[{icon:'bulb-outline',title:'Ideas',text:'Private, offline notes for your next development session. Export them to share with your coding agent.'}]},
  {version:'2.8.0',items:[{icon:'lock-closed-outline',title:'Scooter controls',text:'Quick lock controls and optional locking at the start and end of a ride.'},{icon:'navigate-outline',title:'Are you riding?',text:'Start recording or find a destination from a ride detection alert.'},{icon:'build-outline',title:'Fixes & Improvements',text:'Pairing repair and Bluetooth reconnection improvements.'}]},

@@ -2079,5 +2079,10 @@
   "selected": "ausgewählt",
   "Vehicle connected": "Fahrzeug verbunden",
   "Bluetooth restoration and automatic ride alerts.": "Bluetooth-Wiederherstellung und automatische Fahrthinweise.",
-  "Reconnects can offer a ride alert. Force-quitting the app stops detection until you open it again.": "Beim Wiederverbinden kann ein Fahrthinweis erscheinen. Wenn du die App zwangsweise beendest, bleibt die Erkennung bis zum nächsten Öffnen aus."
+  "Reconnects can offer a ride alert. Force-quitting the app stops detection until you open it again.": "Beim Wiederverbinden kann ein Fahrthinweis erscheinen. Wenn du die App zwangsweise beendest, bleibt die Erkennung bis zum nächsten Öffnen aus.",
+  "Movement detected. Open Velunivo to connect your scooter and record.": "Bewegung erkannt. Öffne Velunivo, um deinen Roller zu verbinden und aufzuzeichnen.",
+  "Location wake can resume detection after a swipe-away. Always location and Background App Refresh are required; detection may be delayed.": "Die Standortfunktion kann die Erkennung nach einem erzwungenen Beenden fortsetzen. Standortzugriff Immer und Hintergrundaktualisierung sind erforderlich; die Erkennung kann verzögert sein.",
+  "Wakes on significant location changes, then checks your saved scooter. Coarse wake events are not recorded as rides. Timing depends on iOS.": "Wird bei deutlichen Standortänderungen aktiviert und prüft dann den gespeicherten Roller. Diese groben Ereignisse werden nicht als Fahrten gespeichert. Der Zeitpunkt hängt von iOS ab.",
+  "Could not disable all wake services. Open the app and try again.": "Nicht alle Aktivierungsdienste konnten deaktiviert werden. Öffne die App und versuche es erneut.",
+  "Native location wake for automatic ride detection.": "Native Standortaktivierung zur automatischen Fahrterkennung."
 }

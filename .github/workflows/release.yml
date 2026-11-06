@@ -306,6 +306,9 @@ jobs:
             echo '::warning::ccache unavailable; continue with a normal native build.'
           fi
       - run: xcodebuild -version && xcodebuild -showsdks
+      - name: Type-check the native ride wake engine against the iOS SDK
+        run: |
+          xcrun --sdk iphonesimulator swiftc -typecheck -swift-version 5 -target arm64-apple-ios16.4-simulator -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" modules/velunivo-ride-wake/ios/RideWakeEngine.swift
       - run: npm ci
       - run: npx expo prebuild --platform ios --no-install
       - name: Cache verified React Native downloads
