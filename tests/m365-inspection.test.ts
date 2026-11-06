@@ -24,6 +24,17 @@ test('profile research cannot confuse ordinary B2 lock status with SHFW replies'
   }
 });
 
+test('fixed survey reads cover the 8-bit word window without running past its end', () => {
+  const windows = Object.entries(inspectionReads).filter(([name]) => name.startsWith('window'));
+  assert.equal(windows.length, 16);
+  assert.deepEqual(windows.map(([, read]) => read.register), Array.from({length: 16}, (_, i) => i * 16));
+  for (const [name, read] of windows) {
+    assert.equal(read.length, 32);
+    assert.ok(read.register + read.length / 2 <= 256);
+    assert.equal(inspectionReadBody(name as InspectionRead)[1], 0x31);
+  }
+});
+
 function fixture(speed = 0) {
   const app = new Uint8Array(16).fill(1), device = new Uint8Array(16).fill(2);
   const appIV = Uint8Array.of(1, 2, 3, 4), deviceIV = Uint8Array.of(5, 6, 7, 8);

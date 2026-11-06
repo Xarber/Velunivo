@@ -19,3 +19,4 @@ Some older documents describe historical snapshots, not current guarantees. The 
 - Independent SHFW responses: [5 November read-only investigation and validation scope](reports/M365_INDEPENDENT_PROTOCOL_2026-11-05.md).
 
 - Developer feedback: [Ideas architecture and export/agent workflow](features/DEVELOPER_IDEAS.md), [repository collection](IDEAS.json).
+- Controlled SHFW mappings: [all three light flags, shutdown timers, profile selection and independent restoration](reports/M365_READ_MAPPING_2026-11-05.md).

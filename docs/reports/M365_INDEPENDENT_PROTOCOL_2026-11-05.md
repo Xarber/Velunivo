@@ -1,5 +1,7 @@
 # Independent SHFW read investigation — 5 November 2026
 
+Later evening work: [controlled mappings for all original-scope fields and exact baseline restoration](M365_READ_MAPPING_2026-11-05.md). Unresolved locations below describe the earlier sessions; the new report supersedes those location gaps while independent writes remain untested.
+
 ## Scope and implemented work
 
 Built an original, local read-only diagnostic instrument under `scripts/m365-inspection/`, served by `scripts/inspect-m365.mjs`. It reuses Velunivo's existing Web Bluetooth transport, Mi FE95 authentication, authenticated UART cipher, fragment parser and request matcher. No Utility implementation or third-party implementation was copied. Public protocol research supplied candidate read operations; arbitrary addresses and all configuration writes remain unavailable. See [tool design, operation, sources and limits](../M365_INSPECTION.md).
