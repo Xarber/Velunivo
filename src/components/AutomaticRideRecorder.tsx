@@ -1,3 +1,5 @@
+import {wakeRegistrationDecision} from '../core/bluetoothStartup';
+import {canPairVehicle} from '../bluetooth/policy';
 import {diagnostic} from '../core/diagnosticEvents';
 import {useM365RideControls} from '../bluetooth/plugins/useM365RideControls';
 import {armAutomaticRideWake,stopAutomaticRideWake,setAutomaticRideWakeActivity} from '../services/automaticRideWake';
@@ -31,7 +33,7 @@ const noMotion={accelerometer:null,gyroscope:null},noCompass={heading:null,times
 /** A root-owned recorder survives tab changes. No background UI navigation is required. */
 export default function AutomaticRideRecorder(){
  const {profile,navigationOptions:n,ready,vehicleLocked,lockVehicle}=useStore();
- const {preferences,ready:bluetoothReady}=useBluetoothPreferences();
+ const {preferences,ready:bluetoothReady,associationsReady}=useBluetoothPreferences();
  const simulatedMode=n.developerMode&&preferences.simulateTelemetry;
  const snapshot=useBluetoothVehicle(profile.id),p=usePalette(),insets=useSafeAreaInsets();
  const [active,setActive]=useState(false),[saving,setSaving]=useState(false),[foreground,setForeground]=useState(AppState.currentState==='active'),[consented,setConsented]=useState(false),[consentLoaded,setConsentLoaded]=useState(false),[now,setNow]=useState(()=>Date.now()),[error,setError]=useState('');
@@ -57,9 +59,13 @@ export default function AutomaticRideRecorder(){
  const associationId=bluetoothBridge.association(profile.id)?.device.id;
  useEffect(()=>{
   if(Platform.OS!=='ios'||!ready||!bluetoothReady||!consentLoaded)return;
-  if(consented&&n.autoBluetoothRecording&&associationId&&!simulatedMode)void armAutomaticRideWake(profile.id).catch(()=>{});
-  else void stopAutomaticRideWake().catch(()=>{});
- },[ready,bluetoothReady,consentLoaded,consented,n.autoBluetoothRecording,associationId,simulatedMode,profile.id]);
+  const decision=wakeRegistrationDecision(consented&&n.autoBluetoothRecording&&!simulatedMode&&canPairVehicle(profile.id),associationsReady,!!associationId);
+  if(decision==='stop'){void stopAutomaticRideWake().catch(()=>{});return;}
+  // A locked keychain is not evidence that pairing was removed. Preserve the
+  // native wake registration and prompt; retry secure loading after unlock.
+  if(decision==='wait')return;
+  void armAutomaticRideWake(profile.id).catch(()=>{});
+ },[ready,bluetoothReady,associationsReady,consentLoaded,consented,n.autoBluetoothRecording,associationId,simulatedMode,profile.id]);
  useEffect(()=>{if(vehicleLocked||!n.autoBluetoothRecording)void stopRidingPromptActivity();},[vehicleLocked,n.autoBluetoothRecording]);
  useEffect(()=>{if(ready&&!n.autoBluetoothRecording)void stopAutomaticRideWake().catch(()=>{});},[ready,n.autoBluetoothRecording]);
  useEffect(()=>{const sub=AppState.addEventListener('change',state=>setForeground(state==='active'));return()=>sub.remove();},[]);
