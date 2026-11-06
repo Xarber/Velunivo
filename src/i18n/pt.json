@@ -2084,5 +2084,16 @@
   "Location wake can resume detection after a swipe-away. Always location and Background App Refresh are required; detection may be delayed.": "A localização pode retomar a deteção após forçar o fecho. Requer localização Sempre e atualização em segundo plano; a deteção pode demorar.",
   "Wakes on significant location changes, then checks your saved scooter. Coarse wake events are not recorded as rides. Timing depends on iOS.": "Reativa com alterações significativas de localização e verifica a trotineta guardada. Estes eventos aproximados não são gravados como viagens. O tempo depende do iOS.",
   "Could not disable all wake services. Open the app and try again.": "Não foi possível desativar todos os serviços de reativação. Abra a app e tente novamente.",
-  "Native location wake for automatic ride detection.": "Reativação nativa por localização para deteção automática de viagens."
+  "Native location wake for automatic ride detection.": "Reativação nativa por localização para deteção automática de viagens.",
+  "Allow scooter credentials while locked": "Permitir credenciais do patinete com a tela bloqueada",
+  "Reduced protection. New file backups include scooter pairing secrets.": "Proteção reduzida. Novos backups em arquivo incluem os segredos de pareamento.",
+  "Reduced credential protection": "Proteção reduzida das credenciais",
+  "Enable in {seconds}s": "Ativar em {seconds} s",
+  "Enable reduced protection": "Ativar proteção reduzida",
+  "Could not update credential protection. Unlock your phone and try again.": "Não foi possível alterar a proteção. Desbloqueie o telefone e tente novamente.",
+  "Enable locked scooter credential access before restoring a backup containing pairing secrets.": "Ative o acesso às credenciais com a tela bloqueada antes de restaurar um backup com segredos de pareamento.",
+  "Scooter secrets remain encrypted, but the app can read them while locked after the first unlock following a restart. This reduces protection if your phone is compromised. New file backups contain unencrypted pairing secrets: anyone with a backup may be able to control your scooter. Keep backups private. Disabling this does not remove secrets from existing backups. This does not guarantee iOS will wake the app.": "As credenciais continuam criptografadas, mas o app pode lê-las com a tela bloqueada após o primeiro desbloqueio depois de reiniciar. Isso reduz a proteção se o telefone for comprometido. Novos backups em arquivo contêm segredos sem criptografia: quem tiver um backup poderá controlar seu patinete. Mantenha-os privados. Desativar esta opção não remove os segredos dos backups existentes nem garante que o iOS reative o app.",
+  "Invalid scooter pairing backup.": "Backup do pareamento do patinete inválido.",
+  "Locked credential access is available on iOS only.": "O acesso às credenciais com a tela bloqueada só está disponível no iOS.",
+  "Scooter pairing must use the private device-sync channel.": "Os dados de pareamento devem usar o canal privado de sincronização."
 }

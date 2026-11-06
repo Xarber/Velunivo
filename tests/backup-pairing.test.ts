@@ -1,0 +1,14 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {defaultGarage} from '../src/core/vehicles';
+import {defaultNavigationOptions} from '../src/core/types';
+import {defaultBluetoothPreferences} from '../src/bluetooth/preferences';
+import {AppBackup,parseBackup} from '../src/core/dataTransfer';
+import {portableVehicleIds} from '../src/core/portableVehicleIds';
+import {parseSyncEnvelope} from '../src/core/syncPrivateData';
+import type {Association} from '../src/bluetooth/types';
+const backup=():AppBackup=>({format:'velunivo',schema:1,createdAt:1,garage:structuredClone(defaultGarage),places:[],routes:[],rides:[],navigation:{...defaultNavigationOptions},language:'system',bluetooth:{...defaultBluetoothPreferences}});
+const association=(vehicleId:string):Association=>({schema:1,vehicleId,vehicleType:'electric_scooter',pluginId:'xiaomi-m365-v1',associatedAt:1,identity:{model:'Test scooter'},device:{id:'synthetic-device',name:'Test',rssi:-50,services:[]},credentials:{token:'synthetic-secret'}});
+test('optional pairing roundtrips in ordinary backups and portable IDs restore correctly',()=>{const source=backup();source.pairing=[association(source.garage.vehicles.find(v=>v.id!=='sharing-scooter')!.id)];const portable=portableVehicleIds(parseBackup(JSON.stringify(source)),'a'.repeat(32));assert.equal(portable.pairing![0].vehicleId,portable.garage.vehicles.find(v=>v.id!=='sharing-scooter')!.id);assert.deepEqual(portableVehicleIds(portable,'a'.repeat(32),true).pairing,source.pairing);assert.equal(parseBackup(JSON.stringify(backup())).pairing,undefined);});
+test('public and private sync envelopes reject embedded file-backup credentials',()=>{const source=backup();source.pairing=[association(source.garage.vehicles.find(v=>v.id!=='sharing-scooter')!.id)];for(const allowPrivate of [false,true])assert.throws(()=>parseSyncEnvelope(JSON.stringify({format:'velunivo-device-sync',schema:1,backup:source}),allowPrivate),/private device-sync/);});
+test('pairing imports reject orphan, simulated, duplicated and malformed secrets',()=>{for(const transform of [(a:Association)=>({...a,vehicleId:'missing'}),(a:Association)=>({...a,simulated:true}),(a:Association)=>({...a,credentials:{token:3}})]){const source=backup();source.pairing=[transform(association(source.garage.vehicles[0].id)) as Association];assert.throws(()=>parseBackup(JSON.stringify(source)));}const source=backup(),a=association(source.garage.vehicles.find(v=>v.id!=='sharing-scooter')!.id);source.pairing=[a,a];assert.throws(()=>parseBackup(JSON.stringify(source)));});

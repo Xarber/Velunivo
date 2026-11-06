@@ -2084,5 +2084,16 @@
   "Location wake can resume detection after a swipe-away. Always location and Background App Refresh are required; detection may be delayed.": "Die Standortfunktion kann die Erkennung nach einem erzwungenen Beenden fortsetzen. Standortzugriff Immer und Hintergrundaktualisierung sind erforderlich; die Erkennung kann verzögert sein.",
   "Wakes on significant location changes, then checks your saved scooter. Coarse wake events are not recorded as rides. Timing depends on iOS.": "Wird bei deutlichen Standortänderungen aktiviert und prüft dann den gespeicherten Roller. Diese groben Ereignisse werden nicht als Fahrten gespeichert. Der Zeitpunkt hängt von iOS ab.",
   "Could not disable all wake services. Open the app and try again.": "Nicht alle Aktivierungsdienste konnten deaktiviert werden. Öffne die App und versuche es erneut.",
-  "Native location wake for automatic ride detection.": "Native Standortaktivierung zur automatischen Fahrterkennung."
+  "Native location wake for automatic ride detection.": "Native Standortaktivierung zur automatischen Fahrterkennung.",
+  "Allow scooter credentials while locked": "Roller-Zugangsdaten bei gesperrtem Gerät erlauben",
+  "Reduced protection. New file backups include scooter pairing secrets.": "Reduzierter Schutz. Neue Sicherungsdateien enthalten Kopplungsgeheimnisse.",
+  "Reduced credential protection": "Reduzierter Schutz der Zugangsdaten",
+  "Enable in {seconds}s": "In {seconds} s aktivieren",
+  "Enable reduced protection": "Reduzierten Schutz aktivieren",
+  "Could not update credential protection. Unlock your phone and try again.": "Der Schutz konnte nicht geändert werden. Entsperre das Telefon und versuche es erneut.",
+  "Enable locked scooter credential access before restoring a backup containing pairing secrets.": "Erlaube den Zugriff auf Zugangsdaten bei gesperrtem Gerät, bevor du eine Sicherung mit Kopplungsgeheimnissen wiederherstellst.",
+  "Scooter secrets remain encrypted, but the app can read them while locked after the first unlock following a restart. This reduces protection if your phone is compromised. New file backups contain unencrypted pairing secrets: anyone with a backup may be able to control your scooter. Keep backups private. Disabling this does not remove secrets from existing backups. This does not guarantee iOS will wake the app.": "Die Zugangsdaten bleiben verschlüsselt, sind aber nach dem ersten Entsperren nach einem Neustart auch bei gesperrtem Gerät für die App lesbar. Das verringert den Schutz bei einem kompromittierten Telefon. Neue Sicherungsdateien enthalten unverschlüsselte Geheimnisse: Wer eine Sicherung besitzt, könnte deinen Roller steuern. Bewahre sie sicher auf. Das Ausschalten entfernt keine Geheimnisse aus vorhandenen Sicherungen und garantiert nicht, dass iOS die App aufweckt.",
+  "Invalid scooter pairing backup.": "Ungültige Sicherung der Roller-Kopplung.",
+  "Locked credential access is available on iOS only.": "Zugriff auf Zugangsdaten bei gesperrtem Gerät ist nur unter iOS verfügbar.",
+  "Scooter pairing must use the private device-sync channel.": "Kopplungsdaten müssen den privaten Synchronisierungskanal verwenden."
 }

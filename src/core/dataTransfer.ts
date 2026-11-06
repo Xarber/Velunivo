@@ -1,3 +1,5 @@
+import {validateBackupPairing} from './backupPairing';
+import type {Association} from '../bluetooth/types';
 import {ExplorationProgress,parseExplorationProgress,emptyExplorationProgress,mergeExplorationProgress} from './explorationProgress';
 import {ScratchIndex,parseScratch,emptyScratch,mergeScratch} from './scratchMap';
 import {restoreMaintenance,mergeMaintenance} from './maintenance';
@@ -11,7 +13,7 @@ import {restorePreferences} from './preferences';
 import {BluetoothPreferences,restoreBluetoothPreferences} from '../bluetooth/preferences';
 export const MAX_BACKUP=64_000_000;
 export type ImportMode='merge'|'overwrite';
-export interface AppBackup {exploration?:ExplorationProgress;scratch?:ScratchIndex;format:'velunivo';schema:1;createdAt:number;garage:Garage;places:SavedPlace[];routes:Route[];rides:{summary:RecordedRide;samples:RideSample[]}[];navigation:NavigationOptions;language:LanguageChoice;bluetooth:BluetoothPreferences;}
+export interface AppBackup {pairing?:Association[];exploration?:ExplorationProgress;scratch?:ScratchIndex;format:'velunivo';schema:1;createdAt:number;garage:Garage;places:SavedPlace[];routes:Route[];rides:{summary:RecordedRide;samples:RideSample[]}[];navigation:NavigationOptions;language:LanguageChoice;bluetooth:BluetoothPreferences;}
 const fail=()=>{throw new Error('This is not a valid Velunivo backup.');};
 const coordinate=(v:unknown):v is Coord=>Array.isArray(v)&&v.length===2&&v.every(Number.isFinite)&&Math.abs(v[0])<=180&&Math.abs(v[1])<=90;
 const id=(v:unknown):v is string=>typeof v==='string'&&/^[A-Za-z0-9._-]{1,160}$/.test(v);
@@ -29,7 +31,7 @@ export function parseBackup(text:string):AppBackup{
  if(!Array.isArray(x.rides)||x.rides.length>10000||new Set(x.rides.map(r=>r.summary?.id)).size!==x.rides.length)fail();
  for(const {summary:r,samples} of x.rides){if(!r||!id(r.id)||typeof r.name!=='string'||typeof r.startLabel!=='string'||typeof r.endLabel!=='string'||!r.vehicle||!id(r.vehicle.id)||typeof r.vehicle.name!=='string'||!Number.isFinite(r.vehicle.maxSpeed)||!Number.isFinite(r.vehicle.ridingLimit)||!['escooter','ebike'].includes(r.vehicle.kind)||!Number.isFinite(r.startedAt)||!Number.isFinite(r.meters)||r.meters<0||!Array.isArray(r.preview)||!r.preview.every(coordinate)||(r.trace!==undefined&&(!Array.isArray(r.trace)||r.trace.some(segment=>!Array.isArray(segment)||!segment.every(coordinate))))||!['finished','arrived','interrupted','recording'].includes(r.status)||!Array.isArray(samples)||samples.length!==r.samples||samples.some(s=>!s.fix||!coordinate(s.fix.coordinate)||!Number.isFinite(s.fix.timestamp)||!Number.isFinite(s.fix.accuracy)||(s.displayCoordinate!==undefined&&!coordinate(s.displayCoordinate))))fail();if(r.bookmarks!==undefined&&(!Array.isArray(r.bookmarks)||r.bookmarks.length>1000||!unique(r.bookmarks)||r.bookmarks.some(b=>!id(b.id)||typeof b.name!=='string'||b.name.length>200||!coordinate(b.coordinate)||!Number.isFinite(b.timestamp))))fail();if(r.groupRiders!==undefined){const roster=readRecordedRoster(r.groupRiders);if(!roster)fail();r.groupRiders=roster!;}if(r.groupSize!==undefined&&(!Number.isInteger(r.groupSize)||r.groupSize<1||r.groupSize>8))fail();r.chunks=Math.ceil(samples.length/100);if(r.status==='recording')r.status='interrupted';}
  if(!['system',...languages].includes(x.language)||!x.navigation||!x.bluetooth)fail();
- return {format:'velunivo',schema:1,exploration:parseExplorationProgress(x.exploration),scratch:x.scratch===undefined?emptyScratch():parseScratch(x.scratch),createdAt:x.createdAt,garage,places:x.places,routes:x.routes,rides:x.rides,language:x.language,navigation:restorePreferences(JSON.stringify(x.navigation),garage.vehicles[0]),bluetooth:{...restoreBluetoothPreferences(JSON.stringify(x.bluetooth)),simulateTelemetry:false}};
+ return {pairing:validateBackupPairing(x.pairing,garage),format:'velunivo',schema:1,exploration:parseExplorationProgress(x.exploration),scratch:x.scratch===undefined?emptyScratch():parseScratch(x.scratch),createdAt:x.createdAt,garage,places:x.places,routes:x.routes,rides:x.rides,language:x.language,navigation:restorePreferences(JSON.stringify(x.navigation),garage.vehicles[0]),bluetooth:{...restoreBluetoothPreferences(JSON.stringify(x.bluetooth)),simulateTelemetry:false}};
 }
 function merged<T extends {id:string}>(local:T[],incoming:T[]){const ids=new Set(local.map(v=>v.id));return [...local,...incoming.filter(v=>!ids.has(v.id))];}
 /** Merge keeps local values for matching IDs and local preferences; imported IDs retain ride/vehicle links. */

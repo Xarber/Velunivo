@@ -2084,5 +2084,16 @@
   "Location wake can resume detection after a swipe-away. Always location and Background App Refresh are required; detection may be delayed.": "La localisation peut relancer la détection après une fermeture forcée. L’accès Toujours et l’actualisation en arrière-plan sont nécessaires ; la détection peut être retardée.",
   "Wakes on significant location changes, then checks your saved scooter. Coarse wake events are not recorded as rides. Timing depends on iOS.": "Se réactive lors de changements significatifs de position, puis vérifie la trottinette enregistrée. Ces événements approximatifs ne sont pas enregistrés comme trajets. Le délai dépend d’iOS.",
   "Could not disable all wake services. Open the app and try again.": "Impossible de désactiver tous les services de réactivation. Ouvrez l’app et réessayez.",
-  "Native location wake for automatic ride detection.": "Réactivation native par localisation pour détecter les trajets automatiquement."
+  "Native location wake for automatic ride detection.": "Réactivation native par localisation pour détecter les trajets automatiquement.",
+  "Allow scooter credentials while locked": "Autoriser les identifiants de la trottinette à écran verrouillé",
+  "Reduced protection. New file backups include scooter pairing secrets.": "Protection réduite. Les nouvelles sauvegardes contiennent les secrets d’association.",
+  "Reduced credential protection": "Protection réduite des identifiants",
+  "Enable in {seconds}s": "Activer dans {seconds} s",
+  "Enable reduced protection": "Activer la protection réduite",
+  "Could not update credential protection. Unlock your phone and try again.": "Impossible de modifier la protection. Déverrouillez le téléphone et réessayez.",
+  "Enable locked scooter credential access before restoring a backup containing pairing secrets.": "Activez l’accès aux identifiants à écran verrouillé avant de restaurer une sauvegarde contenant des secrets d’association.",
+  "Scooter secrets remain encrypted, but the app can read them while locked after the first unlock following a restart. This reduces protection if your phone is compromised. New file backups contain unencrypted pairing secrets: anyone with a backup may be able to control your scooter. Keep backups private. Disabling this does not remove secrets from existing backups. This does not guarantee iOS will wake the app.": "Les identifiants restent chiffrés, mais l’app peut les lire à écran verrouillé après le premier déverrouillage suivant un redémarrage. La protection est réduite si le téléphone est compromis. Les nouvelles sauvegardes contiennent les secrets en clair : toute personne qui en possède une pourrait contrôler la trottinette. Gardez-les confidentielles. Désactiver cette option ne retire pas les secrets des sauvegardes existantes et ne garantit pas qu’iOS relance l’app.",
+  "Invalid scooter pairing backup.": "La sauvegarde de l’association de la trottinette est invalide.",
+  "Locked credential access is available on iOS only.": "L’accès aux identifiants à écran verrouillé est disponible uniquement sur iOS.",
+  "Scooter pairing must use the private device-sync channel.": "Les données d’association doivent utiliser le canal privé de synchronisation."
 }

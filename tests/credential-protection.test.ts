@@ -1,0 +1,6 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {migrateCredentialProtection} from '../src/core/credentialProtection';
+test('credential consent is published only after migration, in both directions',async()=>{for(const enabled of [true,false]){const calls:string[]=[];await migrateCredentialProtection(!enabled,enabled,async value=>{calls.push(`rewrite:${value}`);},async value=>{calls.push(`consent:${value}`);});assert.deepEqual(calls,[`rewrite:${enabled}`,`consent:${enabled}`]);}});
+test('failed credential migration restores previous protection without publishing consent',async()=>{const calls:boolean[]=[];await assert.rejects(migrateCredentialProtection(false,true,async value=>{calls.push(value);if(value)throw new Error('Keychain unavailable');},async()=>{assert.fail('must not publish failed consent');}));assert.deepEqual(calls,[true,false]);});
+test('failed consent write restores protection and unchanged mode does not rewrite secrets',async()=>{const calls:boolean[]=[];await assert.rejects(migrateCredentialProtection(true,false,async value=>{calls.push(value);},async()=>{throw new Error('Disk error');}));assert.deepEqual(calls,[false,true]);await migrateCredentialProtection(false,false,async()=>assert.fail(),async()=>assert.fail());});

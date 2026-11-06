@@ -9,6 +9,7 @@ export function parseSyncEnvelope(text:string,allowPrivate:boolean):SyncEnvelope
  const raw=JSON.parse(text) as SyncEnvelope;
  if(raw?.format!=='velunivo-device-sync'||raw.schema!==1)throw new Error('This is not a valid Velunivo backup.');
  const settings=validateSettingEdits(raw.settings),backup=applySettingEdits(parseBackup(JSON.stringify(raw.backup)),settings);
+ if(backup.pairing!==undefined)throw new Error('Scooter pairing must use the private device-sync channel.');
  if(!raw.privateData)return {format:raw.format,schema:1,backup,settings};
  if(!allowPrivate)throw new Error('Private data cannot be transferred through a public server.');
  const {associations,mapKey,mapKeyEdit}=raw.privateData;
