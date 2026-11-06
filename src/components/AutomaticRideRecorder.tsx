@@ -13,7 +13,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AutomaticConnectionAlert,AutomaticRideDetector,AUTOMATIC_RIDE_COOLDOWN,AUTOMATIC_RIDE_DISCONNECT_GRACE} from '../core/automaticRide';
 import {useStore} from '../services/store';
 import {bluetoothBridge} from '../bluetooth/service';
-import {useBluetoothVehicle,useBluetoothLease} from '../bluetooth/react';
+import {useBluetoothVehicle,useBluetoothLease,useBluetoothPreferences} from '../bluetooth/react';
 import {beginBackgroundLocation} from '../services/backgroundLocation';
 import {useTripLocation} from '../services/useTripLocation';
 import {useRideRecorder} from '../services/useRideRecorder';
@@ -31,13 +31,15 @@ const noMotion={accelerometer:null,gyroscope:null},noCompass={heading:null,times
 /** A root-owned recorder survives tab changes. No background UI navigation is required. */
 export default function AutomaticRideRecorder(){
  const {profile,navigationOptions:n,ready,vehicleLocked,lockVehicle}=useStore();
+ const {preferences}=useBluetoothPreferences();
+ const simulatedMode=n.developerMode&&preferences.simulateTelemetry;
  const snapshot=useBluetoothVehicle(profile.id),p=usePalette(),insets=useSafeAreaInsets();
  const [active,setActive]=useState(false),[saving,setSaving]=useState(false),[foreground,setForeground]=useState(AppState.currentState==='active'),[consented,setConsented]=useState(false),[now,setNow]=useState(()=>Date.now()),[error,setError]=useState('');
- const policy=useRef({enabled:false,notifyOnly:false});useEffect(()=>{policy.current={enabled:consented&&n.autoBluetoothRecording,notifyOnly:n.bluetoothRecordingNotifyOnly};},[consented,n.autoBluetoothRecording,n.bluetoothRecordingNotifyOnly]);
+ const policy=useRef({enabled:false,notifyOnly:false});useEffect(()=>{policy.current={enabled:consented&&n.autoBluetoothRecording&&!simulatedMode,notifyOnly:n.bluetoothRecordingNotifyOnly};},[consented,n.autoBluetoothRecording,n.bluetoothRecordingNotifyOnly,simulatedMode]);
  const connectionAlert=useRef(new AutomaticConnectionAlert());
  const detector=useRef(new AutomaticRideDetector()),cooldown=useRef(0),armed=useRef(false),own=useRef(false),ending=useRef(false),disconnectedAt=useRef<number|null>(null);
  useM365RideControls(active,profile.id);
- useBluetoothLease(profile.id,active||(ready&&consented&&n.autoBluetoothRecording));
+ useBluetoothLease(profile.id,active||(ready&&consented&&n.autoBluetoothRecording&&!simulatedMode));
  const recorder=useRideRecorder(active,true,false,metadata,profile,noMotion,noCompass,false);
  const accept=useCallback(async(fix:import('../core/types').Fix)=>{await recorder.accept(fix);const ride=recorder.snapshot();if(n.liveActivities&&ride)await updateRecordingActivity(recordingActivity(fix,ride.meters,ride.startedAt,n.unit,fix.timestamp));},[recorder,n.liveActivities,n.unit]);
  const location=useTripLocation(active,true,accept);
