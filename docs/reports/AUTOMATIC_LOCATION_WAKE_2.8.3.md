@@ -23,3 +23,9 @@ Added locked-store startup readiness: readable Bluetooth preferences survive Key
 The initial remote iOS jobs failed before compilation: the runner contained no beta/RC Xcode and stable fallback was disabled. Both jobs now prefer prerelease Xcode but allow an installed stable fallback without downloading toolchains. Native compilation and physical swipe-away/locked-scooter validation remain distinct pending gates. No local native build or simulator was used.
 
 Final local checks: lint and TypeScript passed; all 552 JavaScript tests passed. Python workflow/tool tests require Python 3.11+ (`hashlib.file_digest`); macOS's system Python 3.9 cannot run that existing checksum test. Re-ran all 57 with the installed Python 3.13; passed. No physical device, simulator, or iOS runtime claim follows from these checks.
+
+### Publication handoff
+
+Source `a4d6905b67f9363d3bc83f4323c303dc6b15927d` pushed unsigned through development → testing. Remote build submitted: https://github.com/Xarber/Velunivo/actions/runs/42169189859 ; not treated as a completed release. iOS unsigned IPA, iOS simulator, Android APK/AAB remain governed by that workflow's actual results.
+
+Hosted web 2.8.3 now serves this exact source. Public build metadata, HTML and stamped service worker match the validated export; public health reports web/peer true and a fresh WSS PeerServer handshake returned OPEN. Previous selector `/srv/xcenter/apps/velunivo/releases/a6039810a449ca5b983c9582adc56b4a96692e8e` preserved in `rollback-2.8.3-web-target.txt`. Changed only the static selector under updater lock; no signaling restart or infrastructure change. No browser UI/native rendering claim. Removed only the completed, merged local branch `fix/ios-ride-detection`; no user data or simulator files removed.
