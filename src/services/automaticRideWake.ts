@@ -37,8 +37,8 @@ if(!TaskManager.isTaskDefined(TASK))TaskManager.defineTask<{eventType:Location.G
   // Re-read revocation before sending. Headless wake cannot rely on a mounted
   // React recorder, so use the honest notification fallback, not fake recording.
   if(await AsyncStorage.getItem('automatic-ride-consent-v1')!=='true')return;
-  await AsyncStorage.setItem('automatic-ride-alert-at-v1',String(Date.now()));
-  await notifyRideEvent('bluetooth-ride-detected','Looks like you’re riding',t('Tap to start recording your Bluetooth ride.'),'velunivo:///offline/record-trip');
+  const queued=await notifyRideEvent('bluetooth-ride-detected','Looks like you’re riding',t('Tap to start recording your Bluetooth ride.'),'velunivo:///offline/record-trip');
+  if(queued)await AsyncStorage.setItem('automatic-ride-alert-at-v1',String(Date.now()));
  }catch{/* Optional wake must never launch pairing or crash the background task. */}
  finally{release?.();checking=false;}
 });

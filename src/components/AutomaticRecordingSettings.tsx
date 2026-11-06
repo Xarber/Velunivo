@@ -2,6 +2,7 @@
 import React,{useState} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Platform,Switch,View} from 'react-native';
+import {useBluetoothPreferences} from '../bluetooth/react';
 import {useStore} from '../services/store';
 import {prepareAutomaticRide} from '../services/automaticRidePermissions';
 import {t} from '../i18n/core';
@@ -10,13 +11,14 @@ import InfoButton from './InfoButton';
 import {usePalette} from './ui';
 export default function AutomaticRecordingSettings(){
  const p=usePalette(),{navigationOptions:n,updateNavigationOptions}=useStore();
+ const {update:updateBluetooth}=useBluetoothPreferences();
  const [busy,setBusy]=useState(false),[status,setStatus]=useState('');
  async function enable(value:boolean){
   if(!value){updateNavigationOptions({autoBluetoothRecording:false});await AsyncStorage.removeItem('automatic-ride-consent-v1').catch(()=>{});return;}
   setBusy(true);
-  try{const result=await prepareAutomaticRide();await AsyncStorage.setItem('automatic-ride-consent-v1','true');updateNavigationOptions({autoBluetoothRecording:true});setStatus(result==='background'?'Background detection is ready while connected.':result==='foreground'?'Allow Always location for automatic background recording. Otherwise, a ride alert is used.':'Allow location to record. Ride alerts also require notification permission.');}
+  try{const result=await prepareAutomaticRide();await AsyncStorage.setItem('automatic-ride-consent-v1','true');updateBluetooth({autoReconnect:true});updateNavigationOptions({autoBluetoothRecording:true});setStatus(result==='background'?'Background detection is ready while connected.':result==='foreground'?'Allow Always location for automatic background recording. Otherwise, a ride alert is used.':'Allow location to record. Ride alerts also require notification permission.');}
   catch{setStatus('Could not enable automatic recording. Check location and notification permissions.');}
   finally{setBusy(false);}
  }
- return <View style={{gap:12}}><View style={{flexDirection:'row',gap:12,alignItems:'center'}}><Text style={{flex:1,color:p.text,fontWeight:'700'}}>Automatic Bluetooth recording</Text><InfoButton title={t('Automatic Bluetooth recording')}>{t('Records sustained movement from your connected vehicle. Allow Always location and open the app while connected to arm detection. Monitoring uses location and battery. iOS can wake the app after leaving a nearby area and offer a ride alert. Force-quitting stops detection. Recordings end one minute after disconnection.')}</InfoButton><Switch accessibilityLabel={t('Automatic Bluetooth recording')} disabled={busy||Platform.OS==='web'} value={n.autoBluetoothRecording} onValueChange={value=>void enable(value)} trackColor={{true:p.accent}}/></View>{n.autoBluetoothRecording&&<View style={{flexDirection:'row',gap:12,alignItems:'center'}}><Text style={{flex:1,color:p.text}}>Notify instead of recording</Text><Switch accessibilityLabel={t('Notify instead of recording')} value={n.bluetoothRecordingNotifyOnly} onValueChange={bluetoothRecordingNotifyOnly=>updateNavigationOptions({bluetoothRecordingNotifyOnly})} trackColor={{true:p.accent}}/></View>}{!!status&&<Text style={{color:p.muted,fontSize:12}}>{status}</Text>}</View>;
+ return <View style={{gap:12}}><View style={{flexDirection:'row',gap:12,alignItems:'center'}}><Text style={{flex:1,color:p.text,fontWeight:'700'}}>Automatic Bluetooth recording</Text><InfoButton title={t('Automatic Bluetooth recording')}>{t('Records sustained movement from your connected vehicle. Allow Always location and open the app while connected to arm detection. Monitoring uses location and battery. iOS can wake the app after leaving a nearby area and offer a ride alert. Force-quitting stops detection. Recordings end one minute after disconnection.')}</InfoButton><Switch accessibilityLabel={t('Automatic Bluetooth recording')} disabled={busy||Platform.OS==='web'} value={n.autoBluetoothRecording} onValueChange={value=>void enable(value)} trackColor={{true:p.accent}}/></View>{n.autoBluetoothRecording&&<Text style={{color:p.muted,fontSize:12}}>Reconnects can offer a ride alert. Force-quitting the app stops detection until you open it again.</Text>}{n.autoBluetoothRecording&&<View style={{flexDirection:'row',gap:12,alignItems:'center'}}><Text style={{flex:1,color:p.text}}>Notify instead of recording</Text><Switch accessibilityLabel={t('Notify instead of recording')} value={n.bluetoothRecordingNotifyOnly} onValueChange={bluetoothRecordingNotifyOnly=>updateNavigationOptions({bluetoothRecordingNotifyOnly})} trackColor={{true:p.accent}}/></View>}{!!status&&<Text style={{color:p.muted,fontSize:12}}>{status}</Text>}</View>;
 }

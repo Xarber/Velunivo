@@ -2076,5 +2076,8 @@
   "Ideas could not be loaded.": "No se pudieron cargar las ideas.",
   "Could not save or transfer ideas. Your existing ideas are preserved.": "No se pudieron guardar o transferir las ideas. Tus ideas existentes se conservan.",
   "Ideas imported.": "Ideas importadas.",
-  "selected": "seleccionadas"
+  "selected": "seleccionadas",
+  "Vehicle connected": "Vehículo conectado",
+  "Bluetooth restoration and automatic ride alerts.": "Restauración de Bluetooth y avisos automáticos de viaje.",
+  "Reconnects can offer a ride alert. Force-quitting the app stops detection until you open it again.": "La reconexión puede mostrar un aviso de viaje. Si fuerzas el cierre de la app, la detección se detiene hasta que vuelvas a abrirla."
 }

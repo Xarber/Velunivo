@@ -30,3 +30,23 @@ test('automatic recording consent and wake state never transfer to another devic
  const {transferableKey}=await import('../src/core/dataStorage');
  for(const key of ['automatic-ride-consent-v1','automatic-ride-vehicle-v1','automatic-ride-alert-at-v1'])assert.equal(transferableKey(key),false);
 });
+
+test('background connection prompts once without treating a stationary connection as movement',async()=>{
+ const {AutomaticConnectionAlert}=await import('../src/core/automaticRide');const d=new AutomaticConnectionAlert();const s=snapshot(0,{connectedAt:base});s.fields.speed!.value=0;
+ assert.equal(d.accept(s,'scooter',true,false,base),true);assert.equal(d.accept(s,'scooter',true,false,base),false);assert.equal(new AutomaticRideDetector().accept(s,'scooter',base),false);
+});
+test('backgrounding an existing foreground connection does not create a connection alert',async()=>{
+ const {AutomaticConnectionAlert}=await import('../src/core/automaticRide');const d=new AutomaticConnectionAlert();const s=snapshot(0,{connectedAt:base});assert.equal(d.accept(s,'scooter',true,true,base),false);assert.equal(d.accept(s,'scooter',true,false,base),false);
+});
+test('connection alerts reject revoked consent, stale/simulated readings and the wrong vehicle',async()=>{
+ const {AutomaticConnectionAlert}=await import('../src/core/automaticRide');const s=snapshot(0,{connectedAt:base});assert.equal(new AutomaticConnectionAlert().accept(s,'scooter',false,false,base),false);assert.equal(new AutomaticConnectionAlert().accept({...s,simulated:true},'scooter',true,false,base),false);assert.equal(new AutomaticConnectionAlert().accept(s,'other',true,false,base),false);assert.equal(new AutomaticConnectionAlert().accept(s,'scooter',true,false,base+4000),false);
+});
+
+test('installed iOS plugin creates a restoration pod and a matching runtime identifier',async()=>{
+ const fs=await import('node:fs');const {createRequire}=await import('node:module');const require=createRequire(import.meta.url);
+ const config=JSON.parse(fs.readFileSync('app.json','utf8')).expo;const [,options]=config.plugins.find((p:unknown)=>Array.isArray(p)&&p[0]==='@sfourdrinier/react-native-ble-plx');
+ assert.equal(options.iosEnableRestoration,true);assert(options.modes.includes('central'));
+ const {injectRestorationPodLine,setBlePlxRestoreIdentifier}=require('@sfourdrinier/react-native-ble-plx/plugin/build/withBLERestorationPodfile.js');
+ const pod=injectRestorationPodLine("target 'Velunivo' do\n  use_expo_modules!\nend\n",'@sfourdrinier/react-native-ble-plx');assert.match(pod,/Restoration/);
+ assert.equal(setBlePlxRestoreIdentifier({},options.iosRestorationIdentifier).BlePlxRestoreIdentifier,'app.velunivo.vehicle-central');
+});

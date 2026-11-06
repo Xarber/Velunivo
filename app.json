@@ -2,7 +2,7 @@
   "expo": {
     "name": "Velunivo",
     "slug": "velunivo",
-    "version": "2.8.1",
+    "version": "2.8.2",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -100,7 +100,9 @@
           "bluetoothAlwaysPermission": "Velunivo connects to supported vehicles for read-only speed and battery telemetry.",
           "androidEnableForegroundService": true,
           "isBackgroundEnabled": true,
-          "neverForLocation": false
+          "neverForLocation": false,
+          "iosEnableRestoration": true,
+          "iosRestorationIdentifier": "app.velunivo.vehicle-central"
         }
       ],
       "expo-localization"

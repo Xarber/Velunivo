@@ -7,10 +7,10 @@ export async function requestLocalNotifications(){
  if(Platform.OS==='android')await Notifications.setNotificationChannelAsync('ride-events',{name:t('Local ride notifications'),importance:Notifications.AndroidImportance.DEFAULT});
  const permission=await Notifications.requestPermissionsAsync();return permission.granted;
 }
-const recent=new Map<string,number>();
+const recent=new Map<string,number>(),delivering=new Set<string>();
 export async function notifyRideEvent(id:string,title:string,body:string,url='velunivo:///'){
- if(Platform.OS==='web'||Date.now()-(recent.get(id)??0)<60000)return;
- recent.set(id,Date.now());if(recent.size>100)recent.delete(recent.keys().next().value!);
- try{if(!(await Notifications.getPermissionsAsync()).granted)return;
- if(id==='bluetooth-ride-detected')await Notifications.setNotificationCategoryAsync('ride-detection',[{identifier:'START_RECORDING',buttonTitle:t('Start recording'),options:{opensAppToForeground:true}},{identifier:'SEARCH_DESTINATION',buttonTitle:t('Find destination'),options:{opensAppToForeground:true}}]);await Notifications.scheduleNotificationAsync({content:{title:t(title),body,data:{url},...(id==='bluetooth-ride-detected'?{categoryIdentifier:'ride-detection'}:{}),sound:false},trigger:Platform.OS==='android'?{channelId:'ride-events'}:null});}catch{/* Never interrupt a ride for an optional notification. */}
+ if(Platform.OS==='web'||delivering.has(id)||Date.now()-(recent.get(id)??0)<60000)return false;
+ delivering.add(id);
+ try{if(!(await Notifications.getPermissionsAsync()).granted)return false;
+ if(id==='bluetooth-ride-detected')await Notifications.setNotificationCategoryAsync('ride-detection',[{identifier:'START_RECORDING',buttonTitle:t('Start recording'),options:{opensAppToForeground:true}},{identifier:'SEARCH_DESTINATION',buttonTitle:t('Find destination'),options:{opensAppToForeground:true}}]);await Notifications.scheduleNotificationAsync({content:{title:t(title),body,data:{url},...(id==='bluetooth-ride-detected'?{categoryIdentifier:'ride-detection'}:{}),sound:false},trigger:Platform.OS==='android'?{channelId:'ride-events'}:null});recent.set(id,Date.now());if(recent.size>100)recent.delete(recent.keys().next().value!);return true;}catch{/* Never interrupt a ride for an optional notification. */return false;}finally{delivering.delete(id);}
 }

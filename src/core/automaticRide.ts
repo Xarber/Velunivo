@@ -25,3 +25,15 @@ export class AutomaticRideDetector {
 }
 export const AUTOMATIC_RIDE_COOLDOWN = 5 * 60 * 1000;
 export const AUTOMATIC_RIDE_DISCONNECT_GRACE = 60 * 1000;
+
+/** A real newly authenticated background connection is a prompt, never motion evidence. */
+export class AutomaticConnectionAlert {
+ private handled='';
+ accept(snapshot:BridgeSnapshot,vehicleId:string,enabled:boolean,foreground:boolean,now:number){
+  if(!enabled||snapshot.simulated||snapshot.state!=='connected'||snapshot.vehicleId!==vehicleId||!snapshot.connectedAt)return false;
+  const speed=snapshot.fields.speed;
+  if(!speed||speed.source!=='vehicle'||typeof speed.value!=='number'||!Number.isFinite(speed.value)||speed.timestamp>now+1000||now-speed.timestamp>3000)return false;
+  const key=vehicleId+':'+snapshot.connectedAt;if(key===this.handled)return false;this.handled=key;
+  return !foreground;
+ }
+}
