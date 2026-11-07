@@ -22,3 +22,4 @@ Some older documents describe historical snapshots, not current guarantees. The 
 - Controlled SHFW mappings: [all three light flags, shutdown timers, profile selection and independent restoration](reports/M365_READ_MAPPING_2026-11-05.md).
 
 - Current UADS adoption: [section 36 scope, implementation and validation](reports/UADS_36_2026-11-07.md).
+- Web home: [first visit, remembered app entry and web-only logo shortcut](features/WEB_ENTRY.md).

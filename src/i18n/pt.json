@@ -2096,5 +2096,7 @@
   "Invalid scooter pairing backup.": "Backup do pareamento do patinete inválido.",
   "Locked credential access is available on iOS only.": "O acesso às credenciais com a tela bloqueada só está disponível no iOS.",
   "Scooter pairing must use the private device-sync channel.": "Os dados de pareamento devem usar o canal privado de sincronização.",
-  "Clearer information, accessible motion and a dedicated web introduction.": "Informações mais claras, animações acessíveis e uma página de apresentação na web."
+  "Clearer information, accessible motion and a dedicated web introduction.": "Informações mais claras, animações acessíveis e uma página de apresentação na web.",
+  "About Velunivo": "Sobre o Velunivo",
+  "A welcoming web home that remembers when you open the app.": "Uma página inicial na web que lembra quando você abre o app."
 }

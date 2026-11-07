@@ -2096,5 +2096,7 @@
   "Invalid scooter pairing backup.": "Ungültige Sicherung der Roller-Kopplung.",
   "Locked credential access is available on iOS only.": "Zugriff auf Zugangsdaten bei gesperrtem Gerät ist nur unter iOS verfügbar.",
   "Scooter pairing must use the private device-sync channel.": "Kopplungsdaten müssen den privaten Synchronisierungskanal verwenden.",
-  "Clearer information, accessible motion and a dedicated web introduction.": "Klarere Informationen, barrierearme Animationen und eine eigene Produktseite im Web."
+  "Clearer information, accessible motion and a dedicated web introduction.": "Klarere Informationen, barrierearme Animationen und eine eigene Produktseite im Web.",
+  "About Velunivo": "Über Velunivo",
+  "A welcoming web home that remembers when you open the app.": "Eine Web-Startseite, die sich merkt, wenn du die App öffnest."
 }

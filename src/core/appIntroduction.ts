@@ -7,6 +7,7 @@ export const welcomePages=[
  {icon:'shield-checkmark-outline',title:'You stay in control',text:'Check road signs and local rules. Your records stay on your device until you export or share them.'},
 ] as const;
 export const releaseDetails=[
+ {version:'2.8.5',items:[{icon:'build-outline',title:'Fixes & Improvements',text:'A welcoming web home that remembers when you open the app.'}]},
  {version:'2.8.4',items:[{icon:'build-outline',title:'Fixes & Improvements',text:'Clearer information, accessible motion and a dedicated web introduction.'}]},
  {version:'2.8.3',items:[{icon:'build-outline',title:'Fixes & Improvements',text:'Native location wake for automatic ride detection.'}]},
  {version:'2.8.2',items:[{icon:'build-outline',title:'Fixes & Improvements',text:'Bluetooth restoration and automatic ride alerts.'}]},

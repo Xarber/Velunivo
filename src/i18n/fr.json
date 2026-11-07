@@ -2096,5 +2096,7 @@
   "Invalid scooter pairing backup.": "La sauvegarde de l’association de la trottinette est invalide.",
   "Locked credential access is available on iOS only.": "L’accès aux identifiants à écran verrouillé est disponible uniquement sur iOS.",
   "Scooter pairing must use the private device-sync channel.": "Les données d’association doivent utiliser le canal privé de synchronisation.",
-  "Clearer information, accessible motion and a dedicated web introduction.": "Des informations plus claires, des animations accessibles et une page web de présentation."
+  "Clearer information, accessible motion and a dedicated web introduction.": "Des informations plus claires, des animations accessibles et une page web de présentation.",
+  "About Velunivo": "À propos de Velunivo",
+  "A welcoming web home that remembers when you open the app.": "Une page d’accueil web qui retient votre premier accès à l’app."
 }

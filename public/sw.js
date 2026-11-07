@@ -1,12 +1,12 @@
 /* Only the public application shell is cached. Never cache routing or map tiles. */
 const CACHE='velunivo-shell-__BUILD__';
-function shell(url) {return url.origin===self.location.origin && (/^\/(?:_expo\/static|assets|pwa)\//.test(url.pathname) || url.pathname==='/maplibre-gl-worker.mjs' || url.pathname==='/manifest.webmanifest' || url.pathname==='/favicon.ico' || url.pathname==='/about.css');}
+function shell(url) {return url.origin===self.location.origin && (/^\/(?:_expo\/static|assets|pwa)\//.test(url.pathname) || url.pathname==='/maplibre-gl-worker.mjs' || url.pathname==='/manifest.webmanifest' || url.pathname==='/favicon.ico' || url.pathname==='/about.css' || url.pathname==='/about-entry.js');}
 self.addEventListener('install',event=>event.waitUntil((async()=>{
  const cache=await caches.open(CACHE),response=await fetch('/index.html',{cache:'reload'});
  if(!response.ok)throw new Error('App shell unavailable');await cache.put('/index.html',response.clone());
  const html=await response.text(),urls=[...html.matchAll(/(?:src|href)=["']([^"']+)["']/g)].map(m=>new URL(m[1],self.location.origin)).filter(shell);
  await Promise.all(urls.map(async url=>{const r=await fetch(url,{cache:'reload'});if(r.ok)await cache.put(url,r);}));
- await cache.addAll(['/manifest.webmanifest','/pwa/icon-192.png','/pwa/icon-512.png','/pwa/apple-touch-icon.png','/about.html','/about.css']);
+ await cache.addAll(['/manifest.webmanifest','/pwa/icon-192.png','/pwa/icon-512.png','/pwa/apple-touch-icon.png','/about.html','/about.css','/about-entry.js']);
 })()));
 self.addEventListener('activate',event=>event.waitUntil((async()=>{for(const key of await caches.keys())if(key.startsWith('velunivo-shell-') && key!==CACHE)await caches.delete(key);await self.clients.claim();})()));
 self.addEventListener('message',event=>{if(event.data?.type==='ACTIVATE_UPDATE')self.skipWaiting();});
