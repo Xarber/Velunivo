@@ -1821,24 +1821,769 @@ Test the update process using real release artifacts when possible.
 Clearly distinguish simulated update testing from successful physical-device installation testing.
 
 **The objective is a seamless, secure update experience in which users can discover new versions, understand what's changed, and update through their application's supported distribution method—without manually navigating GitHub whenever direct in-app updating is technically supported.**
+
 ## 32. Mandatory Progressive Web App (PWA) Support
 
-Every applicable website and Expo Web application must be installable, with a complete manifest, stable identity, standalone scope/start URL, service worker, HTTPS, standard and maskable icons, Apple Touch Icons and responsive layouts. Cache essential static resources with versioned caches and an offline fallback; never cache private responses indiscriminately. Preserve user data, deep links and unsaved work through offline use and updates. Detect updates and offer release notes and a safe user-controlled reload. Use feature detection for sharing, files, badging, push and background sync. Verify production exports, installation, offline use and updates on supported mobile and desktop targets; document untested or unsupported platforms.
+**EVERY website, web application, and React Native / Expo Web application must be configured as a fully functional, installable Progressive Web App (PWA).**
+
+PWA support is a default requirement, not an optional enhancement.
+
+### PWA Configuration
+
+Every applicable web project must include:
+
+- A complete Web App Manifest (`manifest.webmanifest`).
+- Proper application name, short name, description, and unique identity.
+- A configured Service Worker.
+- HTTPS compatibility.
+- Installable application metadata.
+- Standalone display support.
+- Appropriate `start_url`, scope, display mode, theme colors, and background colors.
+- Proper icons in all required dimensions.
+- Maskable application icons.
+- Apple Touch Icons.
+- Browser favicons.
+- App shortcuts where useful.
+- Application screenshots for supported installation interfaces when available.
+- Responsive layouts for mobile, tablet, and desktop.
+
+### Offline and Caching
+
+Implement appropriate offline functionality.
+
+- Cache essential static assets.
+- Support offline navigation where technically feasible.
+- Provide a polished offline fallback when network access is required.
+- Use appropriate caching strategies for different resources.
+- Version caches and remove obsolete ones.
+- Prevent outdated cached content from breaking application updates.
+- Never indiscriminately cache sensitive user data, credentials, or private API responses.
+- Preserve user-created data during temporary network outages where practical.
+- Support offline queues and synchronization recovery when relevant.
+
+### PWA Updates
+
+Integrate the Service Worker update lifecycle with the application's existing update and changelog system.
+
+- Detect new web application versions.
+- Notify users when a new version is available.
+- Show release notes with descriptive icons.
+- Offer an Update or Reload action.
+- Apply updates safely without losing unsaved work.
+- Avoid disruptive automatic reloads.
+- Handle outdated caches and incompatible versions correctly.
+
+Where applicable, use the same GitHub-generated structured release metadata used by native applications.
+
+### Native-Like Web Experience
+
+Installed PWAs should provide an application-like experience.
+
+Support, where appropriate:
+
+- Standalone window appearance.
+- Responsive application navigation.
+- Correct safe-area handling.
+- Touch gestures.
+- Keyboard shortcuts.
+- Share Target and Web Share APIs.
+- File handling.
+- Badging.
+- Notifications and push subscriptions.
+- Background synchronization where supported.
+- Deep links and URL handling.
+- Device-specific capabilities through supported Web APIs.
+
+Use feature detection and appropriate fallbacks for unsupported APIs.
+
+Do not claim browser features work on every platform when support differs.
+
+### Expo and React Native Web
+
+When using Expo Web:
+
+- Integrate PWA support into the existing Expo architecture.
+- Ensure the exported web application includes the required manifest, icons, and Service Worker.
+- Maintain compatibility with Expo Router and the installed Expo SDK.
+- Verify that the production export works independently of the development server.
+- Avoid caching strategies that interfere with routing, authentication, or application updates.
+
+### PWA Validation
+
+Verify:
+
+- Installability.
+- Manifest correctness.
+- Service Worker registration.
+- Offline behavior.
+- Responsive layouts.
+- Android browser installation.
+- iOS/iPadOS Add to Home Screen behavior.
+- Desktop browser installation where supported.
+- Application updates.
+- Cache recovery.
+- Navigation and deep links.
+
+Use browser auditing tools such as Lighthouse where useful, but supplement automated checks with actual platform testing.
+
+Document unsupported features and platform limitations.
+
+**Every applicable website must be designed as a web application that can also be installed, rather than merely a website with a manifest attached.**
+
+---
 
 ## 33. Original Application Identity, Branding, and Layered Icons
 
-New applications need an original researched name and coherent branding; preserve existing names unless changes are authorized. Keep editable layered SVG masters with meaningful stable group identifiers. Generate relevant native, adaptive, monochrome, light/dark/tinted, PWA, maskable, favicon and desktop exports reproducibly, respecting small-size legibility, platform masks and safe zones. Maintain docs/BRANDING.md with naming rationale, colors, typography, layer structure, variants, generation and usage instructions. Do not claim trademark clearance without adequate verification.
+**EVERY new application must have its own original name, visual identity, and professionally designed branding.**
+
+Do not use generic placeholder names or reuse the identity of unrelated applications.
+
+### Application Naming
+
+Unless I explicitly provide a name or request otherwise:
+
+1. Analyze the application's purpose, audience, functionality, and personality.
+2. Generate original, memorable name candidates.
+3. Prefer short, recognizable, easily pronounced names.
+4. Avoid generic combinations of common application terms.
+5. Research whether candidates are already used by applications, companies, or established software projects.
+6. Check relevant app stores, GitHub repositories, search results, and trademark sources where possible.
+7. Select the strongest reasonably available candidate.
+8. Explain briefly why the name fits the application.
+
+Avoid names that are confusingly similar to existing products or potentially infringe trademarks.
+
+Do not claim a name is globally unused or legally cleared unless sufficiently verified.
+
+If I have already chosen an application name, preserve it unless I authorize a change.
+
+### Complete Visual Identity
+
+Create a consistent application identity, including:
+
+- Application name.
+- Logo and application icon.
+- Primary and secondary brand colors.
+- Accent colors.
+- Typography recommendations.
+- Visual design language.
+- Iconographic style.
+- Splash screen.
+- Repository banner.
+- README branding.
+- Social/share preview assets where applicable.
+- PWA and native application branding.
+- Light and dark theme variants.
+
+Maintain consistency between application interfaces, documentation, GitHub repositories, and distribution channels.
+
+### Mandatory Layered Icons and SVG Assets
+
+**ALWAYS create layered, editable vector source assets for application icons and logos.**
+
+Do not rely exclusively on flattened PNG or JPEG files.
+
+Create an SVG master asset with logically separated elements, such as:
+
+- Background.
+- Primary symbol.
+- Secondary shapes.
+- Highlights.
+- Shadows.
+- Decorative details.
+- Theme-dependent elements.
+
+Use clean, editable SVG structures with meaningful groups, stable layer identifiers, and reusable definitions.
+
+Keep source assets organized in a dedicated branding or assets directory.
+
+Preserve original editable files rather than only storing exported assets.
+
+### Theme-Aware Icons
+
+Design icons to support:
+
+- Light mode.
+- Dark mode.
+- Monochrome appearance.
+- Tinted appearance where supported.
+- Platform-specific adaptive icons.
+- Alternate themes and accent colors.
+- Different backgrounds and icon masks.
+
+Do not flatten layers prematurely.
+
+Where supported, allow theme-dependent backgrounds, foregrounds, and symbol colors to be modified independently.
+
+### Platform-Specific Exports
+
+Generate appropriate assets from the layered master design.
+
+**iOS and iPadOS**
+- App icon assets for supported platform requirements.
+- Appropriate layered icon assets for supported Liquid Glass and appearance workflows.
+- Light, dark, and tinted variants where applicable.
+- Correctly sized and validated raster exports.
+- Required asset catalogs.
+
+**Android**
+- Adaptive icon foreground.
+- Adaptive icon background.
+- Monochrome themed icon.
+- Compatible launcher icon assets.
+- Appropriate safe zones and masking behavior.
+
+**Web and PWA**
+- SVG logo and icons.
+- Browser favicons.
+- Apple Touch Icon.
+- Standard PWA icons, including 192×192 and 512×512 where applicable.
+- Maskable PWA icons.
+- Theme-compatible application assets.
+
+**Desktop**
+- Appropriate macOS and Windows icon formats.
+- Required icon resolutions.
+- High-resolution assets and platform-specific variants.
+
+Only create assets relevant to the application's actual supported platforms.
+
+### Icon Design Quality
+
+- Prefer clean, recognizable shapes.
+- Ensure icons remain identifiable at small sizes.
+- Avoid excessive detail.
+- Maintain appropriate contrast.
+- Respect platform masking and safe-area requirements.
+- Avoid copyrighted or trademarked artwork without authorization.
+- Ensure layered SVGs render correctly.
+- Validate generated platform assets.
+- Keep exports reproducible from their source files.
+
+The icon should remain visually coherent across themes without requiring a complete redesign.
+
+### Branding Documentation
+
+Document the application's identity in `docs/BRANDING.md`, including:
+
+- Name and naming rationale.
+- Brand colors and their exact values.
+- Typography.
+- Icon construction.
+- SVG layer structure.
+- Theme variants.
+- Exported asset formats.
+- Asset generation instructions.
+- Usage guidelines.
+
+The objective is to create a recognizable, independent application identity that can evolve without rebuilding its assets from scratch.
+
+---
 
 ## 34. Automatic Cleanup of Temporary Branches and Worktrees
 
-After integration, identify task-created temporary branches/worktrees, verify all required commits are integrated into the project's authorized development branch and no associated task/PR remains active, then use safe Git cleanup. Never delete long-lived testing, beta, main or protected release branches; active PR branches; unmerged, user-owned or unrelated branches; or worktrees with uncommitted changes. Ask before discarding intentionally abandoned unmerged experiments. Prune stale references only when safe. Report what was removed and what was intentionally preserved.
+**Always clean up temporary development branches and Git worktrees when they are no longer needed.**
 
-Sections 32–34 above are a concise repository transcription of the owner's additional standards; the complete instruction supplied in the conversation governs if wording differs.
+Temporary branches are encouraged for experiments, isolated fixes, and parallel development, but they must not accumulate unnecessarily.
+
+### Cleanup Requirements
+
+After completing and integrating a development task:
+
+1. Identify temporary branches and worktrees created for the task.
+2. Verify that completed changes have been integrated into `testing`.
+3. Confirm that no required commits remain unmerged.
+4. Confirm that no associated pull requests or development tasks are still active.
+5. Remove obsolete local temporary branches.
+6. Remove corresponding obsolete remote branches where authorized and appropriate.
+7. Remove unused Git worktrees.
+8. Prune stale remote-tracking references when safe.
+9. Verify that the repository and remaining worktrees are healthy.
+
+### Protected Branches
+
+**NEVER automatically delete:**
+
+- `testing`
+- `beta`
+- `main`
+- Protected release branches.
+- Branches belonging to active pull requests.
+- Branches containing unmerged changes.
+- Branches belonging to another developer or ongoing task.
+- Branches associated with worktrees containing uncommitted changes.
+
+Do not delete user-created branches simply because they appear old.
+
+### Safe Cleanup
+
+- Prefer Git's safe branch deletion mechanisms.
+- Verify integration before deleting.
+- Avoid force deletion unless explicitly authorized and demonstrably safe.
+- Do not discard uncommitted changes.
+- Do not remove worktrees that are currently being used.
+- Preserve repository history and recovery options.
+
+For experimental branches that were intentionally abandoned, request confirmation before deleting unmerged work.
+
+### Final Reporting
+
+At task completion, include a brief Git cleanup summary when relevant:
+
+- Temporary branches merged.
+- Local branches removed.
+- Remote branches removed.
+- Worktrees cleaned.
+- Branches intentionally preserved.
+
+**The goal is to leave the repository clean and organized while preserving all valuable, unfinished, or user-owned work.**
 
 ## 35. Developer Ideas, Improvements, and Fix Tracking
 
-Repository transcription of the owner's section 35 (the complete conversation instruction governs): every application needs an offline, persistent Ideas page in Developer Options. Support titles, descriptions, reproduction steps, categories, priorities, stable IDs, creation/modification timestamps, status history, editing/deletion/duplication/organization, search/filter/sort, batch operations, sharing and JSON/Markdown import/export. Statuses are Pending, Approved, Deferred, In Progress, Implemented and Rejected. Preserve history and permit reopening. Implemented requires appropriate verification and release/commit references.
+**Every application must include a persistent Ideas system within Developer Options, tightly integrated with the application's changelog, development workflow, and AI coding agents.**
 
-Use versioned, validated interchange files with project identity, preserved timestamps and duplicate detection. Preview incoming changes, preserve local entries by default, resolve conflicts explicitly and never silently delete data. Maintain `docs/IDEAS.json`; coding agents must read it, report actionable pending/approved/deferred work, compare it with existing implementation, and ask which ideas to implement now or later. Respect explicit task authorization without redundant questions. Update statuses and implementation references only when supported by evidence.
+The objective is to allow developers to record feature ideas, improvements, bugs, and observations directly while using an application, even when Codex or another development environment is unavailable.
 
-Prefer authorized private/direct transfers; provide a one-action export when automatic retrieval is unavailable. Never assume access to private device storage or publish private ideas without authorization. Separate model, persistence, UI, transfer and agent integration. Document architecture/schema/sync limits and test persistence, imports, exports, duplicates and transitions. Integrate verified completed ideas into structured release metadata, full developer changelogs and user-facing highlights or Fixes & Improvements. Preserve original ideas and history; never advertise pending work as completed.
+These ideas must be preserved, easily transferable, automatically discoverable during future development sessions, and traceable through implementation and release.
+
+### Ideas Page
+
+Add a dedicated **Ideas** page within the existing Developer Options system.
+
+The interface must support:
+
+- Creating ideas at any time.
+- Editing, deleting, duplicating, and organizing existing ideas.
+- Recording feature requests, improvements, bug reports, and technical observations.
+- Adding titles, detailed descriptions, and optional reproduction steps.
+- Assigning categories such as **Feature**, **Improvement**, **Bug Fix**, **UI/UX**, **Performance**, or **Other**.
+- Assigning optional priorities.
+- Automatically recording creation and modification timestamps.
+- Tracking implementation status.
+- Searching, filtering, and sorting ideas.
+- Selecting multiple ideas for batch operations.
+- Copying or sharing individual ideas.
+- Exporting and importing the complete ideas collection.
+
+Use a clean, polished interface with descriptive category icons, concise previews, expandable details, and clear status indicators.
+
+### Idea Status and Lifecycle
+
+Each idea must support the following statuses:
+
+- **Pending** — Recorded but not yet reviewed.
+- **Approved** — Selected for future implementation.
+- **Deferred** — Intentionally postponed.
+- **In Progress** — Currently being implemented.
+- **Implemented** — Completed and verified.
+- **Rejected** — Explicitly dismissed or deemed unnecessary.
+
+Preserve ideas and their history when statuses change.
+
+Allow ideas to be reopened, reprioritized, or moved between statuses.
+
+Never mark an idea as implemented merely because development has started or code has been generated.
+
+### Local-First Persistence
+
+**Ideas must work completely offline and survive application restarts, crashes, and updates.**
+
+- Use reliable persistent application storage.
+- Assign stable, unique identifiers to ideas.
+- Preserve descriptions, timestamps, categories, priorities, and statuses.
+- Avoid accidental duplication or data loss.
+- Support safe storage migrations.
+- Keep the system independent of external services.
+- Never delete recorded ideas during ordinary application updates.
+- Keep the underlying data model reusable across platforms.
+
+Do not require an internet connection, GitHub authentication, or an active development environment to record ideas.
+
+### Export and Import
+
+**Every application's Ideas page must provide straightforward, portable export and import functionality.**
+
+Use a standardized, versioned JSON format as the primary interchange format.
+
+Each export should contain:
+
+- Schema version.
+- Application and project identifier.
+- Export timestamp.
+- Idea identifiers.
+- Titles and descriptions.
+- Categories and priorities.
+- Creation and modification timestamps.
+- Current statuses.
+- Optional implementation references.
+- Relevant metadata.
+
+Also support human-readable Markdown export where practical.
+
+Import functionality must:
+
+- Validate file structure and schema versions.
+- Support compatible exports from previous application versions.
+- Detect duplicate ideas using stable identifiers.
+- Provide safe merge and conflict-resolution behavior.
+- Preserve existing entries by default.
+- Allow reviewing incoming changes before applying them.
+- Never silently overwrite or delete existing ideas.
+- Report import results and errors clearly.
+
+Use native share sheets, file pickers, and platform-appropriate import/export interfaces.
+
+### Repository and AI Agent Integration
+
+**Every AI coding agent must check for outstanding recorded ideas when beginning a new development session or substantial application modification.**
+
+Maintain a standardized project-level ideas file, preferably:
+
+`docs/IDEAS.json`
+
+Use `docs/IDEAS.md` as an optional human-readable companion.
+
+Add instructions to `AGENTS.md` requiring coding agents to:
+
+1. Locate and read the project's ideas collection during initial context retrieval.
+2. Identify pending, approved, and deferred ideas.
+3. Compare recorded ideas against existing application functionality.
+4. Detect ideas already implemented but not yet marked as completed.
+5. Present a concise summary of actionable ideas.
+6. Ask whether to implement relevant ideas **now or another time**.
+7. Allow selecting individual ideas or implementing several together.
+8. Respect the user's decision without repeatedly interrupting the current task.
+9. Preserve deferred and unselected ideas for future sessions.
+10. Update idea statuses and implementation references as development progresses.
+
+**The user must remain in control of which ideas are implemented.**
+
+Do not automatically implement unrelated ideas merely because they were discovered.
+
+Essential fixes required for the explicitly requested task remain governed by the existing autonomous development standards.
+
+### Automatic Retrieval and Synchronization
+
+Design the system so that transferring ideas from the running application to the development environment requires as little manual intervention as possible.
+
+When authorized and technically supported:
+
+- Synchronize ideas with the application's private development repository or another explicitly configured development source.
+- Keep the standardized ideas file accessible to coding agents.
+- Automatically retrieve available ideas when a development session begins.
+- Support bidirectional synchronization where practical.
+- Detect conflicts and preserve changes from multiple devices.
+- Avoid unnecessary server infrastructure.
+- Never expose private ideas through public repositories or release artifacts without authorization.
+
+When direct synchronization is unavailable, provide a one-action export workflow that produces a file Codex can read or import into the repository.
+
+**Do not assume that an AI agent can access an application's private on-device storage without an established synchronization, export, or authorized access mechanism.**
+
+Never claim that automatic retrieval succeeded unless the actual ideas collection was successfully accessed.
+
+### Changelog Integration
+
+**The Ideas system must be directly connected to the mandatory What's New and Changelog standard.**
+
+When an idea is implemented:
+
+1. Associate it with the relevant commits, pull requests, or implementation changes.
+2. Record the application version or build in which it becomes available.
+3. Update its status only after appropriate implementation verification.
+4. Include the completed feature or fix in the appropriate structured changelog metadata.
+5. Generate suitable user-facing release notes.
+6. Preserve the original idea and its implementation history.
+
+Follow the existing changelog presentation requirements:
+
+- Major completed features appear with descriptive icons.
+- Minor fixes and optimizations appear under **Fixes & Improvements**.
+- Technical details, commits, and associated idea identifiers remain accessible through the Developer Changelog.
+- Pending, approved, deferred, and in-progress ideas must never appear as completed features in release notes.
+
+Allow implemented ideas to link to their associated changelog entry when that release information is available.
+
+### Developer Workflow
+
+During an ordinary development session, an AI agent should be able to report:
+
+- Number of pending ideas.
+- Number of approved ideas.
+- Number of deferred ideas.
+- Newly recorded ideas since the previous review.
+- Ideas potentially related to the current development task.
+- Ideas that appear to have already been implemented.
+
+For example:
+
+**Example 1 — Feature Improvement**
+
+An idea recorded in the application states:
+
+"Add a battery percentage indicator beside the vehicle speed display."
+
+During the next development session, the agent retrieves the idea and asks whether to implement it immediately or keep it for a future update.
+
+After verified implementation, the idea is linked to its commit and appears under the appropriate release's major features.
+
+**Example 2 — Bug Fix**
+
+An idea states:
+
+"The navigation back button sometimes disappears when a nested page is opened directly."
+
+The agent identifies the relevant navigation issue, offers to fix it, and preserves the idea until the correction is verified.
+
+Once completed, the idea is linked to the relevant commit and included in **Fixes & Improvements**.
+
+### Architecture and Documentation
+
+Implement the Ideas system as a reusable, modular component suitable for every application.
+
+- Separate the UI, storage, import/export, synchronization, and agent-integration logic.
+- Use shared schemas and strongly typed data models where supported.
+- Avoid unnecessary dependencies.
+- Support relevant application platforms.
+- Document the feature in `docs/features/`.
+- Document its storage schema, synchronization behavior, and export format.
+- Keep `AGENTS.md` synchronized with the retrieval workflow.
+- Add relevant tests for persistence, imports, exports, duplicate detection, and status transitions.
+- Preserve compatibility with the existing Developer Options, changelog, and release infrastructure.
+
+**The ultimate goal is to create a continuous feedback loop between using an application and developing it: capture ideas immediately, preserve them reliably, retrieve them during future coding sessions, implement them only when authorized, and track completed improvements through the application's changelog.**
+
+## 36. Universal Platform, Infrastructure, Repository, and Interface Design Standards
+
+**Every application must prioritize multiplatform compatibility, consistent hosting infrastructure, repository continuity, polished visual design, meaningful animations, and clear information hierarchy.**
+
+### Mandatory Multiplatform Development
+
+- **Use Expo and React Native by default for mobile applications.**
+- Prefer frameworks that share application logic, UI components, and functionality across multiple operating systems.
+- For desktop development, evaluate multiplatform frameworks such as React Native macOS/Windows, Tauri, and Electron.
+- Prioritize code reuse between iOS, Android, web, and desktop.
+- Preserve native platform functionality and conventions.
+- Only choose a platform-specific framework when multiplatform solutions cannot adequately support essential requirements.
+- Document technical exceptions without unnecessarily restricting supported platforms.
+- Never rewrite an existing functioning application solely to change its framework without authorization.
+
+### Mandatory Web Versions and Landing Pages
+
+**Every application and service must have an accessible, functional web presence.**
+
+- Provide a web version of every application, using Expo Web or another compatible framework where appropriate.
+- Provide a web-based interface for services, including administration, monitoring, or user-facing functionality as appropriate.
+- Implement functionality comparable to native applications wherever browser capabilities permit.
+- Provide graceful fallbacks for hardware-specific or unsupported browser features.
+- Follow the existing mandatory PWA requirements.
+
+Every project must also include a dedicated, responsive landing page featuring:
+
+- Original branding and application identity.
+- Product description and primary features.
+- Real screenshots or appropriate promotional assets.
+- Supported platforms.
+- Installation and download options.
+- Documentation and relevant links.
+- Privacy and licensing information where applicable.
+- Clear navigation to the actual web application.
+
+The landing page and functional web application must be distinguishable, even when served from the same domain.
+
+Do not expose private applications, repositories, or services publicly without authorization.
+
+### X-Center Hosting
+
+**X-Center is the mandatory default hosting infrastructure for all applications, websites, APIs, databases, and backend services.**
+
+- Deploy compatible services to X-Center.
+- Prefer self-hosted infrastructure over unnecessary third-party hosting.
+- Use appropriate isolation, networking, reverse proxies, TLS, monitoring, and access controls.
+- Preserve existing healthy deployments and unrelated services.
+- Use reproducible deployment configurations.
+- Maintain reliable backups and rollback mechanisms.
+- Do not install or modify major infrastructure components without appropriate authorization.
+- Continue using GitHub Actions for builds and CI/CD, with deployment to X-Center where applicable.
+
+If X-Center cannot support a required workload, report the limitation and obtain authorization before using alternative infrastructure.
+
+### Existing Repository Identification and Reuse
+
+**Never create a duplicate repository when an existing repository with the project's name already contains that project.**
+
+When a repository with the requested project name already exists:
+
+1. Inspect that repository's contents, documentation, history, and application structure.
+2. Determine whether it belongs to the same project.
+3. If confirmed, reuse the existing repository.
+4. Preserve its history, branches, configuration, and existing functionality.
+5. Integrate new work using its established development workflow.
+6. If the contents belong to a different project, do not overwrite them.
+
+**Do not proactively search for repositories with similar names or attempt to identify matching projects across unrelated repositories.**
+
+Only perform the content verification when an existing repository matches the project's intended repository name.
+
+If ownership or project identity remains ambiguous, do not modify the repository without confirmation.
+
+### Hardware-Backed Git Commit Signing
+
+**Prefer hardware-backed signing for Git commits whenever the configured signing key is available.**
+
+When the hardware signing key is unavailable:
+
+- Continue development normally.
+- Create unsigned commits rather than blocking development.
+- Push authorized development changes according to the existing Git workflow.
+- Never substitute an unauthorized software signing key.
+- Preserve the original commit contents and history.
+- Clearly report that commits were created unsigned.
+
+When the hardware signing key becomes available again:
+
+1. Detect or verify that signing is functional.
+2. Identify unsigned commits that could be re-signed.
+3. Ask the user whether to perform an interactive rebase or another suitable history-rewriting operation to sign those commits.
+4. Explain the effects on commit hashes, remote history, collaborators, and open pull requests.
+5. Perform the operation only after authorization.
+6. Verify the resulting signatures.
+7. Update remote references safely and only when authorized.
+
+Never automatically force-push rewritten history or bypass protected-branch policies.
+
+### Universal Iconography
+
+**Use meaningful, descriptive icons throughout application interfaces wherever they improve recognition, clarity, or visual organization.**
+
+This applies to:
+
+- Short and long information lists.
+- Settings and configuration options.
+- Navigation destinations.
+- Feature descriptions.
+- Status messages.
+- Actions and controls.
+- Menus and contextual actions.
+- Changelogs and update dialogs.
+- Empty states and informational panels.
+- Cards, categories, and section summaries.
+
+Long lists should use appropriate individual icons for entries when they improve scanning and distinguish the items.
+
+Icons must:
+
+- Match their associated meaning.
+- Follow a consistent visual style.
+- Maintain appropriate size, alignment, and spacing.
+- Support light and dark themes.
+- Preserve sufficient contrast.
+- Include accessible text or labels.
+- Avoid unnecessary decoration or visual noise.
+
+### Contextual Information and Visual Hierarchy
+
+**Every interface must clearly distinguish primary functionality from supporting information.**
+
+Explanations, helper text, descriptions, instructions, and technical details must never appear as unstructured or visually misplaced content.
+
+Use appropriate styling such as:
+
+- Secondary typography and muted text.
+- Clearly grouped sections.
+- Descriptive headings and subtitles.
+- Consistent spacing and alignment.
+- Subtle background surfaces.
+- Information panels or contextual cards.
+- Dividers when useful.
+- Appropriate information icons.
+
+When explanatory text becomes sufficiently long to clutter an interactive interface, move the additional explanation behind an accessible information button, expandable section, or equivalent disclosure control.
+
+**Do not use information buttons unnecessarily.**
+
+For dedicated informational pages without interactive controls:
+
+- Display informational content directly.
+- Use readable headings, paragraphs, sections, and supporting visuals.
+- Do not hide ordinary page content behind information buttons.
+- Preserve natural document-style reading and scrolling.
+
+The objective is to make information visually intentional, not to hide content indiscriminately.
+
+### Text Contrast and Layout Integrity
+
+**All text and supporting information must remain visually readable, properly grouped, and clearly associated with their intended interface elements.**
+
+- Maintain accessible foreground/background contrast.
+- Avoid low-opacity text that becomes unreadable.
+- Ensure content remains legible over glass, blur, gradients, images, and translucent surfaces.
+- Use appropriate backgrounds or contrast treatments behind floating content.
+- Prevent disconnected text blocks from appearing randomly positioned.
+- Clearly distinguish secondary information from interactive controls and primary content.
+- Validate appearance in light mode, dark mode, and supported accessibility settings.
+- Test responsive layouts across different screen sizes and text scales.
+- Preserve visual hierarchy and alignment during animations and transitions.
+
+### Mandatory Design Skills and Apple Design Principles
+
+**Always consult and apply relevant available professional UI/UX, Apple design, interface animation, motion-design, and accessibility skills during application development.**
+
+Before implementing or substantially modifying an interface:
+
+1. Identify relevant installed design and animation skills.
+2. Read and apply their instructions when available.
+3. Follow Apple's Human Interface Guidelines for Apple-platform applications.
+4. Use appropriate modern Apple design patterns, including Liquid Glass where supported.
+5. Follow native Android, web, and desktop conventions where they differ.
+6. Apply consistent spacing, typography, hierarchy, materials, and interactions.
+7. Review the result for visual quality, accessibility, and platform compatibility.
+
+Do not ignore applicable design skills merely because an interface is technically functional.
+
+When a required specialized skill is unavailable, follow established platform design guidance and report the limitation where relevant.
+
+### Mandatory Animation and Motion Design
+
+**Animations are mandatory throughout every application wherever motion meaningfully improves the user experience.**
+
+Every application must implement a coherent motion-design system.
+
+Use appropriate animations for:
+
+- Screen and navigation transitions.
+- Modal, sheet, and dialog presentation.
+- Buttons and interactive controls.
+- State changes and selection.
+- Expandable and collapsible content.
+- Loading and progress indicators.
+- Success, error, and confirmation feedback.
+- List insertions, removals, and reordering.
+- Gesture-driven interactions.
+- Contextual menus and overlays.
+- Relevant visual transitions between application states.
+
+Animation requirements:
+
+- Prefer smooth, natural, platform-appropriate motion.
+- Use consistent duration, easing, and spring parameters.
+- Maintain responsive interactions.
+- Avoid unnecessary delays.
+- Prefer performant native or GPU-accelerated animations.
+- Prevent flickering, layout jumps, and abrupt visual changes.
+- Avoid excessive animations that distract from functionality.
+- Respect Reduced Motion and equivalent accessibility settings.
+- Provide accessible, less animated alternatives where required.
+- Test animation quality on intended platforms, not only web.
+
+Use relevant available animation and design skills to guide implementation.
+
+**Animation must be intentional and functional, never an excuse for unnecessary visual complexity.**
+
+### Final Design Principle
+
+Every application must feel professionally designed rather than merely functional.
+
+Prioritize multiplatform accessibility, polished native interactions, consistent branding, meaningful icons, readable information hierarchy, thoughtful animations, and reliable self-hosted infrastructure.
+
+**The goal is a unified, maintainable development ecosystem in which applications share professional standards without sacrificing their individual identities or native platform quality.**

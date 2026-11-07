@@ -45,7 +45,7 @@ Run lint and typecheck before declaring any task done.
 
 ## Builds and releases
 
-Use the GitHub Actions workflows and docs/RELEASES.md. Do not submit to EAS. Native builds use Xcode beta and Android SDK Manager's latest stable SDK on runners. Do not download local SDKs unless the user explicitly authorizes it.
+Use the GitHub Actions workflows and docs/RELEASES.md. Do not submit to EAS. Native builds prefer installed Xcode beta/RC (falling back to installed stable Xcode when unavailable) and Android SDK Manager's latest stable SDK on runners. Do not download local SDKs unless the user explicitly authorizes it.
 
 All commits and tags must remain unsigned, including when global Git signing is enabled. Use --no-gpg-sign for commits; leave the user's physical security key alone. Use descriptive conventional commits. Document changes and validation in Markdown. Keep the mutable AltSource in the special 1.0 release; binaries use v-prefixed semantic version tags. Do not publish the ignored private example GPX.
 
@@ -64,3 +64,12 @@ For every Velunivo application update, also deploy the matching validated web bu
 At the start of each substantial session, read `docs/IDEAS.json` and `docs/features/DEVELOPER_IDEAS.md`. Run `./node_modules/.bin/tsx scripts/ideas.ts list` for pending/approved/deferred counts. Identify new or relevant ideas, compare against source and release metadata, and ask whether to implement selected ideas now or later; do not automatically implement unrelated ideas or repeatedly interrupt a declined decision. Explicit task authorization remains sufficient for matching work.
 
 Private on-device ideas are not accessible automatically. Ask for the one-action Ideas JSON export only when needed. Preview it with `tsx scripts/ideas.ts import FILE`; review privacy before `--apply` or committing anything. Conflicting versions require explicit `--accept=ID` to replace local content; both histories are retained. Never publish private ideas through this public repository or release artifacts without explicit authorization. Preserve deferred/unselected entries, IDs, source timestamps and histories. Track verified implementation with version, commit and verification time; include idea IDs in structured release metadata and commit bodies. Never mark started or untested work Implemented.
+
+
+## UADS section 36 — infrastructure and design
+
+- Read the complete repository UADS snapshot, including section 36; the owner’s newer explicit instructions govern if the local snapshot is older. Existing branches and the project-specific unsigned-commit decision above remain intentional exceptions. Do not probe the physical signing key or rewrite history without authorization.
+- Reuse this repository. X-Center is the established hosting default; preserve healthy web/PeerServer services and deploy static changes with rollback. Do not provision another host or new infrastructure to satisfy a checklist.
+- The functional PWA stays at `/`; the separate public product introduction lives at `/about.html`. Preserve app/share/deep-link URLs. Never cache marketing HTML under the PWA shell key. Screenshots on the landing page are explicitly labeled web/simulated previews.
+- Before meaningful UI changes, read applicable installed `apple-design`, `animate-expo`, `review-animations`, web motion or accessibility skills. Apply the frequency/purpose gate: platform tab/keyboard behavior stays native; occasional sheets and feedback may animate. Respect Reduced Motion, transparency/contrast preferences, safe areas and text scaling. Do not animate merely to add motion.
+- Use meaningful labeled icons, grouped supporting text and accessible contrast. Keep safety/consent information visible and dedicated information pages readable without unnecessary info buttons. Validate the actual affected targets; unavailable native devices remain an explicit validation gap.
