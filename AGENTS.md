@@ -68,6 +68,8 @@ Private on-device ideas are not accessible automatically. Ask for the one-action
 
 ## UADS section 36 — infrastructure and design
 
+See the [current adoption and validation report](docs/reports/UADS_36_2026-11-07.md).
+
 - Read the complete repository UADS snapshot, including section 36; the owner’s newer explicit instructions govern if the local snapshot is older. Existing branches and the project-specific unsigned-commit decision above remain intentional exceptions. Do not probe the physical signing key or rewrite history without authorization.
 - Reuse this repository. X-Center is the established hosting default; preserve healthy web/PeerServer services and deploy static changes with rollback. Do not provision another host or new infrastructure to satisfy a checklist.
 - The functional PWA stays at `/`; the separate public product introduction lives at `/about.html`. Preserve app/share/deep-link URLs. Never cache marketing HTML under the PWA shell key. Screenshots on the landing page are explicitly labeled web/simulated previews.
