@@ -2095,5 +2095,6 @@
   "Scooter secrets remain encrypted, but the app can read them while locked after the first unlock following a restart. This reduces protection if your phone is compromised. New file backups contain unencrypted pairing secrets: anyone with a backup may be able to control your scooter. Keep backups private. Disabling this does not remove secrets from existing backups. This does not guarantee iOS will wake the app.": "Las credenciales siguen cifradas, pero la app puede leerlas con la pantalla bloqueada tras el primer desbloqueo después de reiniciar. Esto reduce la protección si el teléfono se ve comprometido. Las nuevas copias en archivo contienen secretos sin cifrar: quien tenga una copia podría controlar el patinete. Guárdalas en privado. Desactivar esta opción no elimina los secretos de las copias existentes ni garantiza que iOS reactive la app.",
   "Invalid scooter pairing backup.": "La copia de vinculación del patinete no es válida.",
   "Locked credential access is available on iOS only.": "El acceso a las credenciales con la pantalla bloqueada solo está disponible en iOS.",
-  "Scooter pairing must use the private device-sync channel.": "Los datos de vinculación deben usar el canal privado de sincronización."
+  "Scooter pairing must use the private device-sync channel.": "Los datos de vinculación deben usar el canal privado de sincronización.",
+  "Clearer information, accessible motion and a dedicated web introduction.": "Información más clara, animaciones accesibles y una página web de presentación."
 }
