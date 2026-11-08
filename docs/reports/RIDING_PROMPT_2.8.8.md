@@ -19,3 +19,7 @@ No simulator, local native build or physical device test was performed. Native c
 ## Publication
 
 Use the established unsigned development → testing → main promotion, mandatory stable builds and automatic AltSource publication. Update the matching hosted web with rollback and health/handshake validation; record actual submission/deployment below.
+
+Unsigned implementation commit `60119e7184a63f2a76c8b808e8194d93de794c58` pushed through development → testing → main. Stable build submitted: https://github.com/Xarber/Velunivo/actions/runs/42487432555 . The redundant testing run for the identical commit was canceled after confirming the main run. Binary and automatic AltSource publication remain pending mandatory build gates. No branch-model changes or temporary worktrees/branches.
+
+Hosted web serves 2.8.8 at exact commit `60119e7184a63f2a76c8b808e8194d93de794c58`. Public HTML, landing entry, worker and build metadata match the exported artifact; public web/peer health true and a fresh WSS handshake returned OPEN. Previous deployment retained in `rollback-2.8.8-web-target.txt`. No live service/PeerServer restart or infrastructure change. Generated export metadata restored before the documentation handoff.
