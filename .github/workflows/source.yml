@@ -1,9 +1,5 @@
-name: Refresh AltSource
+name: Repair AltSource (normally automatic)
 on:
-  workflow_run:
-    workflows: ['Build and release']
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
     inputs:
       release_tag:

@@ -5,9 +5,14 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'App version, e.g. 1.0.0 (the 1.0 tag is reserved for the source feed)'
-        required: true
-        default: '2.7.2'
+        description: 'Optional version override; leave blank to use package.json'
+        required: false
+        default: ''
+      release_channel:
+        description: 'Publication: Stable also updates AltSource automatically (select main)'
+        type: choice
+        default: auto
+        options: [auto, prerelease, stable, artifacts]
       development_build:
         description: 'Development client (Debug), artifacts only; choose any branch above'
         type: boolean
@@ -31,6 +36,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
       prerelease: ${{ steps.version.outputs.prerelease }}
+      publish: ${{ steps.version.outputs.publish }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,20 +44,9 @@ jobs:
       - id: version
         env:
           INPUT_VERSION: ${{ inputs.version }}
+          INPUT_CHANNEL: ${{ inputs.release_channel }}
         run: |
-          version="${INPUT_VERSION:-$(node -p 'require("./package.json").version')}"
-          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Use major.minor.patch'; exit 1; }
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          if [[ "$APP_DEVELOPMENT_BUILD" == '1' ]]; then
-            echo "tag=dev-$version-$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
-            echo 'prerelease=true' >> "$GITHUB_OUTPUT"
-          elif [[ "$GITHUB_REF_NAME" != 'main' ]]; then
-            echo "tag=v$version-testing.$GITHUB_RUN_NUMBER" >> "$GITHUB_OUTPUT"
-            echo 'prerelease=true' >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=v$version" >> "$GITHUB_OUTPUT"
-            echo 'prerelease=false' >> "$GITHUB_OUTPUT"
-          fi
+          python3 scripts/release-channel.py >> "$GITHUB_OUTPUT"
       - name: Compute version-independent native dependency cache key
         run: python3 scripts/native-cache-key.py >> "$GITHUB_ENV"
       - uses: actions/setup-node@v4
@@ -62,7 +57,7 @@ jobs:
       - run: npm run lint && npm run typecheck && npm test
       - run: python3 -m unittest discover -s tests -p 'test_*.py'
       - name: Pin the unsigned release tag before compilation
-        if: inputs.development_build != true
+        if: inputs.development_build != true && inputs.release_channel != 'artifacts'
         env:
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: bash scripts/pin-release-tag.sh
@@ -464,7 +459,7 @@ jobs:
           path: artifacts/Velunivo-simulator.app.zip
           if-no-files-found: error
   publish:
-    if: ${{ inputs.development_build != true && always() && needs.prepare.result == 'success' && needs.web.result == 'success' && needs.android.result == 'success' && needs.ios.result == 'success' && needs.ios-simulator.result == 'success' }}
+    if: ${{ inputs.development_build != true && needs.prepare.outputs.publish == 'true' && always() && needs.prepare.result == 'success' && needs.web.result == 'success' && needs.android.result == 'success' && needs.ios.result == 'success' && needs.ios-simulator.result == 'success' }}
     concurrency:
       group: altsource
       cancel-in-progress: false

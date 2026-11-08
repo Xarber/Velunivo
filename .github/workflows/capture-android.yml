@@ -31,6 +31,15 @@ jobs:
         run: |
           [[ "$BUILD_RUN" =~ ^[0-9]+$ ]] || exit 1
           echo "run=$BUILD_RUN" >> "$GITHUB_OUTPUT"
+          if [[ "${{ github.event_name }}" != 'workflow_dispatch' ]]; then
+            mkdir -p work/channel
+            gh run download "$BUILD_RUN" --repo "$GITHUB_REPOSITORY" --name notes --dir work/channel
+            if ! head -1 work/channel/release-notes.md | grep -Eq '^# v[0-9]+\.[0-9]+\.[0-9]+$'; then
+              echo 'ready=false' >> "$GITHUB_OUTPUT"
+              echo '::notice::Only stable releases refresh distribution galleries.'
+              exit 0
+            fi
+          fi
           if [[ "$MANUAL" == 'true' ]]; then
             echo 'ready=true' >> "$GITHUB_OUTPUT"
           else
