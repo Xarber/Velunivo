@@ -19,7 +19,7 @@ export function inspectLiveActivity():ActivityReport { const checks=inspectActiv
 const NavigationLayout = (p: NavigationActivity, environment: LiveActivityEnvironment) => {
   'widget';
   const accent=environment.isLuminanceReduced ? '#FFFFFF' : '#28DAB0';
-  if(p.ridingPrompt){const actions=environment.isStale?null:<HStack spacing={12}><Button target="ride-prompt:record" modifiers={[buttonStyle('borderedProminent'),tint(accent)]}><Text>{p.recordLabel}</Text></Button><Button target="ride-prompt:search" modifiers={[buttonStyle('plain'),foregroundStyle(accent)]}><Text>{p.searchLabel}</Text></Button></HStack>;return {banner:<VStack alignment="leading" spacing={8} modifiers={[padding({all:16})]}><HStack spacing={8}><Image systemName="arrow.up" color={accent}/><Text modifiers={[font({size:20,weight:'bold'})]}>Velunivo</Text></HStack><Text>{p.turn}</Text>{actions}</VStack>,compactLeading:<Image systemName="arrow.up" color={accent}/>,compactTrailing:<Text>?</Text>,minimal:<Image systemName="arrow.up" color={accent}/>,expandedLeading:<Image systemName="arrow.up" color={accent} modifiers={[font({size:30})]}/>,expandedBottom:<VStack spacing={8}><Text>Velunivo</Text><Text>{p.turn}</Text>{actions}</VStack>};}
+  if(p.ridingPrompt){const actions=environment.isStale?null:<HStack spacing={12}><Button target="ride-prompt:record" modifiers={[buttonStyle('borderedProminent'),tint(accent)]}><HStack spacing={5}><Image systemName="play.fill"/><Text>{p.recordLabel}</Text></HStack></Button><Button target="ride-prompt:search" modifiers={[buttonStyle('plain'),foregroundStyle(accent)]}><Text>{p.searchLabel}</Text></Button></HStack>;return {banner:<VStack alignment="leading" spacing={10} modifiers={[padding({all:16})]}><HStack spacing={10}><Image systemName={p.promptVehicleSymbol||"scooter"} color={accent}/><Text modifiers={[font({size:20,weight:'bold'})]}>Velunivo</Text></HStack><Text>{p.turn}</Text>{actions}</VStack>,compactLeading:<Image systemName={p.promptVehicleSymbol||"scooter"} color={accent}/>,compactTrailing:<Text>?</Text>,minimal:<Image systemName={p.promptVehicleSymbol||"scooter"} color={accent}/>,expandedLeading:<Image systemName={p.promptVehicleSymbol||"scooter"} color={accent} modifiers={[font({size:30})]}/>,expandedBottom:<VStack spacing={10}><Text>Velunivo</Text><Text>{p.turn}</Text>{actions}</VStack>};}
 
   const old=environment.isStale || p.batteryOld;
   const batteryTint=old?'#E49235':p.batteryColor || accent;
@@ -94,7 +94,7 @@ export async function updateRecordingActivity(props:NavigationActivity){try{for(
 /** ActivityKit cannot request an ordinary local activity from arbitrary background execution. */
 export async function showRidingPromptActivity(vehicleId?:string){
  try{
-  const props=ridingPromptProps(bluetoothBridge.getSnapshot(),vehicleId),key=JSON.stringify(props);
+  const props=ridingPromptProps(bluetoothBridge.getSnapshot(),vehicleId,Date.now(),vehicleId?bluetoothBridge.association(vehicleId)?.vehicleType:undefined),key=JSON.stringify(props);
   if(lastPromptProps===key&&Date.now()-lastPromptUpdate<15000)return true;
   const existing=ridingPromptActivity.getInstances().find(live=>live.getId()!==promotedPrompt?.getId());
   if(!existing&&AppState.currentState!=='active')return false;

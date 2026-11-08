@@ -10,6 +10,7 @@ private struct VelunivoActivityData {
   var pausedLabel: String { values["pausedLabel"] as? String ?? "Waiting for a navigation update" }
   var arrivalLabel: String { values["arrivalLabel"] as? String ?? "Arrival" }
   var timer: String { values["timer"] as? String ?? "—" }
+  var promptVehicleSymbol: String { values["promptVehicleSymbol"] as? String == "bicycle" ? "bicycle" : "scooter" }
   var ridingPrompt: Bool { values["ridingPrompt"] as? Bool ?? false }
   var recording: Bool { values["recording"] as? Bool ?? false }
   var groups: Int? { guard let count = values["groupCount"] as? Double, count.isFinite, (1...8).contains(count) else { return nil }; return Int(count) }
@@ -96,10 +97,10 @@ private struct VelunivoActivitySection: View {
     let data = VelunivoActivityData(context.state.props)
     if data.ridingPrompt {
       switch sectionName {
-      case "expandedLeading": Image(systemName: "arrow.up").font(.system(size: 32, weight: .semibold)).foregroundStyle(Color.mint)
-      case "compactLeading", "minimal": Image(systemName: "arrow.up").foregroundStyle(Color.mint)
+      case "expandedLeading": Image(systemName: data.promptVehicleSymbol).font(.system(size: 32, weight: .semibold)).foregroundStyle(Color.mint)
+      case "compactLeading", "minimal": Image(systemName: data.promptVehicleSymbol).foregroundStyle(Color.mint)
       case "compactTrailing": Text("?").foregroundStyle(Color.mint)
-      case "expandedBottom": VelunivoRidingPromptContent(data: data, source: context.state.name, stale: velunivoActivityIsStale(context), showArrow: false).padding(.horizontal, 8).padding(.bottom, 6)
+      case "expandedBottom": VelunivoRidingPromptContent(data: data, source: context.state.name, stale: velunivoActivityIsStale(context), showVehicleIcon: false).padding(.horizontal, 8).padding(.bottom, 6)
       default: EmptyView()
       }
     } else {
@@ -205,30 +206,38 @@ private struct VelunivoRidingPromptContent: View {
   let data: VelunivoActivityData
   let source: String
   let stale: Bool
-  var showArrow = true
+  var showVehicleIcon = true
   var body: some View {
-    VStack(alignment: .leading, spacing: 8) {
+    VStack(alignment: .leading, spacing: 10) {
       HStack(spacing: 8) {
-        if showArrow { Image(systemName: "arrow.up").font(.title2).foregroundStyle(Color.mint) }
+        if showVehicleIcon { Image(systemName: data.promptVehicleSymbol).font(.title2).foregroundStyle(Color.mint) }
         Text("Velunivo").font(.headline)
-        Spacer(minLength: 0)
-        if #available(iOS 17.0, *), let target = data.values["promptLockTarget"] as? String {
-          Button(intent: LiveActivityUserInteraction(source: source, target: target)) {
-            Image(systemName: target.hasPrefix("ride-prompt:unlock:") ? "lock.open" : "lock").frame(width: 36, height: 32)
-          }.buttonStyle(.bordered).tint(.mint)
-            .disabled(stale || !(data.values["promptLockEnabled"] as? Bool ?? false))
-            .accessibilityLabel(data.values["promptLockLabel"] as? String ?? "Vehicle lock")
-        }
       }
       Text(data.turn).font(.subheadline)
-      HStack(spacing: 12) {
+      // One action row keeps the connected-vehicle control out of the title's height.
+      HStack(spacing: 10) {
         if #available(iOS 17.0, *) {
-          Button(intent: VelunivoRidePromptIntent(source: source, target: "ride-prompt:record")) { Text(data.values["recordLabel"] as? String ?? "Start recording").lineLimit(1).minimumScaleFactor(0.75) }.buttonStyle(.borderedProminent).tint(.mint).foregroundStyle(.black)
-          Button(intent: VelunivoRidePromptIntent(source: source, target: "ride-prompt:search")) { Text(data.values["searchLabel"] as? String ?? "Find destination").lineLimit(1).minimumScaleFactor(0.75) }.buttonStyle(.plain).foregroundStyle(Color.mint)
+          Button(intent: VelunivoRidePromptIntent(source: source, target: "ride-prompt:record")) {
+            Label(data.values["recordLabel"] as? String ?? "Start recording", systemImage: "play.fill")
+              .lineLimit(1).minimumScaleFactor(0.75)
+          }.buttonStyle(.borderedProminent).tint(.mint).foregroundStyle(.black)
+          Button(intent: VelunivoRidePromptIntent(source: source, target: "ride-prompt:search")) {
+            Text(data.values["searchLabel"] as? String ?? "Find destination").lineLimit(1).minimumScaleFactor(0.75)
+          }.buttonStyle(.plain).foregroundStyle(Color.mint)
+          if let target = data.values["promptLockTarget"] as? String {
+            Button(intent: LiveActivityUserInteraction(source: source, target: target)) {
+              Image(systemName: target.hasPrefix("ride-prompt:unlock:") ? "lock.open" : "lock")
+                .frame(width: 28, height: 28)
+            }.buttonStyle(.bordered).tint(.mint).fixedSize()
+              .disabled(!(data.values["promptLockEnabled"] as? Bool ?? false))
+              .accessibilityLabel(data.values["promptLockLabel"] as? String ?? "Vehicle lock")
+          }
         } else {
-          Link(data.values["recordLabel"] as? String ?? "Start recording", destination: data.actionURL).foregroundStyle(Color.mint)
+          Link(destination: data.actionURL) {
+            Label(data.values["recordLabel"] as? String ?? "Start recording", systemImage: "play.fill")
+          }.foregroundStyle(Color.mint)
         }
-      }.disabled(stale)
+      }.font(.subheadline).disabled(stale)
     }
   }
 }

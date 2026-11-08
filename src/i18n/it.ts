@@ -1,5 +1,6 @@
 /** English source messages are stable keys. User-authored content is never stored translated. */
 export const italian:Record<string,string>={
+"A more compact riding prompt, with vehicle icons and all actions in one row.":"Un avviso di viaggio più compatto, con l’icona del veicolo e tutti i comandi su una riga.",
 "Automatic rides open the recording screen, with clearer ride controls and release options.":"I viaggi automatici aprono la schermata di registrazione, con comandi e opzioni di pubblicazione più chiari.",
 "About Velunivo":"Informazioni su Velunivo","A welcoming web home that remembers when you open the app.":"Una pagina iniziale sul web che ricorda quando apri l’app.",
 "Clearer information, accessible motion and a dedicated web introduction.":"Informazioni più chiare, animazioni accessibili e una pagina web di presentazione dedicata.",

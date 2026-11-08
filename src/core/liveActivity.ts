@@ -5,7 +5,7 @@ import { Route, Profile, NavigationOptions, Fix } from './types';
 import { guidance } from './navigation';
 import { estimate, minutes } from './eta';
 import { arrivalTime, maneuverDistance, distanceLeft,displaySpeed } from './rideView';
-export interface NavigationActivity extends ActivityExtras {ridingPrompt?:boolean;promptLockTarget?:string;promptLockLabel?:string;promptLockEnabled?:boolean;recordLabel?:string;searchLabel?:string; pausedLabel?:string;arrivalLabel?:string;recording?:boolean;timer?:string;updatedAt?:number; turn: string; symbol: 'flag.fill' | 'arrow.turn.up.left' | 'arrow.turn.up.right' | 'arrow.up' | 'record.circle'; distance: string; arrival: string; minutes: string; remaining: string; }
+export interface NavigationActivity extends ActivityExtras {ridingPrompt?:boolean;promptVehicleSymbol?:'scooter'|'bicycle';promptLockTarget?:string;promptLockLabel?:string;promptLockEnabled?:boolean;recordLabel?:string;searchLabel?:string; pausedLabel?:string;arrivalLabel?:string;recording?:boolean;timer?:string;updatedAt?:number; turn: string; symbol: 'flag.fill' | 'arrow.turn.up.left' | 'arrow.turn.up.right' | 'arrow.up' | 'record.circle'; distance: string; arrival: string; minutes: string; remaining: string; }
 
 export function rideActivity(route:Route,profile:Profile,options:NavigationOptions,g:ReturnType<typeof guidance>,fix?:Fix,simulation=false):NavigationActivity {
  const eta=estimate(route,profile,g.offRoute ? 0 : g.along);
