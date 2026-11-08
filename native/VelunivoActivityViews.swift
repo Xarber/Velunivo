@@ -1,3 +1,4 @@
+import AppIntents
 // Compiled into ExpoWidgets by the guarded postinstall patch.
 // ActivityKit delivers these props directly; no App Group or JS layout is read.
 @available(iOS 16.1, *)
@@ -9,6 +10,7 @@ private struct VelunivoActivityData {
   var pausedLabel: String { values["pausedLabel"] as? String ?? "Waiting for a navigation update" }
   var arrivalLabel: String { values["arrivalLabel"] as? String ?? "Arrival" }
   var timer: String { values["timer"] as? String ?? "—" }
+  var ridingPrompt: Bool { values["ridingPrompt"] as? Bool ?? false }
   var recording: Bool { values["recording"] as? Bool ?? false }
   var groups: Int? { guard let count = values["groupCount"] as? Double, count.isFinite, (1...8).contains(count) else { return nil }; return Int(count) }
   var approveTarget: String? { values["approveTarget"] as? String }
@@ -53,6 +55,12 @@ private struct VelunivoActivityBanner: View {
   let context: ActivityViewContext<LiveActivityAttributes>
   var body: some View {
     let data = VelunivoActivityData(context.state.props)
+    if data.ridingPrompt {
+      VelunivoRidingPromptContent(data: data, source: context.state.name, stale: velunivoActivityIsStale(context))
+        .padding(.horizontal, 20).padding(.vertical, 14)
+        .activityBackgroundTint(Color(red: 0.04, green: 0.10, blue: 0.13))
+        .activitySystemActionForegroundColor(.white).foregroundStyle(.white)
+    } else {
     VStack(alignment: .leading, spacing: 8) {
       HStack(alignment: .center, spacing: 12) {
         Image(systemName: data.symbol).font(.system(size: 28, weight: .semibold)).foregroundStyle(data.regroup == nil ? Color.mint : Color.red)
@@ -76,6 +84,7 @@ private struct VelunivoActivityBanner: View {
     .activityBackgroundTint(Color(red: 0.04, green: 0.10, blue: 0.13))
     .activitySystemActionForegroundColor(.white)
     .foregroundStyle(.white)
+    }
   }
 }
 
@@ -85,6 +94,15 @@ private struct VelunivoActivitySection: View {
   let sectionName: String
   var body: some View {
     let data = VelunivoActivityData(context.state.props)
+    if data.ridingPrompt {
+      switch sectionName {
+      case "expandedLeading": Image(systemName: "arrow.up").font(.system(size: 32, weight: .semibold)).foregroundStyle(Color.mint)
+      case "compactLeading", "minimal": Image(systemName: "arrow.up").foregroundStyle(Color.mint)
+      case "compactTrailing": Text("?").foregroundStyle(Color.mint)
+      case "expandedBottom": VelunivoRidingPromptContent(data: data, source: context.state.name, stale: velunivoActivityIsStale(context), showArrow: false).padding(.horizontal, 8).padding(.bottom, 6)
+      default: EmptyView()
+      }
+    } else {
     switch sectionName {
     case "expandedLeading":
       VStack(alignment: .leading, spacing: 6) {
@@ -107,6 +125,7 @@ private struct VelunivoActivitySection: View {
       }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 8).padding(.bottom, 6)
     default:
       EmptyView()
+    }
     }
   }
 }
@@ -163,4 +182,53 @@ private struct VelunivoJoinActions: View {
    }.buttonStyle(.bordered).foregroundStyle(Color.mint)
   }
  }
+}
+
+
+@available(iOS 17.0, *)
+private struct VelunivoRidePromptIntent: LiveActivityIntent {
+  static var title: LocalizedStringResource = "Velunivo"
+  static var isDiscoverable: Bool = false
+  static var openAppWhenRun: Bool = true
+  @Parameter(title: "Action") var target: String
+  @Parameter(title: "Source") var source: String
+  init() { target = ""; source = "" }
+  init(source: String, target: String) { self.source = source; self.target = target }
+  func perform() async throws -> some IntentResult {
+    WidgetsEvents.shared.sendNotification(type: .userEvent, data: ["source": source, "target": target, "timestamp": Int(Date().timeIntervalSince1970 * 1000)])
+    return .result()
+  }
+}
+
+@available(iOS 16.1, *)
+private struct VelunivoRidingPromptContent: View {
+  let data: VelunivoActivityData
+  let source: String
+  let stale: Bool
+  var showArrow = true
+  var body: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      HStack(spacing: 8) {
+        if showArrow { Image(systemName: "arrow.up").font(.title2).foregroundStyle(Color.mint) }
+        Text("Velunivo").font(.headline)
+        Spacer(minLength: 0)
+        if #available(iOS 17.0, *), let target = data.values["promptLockTarget"] as? String {
+          Button(intent: LiveActivityUserInteraction(source: source, target: target)) {
+            Image(systemName: target.hasPrefix("ride-prompt:unlock:") ? "lock.open" : "lock").frame(width: 36, height: 32)
+          }.buttonStyle(.bordered).tint(.mint)
+            .disabled(stale || !(data.values["promptLockEnabled"] as? Bool ?? false))
+            .accessibilityLabel(data.values["promptLockLabel"] as? String ?? "Vehicle lock")
+        }
+      }
+      Text(data.turn).font(.subheadline)
+      HStack(spacing: 12) {
+        if #available(iOS 17.0, *) {
+          Button(intent: VelunivoRidePromptIntent(source: source, target: "ride-prompt:record")) { Text(data.values["recordLabel"] as? String ?? "Start recording").lineLimit(1).minimumScaleFactor(0.75) }.buttonStyle(.borderedProminent).tint(.mint).foregroundStyle(.black)
+          Button(intent: VelunivoRidePromptIntent(source: source, target: "ride-prompt:search")) { Text(data.values["searchLabel"] as? String ?? "Find destination").lineLimit(1).minimumScaleFactor(0.75) }.buttonStyle(.plain).foregroundStyle(Color.mint)
+        } else {
+          Link(data.values["recordLabel"] as? String ?? "Start recording", destination: data.actionURL).foregroundStyle(Color.mint)
+        }
+      }.disabled(stale)
+    }
+  }
 }

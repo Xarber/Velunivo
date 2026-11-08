@@ -25,5 +25,5 @@ export async function startTestLiveActivity(kind:ActivityTestKind='navigation',o
 
 export async function updateRecordingActivity(props:NavigationActivity){await publish('velunivo-recording',props,'velunivo:///offline/record-trip').catch(()=>{});}
 
-export async function showRidingPromptActivity(){return false;}
+export async function showRidingPromptActivity(_vehicleId?:string){return false;}
 export async function stopRidingPromptActivity(){}

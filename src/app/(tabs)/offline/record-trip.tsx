@@ -1,3 +1,4 @@
+import {useAutomaticRecordingView} from '../../../services/automaticRecordingView';
 import {useM365RideControls} from '../../../bluetooth/plugins/useM365RideControls';
 import PluginCards from '../../../plugins/PluginCards';
 import {retainedMapFix,bearing,displaySpeed,distanceLeft,freshFix,forwardHeading} from '../../../core/rideView';
@@ -53,40 +54,41 @@ import {tripDuration,tripAverage} from '../../../core/tripDashboard';
 import {batteryLabel} from '../../../core/vehicles';
 function KeepAwake(){useScreenWake();return null;}
 export default function RecordTrip(){
-  const focused=useIsFocused();
+  const focused=useIsFocused(),automatic=useAutomaticRecordingView();
   const [startRequested]=useState(consumeRecordingStart),autoStarted=useRef(false);
   const [externalLink,setExternalLink]=useState(takeRecordingRedirect),[externalBackground,setExternalBackground]=useState(!!externalLink),[reviewRoute,setReviewRoute]=useState(false),[externalError,setExternalError]=useState(''),externalOpening=useRef<string|null>(null);
   const p=usePalette(),insets=useSafeAreaInsets(),{width,height}=useWindowDimensions(),navigation=useNavigation();
   const {profile,navigationOptions:n,lockVehicle,vehicleLocked,updateNavigationOptions}=useStore();
   const [panelOpen,setPanelOpen]=useState(true),[explorationRoute,setExplorationRoute]=useState<import('../../../core/types').Route|null>(null);
   const [contentHeight,setContentHeight]=useState(0),[headerHeight,setHeaderHeight]=useState(70);
-  const [active,setActive]=useState(false),[saving,setSaving]=useState(false),[now,setNow]=useState(Date.now()),[peak,setPeak]=useState(0),[follow,setFollow]=useState(true);
+  const [manualActive,setActive]=useState(false),[saving,setSaving]=useState(false),[now,setNow]=useState(Date.now()),[peak,setPeak]=useState(0),[follow,setFollow]=useState(true);
+  const active=manualActive||!!automatic;
   const leaving=useRef(false),savingRef=useRef(false);
   const [controlsHeight,setControlsHeight]=useState(height),nativeTabs=usesLiquidGlassTabs();
   const bottomObstruction=nativeTabs?Math.max(0,height-controlsHeight):0;
   const metadata=useMemo(()=>explorationRoute??({id:`free-trip-${Date.now()}`,name:`Free ride · ${new Date().toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}`,startLabel:'Trip start',endLabel:'Trip finish'}),[explorationRoute]);
   const mapBrowsing=useMapBrowsing(active,()=>setFollow(true));
-  const motion=useMotion(active),compass=useHeading(active),recorder=useRideRecorder(active,true,false,metadata,profile,motion,compass,n.askBatteryUsage);
+  const motion=useMotion(manualActive),compass=useHeading(active),localRecorder=useRideRecorder(manualActive,true,false,metadata,profile,motion,compass,n.askBatteryUsage),recorder=automatic?.recorder??localRecorder;
   const recordFix=recorder.accept,recordSnapshot=recorder.snapshot;
   const accept=React.useCallback(async (fix:import('../../../core/types').Fix)=>{if(fix.speed!==null)setPeak(v=>Math.max(v,fix.speed!*3.6));await recordFix(fix);const summary=recordSnapshot();if(n.liveActivities&&summary)await updateRecordingActivity({...recordingActivity(fix,summary.meters,summary.startedAt,n.unit,fix.timestamp),...currentActivityExtras(profile.id,fix.timestamp)});},[recordFix,recordSnapshot,n.liveActivities,n.unit,profile.id]);
-  const location=useTripLocation(active,n.backgroundNavigation||externalBackground,accept),preview=useLocation(focused&&!active);
+  const localLocation=useTripLocation(manualActive,n.backgroundNavigation||externalBackground,accept),location=automatic?.location??localLocation,preview=useLocation(focused&&!active);
   const fix=active ? location.fix : preview.fix,valid=freshFix(fix,now),position=retainedMapFix(fix,now)?fix!.coordinate:undefined;
-  useM365RideControls(active,profile.id);
+  useM365RideControls(manualActive,profile.id);
   useBluetoothLease(profile.id,active);
   const bluetooth=useBluetoothVehicle(profile.id),{preferences:bluetoothPreferences}=useBluetoothPreferences();
   const reported=active && metricVisible(bluetoothPreferences,'speed')?dashboardReading(bluetooth,profile.id,'speed',now):undefined;
   const currentSpeed=reported && typeof reported.value==='number'?reported.value*3.6:valid && fix?.speed!=null?fix.speed*3.6:null;
-  useGroupActivity(active,async()=>{if(await recorder.finish()===false)return false;leaving.current=true;setActive(false);lockVehicle(false);return true;});
+  useGroupActivity(manualActive,async()=>{if(await recorder.finish()===false)return false;leaving.current=true;setActive(false);lockVehicle(false);return true;});
   const groupRide=useRideGroup(active,valid?position??null:null,null,fix?.timestamp);
   const roadLimit=useTripRoadLimit(active,fix,now);
   const offlineMap=useDownloadedMaps(n.downloadedMaps,position,null);
   const meters=recorder.record?.meters || 0,startedAt=recorder.record?.startedAt || now,unit=n.unit==='mi'?'mph':'km/h';
-  useRecordingActivity(active&&n.liveActivities,{...recordingActivity(fix,meters,startedAt,n.unit,now,currentSpeed),...currentActivityExtras(profile.id,now)});
+  useRecordingActivity(manualActive&&n.liveActivities,{...recordingActivity(fix,meters,startedAt,n.unit,now,currentSpeed),...currentActivityExtras(profile.id,now)});
   const trail=recorder.record?.trace;
   const trailHeading=useMemo(()=>{const segment=trail?.at(-1);return segment && segment.length>1?bearing(segment[segment.length-2],segment.at(-1)!):null;},[trail]);
   const heading=useRideHeading(fix,compass,n.compass,fix?.heading!==undefined&&valid?forwardHeading(null,undefined,fix):{heading:trailHeading??0,source:'Travel direction'},now,`${metadata.id}-${active}`).heading;
   useEffect(()=>{if(!focused&&!active)return;const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer);},[focused,active]);
-  useEffect(()=>{if(active){setRideScreen('/offline/record-trip');lockVehicle(true);return()=>{if(getRideScreen()==='/offline/record-trip')lockVehicle(false);};}},[active,lockVehicle]);
+  useEffect(()=>{if(manualActive){setRideScreen('/offline/record-trip');lockVehicle(true);return()=>{if(getRideScreen()==='/offline/record-trip')lockVehicle(false);};}},[manualActive,lockVehicle]);
   // Returning to another tab leaves the dashboard mounted; going back ends and checkpoints the recording.
   useEffect(()=>navigation.addListener('beforeRemove',event=>{if(active && !leaving.current){event.preventDefault();void finish();}}),[navigation,active]); // eslint-disable-line react-hooks/exhaustive-deps
   async function finish(){if(savingRef.current)return;savingRef.current=true;setSaving(true);const saved=await recorder.finish();savingRef.current=false;setSaving(false);if(saved!==false){leaving.current=true;setActive(false);router.replace('/offline/rides');}}
@@ -102,7 +104,7 @@ export default function RecordTrip(){
     <GlassSurface expanded={panelOpen} style={{position:'absolute',bottom:width>height?62:12,left:24+insets.left,right:width>height||width>=800?undefined:24+insets.right,width:width>height?Math.min(340,width*.42):width>=800?390:undefined,height:panelOpen?Math.min(width>height?controlsHeight-insets.top-insets.bottom-100:controlsHeight*.6,width>height?controlsHeight-insets.top-insets.bottom-100:480,headerHeight+(contentHeight || 480)):undefined,borderRadius:28}}><PaletteProvider value={panelP}>
       <SwipeArea onSwipe={setPanelOpen} onLayout={e=>setHeaderHeight(e.nativeEvent.layout.height)}><View style={{alignItems:'center',paddingTop:8}}><View style={{width:38,height:4,borderRadius:2,backgroundColor:panelP.muted,opacity:.4}} /></View><View style={{paddingHorizontal:16,paddingVertical:10,flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}><Text style={{color:panelP.text,fontSize:20,fontWeight:'800'}}>{active?'Recording trip':'Record a trip'}</Text><Pressable accessibilityRole="button" accessibilityLabel={t(panelOpen?'Collapse recording controls':'Expand recording controls')} onPress={()=>setPanelOpen(v=>!v)} style={{padding:8}}><Ionicons name={panelOpen?'chevron-down':'chevron-up'} color={panelP.accent} size={22} /></Pressable></View></SwipeArea>
       {panelOpen?<ScrollView onContentSizeChange={(_,h)=>setContentHeight(h)} style={{flex:1}} contentContainerStyle={{padding:16,paddingTop:0,gap:14,paddingBottom:16}}>
-{!active && <><VehicleSelector outlined /><Text style={{color:panelP.muted,lineHeight:20}}>Ride freely with a live dashboard. GPS and available sensors are saved to Recorded Rides, even if automatic Record Rides is off. Road limits use nearby OpenStreetMap roads; your position is sent to Overpass while recording.</Text><ExplorationRideOptions fix={preview.fix} vehicle={profile} unit={n.unit} route={explorationRoute} onRoute={r=>{setExplorationRoute(r);setFollow(!r);}}/><Button title={t("Start recording")} icon="recording-outline" disabled={vehicleLocked || !freshFix(preview.fix)} onPress={()=>{if(explorationRoute?.safetyWarnings?.length)setReviewRoute(true);else startRecording();}} /></>}{active && <><Text style={{color:panelP.muted}}>{profile.name} · Riding limit {displaySpeed(Math.min(profile.maxSpeed,profile.ridingLimit),n.unit).toFixed(0)} {unit}</Text><View style={{flexDirection:'row',flexWrap:'wrap',gap:14}}>{metric('Trip time',tripDuration(startedAt,now))}{metric('Travelled',distanceLeft(meters,n.unit))}{metric('Average speed',`${displaySpeed(tripAverage(meters,startedAt,now),n.unit).toFixed(1)} ${unit}`)}{metric('Top speed',`${displaySpeed(peak,n.unit).toFixed(0)} ${unit}`)}</View><Text style={{color:panelP.muted,fontSize:12}}>{batteryLabel(meters,profile)}</Text><RideBookmarkButton fix={fix} onBookmark={recorder.bookmark}/><PluginCards slot="ride"/><VehicleTelemetryPanel vehicleId={profile.id} meters={meters}/><GroupRiding active={active} recording/><Button title={t(saving?'Saving…':'Finish & save trip')} icon="stop-circle-outline" disabled={saving} onPress={()=>void finish()} /></>}
+{!active && <><VehicleSelector outlined /><Text style={{color:panelP.muted,lineHeight:20}}>Ride freely with a live dashboard. GPS and available sensors are saved to Recorded Rides, even if automatic Record Rides is off. Road limits use nearby OpenStreetMap roads; your position is sent to Overpass while recording.</Text><ExplorationRideOptions fix={preview.fix} vehicle={profile} unit={n.unit} route={explorationRoute} onRoute={r=>{setExplorationRoute(r);setFollow(!r);}}/><Button title={t("Start recording")} icon="recording-outline" disabled={vehicleLocked || !freshFix(preview.fix)} onPress={()=>{if(explorationRoute?.safetyWarnings?.length)setReviewRoute(true);else startRecording();}} /></>}{active && <><Text style={{color:panelP.muted}}>{profile.name} · Riding limit {displaySpeed(Math.min(profile.maxSpeed,profile.ridingLimit),n.unit).toFixed(0)} {unit}</Text><View style={{flexDirection:'row',flexWrap:'wrap',gap:14}}>{metric('Trip time',tripDuration(startedAt,now))}{metric('Travelled',distanceLeft(meters,n.unit))}{metric('Average speed',`${displaySpeed(tripAverage(meters,startedAt,now),n.unit).toFixed(1)} ${unit}`)}{metric('Top speed',`${displaySpeed(automatic?.peak??peak,n.unit).toFixed(0)} ${unit}`)}</View><Text style={{color:panelP.muted,fontSize:12}}>{batteryLabel(meters,profile)}</Text><RideBookmarkButton fix={fix} onBookmark={recorder.bookmark}/><PluginCards slot="ride"/><VehicleTelemetryPanel vehicleId={profile.id} meters={meters}/><GroupRiding active={active} recording/><Button title={t(saving?'Saving…':'Finish & save trip')} icon="stop-circle-outline" disabled={saving} onPress={()=>void finish()} /></>}
       <Text style={{color:panelP.muted,fontSize:12}}>{active?location.status:preview.status}{fix ? ` · GPS ±${Math.round(fix.accuracy)} m` : ''}</Text><Text style={{color:panelP.muted,fontSize:11}}>Mapped road limits can be missing or ambiguous. Follow posted signs. {Platform.OS==='web'?'Keep this page open to record.':''}</Text>{!!(recorder.error || location.error) && <Text style={{color:'#D85847'}}>{publicError(recorder.error || location.error,n.developerMode)}</Text>}
     </ScrollView>:<SwipeArea onSwipe={setPanelOpen} style={{paddingHorizontal:16,paddingBottom:16,gap:10}}><Text numberOfLines={1} style={{color:panelP.muted}}>{active?`${tripDuration(startedAt,now)} · ${distanceLeft(meters,n.unit)} · ${profile.name}`:profile.name}</Text><Button title={t(active?'Recording controls':'Choose vehicle & record')} icon={active?'options-outline':'recording-outline'} onPress={()=>setPanelOpen(true)} /></SwipeArea>}
     {externalLink&&<Text style={{color:panelP.muted,fontSize:12}}>Preparing recording before opening maps…</Text>}

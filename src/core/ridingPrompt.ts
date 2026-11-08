@@ -1,5 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+import {m365ControlsAvailable,safeStationary} from '../bluetooth/plugins/m365ControlPolicy';
+import {BridgeSnapshot} from '../bluetooth/types';
+import {NavigationActivity} from './liveActivity';
+import {t} from '../i18n/core';
 import {Fix} from './types';
 import {distance} from './geo';
+export function ridingPromptProps(snapshot:BridgeSnapshot,vehicleId?:string,now=Date.now()):NavigationActivity{
+ const locked=snapshot.extensions.locked;
+ const known=!!vehicleId&&m365ControlsAvailable(snapshot,vehicleId)&&locked?.source==='vehicle'&&typeof locked.value==='boolean'&&Math.abs(now-locked.timestamp)<10000;
+ return {ridingPrompt:true,turn:t('Are you riding?'),symbol:'arrow.up',distance:'',arrival:'',minutes:'',remaining:'',recordLabel:t('Start recording'),searchLabel:t('Find destination'),...(known?{promptLockTarget:`ride-prompt:${locked!.value?'unlock':'lock'}:${encodeURIComponent(vehicleId!)}`,promptLockLabel:t(locked!.value?'Unlock vehicle':'Lock vehicle'),promptLockEnabled:safeStationary(snapshot,now)}:{})};
+}
+
 /** Several fresh moving readings are required; walking speed and stationary drift do not qualify. */
 export class RidingPromptDetector {
  private first:Fix|null=null;private previous:Fix|null=null;private meters=0;private count=0;

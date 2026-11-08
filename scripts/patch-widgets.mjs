@@ -21,7 +21,7 @@ export function patchSources(widget,utils,views) {
  widget=protectActivityNodes(widget);
  widget=once(widget,'    if let node = nodes[sectionName] as? [String: Any] {','    if nodes["__velunivo_native"] as? Bool == true {\n      VelunivoActivitySection(context: context, sectionName: sectionName)\n    } else if let node = nodes[sectionName] as? [String: Any] {');
  widget=once(widget,'    if #available(iOS 18.0, *) {','    if nodes["__velunivo_native"] as? Bool == true {\n      VelunivoActivityBanner(context: context)\n    } else if #available(iOS 18.0, *) {');
- utils=once(utils,'  let layout = WidgetsStorage.getString(forKey: "__expo_widgets_live_activity_\\(name)_layout") ?? ""',`${marker}\n  if name == "VelunivoNavigation" || name == "VelunivoNavigationTest" || name == "VelunivoSharedTrip" {\n    return ["__velunivo_native": true]\n  }\n  let layout = WidgetsStorage.getString(forKey: "__expo_widgets_live_activity_\\(name)_layout") ?? ""`);
+ utils=once(utils,'  let layout = WidgetsStorage.getString(forKey: "__expo_widgets_live_activity_\\(name)_layout") ?? ""',`${marker}\n  if name == "VelunivoNavigation" || name == "VelunivoNavigationTest" || name == "VelunivoSharedTrip" || name == "VelunivoRecording" || name == "VelunivoRidingPrompt" {\n    return ["__velunivo_native": true]\n  }\n  let layout = WidgetsStorage.getString(forKey: "__expo_widgets_live_activity_\\(name)_layout") ?? ""`);
  return {widget:widget+`\n${marker}\n`+views,utils};
 }
 export function patchActivityPriority(source) {
@@ -41,7 +41,7 @@ export function applyPatch(directory=root) {
   widget=protectActivityNodes(widget);
   widget=widget.replace("VelunivoActivitySection(props: context.state.props, sectionName: sectionName)","VelunivoActivitySection(context: context, sectionName: sectionName)");
   widget=widget.split(`\n${marker}\n`)[0]+`\n${marker}\n`+views;
-  utils=utils.replace('name == "VelunivoNavigation" || name == "VelunivoNavigationTest" {','name == "VelunivoNavigation" || name == "VelunivoNavigationTest" || name == "VelunivoSharedTrip" {');
+  utils=utils.replace(/if name == "VelunivoNavigation"[^\n]*\{/, 'if name == "VelunivoNavigation" || name == "VelunivoNavigationTest" || name == "VelunivoSharedTrip" || name == "VelunivoRecording" || name == "VelunivoRidingPrompt" {');
   fs.writeFileSync(widgetPath,widget);fs.writeFileSync(utilsPath,utils);return;
  }
  const hashes=[['eb094a8dabfc256d5aaa3c85f31dc26f18264250992acd417da65aa811bd02f6',widget],['cca8d5a8d80fa9a21d863876f62c6c134fcb9d1155c04a00728479ff34776850',utils]];

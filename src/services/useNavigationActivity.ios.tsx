@@ -1,3 +1,5 @@
+import {ridingPromptProps} from '../core/ridingPrompt';
+import {bluetoothBridge} from '../bluetooth/service';
 import {activityTestData,ActivityTestKind} from '../core/activityTestData';
 import {t} from '../i18n/core';
 import {currentActivityExtras} from './activityExtras';
@@ -13,7 +15,7 @@ import { Route, Profile, NavigationOptions, Fix } from '../core/types';
 import { guidance } from '../core/navigation';
 let lastActivityError = '';
 let currentRideProps:NavigationActivity|undefined;
-export function inspectLiveActivity():ActivityReport { const checks=inspectActivityInstallation();let activeCount:number|null=null;try{activeCount=activity.getInstances().length+testActivity.getInstances().length+spectatorActivity.getInstances().length+recordingActivity.getInstances().length;}catch{}return {checks,activeCount,lastError:lastActivityError}; }
+export function inspectLiveActivity():ActivityReport { const checks=inspectActivityInstallation();let activeCount:number|null=null;try{activeCount=activity.getInstances().length+testActivity.getInstances().length+spectatorActivity.getInstances().length+recordingActivity.getInstances().length+ridingPromptActivity.getInstances().length;}catch{}return {checks,activeCount,lastError:lastActivityError}; }
 const NavigationLayout = (p: NavigationActivity, environment: LiveActivityEnvironment) => {
   'widget';
   const accent=environment.isLuminanceReduced ? '#FFFFFF' : '#28DAB0';
@@ -33,6 +35,8 @@ const NavigationLayout = (p: NavigationActivity, environment: LiveActivityEnviro
     expandedBottom: <VStack modifiers={[padding({all:12})]}><Text>{p.turn}</Text><Text>{p.arrival}{p.recording?'':` ${p.arrivalLabel||'Arrival'}`} · {p.minutes} · {p.remaining}</Text>{environment.isStale&&<Text modifiers={[foregroundStyle('#E49235')]}>{p.oldLabel}</Text>}{p.regroup&&<Text modifiers={[foregroundStyle('#FF5965'),font({weight:'bold'})]}>{p.regroup}</Text>}{badges}{actions}</VStack>,
   };
 };
+let lastPromptUpdate=0,lastPromptProps='';
+let promotedPrompt:LiveActivity<NavigationActivity>|null=null;
 let ridingPromptTimer:ReturnType<typeof setTimeout>|undefined;
 const ridingPromptActivity=createLiveActivity<NavigationActivity>('VelunivoRidingPrompt',NavigationLayout);
 const activity=createLiveActivity<NavigationActivity>('VelunivoNavigation',NavigationLayout);
@@ -68,8 +72,9 @@ function useActivity(factory:typeof activity,active: boolean, props: NavigationA
   useEffect(()=>{ if(!active)return;
     // The native ActivityKit factory synchronously reports availability.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    try { instance.current=factory.start(latest.current,link,new Date(Date.now()+30000)); lastActivityError=''; const report=inspectLiveActivity();setStatus(report.checks && Object.values(report.checks).some(value=>!value) ? activityDiagnosis(report) : 'Live Activity requested · check the Lock Screen'); } catch (error) { lastActivityError=error instanceof Error ? error.message : String(error);setStatus(`Live Activity could not start: ${lastActivityError}. Check iOS Settings → Apps → Velunivo → Live Activities.`); }
-    return ()=>{const live=instance.current;instance.current=null;last.current='';if(live)void live.end('immediate').catch(()=>{});};
+    try { const pending=factory===recordingActivity?ridingPromptActivity.getInstances()[0]:undefined;if(pending){if(ridingPromptTimer)clearTimeout(ridingPromptTimer);promotedPrompt=pending;instance.current=pending;void pending.update(latest.current,new Date(Date.now()+30000)).catch(error=>{lastActivityError=String(error);});}else{instance.current=factory.start(latest.current,link,new Date(Date.now()+30000));} lastActivityError=''; const report=inspectLiveActivity();setStatus(report.checks && Object.values(report.checks).some(value=>!value) ? activityDiagnosis(report) : 'Live Activity requested · check the Lock Screen'); } catch (error) { lastActivityError=error instanceof Error ? error.message : String(error);setStatus(`Live Activity could not start: ${lastActivityError}. Check iOS Settings → Apps → Velunivo → Live Activities.`); }
+    const foreground=AppState.addEventListener('change',state=>{if(state==='active'&&!instance.current){try{instance.current=factory.start(latest.current,link,new Date(Date.now()+30000));}catch(error){lastActivityError=String(error);}}});
+    return ()=>{foreground.remove();const live=instance.current;if(promotedPrompt===live)promotedPrompt=null;instance.current=null;last.current='';if(live)void live.end('immediate').catch(()=>{});};
   },[active,factory,link]);
   useEffect(()=>{ if(!active || !instance.current)return; const key=JSON.stringify(props);if(key===last.current)return;last.current=key;void instance.current.update(latest.current,new Date(Date.now()+30000)).catch(error=>{lastActivityError=error instanceof Error ? error.message : String(error);setStatus(`Live Activity could not update: ${lastActivityError}`);}); },[active,props,factory,link]);
   return {status};
@@ -84,11 +89,18 @@ export async function updateRideActivity(route:Route,profile:Profile & {id?:stri
 }
 export async function markActivityPaused() {try {for(const live of activity.getInstances())await live.update({...currentRideProps,batteryOld:true,turn:'Guidance paused · enable background location',symbol:'arrow.up',distance:'—',arrival:'—',minutes:'—',remaining:'—'},new Date());} catch { /* Unsupported extension. */ }}
 
-export async function updateRecordingActivity(props:NavigationActivity){try{for(const live of recordingActivity.getInstances())await live.update(props,new Date(Date.now()+30000));}catch(error){lastActivityError=error instanceof Error?error.message:String(error);}}
+export async function updateRecordingActivity(props:NavigationActivity){try{for(const live of [...recordingActivity.getInstances(),...(promotedPrompt?[promotedPrompt]:[])])await live.update(props,new Date(Date.now()+30000));}catch(error){lastActivityError=error instanceof Error?error.message:String(error);}}
 
 /** ActivityKit cannot request an ordinary local activity from arbitrary background execution. */
-export async function showRidingPromptActivity(){
- if(AppState.currentState!=='active')return false;
- try{if(ridingPromptTimer)clearTimeout(ridingPromptTimer);for(const live of ridingPromptActivity.getInstances())await live.end('immediate');ridingPromptActivity.start({ridingPrompt:true,turn:t('Are you riding?'),symbol:'arrow.up',distance:'',arrival:'',minutes:'',remaining:'',recordLabel:t('Start recording'),searchLabel:t('Find destination')},'velunivo:///',new Date(Date.now()+120000));ridingPromptTimer=setTimeout(()=>void stopRidingPromptActivity(),120000);return true;}catch{return false;}
+export async function showRidingPromptActivity(vehicleId?:string){
+ try{
+  const props=ridingPromptProps(bluetoothBridge.getSnapshot(),vehicleId),key=JSON.stringify(props);
+  if(lastPromptProps===key&&Date.now()-lastPromptUpdate<15000)return true;
+  const existing=ridingPromptActivity.getInstances().find(live=>live.getId()!==promotedPrompt?.getId());
+  if(!existing&&AppState.currentState!=='active')return false;
+  const stale=new Date(Date.now()+120000);
+  if(existing)await existing.update(props,stale);else ridingPromptActivity.start(props,'velunivo:///offline/record-trip',stale);
+  lastPromptProps=key;lastPromptUpdate=Date.now();if(ridingPromptTimer)clearTimeout(ridingPromptTimer);ridingPromptTimer=setTimeout(()=>void stopRidingPromptActivity(),120000);return true;
+ }catch(error){lastActivityError=String(error);return false;}
 }
-export async function stopRidingPromptActivity(){if(ridingPromptTimer)clearTimeout(ridingPromptTimer);ridingPromptTimer=undefined;try{for(const live of ridingPromptActivity.getInstances())await live.end('immediate');}catch{}}
+export async function stopRidingPromptActivity(){lastPromptProps='';lastPromptUpdate=0;if(ridingPromptTimer)clearTimeout(ridingPromptTimer);ridingPromptTimer=undefined;try{for(const live of ridingPromptActivity.getInstances())if(live.getId()!==promotedPrompt?.getId())await live.end('immediate');}catch{}}

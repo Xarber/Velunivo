@@ -1,10 +1,12 @@
+import {ridingPromptProps} from './ridingPrompt';
 import {NavigationActivity} from './liveActivity';
 import {batteryColor} from '../bluetooth/telemetry';
 import {t} from '../i18n/core';
-export type ActivityTestKind='navigation'|'recording'|'shared'|'regroup'|'join-approval'|'charging'|'stale';
+export type ActivityTestKind='navigation'|'recording'|'shared'|'regroup'|'join-approval'|'charging'|'stale'|'riding-prompt';
 /** All test kinds use the existing renderer, never a live ride's factory. */
 export function activityTestData(kind:ActivityTestKind='navigation',overrides:Partial<NavigationActivity>={},now=Date.now()):NavigationActivity {
  const base:NavigationActivity={actionLabel:t(kind==='join-approval'?'Review request':kind==='regroup'?'View group':'Open ride'),requestLabel:t('Join request'),updatedAt:now,turn:t('Live Activity test · Turn right'),symbol:'arrow.turn.up.right',distance:'100 m',arrival:new Date(now+600000).toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'}),minutes:'10 min',remaining:'2.5 km',arrivalLabel:t('Arrival'),oldLabel:t('Old'),batteryPercent:64,batterySymbol:'battery.75percent',batteryUpdatedAt:now,groupCount:3,viewerCount:2};
+ if(kind==='riding-prompt')return {...ridingPromptProps({state:'idle',message:'',fields:{},extensions:{}}),...overrides};
  const result={...base,...overrides};
  if(kind==='regroup')result.regroup=t('Regroup requested')+' · Alex';
  if(kind==='join-approval'){result.joinRequest='Alex';result.approveTarget='group-approval:TEST1234:00000000000000000000000000000000:1';result.declineTarget=result.approveTarget.slice(0,-1)+'0';}

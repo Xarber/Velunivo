@@ -1,17 +1,19 @@
+import {currentActivityExtras} from '../services/activityExtras';
+import {handleRidingPromptLock} from '../services/ridingPrompt';
+import {publishAutomaticRecordingView} from '../services/automaticRecordingView';
 import {wakeRegistrationDecision} from '../core/bluetoothStartup';
 import {canPairVehicle} from '../bluetooth/policy';
 import {diagnostic} from '../core/diagnosticEvents';
 import {useM365RideControls} from '../bluetooth/plugins/useM365RideControls';
 import {armAutomaticRideWake,stopAutomaticRideWake,setAutomaticRideWakeActivity} from '../services/automaticRideWake';
 // SPDX-License-Identifier: AGPL-3.0-only
-import React,{useCallback,useEffect,useRef,useState} from 'react';
-import {AppState,Platform,View} from 'react-native';
+import {useCallback,useEffect,useRef,useState} from 'react';
+import {AppState,Platform} from 'react-native';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {router} from 'expo-router';
+import {router,usePathname} from 'expo-router';
 import {useGroupActivity} from '../groups/useGroupActivity';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {AutomaticConnectionAlert,AutomaticRideDetector,AUTOMATIC_RIDE_COOLDOWN,AUTOMATIC_RIDE_DISCONNECT_GRACE} from '../core/automaticRide';
 import {useStore} from '../services/store';
 import {bluetoothBridge} from '../bluetooth/service';
@@ -25,27 +27,25 @@ import {requestRecordingStart} from '../services/recordingStartRequest';
 import {useRecordingActivity,updateRecordingActivity,showRidingPromptActivity,stopRidingPromptActivity} from '../services/useNavigationActivity';
 import {recordingActivity} from '../core/liveActivity';
 import {t} from '../i18n/core';
-import Text from './LocalizedText';
-import {publicError} from '../core/publicErrors';
-import {Button,usePalette} from './ui';
 const metadata={id:'automatic-bluetooth-ride',name:'Bluetooth ride',startLabel:'Trip start',endLabel:'Trip finish'};
 const noMotion={accelerometer:null,gyroscope:null},noCompass={heading:null,timestamp:0};
 /** A root-owned recorder survives tab changes. No background UI navigation is required. */
 export default function AutomaticRideRecorder(){
  const {profile,navigationOptions:n,ready,vehicleLocked,lockVehicle}=useStore();
+ const pathname=usePathname(),shownRecording=useRef(false);
  const {preferences,ready:bluetoothReady,associationsReady}=useBluetoothPreferences();
  const simulatedMode=n.developerMode&&preferences.simulateTelemetry;
- const snapshot=useBluetoothVehicle(profile.id),p=usePalette(),insets=useSafeAreaInsets();
- const [active,setActive]=useState(false),[saving,setSaving]=useState(false),[foreground,setForeground]=useState(AppState.currentState==='active'),[consented,setConsented]=useState(false),[consentLoaded,setConsentLoaded]=useState(false),[now,setNow]=useState(()=>Date.now()),[error,setError]=useState('');
+ const snapshot=useBluetoothVehicle(profile.id);
+ const [active,setActive]=useState(false),[,setSaving]=useState(false),[foreground,setForeground]=useState(AppState.currentState==='active'),[consented,setConsented]=useState(false),[consentLoaded,setConsentLoaded]=useState(false),[now,setNow]=useState(()=>Date.now()),[peak,setPeak]=useState(0),[error,setError]=useState('');
  const policy=useRef({enabled:false,notifyOnly:false});useEffect(()=>{policy.current={enabled:consented&&n.autoBluetoothRecording&&!simulatedMode,notifyOnly:n.bluetoothRecordingNotifyOnly};},[consented,n.autoBluetoothRecording,n.bluetoothRecordingNotifyOnly,simulatedMode]);
  const connectionAlert=useRef(new AutomaticConnectionAlert());
  const detector=useRef(new AutomaticRideDetector()),cooldown=useRef(0),armed=useRef(false),own=useRef(false),ending=useRef(false),disconnectedAt=useRef<number|null>(null);
  useM365RideControls(active,profile.id);
  useBluetoothLease(profile.id,active||(ready&&consented&&n.autoBluetoothRecording&&!simulatedMode));
  const recorder=useRideRecorder(active,true,false,metadata,profile,noMotion,noCompass,false);
- const accept=useCallback(async(fix:import('../core/types').Fix)=>{await recorder.accept(fix);const ride=recorder.snapshot();if(n.liveActivities&&ride)await updateRecordingActivity(recordingActivity(fix,ride.meters,ride.startedAt,n.unit,fix.timestamp));},[recorder,n.liveActivities,n.unit]);
+ const accept=useCallback(async(fix:import('../core/types').Fix)=>{if(fix.speed!==null)setPeak(value=>Math.max(value,fix.speed!*3.6));await recorder.accept(fix);const ride=recorder.snapshot();if(n.liveActivities&&ride)await updateRecordingActivity({...recordingActivity(fix,ride.meters,ride.startedAt,n.unit,fix.timestamp),...currentActivityExtras(profile.id,fix.timestamp)});},[recorder,n.liveActivities,n.unit,profile.id]);
  const location=useTripLocation(active,true,accept);
- useRecordingActivity(active&&n.liveActivities,recordingActivity(location.fix,recorder.record?.meters??0,recorder.record?.startedAt??now,n.unit,now));
+ useRecordingActivity(active&&n.liveActivities,{...recordingActivity(location.fix,recorder.record?.meters??0,recorder.record?.startedAt??now,n.unit,now),...currentActivityExtras(profile.id,now)});
  const finish=useCallback(async()=>{
   if(!own.current)return true;if(ending.current)return false;
   ending.current=true;setSaving(true);cooldown.current=Date.now()+AUTOMATIC_RIDE_COOLDOWN;
@@ -53,6 +53,9 @@ export default function AutomaticRideRecorder(){
   finally{ending.current=false;setSaving(false);}
  },[recorder,lockVehicle]);
  useGroupActivity(active,finish);
+ useEffect(()=>{publishAutomaticRecordingView(active?{peak,recorder:{...recorder,error:error||recorder.error,finish},location}:null);},[active,recorder,finish,location,error,peak]);
+ useEffect(()=>()=>publishAutomaticRecordingView(null),[]);
+ useEffect(()=>{if(!active||!foreground){shownRecording.current=false;return;}if(shownRecording.current)return;shownRecording.current=true;if(pathname!=='/offline/record-trip')router.replace('/offline/record-trip');},[active,foreground,pathname]);
  const finishRef=useRef(finish);useEffect(()=>{finishRef.current=finish;},[finish]);
  useEffect(()=>{let cancelled=false;void AsyncStorage.getItem('automatic-ride-consent-v1').then(v=>{if(!cancelled)setConsented(v==='true');}).catch(()=>{}).finally(()=>{if(!cancelled)setConsentLoaded(true);});return()=>{cancelled=true;};},[n.autoBluetoothRecording]);
  useEffect(()=>{void setAutomaticRideWakeActivity(vehicleLocked).catch(()=>{});},[vehicleLocked]);
@@ -73,6 +76,7 @@ export default function AutomaticRideRecorder(){
  // Monitoring is armed while foregrounded with an actual connection and existing
  // Always permission. It stays active when locked, without collecting ride history.
  const connected=snapshot.state==='connected'&&!snapshot.simulated&&snapshot.vehicleId===profile.id;
+ useEffect(()=>{if(Platform.OS!=='ios')return;if(ready&&consented&&n.autoBluetoothRecording&&n.liveActivities&&connected&&!active&&!vehicleLocked&&Date.now()>=cooldown.current)void showRidingPromptActivity(profile.id);else if(!active)void stopRidingPromptActivity();},[ready,consented,n.autoBluetoothRecording,n.liveActivities,connected,active,vehicleLocked,foreground,profile.id,snapshot]);
  useEffect(()=>{
   if(Platform.OS==='web'||!ready||!consented||!n.autoBluetoothRecording||!connected||vehicleLocked||active)return;
   let cancelled=false,wakeArmed=false,arming=false,stop:(()=>Promise<void>)|undefined;
@@ -108,10 +112,10 @@ export default function AutomaticRideRecorder(){
    const current=bluetoothBridge.getSnapshot();
    if(!policy.current.enabled||isRideLocked()||current.state!=='connected'||current.simulated||current.vehicleId!==profile.id)return;
    if(policy.current.notifyOnly||!permission.granted||(!armed.current&&AppState.currentState!=='active')){
-    if(n.liveActivities&&await showRidingPromptActivity())return;
+    if(n.liveActivities&&await showRidingPromptActivity(profile.id))return;
     await notifyRideEvent('bluetooth-ride-detected','Looks like you’re riding',t('Tap to start recording your Bluetooth ride.'),'velunivo:///offline/record-trip');return;
    }
-   void stopRidingPromptActivity();own.current=true;lockVehicle(true);setRideScreen('/');setActive(true);setError('');
+   own.current=true;lockVehicle(true);setRideScreen('/offline/record-trip');setPeak(0);setActive(true);setError('');
    await notifyRideEvent('bluetooth-recording-started','Automatic recording started',t('Your ride is being recorded. Open Velunivo to finish and save it.'));
   })().catch(()=>setError('Automatic recording could not start. Open the app and try again.'));
  },[snapshot,profile.id,ready,consented,n.autoBluetoothRecording,n.bluetoothRecordingNotifyOnly,n.liveActivities,active,lockVehicle]);
@@ -140,9 +144,8 @@ export default function AutomaticRideRecorder(){
 
  useEffect(()=>{
   if(Platform.OS!=='ios')return;let alive=true,sub:{remove():void}|undefined;
-  void import('expo-widgets').then(({addUserInteractionListener})=>{if(!alive)return;sub=addUserInteractionListener(event=>{if(isRideLocked()||Math.abs(Date.now()-event.timestamp)>120000)return;if(event.target==='ride-prompt:record'){void stopRidingPromptActivity();requestRecordingStart();router.push('/offline/record-trip');}else if(event.target==='ride-prompt:search'){void stopRidingPromptActivity();router.push('/?plan=1');}});}).catch(()=>{});
+  void import('expo-widgets').then(({addUserInteractionListener})=>{if(!alive)return;sub=addUserInteractionListener(event=>{if(isRideLocked()||Math.abs(Date.now()-event.timestamp)>120000||event.source!=='VelunivoRidingPrompt')return;if(event.target?.startsWith('ride-prompt:lock:')||event.target?.startsWith('ride-prompt:unlock:')){void handleRidingPromptLock(event.target).catch(()=>notifyRideEvent('vehicle-control-failed','Vehicle control failed',t('The scooter did not confirm the lock change. Check it before leaving.')));return;}if(event.target==='ride-prompt:record'){void stopRidingPromptActivity();requestRecordingStart();router.push('/offline/record-trip');}else if(event.target==='ride-prompt:search'){void stopRidingPromptActivity();router.push('/?plan=1');}});}).catch(()=>{});
   return()=>{alive=false;sub?.remove();};
  },[]);
- if(!active||!foreground)return null;
- return <View style={{position:'absolute',top:insets.top+6,left:16+insets.left,right:16+insets.right,zIndex:3000,backgroundColor:p.card,borderRadius:18,padding:12,gap:6}}><Text style={{color:p.text,fontWeight:'700'}}>Automatic recording</Text><Button title={t(saving?'Saving…':'Finish & save trip')} icon="stop-circle-outline" disabled={saving} onPress={()=>void finish()}/>{!!(error||recorder.error||location.error)&&<Text style={{color:p.muted,fontSize:12}}>{publicError(error||recorder.error||location.error,n.developerMode)}</Text>}</View>;
+ return null;
 }

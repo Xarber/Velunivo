@@ -17,5 +17,5 @@ export function useRecordingActivity(_active:boolean,_props:NavigationActivity){
 
 export async function updateRecordingActivity(_props:NavigationActivity){}
 
-export async function showRidingPromptActivity(){return false;}
+export async function showRidingPromptActivity(_vehicleId?:string){return false;}
 export async function stopRidingPromptActivity(){}
