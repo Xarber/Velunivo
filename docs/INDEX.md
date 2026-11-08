@@ -23,3 +23,4 @@ Some older documents describe historical snapshots, not current guarantees. The 
 
 - Current UADS adoption: [section 36 scope, implementation and validation](reports/UADS_36_2026-11-07.md).
 - Web home: [first visit, remembered app entry and web-only logo shortcut](features/WEB_ENTRY.md).
+- Automatic ride UI and release controls: [2.8.6 causes, behavior, boundaries and evidence](reports/RIDE_RECOVERY_2.8.6.md).

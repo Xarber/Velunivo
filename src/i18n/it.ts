@@ -1,5 +1,6 @@
 /** English source messages are stable keys. User-authored content is never stored translated. */
 export const italian:Record<string,string>={
+"Automatic rides open the recording screen, with clearer ride controls and release options.":"I viaggi automatici aprono la schermata di registrazione, con comandi e opzioni di pubblicazione più chiari.",
 "About Velunivo":"Informazioni su Velunivo","A welcoming web home that remembers when you open the app.":"Una pagina iniziale sul web che ricorda quando apri l’app.",
 "Clearer information, accessible motion and a dedicated web introduction.":"Informazioni più chiare, animazioni accessibili e una pagina web di presentazione dedicata.",
 "Invalid scooter pairing backup.":"Backup dell’associazione del monopattino non valido.","Locked credential access is available on iOS only.":"L’accesso alle credenziali a schermo bloccato è disponibile solo su iOS.","Scooter pairing must use the private device-sync channel.":"I dati di associazione devono usare il canale privato di sincronizzazione.",
