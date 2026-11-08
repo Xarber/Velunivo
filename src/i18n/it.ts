@@ -1,5 +1,6 @@
 /** English source messages are stable keys. User-authored content is never stored translated. */
 export const italian:Record<string,string>={
+"Smaller, better-aligned riding prompts with matching lock controls and a cleaner Dynamic Island.":"Avvisi di viaggio più compatti e allineati, con comandi di blocco coerenti e una Dynamic Island più pulita.",
 "A more compact riding prompt, with vehicle icons and all actions in one row.":"Un avviso di viaggio più compatto, con l’icona del veicolo e tutti i comandi su una riga.",
 "Automatic rides open the recording screen, with clearer ride controls and release options.":"I viaggi automatici aprono la schermata di registrazione, con comandi e opzioni di pubblicazione più chiari.",
 "About Velunivo":"Informazioni su Velunivo","A welcoming web home that remembers when you open the app.":"Una pagina iniziale sul web che ricorda quando apri l’app.",

@@ -97,10 +97,10 @@ private struct VelunivoActivitySection: View {
     let data = VelunivoActivityData(context.state.props)
     if data.ridingPrompt {
       switch sectionName {
-      case "expandedLeading": Image(systemName: data.promptVehicleSymbol).font(.system(size: 32, weight: .semibold)).foregroundStyle(Color.mint)
-      case "compactLeading", "minimal": Image(systemName: data.promptVehicleSymbol).foregroundStyle(Color.mint)
-      case "compactTrailing": Text("?").foregroundStyle(Color.mint)
-      case "expandedBottom": VelunivoRidingPromptContent(data: data, source: context.state.name, stale: velunivoActivityIsStale(context), showVehicleIcon: false).padding(.horizontal, 8).padding(.bottom, 6)
+      case "expandedLeading": EmptyView()
+      case "compactLeading", "minimal": Image(systemName: data.promptVehicleSymbol).font(.system(size: 16, weight: .medium)).foregroundStyle(Color.mint)
+      case "compactTrailing": EmptyView()
+      case "expandedBottom": VelunivoRidingPromptContent(data: data, source: context.state.name, stale: velunivoActivityIsStale(context)).padding(.horizontal, 8).padding(.bottom, 6)
       default: EmptyView()
       }
     } else {
@@ -206,11 +206,11 @@ private struct VelunivoRidingPromptContent: View {
   let data: VelunivoActivityData
   let source: String
   let stale: Bool
-  var showVehicleIcon = true
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
       HStack(spacing: 8) {
-        if showVehicleIcon { Image(systemName: data.promptVehicleSymbol).font(.title2).foregroundStyle(Color.mint) }
+        Image(systemName: data.promptVehicleSymbol)
+          .font(.system(size: 18, weight: .medium)).frame(width: 24, height: 24).foregroundStyle(Color.mint)
         Text("Velunivo").font(.headline)
       }
       Text(data.turn).font(.subheadline)
@@ -220,15 +220,14 @@ private struct VelunivoRidingPromptContent: View {
           Button(intent: VelunivoRidePromptIntent(source: source, target: "ride-prompt:record")) {
             Label(data.values["recordLabel"] as? String ?? "Start recording", systemImage: "play.fill")
               .lineLimit(1).minimumScaleFactor(0.75)
-          }.buttonStyle(.borderedProminent).tint(.mint).foregroundStyle(.black)
+          }.buttonStyle(.borderedProminent).controlSize(.small).tint(.mint).foregroundStyle(.black).frame(height: 32)
           Button(intent: VelunivoRidePromptIntent(source: source, target: "ride-prompt:search")) {
             Text(data.values["searchLabel"] as? String ?? "Find destination").lineLimit(1).minimumScaleFactor(0.75)
-          }.buttonStyle(.plain).foregroundStyle(Color.mint)
+          }.buttonStyle(.plain).foregroundStyle(Color.mint).frame(height: 32)
           if let target = data.values["promptLockTarget"] as? String {
             Button(intent: LiveActivityUserInteraction(source: source, target: target)) {
               Image(systemName: target.hasPrefix("ride-prompt:unlock:") ? "lock.open" : "lock")
-                .frame(width: 28, height: 28)
-            }.buttonStyle(.bordered).tint(.mint).fixedSize()
+            }.buttonStyle(.plain).foregroundStyle(Color.mint).frame(width: 32, height: 32).fixedSize()
               .disabled(!(data.values["promptLockEnabled"] as? Bool ?? false))
               .accessibilityLabel(data.values["promptLockLabel"] as? String ?? "Vehicle lock")
           }

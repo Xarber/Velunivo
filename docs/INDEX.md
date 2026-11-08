@@ -26,3 +26,5 @@ Some older documents describe historical snapshots, not current guarantees. The 
 - Automatic ride UI and release controls: [2.8.6 causes, behavior, boundaries and evidence](reports/RIDE_RECOVERY_2.8.6.md).
 
 - [Compact riding prompt 2.8.7 validation](reports/RIDING_PROMPT_2.8.7.md)
+
+- [Riding prompt alignment 2.8.8 validation](reports/RIDING_PROMPT_2.8.8.md)
