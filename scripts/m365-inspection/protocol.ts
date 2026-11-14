@@ -56,10 +56,11 @@ export function inspectionReply(name: InspectionRead, body: Uint8Array): Uint8Ar
 
 export interface InspectionResult {
   schema: 1;
-  probeRevision: 'readonly-shfw-3';
+  probeRevision: 'readonly-shfw-4';
   capturedAt: string;
   provenance: 'authenticated-vehicle-response';
   firmwareBytes: number[];
+  ridingMode: {rawWord: number; capturedAt: string} | null;
   batteryPercent: number;
   speedMetresPerSecond: number;
   blocks: Partial<Record<InspectionRead, {register: number; bytes: number[]; capturedAt: string}>>;
@@ -98,8 +99,15 @@ export async function inspectMiSession(link: BLELink, uart: MiUART, signal: Abor
       throw new Error('A stationary compatible controller response is required');
     }
     const firmwareBytes = Array.from(await ordinaryRead(0x1a, 2));
-    const result: InspectionResult = {schema: 1, probeRevision: 'readonly-shfw-3', capturedAt: new Date().toISOString(),
-      provenance: 'authenticated-vehicle-response', firmwareBytes, batteryPercent, speedMetresPerSecond, blocks: {}, failures: []};
+    let ridingMode: InspectionResult['ridingMode'] = null;
+    try {
+      const mode = await ordinaryRead(0x75, 2);
+      ridingMode = {rawWord: new DataView(mode.buffer, mode.byteOffset, mode.byteLength).getUint16(0, true), capturedAt: new Date().toISOString()};
+    } catch (error) {
+      if (signal.aborted || disconnected) throw error;
+    }
+    const result: InspectionResult = {schema: 1, probeRevision: 'readonly-shfw-4', capturedAt: new Date().toISOString(),
+      provenance: 'authenticated-vehicle-response', firmwareBytes, ridingMode, batteryPercent, speedMetresPerSecond, blocks: {}, failures: []};
     for (const name of Object.keys(inspectionReads) as InspectionRead[]) {
       try {
         const response = await exchange(inspectionReadBody(name), b => inspectionReply(name, b) !== undefined);

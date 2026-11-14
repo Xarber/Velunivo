@@ -56,6 +56,7 @@ function fixture(speed = 0) {
       if (body[1] === 1 && body[2] === 0xb4) {
         data[0] = 60; new DataView(data.buffer).setInt16(2, speed, true);
       } else if (body[1] === 1 && body[2] === 0x1a) {data.set([0x22, 3]);}
+      else if (body[1] === 1 && body[2] === 0x75) {data.set([2, 0]);}
       else {
         assert.equal(body[1], 0x31); assert.equal(body[4], 0);
         assert.ok(Object.values(inspectionReads).some(r => r.register === body[2] && r.length === length));
@@ -74,7 +75,8 @@ test('authenticated fragmented synthetic responses produce raw blocks, without s
   assert.equal(Object.keys(result.blocks).length, Object.keys(inspectionReads).length);
   assert.deepEqual(result.failures, []);
   assert.deepEqual(result.blocks.activeProfile?.bytes, [3, 0]);
-  assert.equal(f.sent.length, Object.keys(inspectionReads).length + 2); assert.equal(f.stopped(), true);
+  assert.equal(result.ridingMode?.rawWord, 2);
+  assert.equal(f.sent.length, Object.keys(inspectionReads).length + 3); assert.equal(f.stopped(), true);
   assert.equal(/token|appIV|deviceIV|serial|synthetic-only/.test(JSON.stringify(result)), false);
 });
 
