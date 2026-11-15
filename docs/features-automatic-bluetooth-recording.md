@@ -69,3 +69,7 @@ Validation must include enabling/disabling on a physical locked iPhone, after-fi
 ## 2.8.6 recording dashboard and prompt activity
 
 Automatic rides now surface through the standard recording screen on foreground/resume, backed by the same root-owned recorder rather than a second recording or a home banner. Vehicle/settings subpages retain a return-to-activity control. The native Are you riding? layout is armed while foregrounded and connected, with explicit record/search actions and a capability/freshness/stationary-checked lock action. An already-armed activity can promote to a recording while backgrounded. A process relaunched into background without an existing activity still uses local notifications: there is no claim of bypassing ActivityKit foreground-start requirements. Detailed root causes, validation and release controls are in [2.8.6 report](reports/RIDE_RECOVERY_2.8.6.md).
+
+### iOS location indicator after a cold wake
+
+Passive ride detection uses Expo background location with the optional blue location indicator disabled. Active navigation and recording retain their existing indicator setting. iOS controls mandatory location indicators. A GPS wake can update an existing ride prompt but cannot create a fresh local Live Activity from that background callback. When none exists, the notification fallback remains available.
