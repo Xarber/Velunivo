@@ -24,3 +24,7 @@ Local lint and TypeScript checks passed. Nine focused tests passed on Node 24, i
 Open [Developer apps](https://id.xcenter.it/developer). Use **Velunivo** as the name, **https://github.com/Xarber/Velunivo** as the repository and **Ride tracking and optional private synchronization of ride summaries** as the description. Select **Website backend** and enter the exact callback above. An optional icon can use Velunivo’s existing branding.
 
 After registration, the portal issues its own DNS challenge. Use the exact TXT host and value it displays, publish it with the domain’s DNS provider, then return to Registered apps to activate. The confidential client secret is for the Velunivo server only. A native app can later use this backend registration with an independently verified app link and one-time handoff.
+
+## Production deployment receipt
+
+X-Center now serves web commit `577d5f1d8a6a2bad9994e8f54e20880e4f76e978` with the matching account-sync server. DNS publishes the callback verification TXT record. A public sign-in start sent the registered client to the issuer interaction screen. Public web and peer health passed, including a fresh WSS signaling handshake. The credential is loaded from a root-readable server environment file. The prior web and runtime selectors are recorded in `rollback-account-sync-targets.txt` on the host. A completed provider consent and real two-browser sync have yet to be verified.
