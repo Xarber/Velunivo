@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { Router, json, type Request } from 'express';
 import * as oidc from 'openid-client';
 
@@ -31,7 +31,7 @@ export function accountSync(clientId?: string, secret?: string) {
   const router = Router();
   const enabled = !!secret && !!clientId && /^[a-zA-Z0-9_-]{1,100}$/.test(clientId);
   const transactions = new ExpiringStore<{ state: string; nonce: string; verifier: string }>();
-  const sessions = new ExpiringStore<{ subject: string; token: string; binding: string }>();
+  const sessions = new ExpiringStore<{ subject: string; token: string; binding: string; profile: Record<string, string> }>();
 
   async function config() {
     const configuration = await oidc.discovery(new URL(issuer), clientId!, undefined, oidc.ClientSecretBasic(secret!));
@@ -46,7 +46,7 @@ export function accountSync(clientId?: string, secret?: string) {
   router.use((_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
   router.get('/status', (req, res) => {
     const session = sessions.get(cookie(req, 'velunivo_session'));
-    res.json({ enabled, signedIn: !!session, binding: session?.binding });
+    res.json({ enabled, signedIn: !!session, binding: session?.binding, profile: session?.profile, account: session && createHash('sha256').update(session.subject).digest('hex') });
   });
   router.use((req, res, next) => {
     if (!enabled) { res.sendStatus(503); return; }
@@ -59,7 +59,7 @@ export function accountSync(clientId?: string, secret?: string) {
     const transaction = { state: id(), nonce: id(), verifier: oidc.randomPKCECodeVerifier() };
     const key = id();
     const url = oidc.buildAuthorizationUrl(configuration, {
-      redirect_uri: redirect, response_type: 'code', scope: 'openid app_data',
+      redirect_uri: redirect, response_type: 'code', scope: 'openid profile email age_range app_data',
       state: transaction.state, nonce: transaction.nonce,
       code_challenge: await oidc.calculatePKCECodeChallenge(transaction.verifier), code_challenge_method: 'S256',
     });
@@ -83,10 +83,23 @@ export function accountSync(clientId?: string, secret?: string) {
       });
       const subject = tokens.claims()?.sub;
       if (!subject || !tokens.scope?.split(' ').includes('app_data')) throw new Error('Sync permission declined');
-      await oidc.fetchUserInfo(configuration, tokens.access_token, subject);
+      const info = await oidc.fetchUserInfo(configuration, tokens.access_token, subject);
+      const granted = new Set(tokens.scope?.split(' '));
+      const profile: Record<string, string> = {};
+      for (const [scope, fields] of [
+        ['profile', ['name', 'preferred_username']],
+        ['email', ['email']],
+        ['age_range', ['age_range']],
+      ] as const) {
+        if (!granted.has(scope)) continue;
+        for (const field of fields) {
+          const value = info[field];
+          if (typeof value === 'string' && value.length <= 254) profile[field] = value;
+        }
+      }
       const duration = Math.min(3600, tokens.expires_in ?? 300) * 1000;
       const session = id();
-      sessions.set(session, { subject, token: tokens.access_token, binding: id() }, duration);
+      sessions.set(session, { subject, token: tokens.access_token, binding: id(), profile }, duration);
       sessions.delete(cookie(req, 'velunivo_session'));
       res.cookie('velunivo_session', session, { ...cookieOptions, maxAge: duration });
       res.redirect(303, '/settings/data?account=connected');

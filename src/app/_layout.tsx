@@ -1,3 +1,4 @@
+import AccountSyncWorker from '../components/AccountSyncWorker';
 import WebEntryGate from '../components/WebEntryGate';
 import AutomaticRideRecorder from '../components/AutomaticRideRecorder';
 import RuntimeScreenDiagnostics from '../components/RuntimeScreenDiagnostics';
@@ -26,5 +27,5 @@ import { usePalette } from '../components/ui';
 export default function Layout(){return <WebEntryGate><AppLayout/></WebEntryGate>;}
 function AppLayout() {
   const [dataEpoch,setDataEpoch]=useState(0);useEffect(()=>subscribeDataChange(()=>setDataEpoch(v=>v+1)),[]);const p = usePalette();const language=useLanguage();useEffect(()=>{void loadLanguage();const state=AppState.addEventListener('change',s=>{if(s==='active')notifySystemLanguage();});if(Platform.OS==='web')window.addEventListener('languagechange',notifySystemLanguage);return()=>{state.remove();if(Platform.OS==='web')window.removeEventListener('languagechange',notifySystemLanguage);};},[]);useEffect(()=>{if(Platform.OS==='web')document.documentElement.lang=language.language;},[language.choice,language.language]);
-  return <GestureHandlerRootView style={{flex:1}}><PairedDeviceSync/><StoreProvider key={dataEpoch}><PluginProvider><CosmeticThemeProvider><BluetoothProvider><GroupProvider><RuntimeScreenDiagnostics/><AppIntroduction /><ScratchRecap/><BatteryUsagePrompt /><ShortRideNotice /><PwaLifecycle /><WebMotion /><StatusBar style={p.dark ? 'light' : 'dark'} /><KeyboardPage><Stack screenOptions={{headerShown:false}}><Stack.Screen name="(tabs)"/><Stack.Screen name="share"/></Stack></KeyboardPage><AutomaticRideRecorder/></GroupProvider></BluetoothProvider></CosmeticThemeProvider></PluginProvider></StoreProvider></GestureHandlerRootView>;
+  return <GestureHandlerRootView style={{flex:1}}><PairedDeviceSync/><AccountSyncWorker/><StoreProvider key={dataEpoch}><PluginProvider><CosmeticThemeProvider><BluetoothProvider><GroupProvider><RuntimeScreenDiagnostics/><AppIntroduction /><ScratchRecap/><BatteryUsagePrompt /><ShortRideNotice /><PwaLifecycle /><WebMotion /><StatusBar style={p.dark ? 'light' : 'dark'} /><KeyboardPage><Stack screenOptions={{headerShown:false}}><Stack.Screen name="(tabs)"/><Stack.Screen name="share"/></Stack></KeyboardPage><AutomaticRideRecorder/></GroupProvider></BluetoothProvider></CosmeticThemeProvider></PluginProvider></StoreProvider></GestureHandlerRootView>;
 }
