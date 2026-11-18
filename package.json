@@ -71,6 +71,7 @@
     "@types/geojson": "^7946.0.16",
     "@types/react": "~19.2.2",
     "esbuild": "^0.28.2",
+    "openid-client": "^6.9.0",
     "sharp": "^0.35.5",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3"

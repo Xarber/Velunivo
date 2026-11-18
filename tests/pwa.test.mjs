@@ -6,3 +6,13 @@ test('manifest uses real icon sizes and in-scope shortcut destinations',()=>{con
 
 test('landing navigation cannot replace the cached application shell',async()=>{const {events,stores}=worker(async()=>new Response('landing'));stores.set('/index.html',new Response('app'));let result;events.fetch({request:{url:'https://velunivo.test/about.html',method:'GET',mode:'navigate'},respondWith(p){result=p;}});assert.equal(await(await result).text(),'landing');assert.equal(await stores.get('/index.html').text(),'app');assert.equal(await stores.get('/about.html').text(),'landing');});
 test('offline landing uses its own cache, and normal navigation keeps the app shell',async()=>{const {events,stores}=worker();stores.set('/index.html',new Response('app'));stores.set('/about.html',new Response('landing'));for(const [path,expected] of [['/about.html','landing'],['/offline','app']]){let result;events.fetch({request:{url:'https://velunivo.test'+path,method:'GET',mode:'navigate'},respondWith(p){result=p;}});assert.equal(await(await result).text(),expected);}});
+
+test('account API navigations bypass the offline app shell',()=>{
+ const {events}=worker();
+ let intercepted=false;
+ events.fetch({
+  request:{url:'https://velunivo.test/api/account/callback?code=one-time',method:'GET',mode:'navigate'},
+  respondWith(){intercepted=true;},
+ });
+ assert.equal(intercepted,false);
+});

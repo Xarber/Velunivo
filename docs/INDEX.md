@@ -28,3 +28,5 @@ Some older documents describe historical snapshots, not current guarantees. The 
 - [Compact riding prompt 2.8.7 validation](reports/RIDING_PROMPT_2.8.7.md)
 
 - [Riding prompt alignment 2.8.8 validation](reports/RIDING_PROMPT_2.8.8.md)
+
+- [X-Center ID summary sync](features/ACCOUNT_SYNC.md) and [active development queue](ACTIVE_TASKS.md).
