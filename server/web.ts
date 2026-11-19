@@ -15,10 +15,7 @@ export function createWebServer(directory:string){
  app.use('/peer',ExpressPeerServer(server,{path:'/',proxied:process.env.BEHIND_PROXY==='1',allow_discovery:false,concurrent_limit:250,expire_timeout:30000,corsOptions:{origin:process.env.SHARE_ORIGIN || true}}));
  const transit=createTransitService();
  app.get('/api/transit',async(req,res)=>{res.setHeader('Access-Control-Allow-Origin','*');const key=transitBounds(req.query.bbox);if(!key)return res.status(400).json({error:'Choose a smaller map area.'});try{const text=await transit.get(key);res.setHeader('Cache-Control','public, max-age=300');res.type('application/json').send(text);}catch{res.status(503).json({error:'Transit service unavailable'});}});
- app.use('/api/account', accountSync(process.env.XCENTER_ID_CLIENT_ID, process.env.XCENTER_ID_CLIENT_SECRET, {
-   ios: !!appleSiteAssociation(process.env.APPLE_TEAM_ID || '', process.env.APP_IDENTIFIER),
-   android: !!androidAssetLinks(process.env.ANDROID_CERT_FINGERPRINTS || '', process.env.APP_IDENTIFIER),
- }));
+ app.use('/api/account', accountSync(process.env.XCENTER_ID_CLIENT_ID, process.env.XCENTER_ID_CLIENT_SECRET));
  app.get('/health',(_req,res)=>res.json({web:true,peer:true}));
  app.get('/.well-known/apple-app-site-association',(_req,res)=>{const data=appleSiteAssociation(process.env.APPLE_TEAM_ID||'',process.env.APP_IDENTIFIER);if(!data)return res.status(404).end();res.setHeader('Cache-Control','public, max-age=300');res.json(data);});
  app.get('/.well-known/assetlinks.json',(_req,res)=>{const data=androidAssetLinks(process.env.ANDROID_CERT_FINGERPRINTS||'',process.env.APP_IDENTIFIER);if(!data)return res.status(404).end();res.setHeader('Cache-Control','public, max-age=300');res.json(data);});

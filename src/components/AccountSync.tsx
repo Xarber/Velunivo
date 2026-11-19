@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { startAccountSignIn, signOutAccount } from '../services/accountSession';
+import { startAccountSignIn, signOutAccount, finishAccountSignIn } from '../services/accountSession';
 import { observeAccountSync, refreshAccountSync } from './AccountSyncWorker';
 import React, { useEffect, useState } from 'react';
-import { Alert, Platform, Switch, View } from 'react-native';
+import { Alert, AppState, Platform, Switch, View } from 'react-native';
 import Text from './LocalizedText';
 import { Button, usePalette } from './ui';
 import { categories, consentKey, readSummary, request, type AccountStatus, type Category, type SummaryRecord } from '../services/accountSync';
@@ -17,7 +17,28 @@ export default function AccountSync() {
     new URLSearchParams(window.location.search).get('account') === 'failed'
     ? 'Sign-in did not complete. Please try again.' : '');
   useEffect(() => {
-    void request('status').then(response => response.json()).then(setStatus).catch(() => setStatus({ enabled: false, signedIn: false }));
+    let active = true;
+    let checking = false;
+    const check = async () => {
+      if (checking || !active || (Platform.OS !== 'web' && AppState.currentState === 'background')) return;
+      checking = true;
+      try {
+        const result = await finishAccountSignIn();
+        if (!active) return;
+        if (result === 'connected' || result === 'expired') {
+          setMessage(result === 'connected' ? 'Connected to X-Center ID.' : 'Sign-in expired or was declined. Try again.');
+        }
+        const response = await request('status');
+        if (active) setStatus(await response.json());
+        if (result === 'connected') refreshAccountSync();
+      } catch {
+        // Keep an interrupted browser handoff so the next foreground check can retry.
+      } finally { checking = false; }
+    };
+    void check();
+    const subscription = AppState.addEventListener('change', state => { if (state === 'active') void check(); });
+    const timer = Platform.OS === 'web' ? undefined : setInterval(() => void check(), 5000);
+    return () => { active = false; subscription.remove(); clearInterval(timer); };
   }, []);
   useEffect(() => {
     if (!status?.signedIn) return;
@@ -38,9 +59,6 @@ export default function AccountSync() {
   }, [status?.account]);
   if (!status?.enabled) return <Text style={{ color: palette.muted }}>{status ? 'X-Center ID is unavailable on this server.' : 'Checking X-Center ID availability…'}</Text>;
 
-  const nativeLinkReady = Platform.OS === 'web' ||
-    (Platform.OS === 'ios' ? status.nativeLinks?.ios : status.nativeLinks?.android);
-
   async function run(task: () => Promise<void>) {
     setBusy(true);
     setMessage('');
@@ -58,9 +76,11 @@ export default function AccountSync() {
   return <View style={{ gap: 10, padding: 16, borderWidth: 1, borderColor: palette.muted, borderRadius: 14 }}>
     <Text style={{ color: palette.text, fontWeight: '700' }}>X-Center ID sync</Text>
     <Text style={{ color: palette.muted }}>Signing in enables automatic sync for recent neighborhood names and 30-day ride totals. You can pause either category. Photon receives approximate destinations to look up neighborhood names. Full rides and GPS tracks stay on this device.</Text>
-    {!status.signedIn ? nativeLinkReady ? <Button title="Sign in with X-Center ID" icon="person-circle-outline" disabled={busy}
-      onPress={() => void run(startAccountSignIn)}/> :
-      <Text style={{ color: palette.muted }}>Sign-in is unavailable until the server can verify links for this app.</Text> : <>
+    {!status.signedIn ? <Button title="Sign in with X-Center ID" icon="person-circle-outline" disabled={busy}
+      onPress={() => void run(async () => {
+        await startAccountSignIn();
+        if (Platform.OS !== 'web') setMessage('Finish signing in in your browser, then return here.');
+      })}/> : <>
       {[status.profile?.name || status.profile?.preferred_username, status.profile?.email,
         status.profile?.age_range].filter(Boolean).map((value, index) =>
         <Text key={index} style={{ color: palette.text }}>{value}</Text>)}

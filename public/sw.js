@@ -12,7 +12,7 @@ self.addEventListener('activate',event=>event.waitUntil((async()=>{for(const key
 self.addEventListener('message',event=>{if(event.data?.type==='ACTIVATE_UPDATE')self.skipWaiting();});
 self.addEventListener('fetch',event=>{
  const req=event.request,url=new URL(req.url);if(req.method!=='GET' || url.origin!==self.location.origin)return;
- if(url.pathname.startsWith('/api/account/')||url.pathname==='/account/return')return;
+ if(url.pathname.startsWith('/api/account/'))return;
  if(req.mode==='navigate'){const key=url.pathname==='/about.html'?'/about.html':'/index.html';event.respondWith((async()=>{try {const r=await fetch(req);if(r.ok)await (await caches.open(CACHE)).put(key,r.clone());return r;}catch{return await (await caches.open(CACHE)).match(key) || Response.error();}})());return;}
  if(shell(url))event.respondWith((async()=>{const cache=await caches.open(CACHE),stored=await cache.match(req);if(stored)return stored;const r=await fetch(req);if(r.ok)await cache.put(req,r.clone());return r;})());
 });

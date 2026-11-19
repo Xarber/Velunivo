@@ -28,11 +28,12 @@ class ExpiringStore<T> {
   delete(key: string) { this.entries.delete(key); }
 }
 
-export function accountSync(clientId?: string, secret?: string, nativeLinks?: { ios: boolean; android: boolean }) {
+export function accountSync(clientId?: string, secret?: string) {
   const router = Router();
   const enabled = !!secret && !!clientId && /^[a-zA-Z0-9_-]{1,100}$/.test(clientId);
   const transactions = new ExpiringStore<{ state: string; nonce: string; verifier: string; nativeChallenge?: string }>();
-  const handoffs = new ExpiringStore<{ session: string; challenge: string }>();
+  const handoffs = new ExpiringStore<{ session?: string; challenge: string; failed?: boolean }>();
+  const browserLaunches = new ExpiringStore<{ authorization: string; key: string }>();
   const sessions = new ExpiringStore<{ subject: string; token: string; binding: string; profile: Record<string, string> }>();
 
   function sessionKey(req: Request) {
@@ -53,7 +54,7 @@ export function accountSync(clientId?: string, secret?: string, nativeLinks?: { 
   router.use((_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
   router.get('/status', (req, res) => {
     const session = sessions.get(sessionKey(req));
-    res.json({ enabled, nativeLinks, signedIn: !!session, binding: session?.binding, profile: session?.profile, account: session && createHash('sha256').update(session.subject).digest('hex') });
+    res.json({ enabled, signedIn: !!session, binding: session?.binding, profile: session?.profile, account: session && createHash('sha256').update(session.subject).digest('hex') });
   });
   router.use((req, res, next) => {
     if (!enabled) { res.sendStatus(503); return; }
@@ -75,17 +76,35 @@ export function accountSync(clientId?: string, secret?: string, nativeLinks?: { 
       code_challenge: await oidc.calculatePKCECodeChallenge(transaction.verifier), code_challenge_method: 'S256',
     });
     transactions.set(key, transaction, 300_000);
-    if (!native) res.cookie('velunivo_login', key, { ...cookieOptions, maxAge: 300_000 });
-    res.json({ url: url.href });
+    if (native) {
+      const launch = id();
+      handoffs.set(key, { challenge: nativeChallenge }, 300_000);
+      browserLaunches.set(launch, { authorization: url.href, key }, 300_000);
+      res.json({ url: origin + '/api/account/native/browser?launch=' + launch, transaction: key });
+    } else {
+      res.cookie('velunivo_login', key, { ...cookieOptions, maxAge: 300_000 });
+      res.json({ url: url.href });
+    }
+  });
+
+  router.get('/native/browser', (req, res) => {
+    const launch = req.query.launch;
+    const entry = handoffState(launch) ? browserLaunches.get(launch) : undefined;
+    if (!entry || !handoffState(launch)) { res.sendStatus(410); return; }
+    browserLaunches.delete(launch);
+    res.cookie('velunivo_native_login', entry.key, { ...cookieOptions, maxAge: 300_000 });
+    res.redirect(303, entry.authorization);
   });
 
   router.get('/callback', async (req, res) => {
     const state = typeof req.query.state === 'string' ? req.query.state : '';
     const native = handoffState(state) && !!transactions.get(state)?.nativeChallenge;
+    const browserKey = cookie(req, 'velunivo_native_login');
+    if (native && browserKey !== state) { res.sendStatus(403); return; }
     const key = native ? state : cookie(req, 'velunivo_login');
     const transaction = transactions.get(key);
     transactions.delete(key);
-    res.clearCookie('velunivo_login', cookieOptions);
+    res.clearCookie(native ? 'velunivo_native_login' : 'velunivo_login', cookieOptions);
     try {
       if (!transaction || !!transaction.nativeChallenge !== native) throw new Error('Missing login transaction');
       const callback = new URL(redirect);
@@ -115,16 +134,20 @@ export function accountSync(clientId?: string, secret?: string, nativeLinks?: { 
       const session = id();
       sessions.set(session, { subject, token: tokens.access_token, binding: id(), profile }, duration);
       if (transaction.nativeChallenge) {
-        const code = id();
-        handoffs.set(code, { session, challenge: transaction.nativeChallenge }, 60_000);
-        res.redirect(303, '/account/return?code=' + code);
+        handoffs.delete(key);
+        handoffs.set(key, { session, challenge: transaction.nativeChallenge }, 180_000);
+        res.type('html').send(browserResult(true));
         return;
       }
       sessions.delete(sessionKey(req));
       res.cookie('velunivo_session', session, { ...cookieOptions, maxAge: duration });
       res.redirect(303, '/settings/xcenter-id?account=connected');
     } catch {
-      res.redirect(303, native ? '/account/return?error=failed' : '/settings/xcenter-id?account=failed');
+      if (native && transaction?.nativeChallenge) {
+        handoffs.delete(key);
+        handoffs.set(key, { challenge: transaction.nativeChallenge, failed: true }, 180_000);
+        res.status(400).type('html').send(browserResult(false));
+      } else res.redirect(303, '/settings/xcenter-id?account=failed');
     }
   });
 
@@ -133,10 +156,12 @@ export function accountSync(clientId?: string, secret?: string, nativeLinks?: { 
     if (!handoffState(code) || !handoffState(verifier)) { res.sendStatus(400); return; }
     const handoff = handoffs.get(code);
     const challenge = createHash('sha256').update(verifier).digest('hex');
-    if (!handoff || handoff.challenge !== challenge || !sessions.get(handoff.session)) {
+    if (!handoff || handoff.challenge !== challenge) {
       res.sendStatus(401); return;
     }
+    if (!handoff.session && !handoff.failed) { res.sendStatus(202); return; }
     handoffs.delete(code);
+    if (!handoff.session || !sessions.get(handoff.session)) { res.sendStatus(410); return; }
     res.json({ session: handoff.session });
   });
 
@@ -196,4 +221,10 @@ export function validSummary(category: string, data: unknown): boolean {
   const values = data as Record<string, unknown>;
   return Object.keys(values).length === 3 && ['rides', 'kilometers', 'minutes'].every(key =>
     typeof values[key] === 'number' && Number.isSafeInteger(values[key]) && values[key] >= 0);
+}
+
+function browserResult(success: boolean) {
+  const heading = success ? 'Signed in to Velunivo' : 'Sign-in did not finish';
+  const message = success ? 'Return to the Velunivo app to finish connecting your account.' : 'Return to Velunivo and try signing in again.';
+  return `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${heading}</title><main style="max-width:32rem;margin:15vh auto;padding:1.25rem;font-family:system-ui"><h1>${heading}</h1><p>${message}</p></main></html>`;
 }

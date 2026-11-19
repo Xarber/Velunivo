@@ -35,7 +35,6 @@ async function makeSummary(category: Category): Promise<Summary> {
 
 export type AccountStatus = {
   enabled: boolean;
-  nativeLinks?: { ios: boolean; android: boolean };
   signedIn: boolean;
   binding?: string;
   account?: string;

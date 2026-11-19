@@ -29,25 +29,42 @@ export async function startAccountSignIn() {
   const response = await accountRequest(web ? 'start' : 'native/start', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ challenge }),
   });
-  const { url } = await response.json();
-  if (new URL(url).origin !== 'https://id.xcenter.it') throw new Error('Invalid authorization URL');
+  const { url, transaction } = await response.json();
+  const destination = new URL(url);
+  if (web ? destination.origin !== 'https://id.xcenter.it' :
+      destination.origin !== server || destination.pathname !== '/api/account/native/browser' ||
+      typeof transaction !== 'string' || !/^[a-f0-9]{64}$/.test(transaction)) throw new Error('Invalid authorization URL');
   if (web) window.location.assign(url);
   else {
-    await SecureStore.setItemAsync(verifierKey, verifier);
+    await SecureStore.setItemAsync(verifierKey, JSON.stringify({ verifier, code: transaction, expires: Date.now() + 480_000 }));
     await Linking.openURL(url);
   }
 }
 
-export async function finishAccountSignIn(code: string) {
-  const verifier = await SecureStore.getItemAsync(verifierKey);
-  if (!verifier || !/^[a-f0-9]{64}$/.test(code)) throw new Error('Invalid sign-in return');
-  const response = await accountRequest('native/exchange', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, verifier }),
-  });
-  const { session } = await response.json();
-  if (typeof session !== 'string' || !/^[a-f0-9]{64}$/.test(session)) throw new Error('Invalid session');
-  await SecureStore.setItemAsync(sessionKey, session);
-  await SecureStore.deleteItemAsync(verifierKey);
+export async function finishAccountSignIn() {
+  if (Platform.OS === 'web') return 'idle';
+  const pending = await SecureStore.getItemAsync(verifierKey);
+  if (!pending) return 'idle';
+  const { verifier, code, expires } = JSON.parse(pending);
+  if (Date.now() >= expires) {
+    await SecureStore.deleteItemAsync(verifierKey);
+    return 'expired';
+  }
+  try {
+    const response = await accountRequest('native/exchange', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, verifier }),
+    });
+    if (response.status === 202) return 'pending';
+    const { session } = await response.json();
+    if (typeof session !== 'string' || !/^[a-f0-9]{64}$/.test(session)) throw new Error('Invalid session');
+    await SecureStore.setItemAsync(sessionKey, session);
+    await SecureStore.deleteItemAsync(verifierKey);
+    return 'connected';
+  } catch (error) {
+    if (!['401', '410'].includes((error as Error).message)) throw error;
+    await SecureStore.deleteItemAsync(verifierKey);
+    return 'expired';
+  }
 }
 
 export async function signOutAccount() {
