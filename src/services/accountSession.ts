@@ -12,6 +12,9 @@ export async function accountRequest(path: string, init?: RequestInit) {
   const headers = new Headers(init?.headers);
   if (session) headers.set('Authorization', 'Bearer ' + session);
   const controller = new AbortController();
+  const cancel = () => controller.abort();
+  if (init?.signal?.aborted) cancel();
+  else init?.signal?.addEventListener('abort', cancel);
   const timeout = setTimeout(() => controller.abort(), path.startsWith('archive/') ? 90_000 : 15_000);
   try {
     const response = await fetch((web ? '' : server) + '/api/account/' + path, {
@@ -19,7 +22,10 @@ export async function accountRequest(path: string, init?: RequestInit) {
     });
     if (!response.ok) throw new Error(String(response.status));
     return response;
-  } finally { clearTimeout(timeout); }
+  } finally {
+    clearTimeout(timeout);
+    init?.signal?.removeEventListener('abort', cancel);
+  }
 }
 
 export async function startAccountSignIn() {

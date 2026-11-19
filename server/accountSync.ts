@@ -35,7 +35,7 @@ export function accountSync(clientId?: string, secret?: string) {
   const transactions = new ExpiringStore<{ state: string; nonce: string; verifier: string; nativeChallenge?: string; portableSync: boolean }>();
   const handoffs = new ExpiringStore<{ session?: string; challenge: string; failed?: boolean }>();
   const browserLaunches = new ExpiringStore<{ authorization: string; key: string }>();
-  const sessions = new ExpiringStore<{ subject: string; token: string; binding: string; profile: Record<string, string>; portableSync: boolean }>();
+  const sessions = new ExpiringStore<{ subject: string; token: string; binding: string; profile: Record<string, string | boolean>; portableSync: boolean }>();
 
   function sessionKey(req: Request) {
     return /^Bearer ([a-f0-9]{64})$/.exec(req.get('authorization') ?? '')?.[1]
@@ -119,7 +119,10 @@ export function accountSync(clientId?: string, secret?: string) {
       if (!subject || !tokens.scope?.split(' ').includes('app_data')) throw new Error('Sync permission declined');
       const info = await oidc.fetchUserInfo(configuration, tokens.access_token, subject);
       const granted = new Set(tokens.scope?.split(' '));
-      const profile: Record<string, string> = {};
+      const profile: Record<string, string | boolean> = {};
+      if ((granted.has('profile') || granted.has('openid')) && info.picture === issuer + '/v1/profile/avatar') {
+        profile.hasPicture = true;
+      }
       for (const [scope, fields] of [
         ['profile', ['name', 'preferred_username']],
         ['email', ['email']],
@@ -169,6 +172,35 @@ export function accountSync(clientId?: string, secret?: string) {
   router.post('/logout', (req, res) => {
     sessions.delete(sessionKey(req));
     res.clearCookie('velunivo_session', cookieOptions).sendStatus(204);
+  });
+
+  router.get('/profile-photo', async (req, res) => {
+    const session = sessions.get(sessionKey(req));
+    if (!session || req.get('x-sync-binding') !== session.binding) { res.sendStatus(401); return; }
+    if (session.profile.hasPicture !== true) { res.sendStatus(404); return; }
+    const picture = await fetch(issuer + '/v1/profile/avatar', {
+      headers: { Authorization: `Bearer ${session.token}` }, redirect: 'error', signal: AbortSignal.timeout(8000),
+    });
+    if (!picture.ok || picture.headers.get('content-type')?.split(';')[0] !== 'image/jpeg' || !picture.body) {
+      res.sendStatus(404);
+      return;
+    }
+    const reader = picture.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let bytes = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      bytes += value.length;
+      if (bytes > 512 * 1024) { await reader.cancel(); res.sendStatus(413); return; }
+      chunks.push(value);
+    }
+    const image = Buffer.concat(chunks);
+    if (image[0] !== 0xff || image[1] !== 0xd8 || image[2] !== 0xff) {
+      res.sendStatus(502);
+      return;
+    }
+    res.type('jpeg').send(image);
   });
 
   router.use('/archive/:category', (req, res, next) => {

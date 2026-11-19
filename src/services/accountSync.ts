@@ -1,3 +1,4 @@
+import type { AccountProfile } from '../core/accountProfile';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {accountRequest as request} from './accountSession';
 import { reverseAreaName } from './api';
@@ -39,7 +40,7 @@ export type AccountStatus = {
   signedIn: boolean;
   binding?: string;
   account?: string;
-  profile?: { name?: string; preferred_username?: string; email?: string; age_range?: string };
+  profile?: AccountProfile & { email?: string; age_range?: string };
 };
 
 export function consentKey(account: string, category: Category) {

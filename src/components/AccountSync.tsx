@@ -1,10 +1,14 @@
+import { accountReturnFailed, defaultAccountProfile } from '../core/accountProfile';
+import { loadAccountProfilePhoto } from '../services/accountProfilePhoto';
+import { readSettingEdits } from '../services/syncSettings';
+import { useStore } from '../services/store';
 import AccountArchiveSettings from './AccountArchiveSettings';
 import { accountArchiveBytes } from '../core/accountArchive';
 import { t } from '../i18n/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { startAccountSignIn, signOutAccount, finishAccountSignIn } from '../services/accountSession';
 import { observeAccountSync, refreshAccountSync } from './AccountSyncWorker';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, AppState, Platform, Switch, View } from 'react-native';
 import Text from './LocalizedText';
 import { Button, usePalette } from './ui';
@@ -12,12 +16,14 @@ import { categories, consentKey, readSummary, request, type AccountStatus, type 
 
 export default function AccountSync() {
   const palette = usePalette();
+  const store = useStore();
+  const latestStore = useRef(store);
+  useEffect(() => { latestStore.current = store; }, [store]);
   const [status, setStatus] = useState<AccountStatus>();
   const [records, setRecords] = useState<Partial<{ [K in Category]: SummaryRecord | null }>>({});
   const [preferences, setPreferences] = useState<Partial<{ [K in Category]: string | null }>>({});
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState(() => typeof window !== 'undefined' &&
-    new URLSearchParams(window.location.search).get('account') === 'failed'
+  const [message, setMessage] = useState(() => accountReturnFailed(Platform.OS, Platform.OS === 'web' && typeof window !== 'undefined' ? window : undefined)
     ? 'Sign-in did not complete. Please try again.' : '');
   useEffect(() => {
     let active = true;
@@ -61,6 +67,26 @@ export default function AccountSync() {
     load();
     return observeAccountSync(load);
   }, [status?.account]);
+  useEffect(() => {
+    const profile = status?.profile;
+    const binding = status?.binding;
+    if (!store.ready || !status?.signedIn || !binding || !profile) return;
+    const controller = new AbortController();
+    void (async () => {
+      const edits = await readSettingEdits();
+      const current = latestStore.current.navigationOptions;
+      // A missing name alone does not rule out an avatar-only account profile.
+      const candidate = profile.hasPicture ? 'pending' : undefined;
+      if (!defaultAccountProfile(current, edits, profile, candidate)) return;
+      const photo = profile.hasPicture ? await loadAccountProfilePhoto(binding, controller.signal).catch(() => undefined) : undefined;
+      if (controller.signal.aborted) return;
+      const active: AccountStatus = await (await request('status')).json();
+      if (!controller.signal.aborted && active.binding === binding) {
+        await latestStore.current.importDefaultAccountProfile(profile, photo);
+      }
+    })().catch(() => {});
+    return () => controller.abort();
+  }, [status, store.ready]);
   if (!status?.enabled) return <Text style={{ color: palette.muted }}>{status ? 'X-Center ID is unavailable on this server.' : 'Checking X-Center ID availability…'}</Text>;
 
   async function run(task: () => Promise<void>) {
