@@ -1,5 +1,10 @@
 /** English source messages are stable keys. User-authored content is never stored translated. */
 export const italian:Record<string,string>={
+"Sign in or create an account":"Accedi o crea un account",
+"Manage account & data →":"Gestisci account e dati →",
+"Open dashboard":"Apri la dashboard",
+"Manage app":"Gestisci app",
+"Could not sign out. Try again.":"Impossibile disconnettersi. Riprova.",
 "Could not load sync preferences.":"Impossibile caricare le preferenze di sincronizzazione.",
 "Linked apps can request saved places (including addresses and coordinates), general areas you’ve explored, recent neighborhood names, and ride totals. You choose what each app can read in X-Center ID.":"Le app collegate possono chiedere accesso ai luoghi salvati (con indirizzi e coordinate), alle zone esplorate, ai nomi dei quartieri visitati di recente e ai totali dei viaggi. In X-Center ID scegli quali dati può leggere ogni app.",
 "Manage app permissions":"Gestisci le autorizzazioni delle app",

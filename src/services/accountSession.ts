@@ -50,12 +50,12 @@ async function openAccountBrowser(url: string) {
   await Linking.openURL(url);
 }
 
-export async function startAccountSignIn(onBrowserReady: () => void) {
+export async function startAccountSignIn(onBrowserReady: () => void, returnToSettings: boolean) {
   const web = Platform.OS === 'web';
   const verifier = web ? '' : Array.from(await Crypto.getRandomBytesAsync(32), value => value.toString(16).padStart(2, '0')).join('');
   const challenge = web ? '' : await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, verifier);
   const response = await accountRequest(web ? 'start' : 'native/start', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ challenge, portableSync: true }),
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ challenge, portableSync: true, returnToSettings }),
   });
   const { url, transaction } = await response.json();
   const destination = new URL(url);
@@ -76,7 +76,12 @@ export async function startAccountSignIn(onBrowserReady: () => void) {
   }
 }
 
-export async function finishAccountSignIn() {
+let pickup: Promise<'idle' | 'pending' | 'connected' | 'expired'> | undefined;
+export function finishAccountSignIn() {
+  return pickup ??= completeAccountSignIn().finally(() => { pickup = undefined; });
+}
+
+async function completeAccountSignIn() {
   if (Platform.OS === 'web') return 'idle';
   const pending = await SecureStore.getItemAsync(verifierKey);
   if (!pending) return 'idle';

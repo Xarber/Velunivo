@@ -34,7 +34,7 @@ class ExpiringStore<T> {
 export function accountSync(clientId?: string, secret?: string, sessionDirectory?: string) {
   const router = Router();
   const enabled = !!secret && !!clientId && /^[a-zA-Z0-9_-]{1,100}$/.test(clientId);
-  const transactions = new ExpiringStore<{ state: string; nonce: string; verifier: string; nativeChallenge?: string; portableSync: boolean; staySignedIn: boolean }>();
+  const transactions = new ExpiringStore<{ state: string; nonce: string; verifier: string; nativeChallenge?: string; portableSync: boolean; staySignedIn: boolean; returnToSettings: boolean }>();
   const handoffs = new ExpiringStore<{ session?: string; challenge: string; failed?: boolean }>();
   const browserLaunches = new ExpiringStore<{ authorization: string; key: string }>();
   const sessions = createAccountSessions(clientId ?? '', secret ?? '', enabled ? sessionDirectory : undefined);
@@ -87,7 +87,7 @@ export function accountSync(clientId?: string, secret?: string, sessionDirectory
     const metadata = configuration.serverMetadata();
     const staySignedIn = sessions.persistent &&
       !!metadata.grant_types_supported?.includes('refresh_token') && !!metadata.scopes_supported?.includes('offline_access');
-    const transaction = { staySignedIn, state: id(), nonce: id(), verifier: oidc.randomPKCECodeVerifier(), nativeChallenge, portableSync: req.body?.portableSync === true };
+    const transaction = { staySignedIn, state: id(), nonce: id(), verifier: oidc.randomPKCECodeVerifier(), nativeChallenge, portableSync: req.body?.portableSync === true, returnToSettings: !native && req.body?.returnToSettings === true };
     const key = id();
     const url = oidc.buildAuthorizationUrl(configuration, {
       redirect_uri: redirect, response_type: 'code', scope: 'openid profile email age_range app_data' + (staySignedIn ? ' offline_access' : ''),
@@ -123,6 +123,7 @@ export function accountSync(clientId?: string, secret?: string, sessionDirectory
     if (native && browserKey !== state) { res.sendStatus(403); return; }
     const key = native ? state : cookie(req, 'velunivo_login');
     const transaction = transactions.get(key);
+    const returnPath = transaction?.returnToSettings ? '/settings' : '/settings/xcenter-id';
     transactions.delete(key);
     res.clearCookie(native ? 'velunivo_native_login' : 'velunivo_login', cookieOptions);
     try {
@@ -170,13 +171,13 @@ export function accountSync(clientId?: string, secret?: string, sessionDirectory
       }
       sessions.remove(sessionKey(req));
       res.cookie('velunivo_session', session, { ...cookieOptions, maxAge: duration });
-      res.redirect(303, '/settings/xcenter-id?account=connected');
+      res.redirect(303, returnPath + '?account=connected');
     } catch {
       if (native && transaction?.nativeChallenge && handoffs.get(key)) {
         handoffs.delete(key);
         handoffs.set(key, { challenge: transaction.nativeChallenge, failed: true }, 180_000);
         res.status(400).type('html').send(browserResult(false));
-      } else res.redirect(303, '/settings/xcenter-id?account=failed');
+      } else res.redirect(303, returnPath + '?account=failed');
     }
   });
 

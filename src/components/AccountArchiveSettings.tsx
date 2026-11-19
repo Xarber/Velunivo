@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState, type ReactNode } from 'react';
-import { Linking, Switch, View } from 'react-native';
+import { Switch, View } from 'react-native';
 import { t } from '../i18n/core';
 import { archiveEnabled, archiveKinds, type ArchiveKind } from '../core/accountArchive';
 import { archivePreferences, setArchiveEnabled } from '../services/accountArchive';
@@ -10,7 +10,7 @@ import { subscribeRides } from '../services/rideHistory';
 import type { AccountStatus } from '../services/accountSync';
 import { observeAccountSync, refreshAccountSync } from './AccountSyncWorker';
 import Text from './LocalizedText';
-import { Button, styles, usePalette } from './ui';
+import { styles, usePalette } from './ui';
 
 type Icon = keyof typeof Ionicons.glyphMap;
 function categoryPresentation(category: ArchiveKind): [string, Icon] {
@@ -98,9 +98,6 @@ export default function AccountArchiveSettings({status, children}: {status: Acco
     })}
     {children}
     <Text style={{ color: palette.muted }}>Linked apps can request saved places (including addresses and coordinates), general areas you’ve explored, recent neighborhood names, and ride totals. You choose what each app can read in X-Center ID.</Text>
-    <Button title="Manage app permissions" icon="shield-checkmark-outline" secondary onPress={() => {
-      void Linking.openURL('https://id.xcenter.it/permissions').catch(() => setMessage('Could not open X-Center ID. Try again.'));
-    }}/>
     {(!!message || failedSizes) && <Text style={{ color: palette.muted }} accessibilityLiveRegion="polite">{message || 'Could not calculate account sync sizes.'}</Text>}
   </View>;
 }

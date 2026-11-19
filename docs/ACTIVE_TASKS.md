@@ -19,3 +19,5 @@
 | VN-ACCOUNT-12 | Add rounded App data category cards and remove summary deletion | Implemented | Summaries remain in the account across sign-out. Lint, type checking, 576 JavaScript tests, and 59 Python tests passed. The production API rejects summary DELETE requests. Web commit 6583f2e is live. A synthetic browser session verified the cards and summary retention. Native artifacts run 44537886677, installed verification pending. |
 
 | VN-ACCOUNT-13 | Open native X-Center ID authorization in the system browser sheet | Implemented | Uses Safari Services on iOS and same-task Custom Tabs on Android with default browser fallback. Installed passkey and browser return verification pending. |
+
+| VN-ACCOUNT-14 | Use the shared account overview at the top of Settings and on its detail page | Implemented | Vendored the upstream presentation for Expo 57, routed detail actions through the overview and kept App data below it. Existing artifact runs are isolated from new manual artifact runs. Runtime and build evidence follow. |

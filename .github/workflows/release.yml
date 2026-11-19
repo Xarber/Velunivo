@@ -20,7 +20,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: velunivo-release-${{ github.ref_name }}
+  group: velunivo-release-${{ inputs.release_channel == 'artifacts' && github.run_id || github.ref_name }}
   cancel-in-progress: true
 env:
   APP_DEVELOPMENT_BUILD: ${{ inputs.development_build && '1' || '0' }}

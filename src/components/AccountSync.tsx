@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import XCenterAccountCard from './XCenterAccountCard';
+import { AccountOverview } from '../vendor/xcenter-id/AccountOverview';
+import { router, useFocusEffect } from 'expo-router';
 import { accountReturnFailed, defaultAccountProfile } from '../core/accountProfile';
 import { loadAccountProfilePhoto } from '../services/accountProfilePhoto';
 import { readSettingEdits } from '../services/syncSettings';
@@ -10,13 +11,16 @@ import { t } from '../i18n/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { startAccountSignIn, signOutAccount, finishAccountSignIn, cancelAccountSignIn } from '../services/accountSession';
 import { observeAccountSync, refreshAccountSync } from './AccountSyncWorker';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, Platform, Switch, View } from 'react-native';
 import Text from './LocalizedText';
-import { Button, styles, usePalette } from './ui';
+import { styles, usePalette } from './ui';
 import { categories, consentKey, readSummary, request, type AccountStatus, type Category, type SummaryRecord } from '../services/accountSync';
 
-export default function AccountSync() {
+// This ID is public. The confidential client credential stays on the server.
+const clientId = 'xid-df7b04a2-7b74-4d2c-81ba-1cdaed9bc495';
+
+export default function AccountSync({ mode = 'details' }: { mode?: 'entry' | 'details' }) {
   const palette = usePalette();
   const store = useStore();
   const latestStore = useRef(store);
@@ -32,7 +36,7 @@ export default function AccountSync() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(() => accountReturnFailed(Platform.OS, Platform.OS === 'web' && typeof window !== 'undefined' ? window : undefined)
     ? 'Sign-in did not complete. Please try again.' : '');
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     let active = true;
     let checking = false;
     const check = async (pollOnly = false) => {
@@ -59,10 +63,10 @@ export default function AccountSync() {
     const subscription = AppState.addEventListener('change', state => { if (state === 'active') void check(); });
     const timer = Platform.OS === 'web' ? undefined : setInterval(() => void check(true), 5000);
     return () => { active = false; checkSignIn.current = undefined; subscription.remove(); clearInterval(timer); };
-  }, []);
+  }, []));
   useEffect(() => {
     const account = status?.account;
-    if (!status?.signedIn || !status.canSync || !account) return;
+    if (mode !== 'details' || !status?.signedIn || !status.canSync || !account) return;
     let active = true;
     const load = () => {
       void Promise.all(categories.map(async category =>
@@ -82,7 +86,7 @@ export default function AccountSync() {
     load();
     const stop = observeAccountSync(load);
     return () => { active = false; stop(); };
-  }, [status?.signedIn, status?.canSync, status?.account, status?.binding]);
+  }, [mode, status?.signedIn, status?.canSync, status?.account, status?.binding]);
   useEffect(() => {
     const profile = status?.profile;
     const binding = status?.binding;
@@ -120,29 +124,46 @@ export default function AccountSync() {
     } finally { setBusy(false); }
   }
 
+  const photo = accountPhoto?.binding === status.binding ? accountPhoto?.uri : undefined;
+  const profile = status.profile;
+
   return <View style={{ gap: 14 }}>
-    {!status.signedIn ? <>
-      <Text style={{ color: palette.text, fontWeight: '700' }}>X-Center ID sync</Text>
-      <Text style={{ color: palette.muted }}>Signing in syncs settings, vehicles, saved places and routes, and ride summaries by default. You can change each category. Ride recordings include GPS tracks and stay off until you enable them.</Text>
-      {pendingSignIn ? <Button title={t('Cancel sign-in')} icon="close-outline" secondary disabled={busy} onPress={() => void run(async () => {
+    <AccountOverview mode={mode} clientId={clientId} translate={t} disabled={busy} pendingSignIn={pendingSignIn}
+      profile={status.signedIn ? {
+        name: profile?.name || profile?.preferred_username || 'X-Center ID',
+        username: profile?.preferred_username || '',
+        email: profile?.email,
+        ageRange: profile?.age_range,
+        photo: photo ? { uri: photo } : undefined,
+        verified: profile?.verified,
+        administrator: profile?.administrator,
+      } : null}
+      signInDescription={t('Signing in syncs settings, vehicles, saved places and routes, and ride summaries by default. You can change each category. Ride recordings include GPS tracks and stay off until you enable them.')}
+      onManageAccount={() => router.push('/settings/xcenter-id')}
+      onSignIn={() => run(async () => {
+        try {
+          await startAccountSignIn(() => {
+            setPendingSignIn(true);
+            setMessage('Finish signing in in your browser, then return here.');
+          }, mode === 'entry');
+        } catch (error) {
+          setPendingSignIn(false);
+          throw error;
+        }
+        if (Platform.OS === 'ios') await checkSignIn.current?.();
+      })}
+      onCancelSignIn={() => run(async () => {
         await cancelAccountSignIn();
         setPendingSignIn(false);
-      })}/> : <Button title={t('Sign in with X-Center ID')} icon="person-circle-outline" disabled={busy}
-        onPress={() => void run(async () => {
-          try {
-            await startAccountSignIn(() => {
-              setPendingSignIn(true);
-              setMessage('Finish signing in in your browser, then return here.');
-            });
-          } catch (error) {
-            setPendingSignIn(false);
-            throw error;
-          }
-          if (Platform.OS === 'ios') await checkSignIn.current?.();
-        })}/>}
-    </> : <>
-      <XCenterAccountCard profile={status.profile} photo={accountPhoto?.binding === status.binding ? accountPhoto?.uri : undefined}/>
-      {!status.canSync ? <Text style={{ color: palette.muted }}>Account storage permission is off. Sign in again to enable sync.</Text> : <>
+      })}
+      onSignOut={() => run(async () => {
+        await signOutAccount();
+        setRecords({});
+        setStatus({ enabled: true, signedIn: false });
+      })}/>
+    {mode === 'details' && status.signedIn && (!status.canSync
+      ? <Text style={{ color: palette.muted }}>Account storage permission is off. Sign in again to enable sync.</Text>
+      :
       <AccountArchiveSettings key={status.account} status={status}>
       {categories.map(category => {
         const neighborhoods = category === 'recent-neighborhoods';
@@ -179,14 +200,7 @@ export default function AccountSync() {
           {readOnly && <Text style={{ color: palette.muted }}>This device reads the account copy. It preserves summaries saved by another device.</Text>}
         </View>;
       })}
-      </AccountArchiveSettings>
-      </>}
-      <Button title="Sign out" icon="log-out-outline" secondary disabled={busy} onPress={() => void run(async () => {
-        await signOutAccount();
-        setRecords({});
-        setStatus({ enabled: true, signedIn: false });
-      })}/>
-    </>}
+      </AccountArchiveSettings>)}
     {!!message && <Text accessibilityLiveRegion="polite" style={{ color: palette.text }}>{message}</Text>}
   </View>;
 }

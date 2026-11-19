@@ -1,4 +1,9 @@
 {
+"Sign in or create an account":"Connectez-vous ou créez un compte",
+"Manage account & data →":"Gérer le compte et les données →",
+"Open dashboard":"Ouvrir le tableau de bord",
+"Manage app":"Gérer l’application",
+"Could not sign out. Try again.":"Impossible de vous déconnecter. Réessayez.",
 "Could not load sync preferences.":"Impossible de charger les préférences de synchronisation.",
 "Linked apps can request saved places (including addresses and coordinates), general areas you’ve explored, recent neighborhood names, and ride totals. You choose what each app can read in X-Center ID.":"Les applications associées peuvent demander l’accès à vos lieux enregistrés (avec leurs adresses et coordonnées), aux zones explorées, aux noms des quartiers visités récemment et aux totaux de vos trajets. Dans X-Center ID, vous choisissez les données que chaque application peut lire.",
 "Manage app permissions":"Gérer les autorisations des applications",
