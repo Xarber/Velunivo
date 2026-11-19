@@ -1,4 +1,7 @@
 {
+"Could not load sync preferences.":"Não foi possível carregar as preferências de sincronização.",
+"Linked apps can request saved places (including addresses and coordinates), general areas you’ve explored, recent neighborhood names, and ride totals. You choose what each app can read in X-Center ID.":"As aplicações associadas podem pedir acesso aos locais guardados (incluindo moradas e coordenadas), às zonas exploradas, aos nomes dos bairros visitados recentemente e aos totais das viagens. No X-Center ID, escolhe os dados que cada aplicação pode ler.",
+"Manage app permissions":"Gerir permissões das aplicações",
   "Explore": "Explorar",
   "Library": "Biblioteca",
   "Vehicles": "Veículos",

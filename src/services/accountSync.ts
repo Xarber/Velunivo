@@ -49,8 +49,8 @@ export function consentKey(account: string, category: Category) {
   return `velunivo:account-sync:${account}:${category}`;
 }
 
-export async function readSummary(category: Category): Promise<SummaryRecord | null> {
-  try { return await (await request('summary/' + category)).json(); }
+export async function readSummary(category: Category, binding?: string): Promise<SummaryRecord | null> {
+  try { return await (await request('summary/' + category, binding ? { headers: { 'X-Sync-Binding': binding } } : undefined)).json(); }
   catch (error) {
     if ((error as Error).message === '404') return null;
     throw error;
@@ -64,7 +64,7 @@ export async function syncSummaries(status: AccountStatus) {
     const saved = await AsyncStorage.getItem(key);
     if (saved?.startsWith('paused:')) continue;
     const approved = saved ?? '0';
-    const remote = await readSummary(category);
+    const remote = await readSummary(category, status.binding);
     const revision = remote?.revision ?? 0;
     // This browser may update its own last revision. A newer remote copy is read-only.
     if (String(revision) !== approved) continue;

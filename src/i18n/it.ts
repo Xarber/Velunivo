@@ -1,5 +1,8 @@
 /** English source messages are stable keys. User-authored content is never stored translated. */
 export const italian:Record<string,string>={
+"Could not load sync preferences.":"Impossibile caricare le preferenze di sincronizzazione.",
+"Linked apps can request saved places (including addresses and coordinates), general areas you’ve explored, recent neighborhood names, and ride totals. You choose what each app can read in X-Center ID.":"Le app collegate possono chiedere accesso ai luoghi salvati (con indirizzi e coordinate), alle zone esplorate, ai nomi dei quartieri visitati di recente e ai totali dei viaggi. In X-Center ID scegli quali dati può leggere ogni app.",
+"Manage app permissions":"Gestisci le autorizzazioni delle app",
 "Account storage permission is off. Sign in again to enable sync.":"L’accesso allo spazio dell’account è disattivato. Accedi di nuovo per attivare la sincronizzazione.",
 "Cancel sign-in":"Annulla accesso",
 "Could not open X-Center ID. Try again.":"Impossibile aprire X-Center ID. Riprova.",

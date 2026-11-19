@@ -4,3 +4,5 @@ export const deletePhoto = (_photo: string) => {};
 export async function portablePhoto(photo:string){return photo;}
 
 export function importPhoto(photo:string){return photo;}
+
+export const portablePhotoExtraBytes = (_photo: string) => 0;

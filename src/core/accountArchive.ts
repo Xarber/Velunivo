@@ -19,14 +19,20 @@ export function projectAccountArchive(source: AutomaticEnvelope, category: Archi
   const { garage, places, routes, rides, scratch, exploration } = source.backup;
   const sort = <T,>(items: T[], id: (item: T) => string) =>
     [...items].sort((a, b) => id(a) < id(b) ? -1 : id(a) > id(b) ? 1 : 0);
-  const vehicles = sort(garage.vehicles, vehicle => vehicle.id);
-  const values: Record<ArchiveKind, unknown> = {
-    settings: safeAccountSettings(source.settings ?? {}),
-    vehicles: { vehicles, activeId: vehicles[0]?.id },
-    'saved-places': sort(places, place => place.id), 'saved-routes': sort(routes, route => route.id),
-    'recorded-rides': sort(rides.filter(ride => ride.summary.status !== 'recording'), ride => ride.summary.id), exploration: { scratch, exploration },
-  };
-  return { schema: 1, category, value: values[category], revisions: scopedRevisions(category, source.revisions) };
+  let value: unknown;
+  switch (category) {
+    case 'settings': value = safeAccountSettings(source.settings ?? {}); break;
+    case 'vehicles': {
+      const vehicles = sort(garage.vehicles, vehicle => vehicle.id);
+      value = { vehicles, activeId: vehicles[0]?.id };
+      break;
+    }
+    case 'saved-places': value = sort(places, place => place.id); break;
+    case 'saved-routes': value = sort(routes, route => route.id); break;
+    case 'recorded-rides': value = sort(rides.filter(ride => ride.summary.status !== 'recording'), ride => ride.summary.id); break;
+    case 'exploration': value = { scratch, exploration }; break;
+  }
+  return { schema: 1, category, value, revisions: scopedRevisions(category, source.revisions) };
 }
 
 export function applyAccountArchive(local: AutomaticEnvelope, remote: AccountArchive, category: ArchiveKind): AutomaticEnvelope {

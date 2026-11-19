@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import XCenterAccountCard from './XCenterAccountCard';
 import { accountReturnFailed, defaultAccountProfile } from '../core/accountProfile';
 import { loadAccountProfilePhoto } from '../services/accountProfilePhoto';
@@ -21,9 +22,10 @@ export default function AccountSync() {
   const latestStore = useRef(store);
   useEffect(() => { latestStore.current = store; }, [store]);
   const [status, setStatus] = useState<AccountStatus>();
+  const [summaryBinding, setSummaryBinding] = useState<string>();
+  const [preferenceAccount, setPreferenceAccount] = useState<string>();
   const [records, setRecords] = useState<Partial<{ [K in Category]: SummaryRecord | null }>>({});
   const [preferences, setPreferences] = useState<Partial<{ [K in Category]: string | null }>>({});
-  const [staySignedIn, setStaySignedIn] = useState(true);
   const [pendingSignIn, setPendingSignIn] = useState(false);
   const [accountPhoto, setAccountPhoto] = useState<{ binding: string; uri: string }>();
   const [busy, setBusy] = useState(false);
@@ -57,22 +59,28 @@ export default function AccountSync() {
     return () => { active = false; subscription.remove(); clearInterval(timer); };
   }, []);
   useEffect(() => {
-    if (!status?.signedIn || !status.canSync) return;
-    const load = () => Promise.all(categories.map(async category => [category, await readSummary(category)] as const))
-      .then(items => setRecords(Object.fromEntries(items)))
-      .catch(() => {});
-    void load();
-        return observeAccountSync(load);
-  }, [status?.signedIn, status?.canSync]);
-  useEffect(() => {
     const account = status?.account;
-    if (!account) return;
-    const load = () => void Promise.all(categories.map(async category =>
-      [category, await AsyncStorage.getItem(consentKey(account, category))] as const))
-      .then(items => setPreferences(Object.fromEntries(items))).catch(() => {});
+    if (!status?.signedIn || !status.canSync || !account) return;
+    let active = true;
+    const load = () => {
+      void Promise.all(categories.map(async category =>
+        [category, await AsyncStorage.getItem(consentKey(account, category))] as const))
+        .then(items => {
+          if (!active) return;
+          setPreferences(Object.fromEntries(items));
+          setPreferenceAccount(account);
+        }).catch(() => {});
+      void Promise.all(categories.map(async category => [category, await readSummary(category, status.binding)] as const))
+        .then(items => {
+          if (!active) return;
+          setRecords(Object.fromEntries(items));
+          setSummaryBinding(status.binding);
+        }).catch(() => {});
+    };
     load();
-    return observeAccountSync(load);
-  }, [status?.account]);
+    const stop = observeAccountSync(load);
+    return () => { active = false; stop(); };
+  }, [status?.signedIn, status?.canSync, status?.account, status?.binding]);
   useEffect(() => {
     const profile = status?.profile;
     const binding = status?.binding;
@@ -110,20 +118,16 @@ export default function AccountSync() {
     } finally { setBusy(false); }
   }
 
-  return <View style={{ gap: 10, padding: 16, borderWidth: 1, borderColor: palette.muted, borderRadius: 14 }}>
+  return <View style={{ gap: 14 }}>
     {!status.signedIn ? <>
       <Text style={{ color: palette.text, fontWeight: '700' }}>X-Center ID sync</Text>
       <Text style={{ color: palette.muted }}>Signing in syncs settings, vehicles, saved places and routes, and ride summaries by default. You can change each category. Ride recordings include GPS tracks and stay off until you enable them.</Text>
-      {status.persistentSignIn && <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={{ color: palette.text }}>Stay signed in</Text>
-        <Switch accessibilityLabel={t('Stay signed in')} value={staySignedIn} disabled={busy || pendingSignIn} onValueChange={setStaySignedIn}/>
-      </View>}
       {pendingSignIn ? <Button title={t('Cancel sign-in')} icon="close-outline" secondary disabled={busy} onPress={() => void run(async () => {
         await cancelAccountSignIn();
         setPendingSignIn(false);
       })}/> : <Button title={t('Sign in with X-Center ID')} icon="person-circle-outline" disabled={busy}
         onPress={() => void run(async () => {
-          await startAccountSignIn(staySignedIn);
+          await startAccountSignIn();
           if (Platform.OS !== 'web') {
             setPendingSignIn(true);
             setMessage('Finish signing in in your browser, then return here.');
@@ -132,39 +136,40 @@ export default function AccountSync() {
     </> : <>
       <XCenterAccountCard profile={status.profile} photo={accountPhoto?.binding === status.binding ? accountPhoto?.uri : undefined}/>
       {!status.canSync ? <Text style={{ color: palette.muted }}>Account storage permission is off. Sign in again to enable sync.</Text> : <>
-      <AccountArchiveSettings status={status}/>
+      <AccountArchiveSettings key={status.account} status={status}>
       {categories.map(category => {
         const neighborhoods = category === 'recent-neighborhoods';
-        const record = records[category];
-        return <View key={category} style={{ gap: 8, marginTop: 8 }}>
-          <Text style={{ color: palette.text, fontWeight: '600' }}>{neighborhoods ? 'Recently visited neighborhoods' : 'Ride insights'}</Text>
+        const record = summaryBinding === status.binding ? records[category] : undefined;
+        const label = neighborhoods ? t('Recently visited neighborhoods') : t('Ride insights');
+        const saved = preferenceAccount === status.account ? preferences[category] : undefined;
+        const paused = saved?.startsWith('paused:') ?? false;
+        const readOnly = !!record && saved !== undefined && !paused && (saved ?? '0') !== String(record.revision);
+        const account = status.account;
+        return <View key={category} style={{ gap: 6 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44 }}>
+            <Ionicons name={neighborhoods ? 'map-outline' : 'stats-chart-outline'} size={20} color={palette.accent}/>
+            <View style={{ flex: 1 }}>
+              <Text translate={false} style={{ color: palette.text }}>{label}</Text>
+              {record && <Text translate={false} style={{ color: palette.muted }}>{accountArchiveBytes(record.data)} B</Text>}
+            </View>
+            <Switch accessibilityLabel={label} disabled={busy || !account || saved === undefined} value={!paused}
+              onValueChange={enabled => void run(async () => {
+                if (!account) return;
+                const key = consentKey(account, category);
+                const current = await AsyncStorage.getItem(key) ?? '0';
+                const next = (enabled ? '' : 'paused:') + current.replace(/^paused:/, '');
+                await AsyncStorage.setItem(key, next);
+                setPreferences(old => ({ ...old, [category]: next }));
+                refreshAccountSync();
+              })}/>
+          </View>
           <Text style={{ color: palette.muted }}>{neighborhoods
             ? 'Approximate destinations from recent rides are sent to Photon to find area names. Only the names are saved to your account.'
             : 'Save the number of rides, total distance and riding time from the last 30 days.'}</Text>
-          {record && <Text translate={false} style={{ color: palette.muted }}>{accountArchiveBytes(record.data)} B</Text>}
           {record && <Text style={{ color: palette.text }}>{Array.isArray(record.data)
             ? record.data.join(' · ') || 'No neighborhood names'
             : `${record.data.rides} rides · ${record.data.kilometers} km · ${record.data.minutes} min`}</Text>}
-          {status.account && preferences[category] !== undefined && (() => {
-            const key = consentKey(status.account, category);
-            const saved = preferences[category];
-            const paused = saved?.startsWith('paused:') ?? false;
-            const readOnly = !!record && !paused && (saved ?? '0') !== String(record.revision);
-            return <>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text style={{ color: palette.text }}>Automatic sync</Text>
-                <Switch accessibilityLabel={neighborhoods ? t('Sync recent neighborhoods') : t('Sync ride insights')}
-                  disabled={busy} value={!paused} onValueChange={enabled => void run(async () => {
-                    const current = await AsyncStorage.getItem(key) ?? '0';
-                    const next = enabled ? current.replace(/^paused:/, '') : 'paused:' + current.replace(/^paused:/, '');
-                    await AsyncStorage.setItem(key, next);
-                    setPreferences(old => ({ ...old, [category]: next }));
-                    refreshAccountSync();
-                  })}/>
-              </View>
-              {readOnly && <Text style={{ color: palette.muted }}>This device reads the account copy. It preserves summaries saved by another device.</Text>}
-            </>;
-          })()}
+          {readOnly && <Text style={{ color: palette.muted }}>This device reads the account copy. It preserves summaries saved by another device.</Text>}
           {record && <Button title="Delete account summary" icon="trash-outline" secondary disabled={busy}
             onPress={() => {
               const remove = () => void run(async () => {
@@ -181,6 +186,7 @@ export default function AccountSync() {
             }}/>}
         </View>;
       })}
+      </AccountArchiveSettings>
       </>}
       <Button title="Sign out" icon="log-out-outline" secondary disabled={busy} onPress={() => void run(async () => {
         await signOutAccount();

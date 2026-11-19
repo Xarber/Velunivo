@@ -1,3 +1,4 @@
+import { sharesArchive, updateSharedArchive } from './accountSharing';
 import { createAccountSessions, idleSessionMilliseconds } from './accountSessions';
 import { accountArchive, archiveCategories, ArchiveError, ARCHIVE_LIMIT } from './accountArchive';
 import { createHash, randomBytes } from 'node:crypto';
@@ -84,13 +85,13 @@ export function accountSync(clientId?: string, secret?: string, sessionDirectory
     if (native && (typeof nativeChallenge !== 'string' || !/^[a-f0-9]{64}$/.test(nativeChallenge))) { res.sendStatus(400); return; }
     const configuration = await config();
     const metadata = configuration.serverMetadata();
-    const staySignedIn = req.body?.staySignedIn === true && sessions.persistent &&
+    const staySignedIn = sessions.persistent &&
       !!metadata.grant_types_supported?.includes('refresh_token') && !!metadata.scopes_supported?.includes('offline_access');
     const transaction = { staySignedIn, state: id(), nonce: id(), verifier: oidc.randomPKCECodeVerifier(), nativeChallenge, portableSync: req.body?.portableSync === true };
     const key = id();
     const url = oidc.buildAuthorizationUrl(configuration, {
       redirect_uri: redirect, response_type: 'code', scope: 'openid profile email age_range app_data' + (staySignedIn ? ' offline_access' : ''),
-      ...(staySignedIn ? { prompt: 'consent' } : {}),
+      prompt: 'consent',
       state: native ? key : transaction.state, nonce: transaction.nonce,
       code_challenge: await oidc.calculatePKCECodeChallenge(transaction.verifier), code_challenge_method: 'S256',
     });
@@ -245,6 +246,19 @@ export function accountSync(clientId?: string, secret?: string, sessionDirectory
     if (!session || req.get('x-sync-binding') !== session.binding) { res.sendStatus(401); return; }
     next();
   });
+  router.post('/archive/:category/sharing', async (req, res) => {
+    const session = await currentSession(req, res);
+    if (!session || req.get('x-sync-binding') !== session.binding) { res.sendStatus(401); return; }
+    if (!session.canSync) { res.sendStatus(403); return; }
+    const category = req.params.category;
+    if (!sharesArchive(category)) { res.sendStatus(404); return; }
+    try {
+      await updateSharedArchive(issuer, clientId!, session.token, category);
+      res.sendStatus(204);
+    } catch (error) {
+      res.sendStatus(error instanceof ArchiveError ? error.status : 503);
+    }
+  });
   router.all('/archive/:category', json({ limit: ARCHIVE_LIMIT }), async (req, res) => {
     const session = await currentSession(req, res);
     if (!session || req.get('x-sync-binding') !== session.binding) { res.sendStatus(401); return; }
@@ -264,6 +278,7 @@ export function accountSync(clientId?: string, secret?: string, sessionDirectory
       if (!match) { res.sendStatus(428); return; }
       if (req.method === 'DELETE') {
         await archive.remove(Number(match[1]));
+        if (sharesArchive(category)) await updateSharedArchive(issuer, clientId!, session.token, category);
         res.sendStatus(204);
         return;
       }
@@ -282,7 +297,7 @@ export function accountSync(clientId?: string, secret?: string, sessionDirectory
 
   router.all('/summary/:category', json({ limit: '8kb' }), async (req, res) => {
     const session = await currentSession(req, res);
-    if (!session) { res.sendStatus(401); return; }
+    if (!session || (req.get('x-sync-binding') && req.get('x-sync-binding') !== session.binding)) { res.sendStatus(401); return; }
     if (!session.canSync) { res.sendStatus(403); return; }
     const category = req.params.category;
     if (category !== 'recent-neighborhoods' && category !== 'ride-insights') { res.sendStatus(404); return; }

@@ -28,12 +28,12 @@ export async function accountRequest(path: string, init?: RequestInit) {
   }
 }
 
-export async function startAccountSignIn(staySignedIn = false) {
+export async function startAccountSignIn() {
   const web = Platform.OS === 'web';
   const verifier = web ? '' : Array.from(await Crypto.getRandomBytesAsync(32), value => value.toString(16).padStart(2, '0')).join('');
   const challenge = web ? '' : await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, verifier);
   const response = await accountRequest(web ? 'start' : 'native/start', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ challenge, portableSync: true, staySignedIn }),
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ challenge, portableSync: true }),
   });
   const { url, transaction } = await response.json();
   const destination = new URL(url);

@@ -27,6 +27,9 @@ test('account sync rejects untrusted origins, unauthenticated access and unbound
     assert.deepEqual(await status.json(), { enabled: true, signedIn: false });
     assert.equal((await fetch(base + '/start', { method: 'POST', headers: { origin: 'https://other.example' } })).status, 403);
     assert.equal((await fetch(base + '/profile-photo')).status, 401);
+    assert.equal((await fetch(base + '/archive/saved-places/sharing', {
+      method: 'POST', headers: { Origin: 'https://velunivo.xcenter.it', 'X-Sync-Binding': 'not-a-session' },
+    })).status, 401);
     assert.equal((await fetch(base + '/summary/recent-neighborhoods')).status, 401);
     assert.equal((await fetch(base + '/native/exchange', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },

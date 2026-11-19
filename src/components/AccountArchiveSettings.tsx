@@ -1,67 +1,106 @@
-import { useEffect, useState } from 'react';
-import { Switch, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useState, type ReactNode } from 'react';
+import { Linking, Switch, View } from 'react-native';
 import { t } from '../i18n/core';
-import type { ArchiveKind } from '../core/accountArchive';
-import { accountArchiveSizes, setArchiveEnabled, type ArchiveSize } from '../services/accountArchive';
+import { archiveEnabled, archiveKinds, type ArchiveKind } from '../core/accountArchive';
+import { archivePreferences, setArchiveEnabled } from '../services/accountArchive';
+import { estimateArchiveBytes } from '../services/accountArchiveSizes';
+import { subscribeDataChange } from '../services/dataChange';
+import { subscribeRides } from '../services/rideHistory';
 import type { AccountStatus } from '../services/accountSync';
 import { observeAccountSync, refreshAccountSync } from './AccountSyncWorker';
 import Text from './LocalizedText';
-import { usePalette } from './ui';
+import { Button, usePalette } from './ui';
 
-function categoryLabel(category: ArchiveKind) {
+type Icon = keyof typeof Ionicons.glyphMap;
+function categoryPresentation(category: ArchiveKind): [string, Icon] {
   switch (category) {
-    case 'settings': return t('Settings');
-    case 'vehicles': return t('Vehicles');
-    case 'saved-places': return t('Saved places');
-    case 'saved-routes': return t('Saved routes');
-    case 'recorded-rides': return t('Recorded rides');
-    case 'exploration': return t('Exploration history');
+    case 'settings': return [t('Settings'), 'settings-outline'];
+    case 'vehicles': return [t('Vehicles'), 'bicycle-outline'];
+    case 'saved-places': return [t('Saved places'), 'location-outline'];
+    case 'saved-routes': return [t('Saved routes'), 'navigate-outline'];
+    case 'recorded-rides': return [t('Recorded rides'), 'time-outline'];
+    case 'exploration': return [t('Exploration history'), 'compass-outline'];
   }
 }
 
-export default function AccountArchiveSettings({status}: {status: AccountStatus}) {
+export default function AccountArchiveSettings({status, children}: {status: AccountStatus; children: ReactNode}) {
   const palette = usePalette();
-  const [sizes, setSizes] = useState<ArchiveSize[]>();
+  const [sizes, setSizes] = useState<Partial<Record<ArchiveKind, number>>>({});
+  const [preferences, setPreferences] = useState<Awaited<ReturnType<typeof archivePreferences>>>();
   const [message, setMessage] = useState('');
+  const [failedSizes, setFailedSizes] = useState(false);
   const [busy, setBusy] = useState(false);
+  const account = status.account;
+
+  useEffect(() => {
+    if (!account) return;
+    let active = true;
+    void archivePreferences(account).then(value => { if (active) setPreferences(value); },
+      () => { if (active) setMessage('Could not load sync preferences.'); });
+    return () => { active = false; };
+  }, [account]);
   useEffect(() => {
     let active = true;
-    function load(error?: unknown) {
-      void accountArchiveSizes(status).then(value => {
-        if (active) {
-          setSizes(value);
-          setMessage(!error ? '' : (error as Error).message === '413'
-            ? 'A category exceeds the account sync size limit.'
-            : 'Some account data could not sync. Velunivo will retry.');
-        }
-      }, () => { if (active) setMessage('Could not calculate account sync sizes.'); });
-    }
+    let generation = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const load = () => {
+      const current = ++generation;
+      for (const category of archiveKinds) {
+        void estimateArchiveBytes(category).then(bytes => {
+          if (active && current === generation) setSizes(old => ({ ...old, [category]: bytes }));
+        }, () => { if (active && current === generation) setFailedSizes(true); });
+      }
+    };
+    const schedule = () => {
+      clearTimeout(timer);
+      timer = setTimeout(load, 500);
+    };
     load();
-    const stop = observeAccountSync(load);
-    return () => { active = false; stop(); };
-  }, [status]);
+    const stopData = subscribeDataChange(schedule);
+    const stopRides = subscribeRides(schedule);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+      stopData();
+      stopRides();
+    };
+  }, []);
+  useEffect(() => observeAccountSync(error => {
+    setMessage(!error ? '' : (error as Error).message === '413'
+      ? 'A category exceeds the account sync size limit.'
+      : 'Some account data could not sync. Velunivo will retry.');
+  }), []);
 
-  return <View style={{gap: 10}}>
-    <Text style={{color: palette.text, fontWeight: '700'}}>App data</Text>
-    <Text style={{color: palette.muted}}>Sizes are estimates before compression. Recorded rides and exploration history start off. Categories with 256 KiB or more also start off.</Text>
-    {!sizes && !message && <Text style={{color: palette.muted}}>Calculating local sizes…</Text>}
-    {sizes?.map(({category, enabled, bytes}) => {
-      const label = categoryLabel(category);
-      const size = bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MiB` : `${(bytes / 1024).toFixed(1)} KiB`;
-      return <View key={category} style={{flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12}}>
-        <View style={{flex: 1}}>
-          <Text translate={false} style={{color: palette.text}}>{label}</Text>
-          <Text translate={false} style={{color: palette.muted}}>{size}</Text>
+  return <View style={{ gap: 12 }}>
+    <Text style={{ color: palette.text, fontWeight: '700' }}>App data</Text>
+    <Text style={{ color: palette.muted }}>Sizes are estimates before compression. Recorded rides and exploration history start off. Categories with 256 KiB or more also start off.</Text>
+    {archiveKinds.map(category => {
+      const [label, icon] = categoryPresentation(category);
+      const bytes = sizes[category];
+      const size = bytes === undefined ? undefined : bytes >= 1024 * 1024
+        ? `${(bytes / (1024 * 1024)).toFixed(1)} MiB` : `${(bytes / 1024).toFixed(1)} KiB`;
+      const enabled = archiveEnabled(category, bytes ?? 0, preferences?.[category] ?? null, status.portableSync === true);
+      return <View key={category} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44 }}>
+        <Ionicons name={icon} size={20} color={palette.accent}/>
+        <View style={{ flex: 1 }}>
+          <Text translate={false} style={{ color: palette.text }}>{label}</Text>
+          {size && <Text translate={false} style={{ color: palette.muted }}>{size}</Text>}
         </View>
-        <Switch accessibilityLabel={label} value={enabled} disabled={busy} onValueChange={on => {
+        <Switch accessibilityLabel={label} value={enabled} disabled={busy || !preferences} onValueChange={on => {
           setBusy(true);
           void setArchiveEnabled(status, category, on).then(() => {
-            setSizes(old => old?.map(item => item.category === category ? {...item, enabled: on} : item));
+            setPreferences(old => old && { ...old, [category]: on ? 'on' : 'off' });
             refreshAccountSync();
           }, () => setMessage('Could not save this sync preference.')).finally(() => setBusy(false));
         }}/>
       </View>;
     })}
-    {!!message && <Text style={{color: palette.muted}} accessibilityLiveRegion="polite">{message}</Text>}
+    {children}
+    <Text style={{ color: palette.muted }}>Linked apps can request saved places (including addresses and coordinates), general areas you’ve explored, recent neighborhood names, and ride totals. You choose what each app can read in X-Center ID.</Text>
+    <Button title="Manage app permissions" icon="shield-checkmark-outline" secondary onPress={() => {
+      void Linking.openURL('https://id.xcenter.it/permissions').catch(() => setMessage('Could not open X-Center ID. Try again.'));
+    }}/>
+    {(!!message || failedSizes) && <Text style={{ color: palette.muted }} accessibilityLiveRegion="polite">{message || 'Could not calculate account sync sizes.'}</Text>}
   </View>;
 }
