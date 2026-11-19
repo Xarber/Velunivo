@@ -10,7 +10,7 @@ import { subscribeRides } from '../services/rideHistory';
 import type { AccountStatus } from '../services/accountSync';
 import { observeAccountSync, refreshAccountSync } from './AccountSyncWorker';
 import Text from './LocalizedText';
-import { Button, usePalette } from './ui';
+import { Button, styles, usePalette } from './ui';
 
 type Icon = keyof typeof Ionicons.glyphMap;
 function categoryPresentation(category: ArchiveKind): [string, Icon] {
@@ -81,7 +81,7 @@ export default function AccountArchiveSettings({status, children}: {status: Acco
       const size = bytes === undefined ? undefined : bytes >= 1024 * 1024
         ? `${(bytes / (1024 * 1024)).toFixed(1)} MiB` : `${(bytes / 1024).toFixed(1)} KiB`;
       const enabled = archiveEnabled(category, bytes ?? 0, preferences?.[category] ?? null, status.portableSync === true);
-      return <View key={category} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44 }}>
+      return <View key={category} style={[styles.card, { backgroundColor: palette.card, flexDirection: 'row', alignItems: 'center', minHeight: 56 }]}>
         <Ionicons name={icon} size={20} color={palette.accent}/>
         <View style={{ flex: 1 }}>
           <Text translate={false} style={{ color: palette.text }}>{label}</Text>

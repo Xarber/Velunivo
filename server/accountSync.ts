@@ -296,13 +296,13 @@ export function accountSync(clientId?: string, secret?: string, sessionDirectory
   });
 
   router.all('/summary/:category', json({ limit: '8kb' }), async (req, res) => {
+    const method = req.method;
+    if (method !== 'GET' && method !== 'PUT') { res.set('Allow', 'GET, PUT').sendStatus(405); return; }
     const session = await currentSession(req, res);
     if (!session || (req.get('x-sync-binding') && req.get('x-sync-binding') !== session.binding)) { res.sendStatus(401); return; }
     if (!session.canSync) { res.sendStatus(403); return; }
     const category = req.params.category;
     if (category !== 'recent-neighborhoods' && category !== 'ride-insights') { res.sendStatus(404); return; }
-    const method = req.method;
-    if (!['GET', 'PUT', 'DELETE'].includes(method)) { res.sendStatus(405); return; }
     const headers: Record<string, string> = { Authorization: `Bearer ${session.token}` };
     if (method !== 'GET') {
       if (req.get('x-sync-binding') !== session.binding) { res.sendStatus(401); return; }

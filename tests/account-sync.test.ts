@@ -31,6 +31,13 @@ test('account sync rejects untrusted origins, unauthenticated access and unbound
       method: 'POST', headers: { Origin: 'https://velunivo.xcenter.it', 'X-Sync-Binding': 'not-a-session' },
     })).status, 401);
     assert.equal((await fetch(base + '/summary/recent-neighborhoods')).status, 401);
+    for (const category of ['recent-neighborhoods', 'ride-insights']) {
+      const deletion = await fetch(base + '/summary/' + category, {
+        method: 'DELETE', headers: { Origin: 'https://velunivo.xcenter.it' },
+      });
+      assert.equal(deletion.status, 405);
+      assert.equal(deletion.headers.get('allow'), 'GET, PUT');
+    }
     assert.equal((await fetch(base + '/native/exchange', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code: 'a'.repeat(64), verifier: 'b'.repeat(64) }),

@@ -15,3 +15,5 @@
 | VN-ACCOUNT-10 | Apply updated X-Center ID integration guidance and build native artifacts | Implemented | Added consented renewal, encrypted session persistence, cancelable unsigned pickup, optional app storage scope and account overview. Live provider rotation and installed native sign-in remain verification gates. |
 
 | VN-ACCOUNT-11 | Load mobile storage options promptly, move persistence choice to issuer, group summary categories, and enable outward permissions | Implemented | All four collections were saved in the verified Velunivo registration and persisted after reload. Anonymous listings returned zero records. End-to-end grant, read and revocation still require an authorized destination registration and test user. See ACCOUNT_SYNC.md. |
+
+| VN-ACCOUNT-12 | Add rounded App data category cards and remove summary deletion | Implemented | Summaries remain in the account across sign-out. The server rejects summary DELETE requests. Native artifacts and matching web deployment follow source verification. |

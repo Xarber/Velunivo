@@ -11,9 +11,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { startAccountSignIn, signOutAccount, finishAccountSignIn, cancelAccountSignIn } from '../services/accountSession';
 import { observeAccountSync, refreshAccountSync } from './AccountSyncWorker';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, AppState, Platform, Switch, View } from 'react-native';
+import { AppState, Platform, Switch, View } from 'react-native';
 import Text from './LocalizedText';
-import { Button, usePalette } from './ui';
+import { Button, styles, usePalette } from './ui';
 import { categories, consentKey, readSummary, request, type AccountStatus, type Category, type SummaryRecord } from '../services/accountSync';
 
 export default function AccountSync() {
@@ -114,7 +114,7 @@ export default function AccountSync() {
         setRecords({});
         setStatus({ enabled: true, signedIn: false });
       }
-      setMessage(status === '409' ? 'This summary changed on another device. Its account copy was preserved.' : 'Account sync could not finish. Please try again.');
+      setMessage('Account sync could not finish. Please try again.');
     } finally { setBusy(false); }
   }
 
@@ -145,7 +145,7 @@ export default function AccountSync() {
         const paused = saved?.startsWith('paused:') ?? false;
         const readOnly = !!record && saved !== undefined && !paused && (saved ?? '0') !== String(record.revision);
         const account = status.account;
-        return <View key={category} style={{ gap: 6 }}>
+        return <View key={category} style={[styles.card, { backgroundColor: palette.card, gap: 6 }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44 }}>
             <Ionicons name={neighborhoods ? 'map-outline' : 'stats-chart-outline'} size={20} color={palette.accent}/>
             <View style={{ flex: 1 }}>
@@ -170,20 +170,6 @@ export default function AccountSync() {
             ? record.data.join(' · ') || 'No neighborhood names'
             : `${record.data.rides} rides · ${record.data.kilometers} km · ${record.data.minutes} min`}</Text>}
           {readOnly && <Text style={{ color: palette.muted }}>This device reads the account copy. It preserves summaries saved by another device.</Text>}
-          {record && <Button title="Delete account summary" icon="trash-outline" secondary disabled={busy}
-            onPress={() => {
-              const remove = () => void run(async () => {
-                if (status.account) {
-                  await AsyncStorage.setItem(consentKey(status.account, category), 'paused:0');
-                  setPreferences(old => ({ ...old, [category]: 'paused:0' }));
-                }
-                await request('summary/' + category, { method: 'DELETE', headers: { 'X-Sync-Binding': status.binding ?? '', 'If-Match': `"${record.revision}"` } });
-                setRecords(old => ({ ...old, [category]: null }));
-              });
-              const prompt = t('Delete this summary from your X-Center ID account?');
-              if (Platform.OS === 'web') { if (window.confirm(prompt)) remove(); }
-              else Alert.alert(prompt, undefined, [{ text: t('Cancel'), style: 'cancel' }, { text: t('Delete'), style: 'destructive', onPress: remove }]);
-            }}/>}
         </View>;
       })}
       </AccountArchiveSettings>
