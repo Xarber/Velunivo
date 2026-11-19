@@ -22,4 +22,4 @@
 
 | VN-ACCOUNT-14 | Use the shared account overview at the top of Settings and on its detail page | Implemented | Vendored the upstream presentation for Expo 57, routed detail actions through the overview and kept App data below it. Existing artifact runs are isolated from new manual artifact runs. Runtime and build evidence follow. |
 
-| VN-ACCOUNT-15 | Combine the managed account UI and the tested iOS authentication session | Implemented | The user tested the separate builds successfully. This change combines them on development. Combined native validation remains separate. |
+| VN-ACCOUNT-15 | Combine the managed account UI and the tested iOS authentication session | Implemented | The user tested the separate builds successfully. Combined commit a34bba0 passed lint, type checking, 576 app tests and 59 workflow tests. Web deployment verified at the same commit. Combined native artifacts are building in run 44586644974. |
