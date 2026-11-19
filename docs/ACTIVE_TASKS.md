@@ -16,4 +16,4 @@
 
 | VN-ACCOUNT-11 | Load mobile storage options promptly, move persistence choice to issuer, group summary categories, and enable outward permissions | Implemented | All four collections were saved in the verified Velunivo registration and persisted after reload. Anonymous listings returned zero records. End-to-end grant, read and revocation still require an authorized destination registration and test user. See ACCOUNT_SYNC.md. |
 
-| VN-ACCOUNT-12 | Add rounded App data category cards and remove summary deletion | Implemented | Summaries remain in the account across sign-out. The server rejects summary DELETE requests. Native artifacts and matching web deployment follow source verification. |
+| VN-ACCOUNT-12 | Add rounded App data category cards and remove summary deletion | Implemented | Summaries remain in the account across sign-out. Lint, type checking, 576 JavaScript tests, and 59 Python tests passed. The production API rejects summary DELETE requests. Web commit 6583f2e is live. A synthetic browser session verified the cards and summary retention. Native artifacts run 44537886677, installed verification pending. |
