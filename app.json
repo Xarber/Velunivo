@@ -91,6 +91,7 @@
         }
       ],
       "expo-secure-store",
+      "expo-web-browser",
       [
         "@sfourdrinier/react-native-ble-plx",
         {

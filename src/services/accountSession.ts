@@ -1,6 +1,7 @@
 import { Linking, Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import * as Crypto from 'expo-crypto';
+import * as WebBrowser from 'expo-web-browser';
 
 const server = 'https://velunivo.xcenter.it';
 const sessionKey = 'xcenter-id-session-v1';
@@ -28,7 +29,28 @@ export async function accountRequest(path: string, init?: RequestInit) {
   }
 }
 
-export async function startAccountSignIn() {
+async function openAccountBrowser(url: string) {
+  if (Platform.OS === 'ios') {
+    await WebBrowser.openBrowserAsync(url, {
+      dismissButtonStyle: 'done',
+      presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
+    });
+    return;
+  }
+  if (Platform.OS === 'android') {
+    const browsers = await WebBrowser.getCustomTabsSupportingBrowsersAsync().catch(() => null);
+    const browserPackage = browsers && [
+      browsers.defaultBrowserPackage, browsers.preferredBrowserPackage, ...browsers.browserPackages,
+    ].find(candidate => candidate && browsers.servicePackages.includes(candidate) && browsers.browserPackages.includes(candidate));
+    if (browserPackage) {
+      await WebBrowser.openBrowserAsync(url, { browserPackage, createTask: false });
+      return;
+    }
+  }
+  await Linking.openURL(url);
+}
+
+export async function startAccountSignIn(onBrowserReady: () => void) {
   const web = Platform.OS === 'web';
   const verifier = web ? '' : Array.from(await Crypto.getRandomBytesAsync(32), value => value.toString(16).padStart(2, '0')).join('');
   const challenge = web ? '' : await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, verifier);
@@ -43,7 +65,14 @@ export async function startAccountSignIn() {
   if (web) window.location.assign(url);
   else {
     await SecureStore.setItemAsync(verifierKey, JSON.stringify({ verifier, code: transaction, expires: Date.now() + 480_000 }));
-    await Linking.openURL(url);
+    onBrowserReady();
+    try {
+      await openAccountBrowser(url);
+    } catch (error) {
+      // Launch URLs are single-use. Discard this attempt so Retry starts with a new one.
+      await cancelAccountSignIn().catch(() => {});
+      throw error;
+    }
   }
 }
 
