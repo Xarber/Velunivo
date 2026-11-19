@@ -21,3 +21,5 @@
 | VN-ACCOUNT-13 | Open native X-Center ID authorization in the system browser sheet | Implemented | Uses Safari Services on iOS and same-task Custom Tabs on Android with default browser fallback. Installed passkey and browser return verification pending. |
 
 | VN-ACCOUNT-14 | Use the shared account overview at the top of Settings and on its detail page | Implemented | Vendored the upstream presentation for Expo 57, routed detail actions through the overview and kept App data below it. Existing artifact runs are isolated from new manual artifact runs. Runtime and build evidence follow. |
+
+| VN-ACCOUNT-15 | Combine the managed account UI and the tested iOS authentication session | Implemented | The user tested the separate builds successfully. This change combines them on development. Combined native validation remains separate. |
