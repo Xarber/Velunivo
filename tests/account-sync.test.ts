@@ -27,9 +27,17 @@ test('account sync rejects untrusted origins, unauthenticated access and unbound
     assert.deepEqual(await status.json(), { enabled: true, signedIn: false });
     assert.equal((await fetch(base + '/start', { method: 'POST', headers: { origin: 'https://other.example' } })).status, 403);
     assert.equal((await fetch(base + '/summary/recent-neighborhoods')).status, 401);
+    assert.equal((await fetch(base + '/native/exchange', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: 'a'.repeat(64), verifier: 'b'.repeat(64) }),
+    })).status, 401);
+    assert.equal((await fetch(base + '/native/start', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ challenge: 'not-a-sha256' }),
+    })).status, 400);
     const callback = await fetch(base + '/callback?code=unbound', { redirect: 'manual' });
     assert.equal(callback.status, 303);
-    assert.equal(callback.headers.get('location'), '/settings/data?account=failed');
+    assert.equal(callback.headers.get('location'), '/settings/xcenter-id?account=failed');
   } finally {
     await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
   }

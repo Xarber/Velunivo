@@ -5,6 +5,7 @@ import * as oidc from 'openid-client';
 const issuer = 'https://id.xcenter.it';
 const redirect = 'https://velunivo.xcenter.it/api/account/callback';
 const origin = new URL(redirect).origin;
+const handoffState = (value: unknown): value is string => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 const id = () => randomBytes(32).toString('hex');
 const cookie = (req: Request, name: string) =>
   new RegExp(`(?:^|; )${name}=([a-f0-9]{64})(?:;|$)`).exec(req.headers.cookie ?? '')?.[1] ?? '';
@@ -27,11 +28,17 @@ class ExpiringStore<T> {
   delete(key: string) { this.entries.delete(key); }
 }
 
-export function accountSync(clientId?: string, secret?: string) {
+export function accountSync(clientId?: string, secret?: string, nativeLinks?: { ios: boolean; android: boolean }) {
   const router = Router();
   const enabled = !!secret && !!clientId && /^[a-zA-Z0-9_-]{1,100}$/.test(clientId);
-  const transactions = new ExpiringStore<{ state: string; nonce: string; verifier: string }>();
+  const transactions = new ExpiringStore<{ state: string; nonce: string; verifier: string; nativeChallenge?: string }>();
+  const handoffs = new ExpiringStore<{ session: string; challenge: string }>();
   const sessions = new ExpiringStore<{ subject: string; token: string; binding: string; profile: Record<string, string> }>();
+
+  function sessionKey(req: Request) {
+    return /^Bearer ([a-f0-9]{64})$/.exec(req.get('authorization') ?? '')?.[1]
+      ?? cookie(req, 'velunivo_session');
+  }
 
   async function config() {
     const configuration = await oidc.discovery(new URL(issuer), clientId!, undefined, oidc.ClientSecretBasic(secret!));
@@ -45,40 +52,47 @@ export function accountSync(clientId?: string, secret?: string) {
 
   router.use((_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
   router.get('/status', (req, res) => {
-    const session = sessions.get(cookie(req, 'velunivo_session'));
-    res.json({ enabled, signedIn: !!session, binding: session?.binding, profile: session?.profile, account: session && createHash('sha256').update(session.subject).digest('hex') });
+    const session = sessions.get(sessionKey(req));
+    res.json({ enabled, nativeLinks, signedIn: !!session, binding: session?.binding, profile: session?.profile, account: session && createHash('sha256').update(session.subject).digest('hex') });
   });
   router.use((req, res, next) => {
     if (!enabled) { res.sendStatus(503); return; }
-    if (req.method !== 'GET' && req.get('origin') !== origin) { res.sendStatus(403); return; }
+    if (req.method !== 'GET' && req.get('origin') !== origin &&
+        (req.get('origin') || !(req.path === '/native/start' || req.path === '/native/exchange' || /^Bearer [a-f0-9]{64}$/.test(req.get('authorization') ?? '')))) { res.sendStatus(403); return; }
     next();
   });
 
-  router.post('/start', async (_req, res) => {
+  router.post(['/start', '/native/start'], json({ limit: '1kb' }), async (req, res) => {
+    const native = req.path === '/native/start';
+    const nativeChallenge = native ? req.body?.challenge : undefined;
+    if (native && (typeof nativeChallenge !== 'string' || !/^[a-f0-9]{64}$/.test(nativeChallenge))) { res.sendStatus(400); return; }
     const configuration = await config();
-    const transaction = { state: id(), nonce: id(), verifier: oidc.randomPKCECodeVerifier() };
+    const transaction = { state: id(), nonce: id(), verifier: oidc.randomPKCECodeVerifier(), nativeChallenge };
     const key = id();
     const url = oidc.buildAuthorizationUrl(configuration, {
       redirect_uri: redirect, response_type: 'code', scope: 'openid profile email age_range app_data',
-      state: transaction.state, nonce: transaction.nonce,
+      state: native ? key : transaction.state, nonce: transaction.nonce,
       code_challenge: await oidc.calculatePKCECodeChallenge(transaction.verifier), code_challenge_method: 'S256',
     });
     transactions.set(key, transaction, 300_000);
-    res.cookie('velunivo_login', key, { ...cookieOptions, maxAge: 300_000 }).json({ url: url.href });
+    if (!native) res.cookie('velunivo_login', key, { ...cookieOptions, maxAge: 300_000 });
+    res.json({ url: url.href });
   });
 
   router.get('/callback', async (req, res) => {
-    const key = cookie(req, 'velunivo_login');
+    const state = typeof req.query.state === 'string' ? req.query.state : '';
+    const native = handoffState(state) && !!transactions.get(state)?.nativeChallenge;
+    const key = native ? state : cookie(req, 'velunivo_login');
     const transaction = transactions.get(key);
     transactions.delete(key);
     res.clearCookie('velunivo_login', cookieOptions);
     try {
-      if (!transaction) throw new Error('Missing login transaction');
+      if (!transaction || !!transaction.nativeChallenge !== native) throw new Error('Missing login transaction');
       const callback = new URL(redirect);
       callback.search = new URL(req.originalUrl, origin).search;
       const configuration = await config();
       const tokens = await oidc.authorizationCodeGrant(configuration, callback, {
-        pkceCodeVerifier: transaction.verifier, expectedState: transaction.state,
+        pkceCodeVerifier: transaction.verifier, expectedState: native ? key : transaction.state,
         expectedNonce: transaction.nonce, idTokenExpected: true,
       });
       const subject = tokens.claims()?.sub;
@@ -100,21 +114,39 @@ export function accountSync(clientId?: string, secret?: string) {
       const duration = Math.min(3600, tokens.expires_in ?? 300) * 1000;
       const session = id();
       sessions.set(session, { subject, token: tokens.access_token, binding: id(), profile }, duration);
-      sessions.delete(cookie(req, 'velunivo_session'));
+      if (transaction.nativeChallenge) {
+        const code = id();
+        handoffs.set(code, { session, challenge: transaction.nativeChallenge }, 60_000);
+        res.redirect(303, '/account/return?code=' + code);
+        return;
+      }
+      sessions.delete(sessionKey(req));
       res.cookie('velunivo_session', session, { ...cookieOptions, maxAge: duration });
-      res.redirect(303, '/settings/data?account=connected');
+      res.redirect(303, '/settings/xcenter-id?account=connected');
     } catch {
-      res.redirect(303, '/settings/data?account=failed');
+      res.redirect(303, native ? '/account/return?error=failed' : '/settings/xcenter-id?account=failed');
     }
   });
 
+  router.post('/native/exchange', json({ limit: '1kb' }), (req, res) => {
+    const { code, verifier } = req.body ?? {};
+    if (!handoffState(code) || !handoffState(verifier)) { res.sendStatus(400); return; }
+    const handoff = handoffs.get(code);
+    const challenge = createHash('sha256').update(verifier).digest('hex');
+    if (!handoff || handoff.challenge !== challenge || !sessions.get(handoff.session)) {
+      res.sendStatus(401); return;
+    }
+    handoffs.delete(code);
+    res.json({ session: handoff.session });
+  });
+
   router.post('/logout', (req, res) => {
-    sessions.delete(cookie(req, 'velunivo_session'));
+    sessions.delete(sessionKey(req));
     res.clearCookie('velunivo_session', cookieOptions).sendStatus(204);
   });
 
   router.all('/summary/:category', json({ limit: '8kb' }), async (req, res) => {
-    const session = sessions.get(cookie(req, 'velunivo_session'));
+    const session = sessions.get(sessionKey(req));
     if (!session) { res.sendStatus(401); return; }
     const category = req.params.category;
     if (category !== 'recent-neighborhoods' && category !== 'ride-insights') { res.sendStatus(404); return; }

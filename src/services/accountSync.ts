@@ -1,3 +1,5 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {accountRequest as request} from './accountSession';
 import { reverseAreaName } from './api';
 import { recordedRides } from './rideHistory';
 
@@ -6,11 +8,7 @@ export type Category = typeof categories[number];
 type Summary = string[] | { rides: number; kilometers: number; minutes: number };
 export type SummaryRecord = { revision: number; data: Summary };
 
-export async function request(path: string, init?: RequestInit) {
-  const result = await fetch('/api/account/' + path, { cache: 'no-store', signal: AbortSignal.timeout(15_000), ...init });
-  if (!result.ok) throw new Error(String(result.status));
-  return result;
-}
+export {accountRequest as request} from './accountSession';
 
 async function makeSummary(category: Category): Promise<Summary> {
   const now = Date.now();
@@ -37,6 +35,7 @@ async function makeSummary(category: Category): Promise<Summary> {
 
 export type AccountStatus = {
   enabled: boolean;
+  nativeLinks?: { ios: boolean; android: boolean };
   signedIn: boolean;
   binding?: string;
   account?: string;
@@ -60,14 +59,15 @@ export async function syncSummaries() {
   if (!status.signedIn || !status.account || !status.binding) return;
   for (const category of categories) {
     const key = consentKey(status.account, category);
-    const approved = window.localStorage.getItem(key);
-    if (approved === null) continue;
+    const saved = await AsyncStorage.getItem(key);
+    if (saved?.startsWith('paused:')) continue;
+    const approved = saved ?? '0';
     const remote = await readSummary(category);
     const revision = remote?.revision ?? 0;
     // This browser may update its own last revision. A newer remote copy is read-only.
     if (String(revision) !== approved) continue;
     const data = await makeSummary(category);
-    if (window.localStorage.getItem(key) !== approved ||
+    if (await AsyncStorage.getItem(key) !== saved ||
         JSON.stringify(data) === JSON.stringify(remote?.data)) continue;
     const empty = Array.isArray(data) ? data.length === 0 : data.rides === 0;
     if (!remote && empty) continue;
@@ -79,8 +79,8 @@ export async function syncSummaries() {
       },
       body: JSON.stringify(data),
     })).json();
-    if (window.localStorage.getItem(key) === approved) {
-      window.localStorage.setItem(key, String(result.revision));
+    if (await AsyncStorage.getItem(key) === saved) {
+      await AsyncStorage.setItem(key, String(result.revision));
     }
   }
 }
