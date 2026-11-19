@@ -6,6 +6,7 @@ import * as WebBrowser from 'expo-web-browser';
 const server = 'https://velunivo.xcenter.it';
 const sessionKey = 'xcenter-id-session-v1';
 const verifierKey = 'xcenter-id-verifier-v1';
+let iosBrowserAttempt: string | undefined;
 
 export async function accountRequest(path: string, init?: RequestInit) {
   const web = Platform.OS === 'web';
@@ -30,13 +31,6 @@ export async function accountRequest(path: string, init?: RequestInit) {
 }
 
 async function openAccountBrowser(url: string) {
-  if (Platform.OS === 'ios') {
-    await WebBrowser.openBrowserAsync(url, {
-      dismissButtonStyle: 'done',
-      presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
-    });
-    return;
-  }
   if (Platform.OS === 'android') {
     const browsers = await WebBrowser.getCustomTabsSupportingBrowsersAsync().catch(() => null);
     const browserPackage = browsers && [
@@ -67,7 +61,21 @@ export async function startAccountSignIn(onBrowserReady: () => void) {
     await SecureStore.setItemAsync(verifierKey, JSON.stringify({ verifier, code: transaction, expires: Date.now() + 480_000 }));
     onBrowserReady();
     try {
-      await openAccountBrowser(url);
+      if (Platform.OS === 'ios') {
+        iosBrowserAttempt = transaction;
+        try {
+          // The website owns the HTTPS callback. The app completes the claim using
+          // its stored verifier and dismisses the system authentication session.
+          const result = await WebBrowser.openAuthSessionAsync(url);
+          if (result.type === 'cancel' && await finishAccountSignIn() === 'pending') {
+            await cancelAccountSignIn();
+          }
+        } finally {
+          if (iosBrowserAttempt === transaction) iosBrowserAttempt = undefined;
+        }
+      } else {
+        await openAccountBrowser(url);
+      }
     } catch (error) {
       // Launch URLs are single-use. Discard this attempt so Retry starts with a new one.
       await cancelAccountSignIn().catch(() => {});
@@ -76,7 +84,14 @@ export async function startAccountSignIn(onBrowserReady: () => void) {
   }
 }
 
-export async function finishAccountSignIn() {
+type PickupResult = 'idle' | 'pending' | 'connected' | 'expired';
+let pickup: Promise<PickupResult> | undefined;
+
+export function finishAccountSignIn() {
+  return pickup ??= completeAccountSignIn().finally(() => { pickup = undefined; });
+}
+
+async function completeAccountSignIn(): Promise<PickupResult> {
   if (Platform.OS === 'web') return 'idle';
   const pending = await SecureStore.getItemAsync(verifierKey);
   if (!pending) return 'idle';
@@ -95,6 +110,9 @@ export async function finishAccountSignIn() {
     if (await SecureStore.getItemAsync(verifierKey) !== pending) return 'idle';
     await SecureStore.setItemAsync(sessionKey, session);
     await SecureStore.deleteItemAsync(verifierKey);
+    if (Platform.OS === 'ios' && iosBrowserAttempt === code) {
+      WebBrowser.dismissAuthSession();
+    }
     return 'connected';
   } catch (error) {
     if (!['401', '410'].includes((error as Error).message)) throw error;

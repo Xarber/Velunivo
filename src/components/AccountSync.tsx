@@ -27,7 +27,7 @@ export default function AccountSync() {
   const [records, setRecords] = useState<Partial<{ [K in Category]: SummaryRecord | null }>>({});
   const [preferences, setPreferences] = useState<Partial<{ [K in Category]: string | null }>>({});
   const [pendingSignIn, setPendingSignIn] = useState(false);
-  const checkSignIn = useRef<() => Promise<void>>(undefined);
+  const checkSignIn = useRef<(pollOnly?: boolean) => Promise<void>>(undefined);
   const [accountPhoto, setAccountPhoto] = useState<{ binding: string; uri: string }>();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(() => accountReturnFailed(Platform.OS, Platform.OS === 'web' && typeof window !== 'undefined' ? window : undefined)
@@ -129,14 +129,18 @@ export default function AccountSync() {
         setPendingSignIn(false);
       })}/> : <Button title={t('Sign in with X-Center ID')} icon="person-circle-outline" disabled={busy}
         onPress={() => void run(async () => {
+          let authPoll: ReturnType<typeof setInterval> | undefined;
           try {
             await startAccountSignIn(() => {
+              if (Platform.OS === 'ios') authPoll = setInterval(() => void checkSignIn.current?.(true), 1250);
               setPendingSignIn(true);
               setMessage('Finish signing in in your browser, then return here.');
             });
           } catch (error) {
             setPendingSignIn(false);
             throw error;
+          } finally {
+            clearInterval(authPoll);
           }
           if (Platform.OS === 'ios') await checkSignIn.current?.();
         })}/>}
