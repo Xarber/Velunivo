@@ -2136,5 +2136,13 @@
   "A category exceeds the account sync size limit.": "Eine Kategorie überschreitet das Größenlimit der Synchronisierung.",
   "Some account data could not sync. Velunivo will retry.": "Einige Daten konnten nicht synchronisiert werden. Velunivo versucht es erneut.",
   "Could not calculate account sync sizes.": "Die Größe der zu synchronisierenden Daten konnte nicht ermittelt werden.",
-  "Could not save this sync preference.": "Die Synchronisierungseinstellung konnte nicht gespeichert werden."
+  "Could not save this sync preference.": "Die Synchronisierungseinstellung konnte nicht gespeichert werden.",
+  "Account storage permission is off. Sign in again to enable sync.": "Der Zugriff auf den Kontospeicher ist deaktiviert. Melde dich zur Synchronisierung erneut an.",
+  "Cancel sign-in": "Anmeldung abbrechen",
+  "Could not open X-Center ID. Try again.": "X-Center ID konnte nicht geöffnet werden. Versuche es erneut.",
+  "Manage X-Center ID": "X-Center ID verwalten",
+  "Profile photo": "Profilfoto",
+  "Stay signed in": "Angemeldet bleiben",
+  "Verified account": "Verifiziertes Konto",
+  "X-Center administrator": "X-Center-Administrator"
 }

@@ -1,5 +1,13 @@
 /** English source messages are stable keys. User-authored content is never stored translated. */
 export const italian:Record<string,string>={
+"Account storage permission is off. Sign in again to enable sync.":"L’accesso allo spazio dell’account è disattivato. Accedi di nuovo per attivare la sincronizzazione.",
+"Cancel sign-in":"Annulla accesso",
+"Could not open X-Center ID. Try again.":"Impossibile aprire X-Center ID. Riprova.",
+"Manage X-Center ID":"Gestisci X-Center ID",
+"Profile photo":"Foto del profilo",
+"Stay signed in":"Resta connesso",
+"Verified account":"Account verificato",
+"X-Center administrator":"Amministratore X-Center",
 "App data":"Dati dell’app",
 "Calculating local sizes…":"Calcolo delle dimensioni locali…",
 "Exploration history":"Cronologia delle esplorazioni",

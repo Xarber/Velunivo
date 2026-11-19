@@ -28,12 +28,12 @@ export async function accountRequest(path: string, init?: RequestInit) {
   }
 }
 
-export async function startAccountSignIn() {
+export async function startAccountSignIn(staySignedIn = false) {
   const web = Platform.OS === 'web';
   const verifier = web ? '' : Array.from(await Crypto.getRandomBytesAsync(32), value => value.toString(16).padStart(2, '0')).join('');
   const challenge = web ? '' : await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, verifier);
   const response = await accountRequest(web ? 'start' : 'native/start', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ challenge, portableSync: true }),
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ challenge, portableSync: true, staySignedIn }),
   });
   const { url, transaction } = await response.json();
   const destination = new URL(url);
@@ -63,12 +63,13 @@ export async function finishAccountSignIn() {
     if (response.status === 202) return 'pending';
     const { session } = await response.json();
     if (typeof session !== 'string' || !/^[a-f0-9]{64}$/.test(session)) throw new Error('Invalid session');
+    if (await SecureStore.getItemAsync(verifierKey) !== pending) return 'idle';
     await SecureStore.setItemAsync(sessionKey, session);
     await SecureStore.deleteItemAsync(verifierKey);
     return 'connected';
   } catch (error) {
     if (!['401', '410'].includes((error as Error).message)) throw error;
-    await SecureStore.deleteItemAsync(verifierKey);
+    if (await SecureStore.getItemAsync(verifierKey) === pending) await SecureStore.deleteItemAsync(verifierKey);
     return 'expired';
   }
 }
@@ -76,4 +77,15 @@ export async function finishAccountSignIn() {
 export async function signOutAccount() {
   try { await accountRequest('logout', { method: 'POST' }); }
   finally { if (Platform.OS !== 'web') await SecureStore.deleteItemAsync(sessionKey); }
+}
+
+export async function cancelAccountSignIn() {
+  if (Platform.OS === 'web') return;
+  const pending = await SecureStore.getItemAsync(verifierKey);
+  await SecureStore.deleteItemAsync(verifierKey);
+  if (!pending) return;
+  const { code, verifier } = JSON.parse(pending);
+  await accountRequest('native/cancel', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, verifier }),
+  }).catch(() => {});
 }

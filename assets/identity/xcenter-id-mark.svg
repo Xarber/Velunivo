@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="109 117 310 261">
+  <defs>
+    <linearGradient id="surface" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#192750"/><stop offset="1" stop-color="#081125"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#FFFFFF"/><stop offset="1" stop-color="#C4D8FF"/>
+    </linearGradient>
+  </defs>
+  <g id="secondary-card" transform="rotate(13 256 256)">
+    <rect x="151" y="155" width="230" height="180" rx="39" fill="#526DFF"/>
+    <rect x="151.5" y="155.5" width="229" height="179" rx="38.5" fill="none" stroke="#8A9AFF"/>
+  </g>
+  <g id="identity-card">
+    <rect x="132" y="175" width="230" height="180" rx="39" fill="#080F24" opacity=".38"/>
+    <rect x="132" y="165" width="230" height="180" rx="39" fill="url(#card)"/>
+  </g>
+  <g id="person" fill="#2D4592">
+    <circle cx="198" cy="230" r="24"/>
+    <path d="M164 287c0-16 15-28 34-28s34 12 34 28v10h-68z"/>
+  </g>
+  <g id="account-details" fill="none" stroke-linecap="round">
+    <path d="M252 231h67" stroke="#314DAB" stroke-width="14"/>
+    <path d="M252 259h50" stroke="#728BE4" stroke-width="12"/>
+    <path d="M252 285h32" stroke="#728BE4" stroke-width="12"/>
+  </g>
+  <g id="verified-dot">
+    <circle cx="350" cy="329" r="20" fill="#131F40"/>
+    <circle cx="350" cy="329" r="13" fill="#5DE9CA"/>
+  </g>
+</svg>

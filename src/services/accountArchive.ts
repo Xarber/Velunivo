@@ -15,7 +15,7 @@ async function categoryEnabled(status: AccountStatus, category: ArchiveKind, byt
 }
 
 export async function accountArchiveSizes(status: AccountStatus): Promise<ArchiveSize[]> {
-  if (!status.signedIn || !status.account) return [];
+  if (!status.signedIn || !status.canSync || !status.account) return [];
   const snapshot = await exportAutomaticSync(false);
   return Promise.all(archiveKinds.map(async category => {
     const bytes = accountArchiveBytes(projectAccountArchive(snapshot, category));
@@ -28,7 +28,7 @@ export async function setArchiveEnabled(status: AccountStatus, category: Archive
 }
 
 export async function syncAccountArchive(status: AccountStatus) {
-  if (!status.signedIn || !status.account || !status.binding || isRideLocked()) return;
+  if (!status.signedIn || !status.canSync || !status.account || !status.binding || isRideLocked()) return;
   let local = await exportAutomaticSync(false);
   const headers = { 'X-Sync-Binding': status.binding };
   let failure: unknown;

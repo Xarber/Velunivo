@@ -36,11 +36,13 @@ async function makeSummary(category: Category): Promise<Summary> {
 
 export type AccountStatus = {
   enabled: boolean;
+  persistentSignIn?: boolean;
+  canSync?: boolean;
   portableSync?: boolean;
   signedIn: boolean;
   binding?: string;
   account?: string;
-  profile?: AccountProfile & { email?: string; age_range?: string };
+  profile?: AccountProfile & { email?: string; age_range?: string; verified?: boolean; administrator?: boolean };
 };
 
 export function consentKey(account: string, category: Category) {
@@ -56,7 +58,7 @@ export async function readSummary(category: Category): Promise<SummaryRecord | n
 }
 
 export async function syncSummaries(status: AccountStatus) {
-  if (!status.signedIn || !status.account || !status.binding) return;
+  if (!status.signedIn || !status.canSync || !status.account || !status.binding) return;
   for (const category of categories) {
     const key = consentKey(status.account, category);
     const saved = await AsyncStorage.getItem(key);

@@ -1,3 +1,4 @@
+import XCenterAccountCard from './XCenterAccountCard';
 import { accountReturnFailed, defaultAccountProfile } from '../core/accountProfile';
 import { loadAccountProfilePhoto } from '../services/accountProfilePhoto';
 import { readSettingEdits } from '../services/syncSettings';
@@ -6,7 +7,7 @@ import AccountArchiveSettings from './AccountArchiveSettings';
 import { accountArchiveBytes } from '../core/accountArchive';
 import { t } from '../i18n/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { startAccountSignIn, signOutAccount, finishAccountSignIn } from '../services/accountSession';
+import { startAccountSignIn, signOutAccount, finishAccountSignIn, cancelAccountSignIn } from '../services/accountSession';
 import { observeAccountSync, refreshAccountSync } from './AccountSyncWorker';
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, AppState, Platform, Switch, View } from 'react-native';
@@ -22,22 +23,27 @@ export default function AccountSync() {
   const [status, setStatus] = useState<AccountStatus>();
   const [records, setRecords] = useState<Partial<{ [K in Category]: SummaryRecord | null }>>({});
   const [preferences, setPreferences] = useState<Partial<{ [K in Category]: string | null }>>({});
+  const [staySignedIn, setStaySignedIn] = useState(true);
+  const [pendingSignIn, setPendingSignIn] = useState(false);
+  const [accountPhoto, setAccountPhoto] = useState<{ binding: string; uri: string }>();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(() => accountReturnFailed(Platform.OS, Platform.OS === 'web' && typeof window !== 'undefined' ? window : undefined)
     ? 'Sign-in did not complete. Please try again.' : '');
   useEffect(() => {
     let active = true;
     let checking = false;
-    const check = async () => {
+    const check = async (pollOnly = false) => {
       if (checking || !active || (Platform.OS !== 'web' && AppState.currentState === 'background')) return;
       checking = true;
       try {
         const result = await finishAccountSignIn();
         if (!active) return;
+        setPendingSignIn(result === 'pending');
+        if (pollOnly && (result === 'idle' || result === 'pending')) return;
         if (result === 'connected' || result === 'expired') {
           setMessage(result === 'connected' ? 'Connected to X-Center ID.' : 'Sign-in expired or was declined. Try again.');
         }
-        const response = await request('status');
+        const response = await request('status?renew=1');
         const next: AccountStatus = await response.json();
         if (active) setStatus(previous => JSON.stringify(previous) === JSON.stringify(next) ? previous : next);
         if (result === 'connected') refreshAccountSync();
@@ -47,17 +53,17 @@ export default function AccountSync() {
     };
     void check();
     const subscription = AppState.addEventListener('change', state => { if (state === 'active') void check(); });
-    const timer = Platform.OS === 'web' ? undefined : setInterval(() => void check(), 5000);
+    const timer = Platform.OS === 'web' ? undefined : setInterval(() => void check(true), 5000);
     return () => { active = false; subscription.remove(); clearInterval(timer); };
   }, []);
   useEffect(() => {
-    if (!status?.signedIn) return;
+    if (!status?.signedIn || !status.canSync) return;
     const load = () => Promise.all(categories.map(async category => [category, await readSummary(category)] as const))
       .then(items => setRecords(Object.fromEntries(items)))
       .catch(() => {});
     void load();
         return observeAccountSync(load);
-  }, [status?.signedIn]);
+  }, [status?.signedIn, status?.canSync]);
   useEffect(() => {
     const account = status?.account;
     if (!account) return;
@@ -77,12 +83,13 @@ export default function AccountSync() {
       const current = latestStore.current.navigationOptions;
       // A missing name alone does not rule out an avatar-only account profile.
       const candidate = profile.hasPicture ? 'pending' : undefined;
-      if (!defaultAccountProfile(current, edits, profile, candidate)) return;
+      const shouldImport = !!defaultAccountProfile(current, edits, profile, candidate);
       const photo = profile.hasPicture ? await loadAccountProfilePhoto(binding, controller.signal).catch(() => undefined) : undefined;
       if (controller.signal.aborted) return;
       const active: AccountStatus = await (await request('status')).json();
       if (!controller.signal.aborted && active.binding === binding) {
-        await latestStore.current.importDefaultAccountProfile(profile, photo);
+        if (photo) setAccountPhoto({ binding, uri: photo });
+        if (shouldImport) await latestStore.current.importDefaultAccountProfile(profile, photo);
       }
     })().catch(() => {});
     return () => controller.abort();
@@ -104,16 +111,27 @@ export default function AccountSync() {
   }
 
   return <View style={{ gap: 10, padding: 16, borderWidth: 1, borderColor: palette.muted, borderRadius: 14 }}>
-    <Text style={{ color: palette.text, fontWeight: '700' }}>X-Center ID sync</Text>
-    <Text style={{ color: palette.muted }}>Signing in syncs settings, vehicles, saved places and routes, and ride summaries by default. You can change each category. Ride recordings include GPS tracks and stay off until you enable them.</Text>
-    {!status.signedIn ? <Button title="Sign in with X-Center ID" icon="person-circle-outline" disabled={busy}
-      onPress={() => void run(async () => {
-        await startAccountSignIn();
-        if (Platform.OS !== 'web') setMessage('Finish signing in in your browser, then return here.');
-      })}/> : <>
-      {[status.profile?.name || status.profile?.preferred_username, status.profile?.email,
-        status.profile?.age_range].filter(Boolean).map((value, index) =>
-        <Text key={index} style={{ color: palette.text }}>{value}</Text>)}
+    {!status.signedIn ? <>
+      <Text style={{ color: palette.text, fontWeight: '700' }}>X-Center ID sync</Text>
+      <Text style={{ color: palette.muted }}>Signing in syncs settings, vehicles, saved places and routes, and ride summaries by default. You can change each category. Ride recordings include GPS tracks and stay off until you enable them.</Text>
+      {status.persistentSignIn && <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text style={{ color: palette.text }}>Stay signed in</Text>
+        <Switch accessibilityLabel={t('Stay signed in')} value={staySignedIn} disabled={busy || pendingSignIn} onValueChange={setStaySignedIn}/>
+      </View>}
+      {pendingSignIn ? <Button title={t('Cancel sign-in')} icon="close-outline" secondary disabled={busy} onPress={() => void run(async () => {
+        await cancelAccountSignIn();
+        setPendingSignIn(false);
+      })}/> : <Button title={t('Sign in with X-Center ID')} icon="person-circle-outline" disabled={busy}
+        onPress={() => void run(async () => {
+          await startAccountSignIn(staySignedIn);
+          if (Platform.OS !== 'web') {
+            setPendingSignIn(true);
+            setMessage('Finish signing in in your browser, then return here.');
+          }
+        })}/>}
+    </> : <>
+      <XCenterAccountCard profile={status.profile} photo={accountPhoto?.binding === status.binding ? accountPhoto?.uri : undefined}/>
+      {!status.canSync ? <Text style={{ color: palette.muted }}>Account storage permission is off. Sign in again to enable sync.</Text> : <>
       <AccountArchiveSettings status={status}/>
       {categories.map(category => {
         const neighborhoods = category === 'recent-neighborhoods';
@@ -163,6 +181,7 @@ export default function AccountSync() {
             }}/>}
         </View>;
       })}
+      </>}
       <Button title="Sign out" icon="log-out-outline" secondary disabled={busy} onPress={() => void run(async () => {
         await signOutAccount();
         setRecords({});

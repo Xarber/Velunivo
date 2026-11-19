@@ -1,3 +1,4 @@
+import { createAccountSessions, idleSessionMilliseconds } from './accountSessions';
 import { accountArchive, archiveCategories, ArchiveError, ARCHIVE_LIMIT } from './accountArchive';
 import { createHash, randomBytes } from 'node:crypto';
 import { Router, json, type Request } from 'express';
@@ -29,13 +30,13 @@ class ExpiringStore<T> {
   delete(key: string) { this.entries.delete(key); }
 }
 
-export function accountSync(clientId?: string, secret?: string) {
+export function accountSync(clientId?: string, secret?: string, sessionDirectory?: string) {
   const router = Router();
   const enabled = !!secret && !!clientId && /^[a-zA-Z0-9_-]{1,100}$/.test(clientId);
-  const transactions = new ExpiringStore<{ state: string; nonce: string; verifier: string; nativeChallenge?: string; portableSync: boolean }>();
+  const transactions = new ExpiringStore<{ state: string; nonce: string; verifier: string; nativeChallenge?: string; portableSync: boolean; staySignedIn: boolean }>();
   const handoffs = new ExpiringStore<{ session?: string; challenge: string; failed?: boolean }>();
   const browserLaunches = new ExpiringStore<{ authorization: string; key: string }>();
-  const sessions = new ExpiringStore<{ subject: string; token: string; binding: string; profile: Record<string, string | boolean>; portableSync: boolean }>();
+  const sessions = createAccountSessions(clientId ?? '', secret ?? '', enabled ? sessionDirectory : undefined);
 
   function sessionKey(req: Request) {
     return /^Bearer ([a-f0-9]{64})$/.exec(req.get('authorization') ?? '')?.[1]
@@ -52,15 +53,28 @@ export function accountSync(clientId?: string, secret?: string) {
     return configuration;
   }
 
+  async function currentSession(req: Request, res: import('express').Response) {
+    const key = sessionKey(req);
+    const before = sessions.get(key);
+    const session = await sessions.fresh(key, async refresh => {
+      const tokens = await oidc.refreshTokenGrant(await config(), refresh);
+      return { token: tokens.access_token, refreshToken: tokens.refresh_token, expiresIn: tokens.expires_in ?? 600, canSync: tokens.scope?.split(' ').includes('app_data') };
+    });
+    if (session && session !== before && !req.get('authorization')) {
+      res.cookie('velunivo_session', key, { ...cookieOptions, maxAge: session.expiresAt - Date.now() });
+    }
+    return session;
+  }
+
   router.use((_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
-  router.get('/status', (req, res) => {
-    const session = sessions.get(sessionKey(req));
-    res.json({ enabled, signedIn: !!session, binding: session?.binding, profile: session?.profile, portableSync: session?.portableSync, account: session && createHash('sha256').update(session.subject).digest('hex') });
+  router.get('/status', async (req, res) => {
+    const session = req.query.renew === '1' ? await currentSession(req, res) : sessions.get(sessionKey(req));
+    res.json({ enabled, ...(sessions.persistent ? { persistentSignIn: true } : {}), signedIn: !!session, binding: session?.binding, profile: session?.profile, canSync: session?.canSync, portableSync: session?.portableSync, account: session && createHash('sha256').update(session.subject).digest('hex') });
   });
   router.use((req, res, next) => {
     if (!enabled) { res.sendStatus(503); return; }
     if (req.method !== 'GET' && req.get('origin') !== origin &&
-        (req.get('origin') || !(req.path === '/native/start' || req.path === '/native/exchange' || /^Bearer [a-f0-9]{64}$/.test(req.get('authorization') ?? '')))) { res.sendStatus(403); return; }
+        (req.get('origin') || !(req.path === '/native/start' || req.path === '/native/exchange' || req.path === '/native/cancel' || /^Bearer [a-f0-9]{64}$/.test(req.get('authorization') ?? '')))) { res.sendStatus(403); return; }
     next();
   });
 
@@ -69,10 +83,14 @@ export function accountSync(clientId?: string, secret?: string) {
     const nativeChallenge = native ? req.body?.challenge : undefined;
     if (native && (typeof nativeChallenge !== 'string' || !/^[a-f0-9]{64}$/.test(nativeChallenge))) { res.sendStatus(400); return; }
     const configuration = await config();
-    const transaction = { state: id(), nonce: id(), verifier: oidc.randomPKCECodeVerifier(), nativeChallenge, portableSync: req.body?.portableSync === true };
+    const metadata = configuration.serverMetadata();
+    const staySignedIn = req.body?.staySignedIn === true && sessions.persistent &&
+      !!metadata.grant_types_supported?.includes('refresh_token') && !!metadata.scopes_supported?.includes('offline_access');
+    const transaction = { staySignedIn, state: id(), nonce: id(), verifier: oidc.randomPKCECodeVerifier(), nativeChallenge, portableSync: req.body?.portableSync === true };
     const key = id();
     const url = oidc.buildAuthorizationUrl(configuration, {
-      redirect_uri: redirect, response_type: 'code', scope: 'openid profile email age_range app_data',
+      redirect_uri: redirect, response_type: 'code', scope: 'openid profile email age_range app_data' + (staySignedIn ? ' offline_access' : ''),
+      ...(staySignedIn ? { prompt: 'consent' } : {}),
       state: native ? key : transaction.state, nonce: transaction.nonce,
       code_challenge: await oidc.calculatePKCECodeChallenge(transaction.verifier), code_challenge_method: 'S256',
     });
@@ -116,7 +134,7 @@ export function accountSync(clientId?: string, secret?: string) {
         expectedNonce: transaction.nonce, idTokenExpected: true,
       });
       const subject = tokens.claims()?.sub;
-      if (!subject || !tokens.scope?.split(' ').includes('app_data')) throw new Error('Sync permission declined');
+      if (!subject) throw new Error('Missing account identity');
       const info = await oidc.fetchUserInfo(configuration, tokens.access_token, subject);
       const granted = new Set(tokens.scope?.split(' '));
       const profile: Record<string, string | boolean> = {};
@@ -134,20 +152,26 @@ export function accountSync(clientId?: string, secret?: string) {
           if (typeof value === 'string' && value.length <= 254) profile[field] = value;
         }
       }
-      const duration = Math.min(3600, tokens.expires_in ?? 300) * 1000;
+      if (info.xcenter_verified === true) profile.verified = true;
+      if (info.xcenter_admin === true) profile.administrator = true;
+      const accessDuration = (tokens.expires_in ?? 300) * 1000;
+      const refreshToken = transaction.staySignedIn ? tokens.refresh_token : undefined;
+      const duration = refreshToken ? idleSessionMilliseconds : accessDuration;
       const session = id();
-      sessions.set(session, { subject, token: tokens.access_token, binding: id(), profile, portableSync: transaction.portableSync }, duration);
+      if (transaction.nativeChallenge && !handoffs.get(key)) throw new Error('Canceled native sign-in');
+      sessions.save(session, { subject, token: tokens.access_token, refreshToken, binding: id(), profile,
+        portableSync: transaction.portableSync, canSync: granted.has('app_data'), accessExpiresAt: Date.now() + accessDuration, expiresAt: Date.now() + duration });
       if (transaction.nativeChallenge) {
         handoffs.delete(key);
         handoffs.set(key, { session, challenge: transaction.nativeChallenge }, 180_000);
         res.type('html').send(browserResult(true));
         return;
       }
-      sessions.delete(sessionKey(req));
+      sessions.remove(sessionKey(req));
       res.cookie('velunivo_session', session, { ...cookieOptions, maxAge: duration });
       res.redirect(303, '/settings/xcenter-id?account=connected');
     } catch {
-      if (native && transaction?.nativeChallenge) {
+      if (native && transaction?.nativeChallenge && handoffs.get(key)) {
         handoffs.delete(key);
         handoffs.set(key, { challenge: transaction.nativeChallenge, failed: true }, 180_000);
         res.status(400).type('html').send(browserResult(false));
@@ -169,13 +193,26 @@ export function accountSync(clientId?: string, secret?: string) {
     res.json({ session: handoff.session });
   });
 
+  router.post('/native/cancel', json({ limit: '1kb' }), (req, res) => {
+    const { code, verifier } = req.body ?? {};
+    if (!handoffState(code) || !handoffState(verifier)) { res.sendStatus(400); return; }
+    const handoff = handoffs.get(code);
+    if (!handoff || handoff.challenge !== createHash('sha256').update(verifier).digest('hex')) {
+      res.sendStatus(401); return;
+    }
+    if (handoff.session) sessions.remove(handoff.session);
+    handoffs.delete(code);
+    transactions.delete(code);
+    res.sendStatus(204);
+  });
+
   router.post('/logout', (req, res) => {
-    sessions.delete(sessionKey(req));
+    sessions.remove(sessionKey(req));
     res.clearCookie('velunivo_session', cookieOptions).sendStatus(204);
   });
 
   router.get('/profile-photo', async (req, res) => {
-    const session = sessions.get(sessionKey(req));
+    const session = await currentSession(req, res);
     if (!session || req.get('x-sync-binding') !== session.binding) { res.sendStatus(401); return; }
     if (session.profile.hasPicture !== true) { res.sendStatus(404); return; }
     const picture = await fetch(issuer + '/v1/profile/avatar', {
@@ -209,8 +246,9 @@ export function accountSync(clientId?: string, secret?: string) {
     next();
   });
   router.all('/archive/:category', json({ limit: ARCHIVE_LIMIT }), async (req, res) => {
-    const session = sessions.get(sessionKey(req));
+    const session = await currentSession(req, res);
     if (!session || req.get('x-sync-binding') !== session.binding) { res.sendStatus(401); return; }
+    if (!session.canSync) { res.sendStatus(403); return; }
     const category = req.params.category;
     if (!archiveCategories.has(category)) { res.sendStatus(404); return; }
     const archive = accountArchive(issuer, clientId!, session.token, category);
@@ -243,8 +281,9 @@ export function accountSync(clientId?: string, secret?: string) {
   });
 
   router.all('/summary/:category', json({ limit: '8kb' }), async (req, res) => {
-    const session = sessions.get(sessionKey(req));
+    const session = await currentSession(req, res);
     if (!session) { res.sendStatus(401); return; }
+    if (!session.canSync) { res.sendStatus(403); return; }
     const category = req.params.category;
     if (category !== 'recent-neighborhoods' && category !== 'ride-insights') { res.sendStatus(404); return; }
     const method = req.method;
