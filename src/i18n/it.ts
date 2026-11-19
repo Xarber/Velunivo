@@ -1,5 +1,15 @@
 /** English source messages are stable keys. User-authored content is never stored translated. */
 export const italian:Record<string,string>={
+"App data":"Dati dell’app",
+"Calculating local sizes…":"Calcolo delle dimensioni locali…",
+"Exploration history":"Cronologia delle esplorazioni",
+"Invalid account data.":"Dati dell’account non validi.",
+"Signing in syncs settings, vehicles, saved places and routes, and ride summaries by default. You can change each category. Ride recordings include GPS tracks and stay off until you enable them.":"Con l’accesso si sincronizzano impostazioni, veicoli, luoghi e percorsi salvati e riepiloghi dei viaggi. Puoi scegliere quali categorie sincronizzare. Le registrazioni contengono tracce GPS e restano escluse finché non le attivi.",
+"Sizes are estimates before compression. Recorded rides and exploration history start off. Categories with 256 KiB or more also start off.":"Le dimensioni sono stimate prima della compressione. I viaggi registrati, la cronologia delle esplorazioni e le categorie da 256 KiB in su partono disattivati.",
+"A category exceeds the account sync size limit.":"Una categoria supera il limite di sincronizzazione.",
+"Some account data could not sync. Velunivo will retry.":"Alcuni dati non sono stati sincronizzati. Velunivo riproverà.",
+"Could not calculate account sync sizes.":"Impossibile calcolare le dimensioni dei dati da sincronizzare.",
+"Could not save this sync preference.":"Impossibile salvare questa preferenza di sincronizzazione.",
 "Account and automatic sync":"Account e sincronizzazione automatica",
 "Approximate destinations from recent rides are sent to Photon to find area names. Only the names are saved to your account.":"Per trovare i nomi dei quartieri, le destinazioni approssimative dei viaggi recenti vengono inviate a Photon. Nell’account vengono salvati solo i nomi.",
 "Automatic sync":"Sincronizzazione automatica",

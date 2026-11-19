@@ -2126,5 +2126,15 @@
   "This summary changed on another device. Its account copy was preserved.": "Otro dispositivo cambió este resumen. Se conservó la copia de la cuenta.",
   "Account sync could not finish. Please try again.": "No se pudo completar la sincronización. Inténtalo de nuevo.",
   "Finish signing in in your browser, then return here.": "Termina de iniciar sesión en el navegador y vuelve aquí.",
-  "Delete this summary from your X-Center ID account?": "¿Eliminar este resumen de tu cuenta de X-Center ID?"
+  "Delete this summary from your X-Center ID account?": "¿Eliminar este resumen de tu cuenta de X-Center ID?",
+  "App data": "Datos de la app",
+  "Calculating local sizes…": "Calculando tamaños locales…",
+  "Exploration history": "Historial de exploración",
+  "Invalid account data.": "Datos de cuenta no válidos.",
+  "Signing in syncs settings, vehicles, saved places and routes, and ride summaries by default. You can change each category. Ride recordings include GPS tracks and stay off until you enable them.": "Al iniciar sesión se sincronizan los ajustes, los vehículos, los lugares y rutas guardados y los resúmenes de viajes. Puedes cambiar cada categoría. Las grabaciones incluyen trazas GPS y quedan desactivadas hasta que las actives.",
+  "Sizes are estimates before compression. Recorded rides and exploration history start off. Categories with 256 KiB or more also start off.": "Los tamaños se estiman antes de comprimir. Los viajes grabados, el historial de exploración y las categorías de 256 KiB o más empiezan desactivados.",
+  "A category exceeds the account sync size limit.": "Una categoría supera el límite de sincronización.",
+  "Some account data could not sync. Velunivo will retry.": "No se sincronizaron algunos datos. Velunivo lo volverá a intentar.",
+  "Could not calculate account sync sizes.": "No se pudieron calcular los tamaños de sincronización.",
+  "Could not save this sync preference.": "No se pudo guardar esta preferencia de sincronización."
 }

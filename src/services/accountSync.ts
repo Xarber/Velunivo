@@ -35,6 +35,7 @@ async function makeSummary(category: Category): Promise<Summary> {
 
 export type AccountStatus = {
   enabled: boolean;
+  portableSync?: boolean;
   signedIn: boolean;
   binding?: string;
   account?: string;
@@ -53,8 +54,7 @@ export async function readSummary(category: Category): Promise<SummaryRecord | n
   }
 }
 
-export async function syncSummaries() {
-  const status: AccountStatus = await (await request('status')).json();
+export async function syncSummaries(status: AccountStatus) {
   if (!status.signedIn || !status.account || !status.binding) return;
   for (const category of categories) {
     const key = consentKey(status.account, category);

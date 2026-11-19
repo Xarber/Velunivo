@@ -2126,5 +2126,15 @@
   "This summary changed on another device. Its account copy was preserved.": "Ein anderes Gerät hat diese Zusammenfassung geändert. Die Kopie im Konto wurde beibehalten.",
   "Account sync could not finish. Please try again.": "Die Synchronisierung konnte nicht abgeschlossen werden. Versuche es erneut.",
   "Finish signing in in your browser, then return here.": "Schließe die Anmeldung im Browser ab und kehre hierher zurück.",
-  "Delete this summary from your X-Center ID account?": "Diese Zusammenfassung aus deinem X-Center-ID-Konto löschen?"
+  "Delete this summary from your X-Center ID account?": "Diese Zusammenfassung aus deinem X-Center-ID-Konto löschen?",
+  "App data": "App-Daten",
+  "Calculating local sizes…": "Lokale Größen werden berechnet…",
+  "Exploration history": "Erkundungsverlauf",
+  "Invalid account data.": "Ungültige Kontodaten.",
+  "Signing in syncs settings, vehicles, saved places and routes, and ride summaries by default. You can change each category. Ride recordings include GPS tracks and stay off until you enable them.": "Bei der Anmeldung werden Einstellungen, Fahrzeuge, gespeicherte Orte und Routen sowie Fahrtübersichten standardmäßig synchronisiert. Du kannst jede Kategorie ändern. Fahrtaufzeichnungen enthalten GPS-Spuren und bleiben deaktiviert, bis du sie aktivierst.",
+  "Sizes are estimates before compression. Recorded rides and exploration history start off. Categories with 256 KiB or more also start off.": "Die Größen werden vor der Komprimierung geschätzt. Aufgezeichnete Fahrten, der Erkundungsverlauf und Kategorien ab 256 KiB sind zunächst deaktiviert.",
+  "A category exceeds the account sync size limit.": "Eine Kategorie überschreitet das Größenlimit der Synchronisierung.",
+  "Some account data could not sync. Velunivo will retry.": "Einige Daten konnten nicht synchronisiert werden. Velunivo versucht es erneut.",
+  "Could not calculate account sync sizes.": "Die Größe der zu synchronisierenden Daten konnte nicht ermittelt werden.",
+  "Could not save this sync preference.": "Die Synchronisierungseinstellung konnte nicht gespeichert werden."
 }

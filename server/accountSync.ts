@@ -1,3 +1,4 @@
+import { accountArchive, archiveCategories, ArchiveError, ARCHIVE_LIMIT } from './accountArchive';
 import { createHash, randomBytes } from 'node:crypto';
 import { Router, json, type Request } from 'express';
 import * as oidc from 'openid-client';
@@ -31,10 +32,10 @@ class ExpiringStore<T> {
 export function accountSync(clientId?: string, secret?: string) {
   const router = Router();
   const enabled = !!secret && !!clientId && /^[a-zA-Z0-9_-]{1,100}$/.test(clientId);
-  const transactions = new ExpiringStore<{ state: string; nonce: string; verifier: string; nativeChallenge?: string }>();
+  const transactions = new ExpiringStore<{ state: string; nonce: string; verifier: string; nativeChallenge?: string; portableSync: boolean }>();
   const handoffs = new ExpiringStore<{ session?: string; challenge: string; failed?: boolean }>();
   const browserLaunches = new ExpiringStore<{ authorization: string; key: string }>();
-  const sessions = new ExpiringStore<{ subject: string; token: string; binding: string; profile: Record<string, string> }>();
+  const sessions = new ExpiringStore<{ subject: string; token: string; binding: string; profile: Record<string, string>; portableSync: boolean }>();
 
   function sessionKey(req: Request) {
     return /^Bearer ([a-f0-9]{64})$/.exec(req.get('authorization') ?? '')?.[1]
@@ -54,7 +55,7 @@ export function accountSync(clientId?: string, secret?: string) {
   router.use((_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
   router.get('/status', (req, res) => {
     const session = sessions.get(sessionKey(req));
-    res.json({ enabled, signedIn: !!session, binding: session?.binding, profile: session?.profile, account: session && createHash('sha256').update(session.subject).digest('hex') });
+    res.json({ enabled, signedIn: !!session, binding: session?.binding, profile: session?.profile, portableSync: session?.portableSync, account: session && createHash('sha256').update(session.subject).digest('hex') });
   });
   router.use((req, res, next) => {
     if (!enabled) { res.sendStatus(503); return; }
@@ -68,7 +69,7 @@ export function accountSync(clientId?: string, secret?: string) {
     const nativeChallenge = native ? req.body?.challenge : undefined;
     if (native && (typeof nativeChallenge !== 'string' || !/^[a-f0-9]{64}$/.test(nativeChallenge))) { res.sendStatus(400); return; }
     const configuration = await config();
-    const transaction = { state: id(), nonce: id(), verifier: oidc.randomPKCECodeVerifier(), nativeChallenge };
+    const transaction = { state: id(), nonce: id(), verifier: oidc.randomPKCECodeVerifier(), nativeChallenge, portableSync: req.body?.portableSync === true };
     const key = id();
     const url = oidc.buildAuthorizationUrl(configuration, {
       redirect_uri: redirect, response_type: 'code', scope: 'openid profile email age_range app_data',
@@ -132,7 +133,7 @@ export function accountSync(clientId?: string, secret?: string) {
       }
       const duration = Math.min(3600, tokens.expires_in ?? 300) * 1000;
       const session = id();
-      sessions.set(session, { subject, token: tokens.access_token, binding: id(), profile }, duration);
+      sessions.set(session, { subject, token: tokens.access_token, binding: id(), profile, portableSync: transaction.portableSync }, duration);
       if (transaction.nativeChallenge) {
         handoffs.delete(key);
         handoffs.set(key, { session, challenge: transaction.nativeChallenge }, 180_000);
@@ -170,6 +171,45 @@ export function accountSync(clientId?: string, secret?: string) {
     res.clearCookie('velunivo_session', cookieOptions).sendStatus(204);
   });
 
+  router.use('/archive/:category', (req, res, next) => {
+    const session = sessions.get(sessionKey(req));
+    if (!session || req.get('x-sync-binding') !== session.binding) { res.sendStatus(401); return; }
+    next();
+  });
+  router.all('/archive/:category', json({ limit: ARCHIVE_LIMIT }), async (req, res) => {
+    const session = sessions.get(sessionKey(req));
+    if (!session || req.get('x-sync-binding') !== session.binding) { res.sendStatus(401); return; }
+    const category = req.params.category;
+    if (!archiveCategories.has(category)) { res.sendStatus(404); return; }
+    const archive = accountArchive(issuer, clientId!, session.token, category);
+    try {
+      if (req.method === 'GET') {
+        const record = await archive.read();
+        if (!record) { res.sendStatus(404); return; }
+        res.json(record);
+        return;
+      }
+      if (req.method !== 'PUT' && req.method !== 'DELETE') { res.sendStatus(405); return; }
+      const match = /^"(\d{1,12})"$/.exec(req.get('if-match') ?? '');
+      if (!match) { res.sendStatus(428); return; }
+      if (req.method === 'DELETE') {
+        await archive.remove(Number(match[1]));
+        res.sendStatus(204);
+        return;
+      }
+      const data = req.body;
+      if (!data || typeof data !== 'object' || Array.isArray(data) ||
+        Object.keys(data).some(key => !['schema','category','value','revisions'].includes(key)) ||
+        data.schema !== 1 || data.category !== category || !Object.hasOwn(data, 'value')) {
+        res.sendStatus(422);
+        return;
+      }
+      res.json(await archive.write(Number(match[1]), data));
+    } catch (error) {
+      res.sendStatus(error instanceof ArchiveError ? error.status : 503);
+    }
+  });
+
   router.all('/summary/:category', json({ limit: '8kb' }), async (req, res) => {
     const session = sessions.get(sessionKey(req));
     if (!session) { res.sendStatus(401); return; }
@@ -205,8 +245,8 @@ export function accountSync(clientId?: string, secret?: string) {
     res.json(method === 'GET' ? { data: result.data, revision: result.revision } : { revision: result.revision });
   });
 
-  router.use((_error: unknown, _req: Request, res: import('express').Response, _next: import('express').NextFunction) => {
-    res.sendStatus(503);
+  router.use((error: { status?: number }, _req: Request, res: import('express').Response, _next: import('express').NextFunction) => {
+    res.sendStatus(error.status === 413 ? 413 : 503);
   });
   router.use((_req, res) => { res.sendStatus(404); });
   return router;

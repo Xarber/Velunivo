@@ -1,12 +1,14 @@
 import { useEffect } from 'react';
 import { AppState, Platform } from 'react-native';
-import { syncSummaries } from '../services/accountSync';
+import { syncAccountArchive } from '../services/accountArchive';
+import {isRideLocked, subscribeRideLock} from '../services/rideLock';
+import { request, syncSummaries, type AccountStatus } from '../services/accountSync';
 import { subscribeRides } from '../services/rideHistory';
 
 const observers = new Set<() => void>();
-const listeners = new Set<() => void>();
+const listeners = new Set<(error?: unknown) => void>();
 export function refreshAccountSync() { for (const observer of observers) observer(); }
-export function observeAccountSync(listener: () => void) {
+export function observeAccountSync(listener: (error?: unknown) => void) {
   listeners.add(listener);
   return () => { listeners.delete(listener); };
 }
@@ -17,15 +19,18 @@ export default function AccountSyncWorker() {
     let queued = false;
     let disposed = false;
     async function sync() {
-      if (disposed || AppState.currentState === 'background' ||
+      if (disposed || isRideLocked() || AppState.currentState === 'background' ||
         (Platform.OS === 'web' && (document.visibilityState !== 'visible' || !navigator.onLine))) return;
       if (running) { queued = true; return; }
       running = true;
       try {
-        await syncSummaries();
+        const response = await request('status');
+        const status: AccountStatus = await response.json();
+        const outcomes = await Promise.allSettled([syncAccountArchive(status), syncSummaries(status)]);
+        for (const outcome of outcomes) if (outcome.status === 'rejected') throw outcome.reason;
         if (!disposed) for (const listener of listeners) listener();
-      } catch {
-        // The next foreground, ride or network event can retry.
+      } catch (error) {
+        if (!disposed) for (const listener of listeners) listener(error);
       } finally {
         running = false;
         if (queued) { queued = false; void sync(); }
@@ -38,6 +43,8 @@ export default function AccountSyncWorker() {
     };
     observers.add(schedule);
     const unsubscribe = subscribeRides(schedule);
+    const stopRide = subscribeRideLock(schedule);
+    const interval = setInterval(schedule, 90_000);
     const state = AppState.addEventListener('change', schedule);
     if (Platform.OS === 'web') {
       document.addEventListener('visibilitychange', schedule);
@@ -49,6 +56,8 @@ export default function AccountSyncWorker() {
       clearTimeout(timer);
       observers.delete(schedule);
       unsubscribe();
+      stopRide();
+      clearInterval(interval);
       state.remove();
       if (Platform.OS === 'web') {
         document.removeEventListener('visibilitychange', schedule);

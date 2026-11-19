@@ -2126,5 +2126,15 @@
   "This summary changed on another device. Its account copy was preserved.": "Un autre appareil a modifié ce récapitulatif. La copie du compte a été conservée.",
   "Account sync could not finish. Please try again.": "La synchronisation n’a pas abouti. Réessayez.",
   "Finish signing in in your browser, then return here.": "Terminez la connexion dans votre navigateur, puis revenez ici.",
-  "Delete this summary from your X-Center ID account?": "Supprimer ce récapitulatif de votre compte X-Center ID ?"
+  "Delete this summary from your X-Center ID account?": "Supprimer ce récapitulatif de votre compte X-Center ID ?",
+  "App data": "Données de l’app",
+  "Calculating local sizes…": "Calcul des tailles locales…",
+  "Exploration history": "Historique des explorations",
+  "Invalid account data.": "Données du compte invalides.",
+  "Signing in syncs settings, vehicles, saved places and routes, and ride summaries by default. You can change each category. Ride recordings include GPS tracks and stay off until you enable them.": "La connexion synchronise par défaut les réglages, les véhicules, les lieux et itinéraires enregistrés et les récapitulatifs de trajet. Vous pouvez modifier chaque catégorie. Les trajets enregistrés contiennent des traces GPS et restent désactivés jusqu’à leur activation.",
+  "Sizes are estimates before compression. Recorded rides and exploration history start off. Categories with 256 KiB or more also start off.": "Les tailles sont estimées avant compression. Les trajets enregistrés, l’historique des explorations et les catégories d’au moins 256 Kio sont désactivés par défaut.",
+  "A category exceeds the account sync size limit.": "Une catégorie dépasse la taille autorisée pour la synchronisation.",
+  "Some account data could not sync. Velunivo will retry.": "Certaines données n’ont pas été synchronisées. Velunivo réessaiera.",
+  "Could not calculate account sync sizes.": "Impossible de calculer la taille des données à synchroniser.",
+  "Could not save this sync preference.": "Impossible d’enregistrer cette préférence de synchronisation."
 }

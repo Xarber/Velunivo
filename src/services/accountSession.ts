@@ -12,7 +12,7 @@ export async function accountRequest(path: string, init?: RequestInit) {
   const headers = new Headers(init?.headers);
   if (session) headers.set('Authorization', 'Bearer ' + session);
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15_000);
+  const timeout = setTimeout(() => controller.abort(), path.startsWith('archive/') ? 90_000 : 15_000);
   try {
     const response = await fetch((web ? '' : server) + '/api/account/' + path, {
       cache: 'no-store', ...init, headers, signal: controller.signal,
@@ -27,7 +27,7 @@ export async function startAccountSignIn() {
   const verifier = web ? '' : Array.from(await Crypto.getRandomBytesAsync(32), value => value.toString(16).padStart(2, '0')).join('');
   const challenge = web ? '' : await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, verifier);
   const response = await accountRequest(web ? 'start' : 'native/start', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ challenge }),
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ challenge, portableSync: true }),
   });
   const { url, transaction } = await response.json();
   const destination = new URL(url);

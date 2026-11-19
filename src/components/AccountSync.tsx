@@ -1,3 +1,5 @@
+import AccountArchiveSettings from './AccountArchiveSettings';
+import { accountArchiveBytes } from '../core/accountArchive';
 import { t } from '../i18n/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { startAccountSignIn, signOutAccount, finishAccountSignIn } from '../services/accountSession';
@@ -30,7 +32,8 @@ export default function AccountSync() {
           setMessage(result === 'connected' ? 'Connected to X-Center ID.' : 'Sign-in expired or was declined. Try again.');
         }
         const response = await request('status');
-        if (active) setStatus(await response.json());
+        const next: AccountStatus = await response.json();
+        if (active) setStatus(previous => JSON.stringify(previous) === JSON.stringify(next) ? previous : next);
         if (result === 'connected') refreshAccountSync();
       } catch {
         // Keep an interrupted browser handoff so the next foreground check can retry.
@@ -76,7 +79,7 @@ export default function AccountSync() {
 
   return <View style={{ gap: 10, padding: 16, borderWidth: 1, borderColor: palette.muted, borderRadius: 14 }}>
     <Text style={{ color: palette.text, fontWeight: '700' }}>X-Center ID sync</Text>
-    <Text style={{ color: palette.muted }}>Signing in enables automatic sync for recent neighborhood names and 30-day ride totals. You can pause either category. Photon receives approximate destinations to look up neighborhood names. Full rides and GPS tracks stay on this device.</Text>
+    <Text style={{ color: palette.muted }}>Signing in syncs settings, vehicles, saved places and routes, and ride summaries by default. You can change each category. Ride recordings include GPS tracks and stay off until you enable them.</Text>
     {!status.signedIn ? <Button title="Sign in with X-Center ID" icon="person-circle-outline" disabled={busy}
       onPress={() => void run(async () => {
         await startAccountSignIn();
@@ -85,6 +88,7 @@ export default function AccountSync() {
       {[status.profile?.name || status.profile?.preferred_username, status.profile?.email,
         status.profile?.age_range].filter(Boolean).map((value, index) =>
         <Text key={index} style={{ color: palette.text }}>{value}</Text>)}
+      <AccountArchiveSettings status={status}/>
       {categories.map(category => {
         const neighborhoods = category === 'recent-neighborhoods';
         const record = records[category];
@@ -93,6 +97,7 @@ export default function AccountSync() {
           <Text style={{ color: palette.muted }}>{neighborhoods
             ? 'Approximate destinations from recent rides are sent to Photon to find area names. Only the names are saved to your account.'
             : 'Save the number of rides, total distance and riding time from the last 30 days.'}</Text>
+          {record && <Text translate={false} style={{ color: palette.muted }}>{accountArchiveBytes(record.data)} B</Text>}
           {record && <Text style={{ color: palette.text }}>{Array.isArray(record.data)
             ? record.data.join(' · ') || 'No neighborhood names'
             : `${record.data.rides} rides · ${record.data.kilometers} km · ${record.data.minutes} min`}</Text>}

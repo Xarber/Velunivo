@@ -1,3 +1,5 @@
+import {applyAccountArchive, type AccountArchive, type ArchiveKind} from '../core/accountArchive';
+import {isRideLocked} from './rideLock';
 import {readEntityEdits} from './entityEdits';
 import {hashCanonical} from '../core/canonicalHash';
 import {canonicalJson} from '../core/canonicalJson';
@@ -19,3 +21,10 @@ let operation:Promise<unknown>=Promise.resolve();
 function serialize<T>(fn:()=>Promise<T>):Promise<T>{const result=operation.catch(()=>{}).then(fn);operation=result;return result;}
 export const exportAutomaticSync=(allowPrivate=true)=>serialize(()=>exportInternal(allowPrivate));
 export const importAutomaticSync=(text:string,allowPrivate=true,refresh=true)=>serialize(()=>importInternal(text,allowPrivate,refresh));
+
+export const importAccountArchive=(incoming:AccountArchive,category:ArchiveKind)=>serialize(async()=>{
+ if(isRideLocked())return;
+ const local=await exportInternal(false);
+ if(isRideLocked())return;
+ await importInternal(JSON.stringify(applyAccountArchive(local,incoming,category)),false);
+});
