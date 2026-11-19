@@ -30,3 +30,7 @@ After registration, the portal issues its own DNS challenge. Use the exact TXT h
 X-Center now serves web commit `577d5f1d8a6a2bad9994e8f54e20880e4f76e978` with the matching account-sync server. DNS publishes the callback verification TXT record. A public sign-in start sent the registered client to the issuer interaction screen. Public web and peer health passed, including a fresh WSS signaling handshake. The credential is loaded from a root-readable server environment file. The prior web and runtime selectors are recorded in `rollback-account-sync-targets.txt` on the host. A completed provider consent and real two-browser sync have yet to be verified.
 
 The November 19 native implementation passed local lint, type checking and nine focused tests. The live host had no Apple or Android signing associations at inspection. An installed signed build must verify the authorization return and exchange before native sign-in is considered verified.
+
+### November 19 deployment
+
+Web commit `ec2ba1dea8ebe9fba5df6c84d523d15cceec5127` and its backend are live. The dedicated Settings page and HTTPS return route respond, the issuer accepted the web sign-in request, and PeerServer signaled OPEN. The server reports that both native signing associations are missing, so the native sign-in entry explains that dependency. The previous deployment remains in `rollback-native-account-targets.txt`. Native build artifacts were requested in [run 44462408799](https://github.com/Xarber/Velunivo/actions/runs/44462408799). No native release is implied by that run.
