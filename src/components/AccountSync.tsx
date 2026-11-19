@@ -1,3 +1,4 @@
+import { t } from '../i18n/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { startAccountSignIn, signOutAccount, finishAccountSignIn } from '../services/accountSession';
 import { observeAccountSync, refreshAccountSync } from './AccountSyncWorker';
@@ -103,7 +104,7 @@ export default function AccountSync() {
             return <>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Text style={{ color: palette.text }}>Automatic sync</Text>
-                <Switch accessibilityLabel={neighborhoods ? 'Sync recent neighborhoods' : 'Sync ride insights'}
+                <Switch accessibilityLabel={neighborhoods ? t('Sync recent neighborhoods') : t('Sync ride insights')}
                   disabled={busy} value={!paused} onValueChange={enabled => void run(async () => {
                     const current = await AsyncStorage.getItem(key) ?? '0';
                     const next = enabled ? current.replace(/^paused:/, '') : 'paused:' + current.replace(/^paused:/, '');
@@ -125,9 +126,9 @@ export default function AccountSync() {
                 await request('summary/' + category, { method: 'DELETE', headers: { 'X-Sync-Binding': status.binding ?? '', 'If-Match': `"${record.revision}"` } });
                 setRecords(old => ({ ...old, [category]: null }));
               });
-              const prompt = 'Delete this summary from your X-Center ID account?';
+              const prompt = t('Delete this summary from your X-Center ID account?');
               if (Platform.OS === 'web') { if (window.confirm(prompt)) remove(); }
-              else Alert.alert(prompt, undefined, [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: remove }]);
+              else Alert.alert(prompt, undefined, [{ text: t('Cancel'), style: 'cancel' }, { text: t('Delete'), style: 'destructive', onPress: remove }]);
             }}/>}
         </View>;
       })}
